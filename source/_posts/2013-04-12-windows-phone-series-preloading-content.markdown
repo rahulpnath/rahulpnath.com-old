@@ -57,7 +57,7 @@ To create a T4 template, add a new item to the project **MyFiles.tt. **Select Ok
 
 In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(**MyFiles.tt**)
 
-    
+``` csharp    
     <#@ template debug="false" hostspecific="true" language="C#" #>
     <#@ output extension=".gen.cs" #>
     <#@ import namespace="System.IO"#>
@@ -86,11 +86,11 @@ In a T4 template it would be a mix of text and code, that would be used to gener
             }
         }
     }
-
+```
 
 It just says to read the directory MyPreloadedContent and iterate to get all the files in that and writes it out by trimming of the absolute path and putting in only the relative path. Save the MyFiles.tt, and in Visual Studio right click on it and say “Run Custom Tool”. This would generate the cs file with an extension “.gen.cs” as we have mentioned in “**<#@ output extension=".gen.cs" #>”.  **The generated class would look like below
 
-    
+    ``` csharp
     namespace PreloadedContent
     {
         public class MyFiles
@@ -109,7 +109,7 @@ It just says to read the directory MyPreloadedContent and iterate to get all the
         }
     }
 
-
+```
 The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.
 
 There are a couple of ways, by which you can ensure that the template file is run before the actual code gets compiled. This is to make sure that this generated class is going to be updated with the latest files that would be copied into the folder at build time i.e your templates are transformed at build time. This [article](http://msdn.microsoft.com/en-us/library/ee847423.aspx) details out the methods to get that integrated into the build. On a build server where you dont have Visual Studio installed you would need to copy out these files mentioned [here](http://msdn.microsoft.com/en-us/library/ee847423.aspx#buildserver) explicitly

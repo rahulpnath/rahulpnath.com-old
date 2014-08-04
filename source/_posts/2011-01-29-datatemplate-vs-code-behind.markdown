@@ -17,7 +17,8 @@ tags:
 Most of the people switching to WPF,got to understand the fact the WPF tries to target one major problem of the technologies that existed before, which was tight coupling of the design and the behaviour.WPF has a ‘_lookless control model_’,and that simply means that the look and feel of the control is completely separated from the behaviour of the  control.And that is where the whole concept of XAML comes in,which does its part of defining the visual representation.
 
 But still many people move on to WPF from older technologies fail to absorb this core approach.Mostly this happens when the look of something is to be dynamically generated.Say in the case of a Listbox bound to a itemssource.As far as the item is to be displayed in pure text everything goes fine.People figure out that the _DisplayMemberPath_ has to be set to the property that they want to be displayed in the listbox.
- [code]private void Window_Loaded(object sender, RoutedEventArgs e)
+ ``` csharp
+ private void Window_Loaded(object sender, RoutedEventArgs e)
         {
           listBox1.ItemsSource = PopulateEmployees();
         }
@@ -47,7 +48,8 @@ But still many people move on to WPF from older technologies fail to absorb this
        public string LastName { get; set; }
 
         public int</span> Id { get; set; }
-    }[/code]
+    }
+    ```
 
 
 [![adfx1oqi](http://rahulpnath.files.wordpress.com/2011/01/adfx1oqi_thumb.jpg)](http://rahulpnath.files.wordpress.com/2011/01/adfx1oqi.jpg)

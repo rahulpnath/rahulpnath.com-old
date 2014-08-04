@@ -17,35 +17,30 @@ Earlier I had blogged about reading an [eBook vs reading a hard copy](http://rah
 
 The easiest way to get books on your Kindle is to buy them from Amazon, right from your Kindle itself. The experience is so seamless that you just cannot resist from. But often you have pdf’s with you that you would want to read in your Kindle. There are a couple of ways(in fact a lot more), that you can get your pdf to the Kindle.
 
-
-
+	
+1. ** **The most direct and easy way is to [send it to your kindle mail address](http://www.amazon.com/gp/sendtokindle/email).  The problem with this is it that it makes the font very small that it is difficult to read.
 
 	
-    1. ** **The most direct and easy way is to [send it to your kindle mail address](http://www.amazon.com/gp/sendtokindle/email).  The problem with this is it that it makes the font very small that it is difficult to read.
-
-	
-    2. 
-
-
-There are also a lot of tools that help you manage your eBooks that have kindle support too. [Calibre](http://calibre-ebook.com/) is     one such popular tool. Calibre has options to send to Kindle, which would convert pdf to the required mobi format. The problem with this is that it keeps inserting line breaks after every other line.
-
-
-
+2. There are also a lot of tools that help you manage your eBooks that have kindle support too. [Calibre](http://calibre-ebook.com/) is one such popular tool. Calibre has options to send to Kindle, which would convert pdf to the required mobi format. The problem with this is that it keeps inserting line breaks after every other line.
 
 
 So with the both the methods I have found that the formatting gets all messed up for the Kindle, making it difficult to have a smooth reading. After a lot of investigating , I have come up with a good method to get my pdf onto the Kindle.
 
 It is a simple **_3 step_** process:
-**Step 1:
-**Convert the pdf into html with [mobipocket creator](http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp).  Highlighted in yellow below.
+
+**Step 1:**
+
+Convert the pdf into html with [mobipocket creator](http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp).  Highlighted in yellow below.
 
 [![mobi creator](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator.png)
 
-**Step 2:
-**From the above step you would get a html output file. Import this converted html format into [Calibre](http://calibre-ebook.com/)
+**Step 2:**
 
-**Step 3:
-**Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
+From the above step you would get a html output file. Import this converted html format into [Calibre](http://calibre-ebook.com/)
+
+**Step 3:**
+
+Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
 Here is a comparison of the all the 3 methods above in order(kindle email, direct calibre and mobicreator + calibre )
 
 [![kindle email](http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail_thumb.jpg)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail.jpg)  [![Caliber Default](http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault.png) [![mobicreator caliber output](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput.png)

@@ -20,7 +20,7 @@ We had looked into many of the common MVVM scenarios, that we come across while 
 For almost all the application, we would need to transfer the control from one page to another, so that the user can navigate through the various contents on the application. In a MVVM application, these navigations would be basically triggered from the ViewModel, as it is there where we need to know where the next control should go to.
 Navigation is basically a platform specific feature and we would not want to bring in any dependency between a platform specific feature and our ViewModels. So the best way here is to _inverse the dependency_, using an interface and inject the dependency via an IoC container. Will call the interface here as _INavigationService _as given below, and the implementation _NavigationService_.
 
-    
+``` csharp
     public interface INavigationService
      {
      void Navigate(string uri);
@@ -28,9 +28,6 @@ Navigation is basically a platform specific feature and we would not want to bri
      void PerformActionOnUIThread(Action action);
      void GoBack();
     }
-
-
-
     
     public class NavigationService : INavigationService
     {
@@ -83,14 +80,17 @@ Navigation is basically a platform specific feature and we would not want to bri
         }
       }
 
+```
 
 This is just a sample implementation that you can use. The _DispatcherHelper _used here is from MVVMLight, which needs to be initialized when the application starts. This can be in the App.xaml.cs in the application constructor
 
-[csharp]DispatcherHelper.Initialize();[/csharp]
+``` csharp
+DispatcherHelper.Initialize();
+```
 
 Here in the above example the parameters are considered to be primitive data-types, which is why it is added as query parameters to the navigation uri. In case you want to have complex parameters passed between pages, you could have a property on the INavigationService, which can be set when calling the Naivgate method. This values can be retrieved when the OnNavigatedTo in the ViewModel.
 
-    
+``` csharp    
     public static object Parameters { get; set; }
     
     public void Navigate(string uri, object parameters)
@@ -102,10 +102,13 @@ Here in the above example the parameters are considered to be primitive data-typ
             });
     }
 
+```
 
 The NavigationService needs to be registered with the MVVM IoC in ViewModelLocator (or anywhere else), and then you could either constructor inject it or create an instance in the BaseViewModel class, so that all ViewModels has a reference to this for navigation.
 
-[csharp]SimpleIoc.Default.Register<INavigationService, NavigationService>();[/csharp]
+``` csharp 
+SimpleIoc.Default.Register<INavigationService, NavigationService>();
+```
 
 When developing applications for both Windows phone and Windows 8 or x-platform, your ViewModels would remain the same and the NavigationService implementations only would change, and would be accordingly injected into the IoC, when the application starts. So for any platform specific features/dependencies this would be the approach that you would need to choose to minimize the dependencies for your ViewModel. Other cases that I can think of right now is for Push Notifications, where each platform would have their own implementations for registering and raising notifications. So you would use the same approach to _inverse the dependencies._
 
@@ -113,7 +116,7 @@ When developing applications for both Windows phone and Windows 8 or x-platform,
 
 Most of the processing/data loading work in done usually on the OnNavigatedTo of the page. To hook to this event in the ViewModel, we would go ahead and introduce some base classes so that we can reuse this in all over ViewModels. We have a application specific base class for the PhoneApplicationPage. We override the _OnNavigatedTo_ event here and call on to the application specific base ViewModel’s OnNavigatedTo event. For any ViewModel to hook into this event just needs to override this method on the ViewModel, as shown in the sample below
 
-    
+``` csharp
     public abstract class ApplicationPageBase: PhoneApplicationPage
     {
         protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
@@ -125,8 +128,6 @@ Most of the processing/data loading work in done usually on the OnNavigatedTo of
         }
     }
 
-
-
     
     public class ApplicationViewModelBase: ViewModelBase
     {
@@ -136,6 +137,7 @@ Most of the processing/data loading work in done usually on the OnNavigatedTo of
         }
     }
 
+```
 
 Similarly for any of the other page events also you could create it in the page base class and call the corresponding function on the ViewModel base.
 

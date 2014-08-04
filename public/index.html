@@ -16,7 +16,7 @@
   
   <link rel="canonical" href="http://yoursite.com">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -406,10 +406,13 @@
 4. </strong>If you face any error while trying to connect to the azure hosted web site from <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows Live Writer</a>(WLW), this most likely is because it uses <a href="http://codex.wordpress.org/XML-RPC_Support">xmlrpc.php</a> for publishing posts to the site and this is accessed over the https enpoint. Since https is not setup for the custom domain, accessing xmlrpc.php over https would present you with the below certificate error.</p>
 
 <p><a href="http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error.jpg"><img src="http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error-150x150.jpg" alt="Https error" />
-</a>You could either configure your ssl bindings in azure portal, under the <a href="http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/">Configure tab under your website</a>. SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.</p>
+</a></p>
 
-<p><strong>Azure Plans &amp; Pricing
-</strong>If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: <strong>Free</strong>, <strong>Shared (Preview)</strong>, <strong>Basic</strong> and <strong>Standard</strong>. The pricing details for each of these is available in detail <a href="http://azure.microsoft.com/en-us/pricing/details/web-sites/">here</a>. To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on <a href="http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx">Penny Pinching in the cloud.</a></p>
+<p>You could either configure your ssl bindings in azure portal, under the <a href="http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/">Configure tab under your website</a>. SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.</p>
+
+<p><strong>Azure Plans &amp; Pricing</strong></p>
+
+<p>If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: <strong>Free</strong>, <strong>Shared (Preview)</strong>, <strong>Basic</strong> and <strong>Standard</strong>. The pricing details for each of these is available in detail <a href="http://azure.microsoft.com/en-us/pricing/details/web-sites/">here</a>. To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on <a href="http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx">Penny Pinching in the cloud.</a></p>
 
 <p>Do you plan to move to Azure Web Sites some time soon?</p>
 </div>
@@ -454,40 +457,74 @@
 
 <p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
 
-<p>[xml]<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>[/xml]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}&quot;</span><span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
 
-<p>[csharp]public class JetImageLoaderImplementation
-{
-    public static readonly BaseMemoryCache&lt;string,stream> MemoryCacheImpl = new WeakMemoryCache&lt;string,stream>();
-    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), &ldquo;\image_cache&rdquo;, new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);</p>
-    public static JetImageLoaderConfig GetJetImageLoaderConfig()
-    {
-        return new JetImageLoaderConfig.Builder
-        {
-            IsLogEnabled = true,
-            CacheMode = CacheMode.MemoryAndStorageCache,
-            DownloaderImpl = new HttpWebRequestDownloader(),
-            MemoryCacheImpl = MemoryCacheImpl,
-            StorageCacheImpl = StorageCacheImpl
-        }.Build();
-    }
-}[/csharp]
-[csharp]public class JetImageLoaderConverter : BaseJetImageLoaderConverter
-{
-    protected override JetImageLoaderConfig GetJetImageLoaderConfig()
-    {
-        return JetImageLoaderImplementation.GetJetImageLoaderConfig();
-    }</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderImplementation</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;</span> <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WeakMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseStorageCache</span> <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LimitedStorageCache</span><span class="p">(</span><span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">(),</span> <span class="s">&quot;\\image_cache&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">SHA1CacheFileNameGenerator</span><span class="p">(),</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">10</span><span class="p">);&lt;/</span><span class="n">p</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">JetImageLoaderConfig</span><span class="p">.</span><span class="n">Builder</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">IsLogEnabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">CacheMode</span> <span class="p">=</span> <span class="n">CacheMode</span><span class="p">.</span><span class="n">MemoryAndStorageCache</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">DownloaderImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpWebRequestDownloader</span><span class="p">(),</span>
+</span><span class='line'>            <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="n">MemoryCacheImpl</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="n">StorageCacheImpl</span>
+</span><span class='line'>        <span class="p">}.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-{
-    return base.Convert(value, targetType, parameter, culture);
-}
-</code></pre>
 
-<p>}[/csharp]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderConverter</span> <span class="p">:</span> <span class="n">BaseJetImageLoaderConverter</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">JetImageLoaderImplementation</span><span class="p">.</span><span class="n">GetJetImageLoaderConfig</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">object</span> <span class="nf">Convert</span><span class="p">(</span><span class="kt">object</span> <span class="k">value</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Type</span> <span class="n">targetType</span><span class="p">,</span> <span class="kt">object</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Globalization</span><span class="p">.</span><span class="n">CultureInfo</span> <span class="n">culture</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="k">value</span><span class="p">,</span> <span class="n">targetType</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">culture</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
 
@@ -558,9 +595,7 @@
 </ul>
 
 
-<p>**Things that I don’t like and miss:</p>
-
-<p>**</p>
+<p><strong>Things that I don’t like and miss:</strong></p>
 
 <ul>
 <li><p><strong>Jumplist: <a href="http://rahulpnath.com/blog/windows-phone-series-jump-lists/">Jumplists</a></strong> really made navigating through large lists a lot easier on Windows phone. Now I always need to hit the search button and type.</p></li>
@@ -571,9 +606,9 @@
 
 <p>The lists itself explains much of it – <strong>I am liking it a lot. </strong>The android experience on a Nexus device is fast and smooth.</p>
 
-<p>**Cases and Covers:</p>
+<p><strong>Cases and Covers:</strong></p>
 
-<p>**I have been alternating between 2 cases for my Nexus 5 from Spigen and liking them both especially the Neo Hybrid. The white shows of through its transparent back and the overall grip on the phone is very good and comfortable.</p>
+<p>I have been alternating between 2 cases for my Nexus 5 from Spigen and liking them both especially the Neo Hybrid. The white shows of through its transparent back and the overall grip on the phone is very good and comfortable.</p>
 
 <ul>
 <li><p><a href="http://www.amazon.in/gp/product/B00HYA10LC/ref=as_li_ss_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=B00HYA10LC&amp;linkCode=as2&amp;tag=rahulpnath-21">Spigen Google Nexus 5 Case ULTRA HYBRID</a><img src="http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&amp;l=as2&amp;o=31&amp;a=B00HYA10LC" alt="" /></p></li>
@@ -624,95 +659,179 @@
 
 <p>To use Maps in windows phone application, you would need to add a reference to ‘<em>Microsoft.Phone.Controls.Maps</em>’ once you create a new Windows phone project. Add the maps control to the application as below to display current location or other map related features.</p>
 
-<p>[xml]
-&lt;maps:Map Grid.Row=&ldquo;1&rdquo; Name=&ldquo;mapBing&rdquo;  AnimationLevel=&ldquo;None&rdquo; VerticalAlignment=&ldquo;Stretch&rdquo; VerticalContentAlignment=&ldquo;Stretch&rdquo;
-          CopyrightVisibility=&ldquo;Collapsed&rdquo;  LogoVisibility=&ldquo;Collapsed&rdquo;
-          ZoomBarVisibility=&ldquo;Collapsed&rdquo;
-          ZoomLevel=&ldquo;12&rdquo; CredentialsProvider=&ldquo;BING MAPS API KEY&rdquo; >
-    &lt;maps:MapLayer Name=&ldquo;RouteLayer&rdquo; />
-    &lt;maps:MapLayer Name=&ldquo;StartPoint&rdquo; />
-    &lt;maps:MapLayer Name=&ldquo;DestinationPoint&rdquo; />
-    &lt;maps:MapLayer Name=&ldquo;CurrentPosition&rdquo; />
-    &lt;maps:MapLayer Name=&ldquo;MyPathLayer&rdquo;>
-    &lt;/maps:MapLayer>
-&lt;/maps:Map>
-[/xml]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;maps:Map</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="na">Name=</span><span class="s">&quot;mapBing&quot;</span>  <span class="na">AnimationLevel=</span><span class="s">&quot;None&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Stretch&quot;</span> <span class="na">VerticalContentAlignment=</span><span class="s">&quot;Stretch&quot;</span>
+</span><span class='line'>          <span class="na">CopyrightVisibility=</span><span class="s">&quot;Collapsed&quot;</span>  <span class="na">LogoVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
+</span><span class='line'>          <span class="na">ZoomBarVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
+</span><span class='line'>          <span class="na">ZoomLevel=</span><span class="s">&quot;12&quot;</span> <span class="na">CredentialsProvider=</span><span class="s">&quot;BING MAPS API KEY&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;RouteLayer&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;StartPoint&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;DestinationPoint&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;CurrentPosition&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;MyPathLayer&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/maps:MapLayer&gt;</span>
+</span><span class='line'><span class="nt">&lt;/maps:Map&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>This adds a map user control to the application and also different layers to the application, on which we would be displaying the pins, routes etc. Anything that gets shown on the map is shown on different layers. Each of these can be cleared, deleted or toggled for visibility making it easy to work on maps.</p>
 
-<p><strong>Track Me
-</strong>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.
-[csharp]GeoPosition myPosition;</p>
+<p><strong>Track Me</strong></p>
 
-<p>private void TrackMe()
-{
-    startingPoint = null;
-    CurrentPosition.Children.Clear();
-    if (myWatcher != null)
-    {
-        myWatcher.PositionChanged -= myWatcher_PositionChanged;
-        myWatcher.Dispose();
-        myWatcher = null;
-    }
-    myWatcher = new GeoCoordinateWatcher();
-    myWatcher.TryStart(false, TimeSpan.FromMilliseconds(1000));
-    myWatcher.PositionChanged += myWatcher_PositionChanged;
-}</p>
+<p>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.</p>
 
-<p>void myWatcher_PositionChanged(object sender, GeoPositionChangedEventArgs e)
-{
-     myPosition = myWatcher.Position;
-     currentLocation = myWatcher.Position.Location;
-     if (isInDriveMode)
-     {
-         DrawMyCurrentRoute(currentLocation);
-     }</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">GeoPosition</span> <span class="n">myPosition</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">TrackMe</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">startingPoint</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">CurrentPosition</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Clear</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">myWatcher</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">-=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GeoCoordinateWatcher</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">TryStart</span><span class="p">(</span><span class="k">false</span><span class="p">,</span> <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">+=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">void</span> <span class="nf">myWatcher_PositionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">GeoPositionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>     <span class="n">myPosition</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">;</span>
+</span><span class='line'>     <span class="n">currentLocation</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
+</span><span class='line'>     <span class="k">if</span> <span class="p">(</span><span class="n">isInDriveMode</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">{</span>
+</span><span class='line'>         <span class="n">DrawMyCurrentRoute</span><span class="p">(</span><span class="n">currentLocation</span><span class="p">);</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">LocationManager</span><span class="p">.</span><span class="n">GetLocationName</span><span class="p">(</span><span class="n">UpdateLocation</span><span class="p">,</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Latitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">(),</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Longitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code> LocationManager.GetLocationName(UpdateLocation, myPosition.Location.Latitude.ToString(), myPosition.Location.Longitude.ToString());
-</code></pre>
 
-<p>}[/csharp]
-<strong>Destination and Routes</strong>
-Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a>
-[csharp]RouteServiceClient routeService = new RouteServiceClient(&ldquo;BasicHttpBinding_IRouteService&rdquo;);</p>
+<p><strong>Destination and Routes</strong></p>
 
-<p>routeService.CalculateRouteCompleted += (sender, e) =&gt;
-{
-    DrawRoute(e);
-};</p>
+<p>Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a></p>
 
-<p>mapBing.SetView(LocationRect.CreateLocationRect(locations));</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">RouteServiceClient</span> <span class="n">routeService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteServiceClient</span><span class="p">(</span><span class="s">&quot;BasicHttpBinding_IRouteService&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteCompleted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">DrawRoute</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">mapBing</span><span class="p">.</span><span class="n">SetView</span><span class="p">(</span><span class="n">LocationRect</span><span class="p">.</span><span class="n">CreateLocationRect</span><span class="p">(</span><span class="n">locations</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">RouteRequest</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Credentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Credentials</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">ApplicationId</span> <span class="p">=</span> <span class="n">LocationManager</span><span class="p">.</span><span class="n">bingApiKey</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="n">Options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteOptions</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">RoutePathType</span> <span class="p">=</span> <span class="n">RoutePathType</span><span class="p">.</span><span class="n">Points</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="n">Waypoints</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">locations</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="k">new</span> <span class="n">Waypoint</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Location</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Phone</span><span class="p">.</span><span class="n">Controls</span><span class="p">.</span><span class="n">Maps</span><span class="p">.</span><span class="n">Platform</span><span class="p">.</span><span class="n">Location</span><span class="p">()</span> <span class="p">{</span> <span class="n">Latitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">Longitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Longitude</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}))</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>routeService.CalculateRouteAsync(new RouteRequest()
-{
-    Credentials = new Credentials()
-    {
-        ApplicationId = LocationManager.bingApiKey
-    },
-    Options = new RouteOptions()
-    {
-        RoutePathType = RoutePathType.Points
-    },
-    Waypoints = new ObservableCollection(
-        locations.Select(x =&gt; new Waypoint()
-        {
-            Location = new Microsoft.Phone.Controls.Maps.Platform.Location() { Latitude = x.Latitude, Longitude = x.Longitude }
-        }))
-});[/csharp]
-The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api
-[csharp]public static string speechUrl = &ldquo;<a href="http://translate.google.com/translate_tts?tl=en&amp;amp;q=">http://translate.google.com/translate_tts?tl=en&amp;amp;q=</a>&rdquo;;
-private void SpeakText(string message)
-{
-    // Play the audio
-    med1.Source = new Uri(speechUrl + message);
-    med1.Play();
-}[/csharp]
-You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
+
+<p>The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="n">speechUrl</span> <span class="p">=</span> <span class="s">&quot;http://translate.google.com/translate_tts?tl=en&amp;amp;q=&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SpeakText</span><span class="p">(</span><span class="kt">string</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Play the audio</span>
+</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Source</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">speechUrl</span> <span class="p">+</span> <span class="n">message</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Play</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
 
 <p><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image1.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb1.png" alt="image" /></a> <a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image2.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb2.png" alt="image" /></a><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image3.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb3.png" alt="image" /></a></p>
 
-<p><strong>Testing
-</strong>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
+<p><strong>Testing</strong></p>
+
+<p>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
 <a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image4.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb4.png" alt="image" /></a></p>
 
 <p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.</p>
@@ -757,44 +876,65 @@ You could add on more features to this using the different location related api�
 <p>Setting up PhoneGap is pretty easy and direct with its integration with <a href="http://nodejs.org/">node.js</a>. Lets take a look on how to setup our project from scratch.</p>
 
 <ol>
-<li><p> Install <a href="http://nodejs.org/">node.js</a></p></li>
-<li><p> Install PhoneGap using node.js
-<strong><em>npm install –g phonegap
-</em></strong>npm is the official node package manager
--g installs the package in global scope.If you face any error while installing the package(since I happened to, I guess because I closed the console while it was installing the first time) you can try following the below steps, which helped me solve it.
-<strong>            npm list –g
-</strong>If the above step shows that there is a <em>unmet dependency phonegap</em>, then you could follow the below steps
-<strong>            npm rm phonegap</strong>
-<strong>            npm cache clear</strong>
-Try installing PhoneGap again using <em>npm install –g phonegap</em></p></li>
-<li><p> Install Cordova
+<li><p>Install <a href="http://nodejs.org/">node.js</a></p></li>
+<li><p>Install PhoneGap using node.js</p>
+
+<p> <strong><em>npm install –g phonegap</em></strong></p>
+
+<p> npm is the official node package manager</p>
+
+<p> -g installs the package in global scope.If you face any error while installing the package(since I happened to, I guess because I closed the console while it was installing the first time) you can try following the below steps, which helped me solve it.</p>
+
+<p> <strong>            npm list –g</strong></p>
+
+<p> If the above step shows that there is a <em>unmet dependency phonegap</em>, then you could follow the below steps</p>
+
+<p> <strong>            npm rm phonegap</strong></p>
+
+<p> <strong>            npm cache clear</strong></p>
+
+<p> Try installing PhoneGap again using <em>npm install –g phonegap</em></p></li>
+<li><p>Install Cordova
 <strong>npm install –g cordova</strong></p></li>
-<li><p> Now we have everything setup for PhoneGap project. Lets create the project. Navigate to your project root folder and create a project.
-<strong>phonegap create <_appname_>
-</strong>This will create the basic folder structure for your PhoneGap project which looks like below.<a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb.png" alt="image" /></a><strong>
-.cordova: </strong>This directory contains files related to cordova.</p></li>
-<li><p> <strong>merges: </strong>This directory contains platform specific assets. A sub-directory for each platform is created inside here, whenever  a new platform is created. This sub-directory mirrors the structure of the <em>www </em>directory, which allows to add platform specific files to appropriate folders.
-<strong>platforms: </strong>This directory contains native code for each of the <a href="http://docs.phonegap.com/en/edge/guide_platforms_index.md.html">supported platforms</a>. By default this is empty and we need to add the required platforms, which we will see later.
-<strong>plugins: </strong>This directory contains the <a href="https://build.phonegap.com/plugins">plugins</a> that provide extra support to interface with each of the native platforms.
-<strong>www: </strong>This directory contains the primary files that is required for your project/application. This gets copied into each of the platform specific projects in <em>platforms </em>folder whenever a build is performed. So this is where your core development would happen and all your cross-platform code would live in.</p></li>
-<li><p> Lets now create a native project, for windows phone.
-<strong>cordova platform add wp8
-</strong>This will add a wp8 folder inside <em>platforms </em>and also <em>merges. </em>The one in platforms will have the native project setup with all the files in <em>www</em> folder copied into it. You can open up the sln file in Visual Studio and build and run. We have the application up and running on our first platform!
-Lets add in some code so that it makes sense as an application. We will stick on with our usual 500px api and show off some beautiful pictures. I have added jquery from nuget in Visual studio and also updated the files to show pictures from 500px, which I would not be explaining here as it is just some html/js/css..(Updated files in www folder can later be copied into the root <em>www </em>folder later. Need to figure out the correct way on how to go about this. In case you know how, please do leave a comment. Would be more than happy to learn.)</p></li>
-<li><p> Once we copy out the updated files in platform specific <em>www </em>folder into root www folder we can go ahead and add android platform.
-<strong>cordova platform add android
-</strong>This creates an android folder inside <em>platforms</em> and <em>merges</em> folder. You can open up the project in your IDE(<a href="https://www.eclipse.org/downloads/">Eclipse</a>, <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or <a href="http://developer.android.com/sdk/installing/studio.html">Android Studio</a> etc) for android, build and run. We have the application up and running also on the second platform!
-For android you would need to make sure the config files are updated with the required permissions for accessing internet and also to enable <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>. By default internet permissions are enabled, you would only have to update the config for cors(<em>origin header</em>) as it defaults to ‘<em>127.0.0.1*</em>’. I have updated this to just ‘*’, inside <strong><em>res/xml/config.xml </em></strong>(since there is one config.xml inside assets/www folder too).If you are new to android platform, which I was then you can check out here on <a href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/">Setting up the development environment for phonegap on android</a>.
-At times I did have the Android emulator not moving past the &lsquo;<em>Connecting to Device</em>&rsquo; screen while running the application. I just killed all the emulators and started a fresh one from AVD (Android Virtual Device) Manager, unchecking &lsquo;launch from snapshot&rsquo; and &lsquo;save to snapshot&rsquo; options.</p></li>
+<li><p>Now we have everything setup for PhoneGap project. Lets create the project. Navigate to your project root folder and create a project.</p>
+
+<p> <strong>phonegap create <appname></strong></p>
+
+<p> This will create the basic folder structure for your PhoneGap project which looks like below.</p>
+
+<p> <img class="left" src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb.png"></p>
+
+<p> <strong>.cordova: </strong>This directory contains files related to cordova.</p>
+
+<p> <strong>merges: </strong>This directory contains platform specific assets. A sub-directory for each platform is created inside here, whenever  a new platform is created. This sub-directory mirrors the structure of the <em>www </em>directory, which allows to add platform specific files to appropriate folders.</p>
+
+<p> <strong>platforms: </strong>This directory contains native code for each of the <a href="http://docs.phonegap.com/en/edge/guide_platforms_index.md.html">supported platforms</a>. By default this is empty and we need to add the required platforms, which we will see later.</p>
+
+<p> <strong>plugins: </strong>This directory contains the <a href="https://build.phonegap.com/plugins">plugins</a> that provide extra support to interface with each of the native platforms.</p>
+
+<p> <strong>www: </strong>This directory contains the primary files that is required for your project/application. This gets copied into each of the platform specific projects in <em>platforms </em>folder whenever a build is performed. So this is where your core development would happen and all your cross-platform code would live in.</p></li>
+<li><p>Lets now create a native project, for windows phone.</p>
+
+<p> <strong>cordova platform add wp8</strong></p>
+
+<p> This will add a wp8 folder inside <em>platforms </em>and also <em>merges. </em>The one in platforms will have the native project setup with all the files in <em>www</em> folder copied into it. You can open up the sln file in Visual Studio and build and run. We have the application up and running on our first platform!
+ Lets add in some code so that it makes sense as an application. We will stick on with our usual 500px api and show off some beautiful pictures. I have added jquery from nuget in Visual studio and also updated the files to show pictures from 500px, which I would not be explaining here as it is just some html/js/css..(Updated files in www folder can later be copied into the root <em>www </em>folder later. Need to figure out the correct way on how to go about this. In case you know how, please do leave a comment. Would be more than happy to learn.)</p></li>
+<li><p>Once we copy out the updated files in platform specific <em>www </em>folder into root www folder we can go ahead and add android platform.</p>
+
+<p> <strong>cordova platform add android</strong></p>
+
+<p> This creates an android folder inside <em>platforms</em> and <em>merges</em> folder. You can open up the project in your IDE(<a href="https://www.eclipse.org/downloads/">Eclipse</a>, <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or <a href="http://developer.android.com/sdk/installing/studio.html">Android Studio</a> etc) for android, build and run. We have the application up and running also on the second platform!
+ For android you would need to make sure the config files are updated with the required permissions for accessing internet and also to enable <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>. By default internet permissions are enabled, you would only have to update the config for cors(<em>origin header</em>) as it defaults to ‘<em>127.0.0.1*</em>’. I have updated this to just ‘*’, inside <strong><em>res/xml/config.xml </em></strong>(since there is one config.xml inside assets/www folder too).If you are new to android platform, which I was then you can check out here on <a href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/">Setting up the development environment for phonegap on android</a>.
+ At times I did have the Android emulator not moving past the &lsquo;<em>Connecting to Device</em>&rsquo; screen while running the application. I just killed all the emulators and started a fresh one from AVD (Android Virtual Device) Manager, unchecking &lsquo;launch from snapshot&rsquo; and &lsquo;save to snapshot&rsquo; options.</p></li>
 </ol>
 
 
 <p>With PhoneGap/Cordova, you can see how easy it is to have an app in various platforms of your choice. We have not seen on how to utilize any of the platform specific features of devices using PhoneGap, but I am sure that you should be able to figure out from here, now that you have all that you need up and running.</p>
 
-<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/WP.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/WP_thumb.png" alt="WP" /></a>
-[<img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/Android_thumb.png" alt="Android" /></p>
+<p><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/WP_thumb.png" alt="WP" />
+<img src="http://rahulpnath.com/blog/wp-content/uploads/2014/03/Android_thumb.png" alt="Android" /></p>
 
-<p>](<a href="http://rahulpnath.com/blog/wp-content/uploads/2014/03/Android.png">http://rahulpnath.com/blog/wp-content/uploads/2014/03/Android.png</a>)The source code for the sample is available <a href="https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap">here</a>. Don’t forget to update the <a href="http://developers.500px.com/">api key for 500px</a> before you run the application.</p>
+<p>The source code for the sample is available <a href="https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap">here</a>. Don’t forget to update the <a href="http://developers.500px.com/">api key for 500px</a> before you run the application.</p>
 </div>
   
   
@@ -894,15 +1034,15 @@ To check if this is successfully setup, open up command prompt and type in java.
 
 <p>I have always tried the pen-paper method to keep track of things to get done, but somehow I could never keep up with it. I always lost track of it as most of my work is <strong>not <em>track able with paper</em></strong>. Most of my work is done using a computer and I thought something that best suites me would be some tool that is right in my computer. I have tried with a variety of tasks application and some of them are pretty good in how it organizes tasks. But again it yet did not integrate into my life that easily, as there was always an overhead of entering tasks.</p>
 
-<blockquote>Contemplating over why all these systems itself was an overhead, one thing that I have realized that I was always trying to live two lives - **personal and official**, with these systems.</blockquote>
-
+<blockquote><p>Contemplating over why all these systems itself was an overhead, one thing that I have realized that I was always trying to live two lives - <strong>personal and official</strong>, with these systems.</p></blockquote>
 
 <p>Major part of my day is spend at office where work mostly comes over email. Keeping track of it on a different task list manager or paper is really an overhead. So mostly I ended my leaving my office tasks in my mails itself and only tried to manage my personal tasks on the tool. This is why I <em>was living two lives</em>. There were two systems of management(or even more as bugs are assigned in <a href="http://www.visualstudio.com/en-us/products/tfs-overview-vs.aspx">Visual Studio TFS</a>) which by itself made tasks management an overhead and unmanageable.</p>
 
 <p>After a  lot of reading and researching around the common productivity tools and systems finally I reached back to what I have been using day in and day out – <strong><em>Outlook. </em></strong>Outlook is more than a mere mailbox management tool. It has a lot of features that is built into it which is seldom used and overlooked upon. One advantage with outlook is that it is available everywhere – desktop, web, tablet and phone.</p>
 
-<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/02/image.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/02/image_thumb.png" alt="image" /></a>
-Most of us, even me used to just use flags on messages to indicate the messages that I had to take actions on. But this would soon turn out unmanageable, as it is hard to prioritize out from a single large list. Outlook has an important feature of <a href="http://office.microsoft.com/en-in/outlook-help/create-and-assign-color-categories-HA010217901.aspx">categorization</a> and also <a href="http://help.outlook.com/en-us/140/bb899478.aspx">folderization</a>. Either of this feature can be used to maximize the way in which we manage tasks.</p>
+<p><img class="left" src="http://rahulpnath.com/blog/wp-content/uploads/2014/02/image_thumb.png"></p>
+
+<p>Most of us, even me used to just use flags on messages to indicate the messages that I had to take actions on. But this would soon turn out unmanageable, as it is hard to prioritize out from a single large list. Outlook has an important feature of <a href="http://office.microsoft.com/en-in/outlook-help/create-and-assign-color-categories-HA010217901.aspx">categorization</a> and also <a href="http://help.outlook.com/en-us/140/bb899478.aspx">folderization</a>. Either of this feature can be used to maximize the way in which we manage tasks.</p>
 
 <p>I have chosen to use folders for the only reason that it is easier to sync folders on to my mobile, than categorized tasks, for which I would again need another application. As mentioned in the <a href="http://www.amazon.in/gp/product/0142000280/ref=as_li_ss_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0142000280&amp;linkCode=as2&amp;tag=rahulpnath-21">Getting Things Done</a>, by David Allen I have created various folders to categorize the tasks that come in</p>
 
@@ -915,25 +1055,25 @@ Most of us, even me used to just use flags on messages to indicate the messages 
 
 <p>And many of such folders that makes sense to me. You should create folders that makes sense to you.So all my official and personal tasks are now managed in my mailbox. For any tasks that do not come over a mail, I send a mail to myself.</p>
 
-<p><strong>Reaching Zero Inbox
-</strong>Having a <a href="http://inboxzero.com/">zero mail inbox</a> is a very important thing – but not at any given point of time. Mails definitely can wait some time, before you take action on them. Allocate time to check mails and try to follow it. Once you check mails allocate them into the various folders that you already have. If it is something that you can answer to in less than a few minutes then do that immediately than allocating them to a folder and then picking it up from there. For anything else allocate them to different folders and act upon them later as per their priority. Create calendar entries/reminders only if it is strictly time bound, which has to happen at a specific time or date, like birthdays, booking time etc.</p>
+<p><strong>Reaching Zero Inbox</strong></p>
+
+<p>Having a <a href="http://inboxzero.com/">zero mail inbox</a> is a very important thing – but not at any given point of time. Mails definitely can wait some time, before you take action on them. Allocate time to check mails and try to follow it. Once you check mails allocate them into the various folders that you already have. If it is something that you can answer to in less than a few minutes then do that immediately than allocating them to a folder and then picking it up from there. For anything else allocate them to different folders and act upon them later as per their priority. Create calendar entries/reminders only if it is strictly time bound, which has to happen at a specific time or date, like birthdays, booking time etc.</p>
 
 <p>Create meaningful <a href="http://office.microsoft.com/en-in/outlook-help/manage-email-messages-by-using-rules-HA010355682.aspx">mail rules</a> so that you get to see what is urgent/important first. You need not scan all mail rule folders at all times. Mails that directly are addressed to you, mostly would need your attention. So the first rule would be to have messages that are directly addressed to you, to come to your inbox. Messages that you are <em>cc’ed</em>  in are mostly for information and should go to a different folder(Inbox-cc). But there are high chances that people who send messages  to you might not take a good look on when replying to messages in which field you are in. I have seen this, where it was directly addressed to me in the subject, but was cc’ed. But at least make sure you do not make this mistake. Always check the to and cc fields before sending/replying to mail. All other mails that reached me because I am in certain distribution lists goes into specific folders, which I scan only once a day.</p>
 
-<p>                   Create a mail scanning process for yourself, whatever works for you. But try to stick to it.</p>
+<p>Create a mail scanning process for yourself, whatever works for you. But try to stick to it.</p>
 
-<p><strong>Managing Attention
-</strong>The biggest thing for staying productive and organized is attention management than time management. Even if you have scheduled your time for tasks, if you don&rsquo;t have the attention required then there is no point in managing your time. It is easy to manage your attention. Find things that distracts you and try to avoid them. One of the main thing in today&rsquo;s world that distracts us the most is – <strong>push notifications</strong>. Turn them off.Yes your heard it right. Turn them off right now. There is nothing that important coming over those notifications that is more important than keeping your attention to what you want. Notifications should be only for phone calls if you feel them important, because I do. I keep my internet turned on, as I would still want to have emails, tweets or other updates to be still updated onto my phone when I need them.</p>
+<p><strong>Managing Attention</strong></p>
 
-<blockquote>             **Turn off  Push Notifications**. This is really going to help you manage your attention.</blockquote>
+<p>The biggest thing for staying productive and organized is attention management than time management. Even if you have scheduled your time for tasks, if you don&rsquo;t have the attention required then there is no point in managing your time. It is easy to manage your attention. Find things that distracts you and try to avoid them. One of the main thing in today&rsquo;s world that distracts us the most is – <strong>push notifications</strong>. Turn them off.Yes your heard it right. Turn them off right now. There is nothing that important coming over those notifications that is more important than keeping your attention to what you want. Notifications should be only for phone calls if you feel them important, because I do. I keep my internet turned on, as I would still want to have emails, tweets or other updates to be still updated onto my phone when I need them.</p>
 
+<blockquote><p><strong>Turn off  Push Notifications</strong>. This is really going to help you manage your attention.</p></blockquote>
 
-<p>Try to forcefully keep your attention to the task at hand. You can try out <a href="http://pomodorotechnique.com/">The Pomodoro Technique</a>. There are many apps for the phone that will work as a timer for the technique. I use <a href="https://play.google.com/store/apps/details?id=net.phlam.android.clockworktomato&amp;hl=en">Clockwork Tomato</a>. - Yes for some time I am on an android Nexus 5.</p>
+<p>Try to forcefully keep your attention to the task at hand. You can try out <a href="http://pomodorotechnique.com/">The Pomodoro Technique</a>. There are many apps for the phone that will work as a timer for the technique. I use <a href="https://play.google.com/store/apps/details?id=net.phlam.android.clockworktomato&amp;hl=en">Clockwork Tomato</a> - Yes for some time I am on an android Nexus5.</p>
 
 <p>Plan your day so that you have a goal to achieve everyday, that just reacting to mails and working on someone else’s priorities. Don’t start your checking mails in the morning immediately after getting up. Have fixed times for checking mails, but definitely not the first thing in the morning.It might be hard for couple of days but it is only a matter of getting used to. You will definitely see a difference once you start following it.</p>
 
-<blockquote>          Stop checking your mails the first thing in the morning immediately after getting up.</blockquote>
-
+<blockquote><p>Stop checking your mails the first thing in the morning immediately after getting up.</p></blockquote>
 
 <p>Its not been long since I have started to follow this, but I felt interesting enough to share this if it helps someone who is also searching for tools and methodologies to keep yourself productive and manage your tasks and responsibilities. There are a lot of resources that has inspired into this process and would be wrong to not mention it here</p>
 
@@ -1011,7 +1151,7 @@ Most of us, even me used to just use flags on messages to indicate the messages 
 
     <ul class="pager">
       
-        <li class="previous"><a href="/posts/2">&larr;&nbsp;Older</a></li>
+        <li class="previous"><a href="/blog/page/2">&larr;&nbsp;Older</a></li>
       
       <li><a href="/blog/archives">Blog Archives</a></li>
       

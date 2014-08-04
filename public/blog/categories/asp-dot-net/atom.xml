@@ -4,7 +4,7 @@
   <title><![CDATA[Category: asp.net | Rahul Nath]]></title>
   <link href="http://yoursite.com/blog/categories/asp-dot-net/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2014-08-03T12:42:52+05:30</updated>
+  <updated>2014-08-04T21:28:31+05:30</updated>
   <id>http://yoursite.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -40,11 +40,13 @@ Let’s get started building our Web API.!!</p>
 <p>Web Api also uses routes to map URI’s to controller actions.But the difference with MVC route is that,here we have no actions specified in the route value.The HTTP method becomes the action.So your controller would have functions with the same names as the HTTP verbs(GET,PUT,POST,DELETE).If you don’t like these function names then there are attributes too that you can use to mark your own function names.We will see all this in our code.</p>
 
 <p>The default route that is created for Web Api can be found in the <em>App_Start/WebApiConfig  _
-[code]config.Routes.MapHttpRoute(
-name: &ldquo;DefaultApi&rdquo;,
-routeTemplate: &ldquo;api/{controller}/{id}&rdquo;,
+<code>csharp
+config.Routes.MapHttpRoute(
+name: "DefaultApi",
+routeTemplate: "api/{controller}/{id}",
 defaults: new { id = RouteParameter.Optional }
-);[/code]
+);
+</code>
 Now that you have seen the API route,lets try invoking the </em>ValuesController <em>that got created automatically.Following the route that is specified above we need to prefix the controller with an </em>api/.<em>This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the </em>ValuesController<em> we would need to invoke it with ‘</em>api/values<em>’.
 To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ &amp; ‘value2’ as returned in the GET of the </em>ValuesController_) in json format,as that is the default formatter that is used.</p>
 
@@ -53,7 +55,8 @@ To issue a GET on the controller,issue the request using the web browser as show
 <p>To check the remaining of HTTP actions we would need to write the implementations for those functions as the <em>ValuesController </em>does not have that implemented.</p>
 
 <p>So lets get back to the Cafeteria business.We will create a model to represent the FoodDishes that the cafeteria has to offer.For now we will just have a id,name and description field in the model.
-[csharp]public class FoodDish
+&#8220;` csharp
+public class FoodDish
 {
 public int FoodDishId { get; set; }</p>
 
@@ -61,7 +64,8 @@ public int FoodDishId { get; set; }</p>
 public string FoodDishName { get; set; }</p>
 
 <p>public string Description { get; set; }
-}[/csharp]
+}
+&#8220;`
 Note the ‘<em>[Required]</em>’ attribute on the property FoodDishName.This ensures that a value is always present for that property.This is similar to the validation in MVC.A list of supported attributes can be found <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.dataannotations.aspx">here</a>
 Visual Studio will do most of  the job in creating out the controllers and the data context’s for us,with just a couple of clicks.To group the WEB API controllers together lets create a folder under the Controllers folder named ‘<em>api</em>’. This is just for a convention and is not mandatory.Right Click on the newly created ‘<em>api’ </em>folder and say Add –> Controller</p>
 
@@ -88,7 +92,8 @@ Now this can be accessed from any device that supports issuing HTTP calls and yo
 
 <p>Lets take a deeper look in the controller,to see how all this is happening.Will look into the GET and POST here in this post as DELETE and PUT would be then easy to follow.
 The GET method that visual studio scaffolded for us,just returns the requested fooddish from the database.If the food item does not exists it returns a ‘NotFound’/404 error.Notice that here we are using HTTP’s error code’s so that client can easily understand the error.
-[csharp]public FoodDish GetFoodDish(int id)
+&#8220;` csharp
+public FoodDish GetFoodDish(int id)
 {
 FoodDish fooddish = db.FoodDishes.Find(id);
 if (fooddish == null)
@@ -97,9 +102,11 @@ throw new HttpResponseException(Request.CreateResponse(HttpStatusCode.NotFound))
 }</p>
 
 <p>return fooddish;
-}[/csharp]
+}
+<code>
 The POST method,checks if the new fooddish entered is valid.In our case we have FoodDishName as a required attribute,so as long as that property is present the ModelState.IsValid would be true.If you have additional validation attributes those would be checked too.If the state is valid then the item is inserted into the database and in the response we write the Location where this new fooddish can be accessed from.This location is what we saw above in the fiddler response.If the ModelState is not valid we sent a BadRequest,so that client can recheck the data send.We can send customized error messages too back to the client,so that the client understands where exactly the issue is.I will be covering validation,authentication and error reporting in a separate post,as that calls for a deeper explanation
-[csharp][HttpPost]
+</code>csharp
+[HttpPost]
 public HttpResponseMessage CreateNewFoodDish(FoodDish fooddish)
 {
 if (ModelState.IsValid)
@@ -115,7 +122,8 @@ else
 {
 return Request.CreateResponse(HttpStatusCode.BadRequest);
 }
-}[/csharp]
+}
+&#8220;`
 DELETE and PUT is very similar and should be easy to understand.</p>
 
 <p>So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.
@@ -177,13 +185,15 @@ Web API is nothing but services exposed over http,providing reach to various dev
 <p>REST simplifies a lot on the interface that is exposed to the client.As for REST there is not explicit &lsquo;<em>contracts</em>&rsquo;  to be specified.The HTTP verbs,GET,PUT POST and DELETE are the interface that is used in REST.This makes it much simple and uniform.Also rest takes a Resource Oriented programming where everything under consideration is a resource and the HTTP interface acts on that.At an implementation level you would still have functions for any of those Create,Read,Update and Delete(CRUD) operations,with the only difference being it would be all mapped to the HTTP verbs.</p>
 
 <p>As for WCF is concerned you have 2 attributes,WebGet and WebInvoke, that would decorate you functions to indicate the mapping with the http interface.WebGet is used to map to the GET of http and all other verbs map to WebInvoke,which inturn has Method property that indicates what method of http it actually maps to.
-[csharp][WebGet(UriTemplate = &ldquo;users/{username}&rdquo;)]
+&#8220;` csharp
+[WebGet(UriTemplate = &ldquo;users/{username}&rdquo;)]
 [OperationContract]
 User GetUserDetails(string userName)</p>
 
 <p>[WebInvoke(Method = &ldquo;PUT&rdquo;, UriTemplate = &ldquo;users/{username}&rdquo;)]
 [OperationContract]
-void PutNewUser(string userName, User user) {&hellip;}[/csharp]
+void PutNewUser(string userName, User user) {&hellip;}
+&#8220;`
 As seen in the above snippet,the same resource,users,supports 2 different kind of methods to be invoked on it.So the function that actually gets invoked would be decided by the Http.So you see the client never calls a GetUserDetails or PutNewUser.All it knows is HTTP and its interface,which gives a uniformity across resources and also makes life simple.</p>
 
 <p>REST is an architectural style,so obviously you need to shift your thought process from previous styles that you would have been exposed to.Wherever you see about REST,it mentions about the basic operations of CRUD over a resource.So often the thought of &lsquo;<em>Are only these operations are suported?</em>&rsquo; comes.So here is one of the shifts in thinking that you would have to think.In REST everything is a resource,be it a person or some activity that he does.So as long as you have different resources for everything you only end up doing the CRUD operations on all those.So its about how you model out these resources.For eg.A transaction that you might need to do can by itself be a resource,over which you would end up doing the basic CRUD operations</p>

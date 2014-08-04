@@ -102,7 +102,7 @@ The base URL for 500px web-api is ‘[https://api.500px.com/v1/](https://api.500
 ** **To get the request token we need to make a POST request to [_oauth/request_token_](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_requesttoken.md), which expects the parameters _CallbackUrl,ConsumerKey,Nonce,SignatureMethod,Timestamp and OAuthVersion. _All these should be in the same order,i.e alphabetical. All these parameters needs to be signed using the consumer secret and the signature too needs to be attached in the request data. This data goes as part of the ‘_Authorization’_ header of the request.
 
  
-    
+    ``` csharp
     public async Task<OauthToken> RequestToken() 
            { 
                AuthorizationParameters = new Dictionary<string, string>(){                                
@@ -118,7 +118,7 @@ The base URL for 500px web-api is ‘[https://api.500px.com/v1/](https://api.500
                    .ExecuteRequest(OAuthRequestUrl); 
     
     ……… 
-
+```
 
 
 
@@ -127,10 +127,7 @@ The above function handles adding the parameters required and executing the requ
     
 The _MakeRequest_ call specifies the kind of HTTP call that you want to make, here it being a POST. The call to the function _Sign, _signs the parameters and adds the signature details to the parameter list. It uses the same signature method as specified in the parameter list, _HMAC-SHA1_
 
-
-
-
-    
+``` csharp    
     private Oauth500px Sign(string Url, string tokenSecret) 
            { 
                String SigBaseStringParams = String.Join("&", AuthorizationParameters.Select(key => key.Key + "=" + Uri.EscapeDataString(key.Value))); 
@@ -146,10 +143,7 @@ The _MakeRequest_ call specifies the kind of HTTP call that you want to make, he
                AuthorizationParameters.Add(OauthParameter.OauthSignature, Signature); 
                return this; 
            } 
-
-
-
-
+```
 
 The _ExecueRequest_ handles adding the details to the authorization header and making the request and returning the response. 
 
@@ -168,10 +162,7 @@ A successful call to request token will return _Request Token_ and a _token secr
 
 The call to authorize brings up the login page of the Service Provider(500px),if the user is not already logged in and is used to authorize the request token that has been just obtained. The request to authorize is to be made at [oauth/authorize](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_authorize.md), with the request token received in the previous call.
 
-
-
-
-    
+``` csharp    
     public async Task<OauthToken> AuthorizeToken() 
            { 
                var tempAuthorizeUrl = OAuthAuthorizeUrl + "?oauth_token=" + Token.Token;
@@ -181,7 +172,7 @@ The call to authorize brings up the login page of the Service Provider(500px),if
                    await 
                    WebAuthenticationBroker.AuthenticateAsync(WebAuthenticationOptions.None, StartUri, EndUri);
                var responseData = auth.ResponseData;
-
+```
 
 
 
@@ -200,10 +191,7 @@ Since this is for Windows8 I use the WebAuthenticationBroker to issue the reques
 
 This final step gives you the access token, that is used for any request to a protected resource. A POST request it to made to the url [oauth/access_token](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_accesstoken.md), with the parameters _ConsumerKey, Nonce, SignatureMethod, Timestamp, RequestToken, VerifierCode and OAuthVersion, _again all alphabetical sorted and signed using the consumer key and token secret that we got in the call to request token.
 
-
-
-
-    
+``` csharp    
     public async Task<OauthToken> AccessToken() 
            { 
                AuthorizationParameters = new Dictionary<string, string>() 
@@ -222,7 +210,7 @@ This final step gives you the access token, that is used for any request to a pr
     
     ……. 
 
-
+```
 
 
 
@@ -236,9 +224,7 @@ From now on any request to a protected resource should be made with the followin
     
 The ExecuteRequest handles for this and is a genenric function that would allow you to specify the return type that you are expecting and the Url of the protected resource
 
-
-
-    
+``` csharp 
     
     public async Task<T> ExecuteRequest<T>(string Url, Dictionary<string, string> Parameters) where T : class 
          { 
@@ -274,7 +260,7 @@ The ExecuteRequest handles for this and is a genenric function that would allow 
          }
     
 
-
+```
 
 
 
@@ -282,9 +268,10 @@ A sample way to use this would be as below
 
 
 
-[sourcecode language="csharp"]Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetails&gt;( 
+``` csharp 
+Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetails&gt;( 
                     photoDetails, null);
-[/sourcecode]
+```
 
 
 

@@ -22,11 +22,14 @@ Recently on a client project, I had a requirement to cache images locally on the
 
 Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.
 
-[xml]<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>[/xml]
+``` xml
+<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>
+```
 
 You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the [project source](https://github.com/artem-zinnatullin/jet-image-loader) also lives.
 
-[csharp]public class JetImageLoaderImplementation
+``` csharp
+public class JetImageLoaderImplementation
 {
     public static readonly BaseMemoryCache<string,stream> MemoryCacheImpl = new WeakMemoryCache<string,stream>();
     public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), "\\image_cache", new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);</p>
@@ -41,8 +44,10 @@ You would need to add a custom converter and add this as part of the resource. T
             StorageCacheImpl = StorageCacheImpl
         }.Build();
     }
-}[/csharp]
-[csharp]public class JetImageLoaderConverter : BaseJetImageLoaderConverter
+}
+```
+``` csharp
+public class JetImageLoaderConverter : BaseJetImageLoaderConverter
 {
     protected override JetImageLoaderConfig GetJetImageLoaderConfig()
     {
@@ -53,7 +58,8 @@ You would need to add a custom converter and add this as part of the resource. T
     {
         return base.Convert(value, targetType, parameter, culture);
     }
-}[/csharp]
+}
+```
 
 This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.
 

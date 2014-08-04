@@ -82,11 +82,7 @@ Gadgets, especially mobile phones have always been of interest to me and so is i
 
 
 
-**Things that I don’t like and miss:  
-
-**
-
-
+**Things that I don’t like and miss:**
 
 
 
@@ -107,9 +103,9 @@ The lists itself explains much of it – **I am liking it a lot. **The android e
 
 
 
-**Cases and Covers:  
+**Cases and Covers:**
 
-**I have been alternating between 2 cases for my Nexus 5 from Spigen and liking them both especially the Neo Hybrid. The white shows of through its transparent back and the overall grip on the phone is very good and comfortable.
+I have been alternating between 2 cases for my Nexus 5 from Spigen and liking them both especially the Neo Hybrid. The white shows of through its transparent back and the overall grip on the phone is very good and comfortable.
 
 
 

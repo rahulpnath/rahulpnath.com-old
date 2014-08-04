@@ -31,7 +31,7 @@ Implementing these over and over for different data sources that you would want 
 
 First lets get the class that implements [ISupportIncrementalLoading](http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916), IList and INotifyCollectionChanged. To keep things simple lets inherit from ObservableCollection,which in turn inherits the latter 2 interfaces
 
-    
+    ``` csharp
     public class IncrementalSource<T, K> : ObservableCollection<K>, ISupportIncrementalLoading
         where T: class
     {
@@ -93,10 +93,10 @@ First lets get the class that implements [ISupportIncrementalLoading](http://msd
         #endregion
     }
 
-
+```
 Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(**_K_**) whose list we are trying to load incrementally. Another one the type of object(**_T_**) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse
 
-    
+    ``` csharp
     public interface IPagedResponse<T>
     {
         IEnumerable<T> Items { get; }
@@ -121,21 +121,21 @@ Before going into the details of the code, lets understand what this class is go
         public IEnumerable<K> Items { get; private set; }
     }
 
-
+```
 That said lets see the  _IncremetnalSource_ class. It takes in the object type **_T _**and **_K._**The constructor takes in the url where the datasource can be found.The Func<T, IPagedResponse<K>> parameter represents a function that takes in the return type of the call to the url as a parameter and returns the PagedResponse type. In other words that function converts the paged request call type to the type that we use to represent it, IPagedResponse.See a sample below.
 
-[sourcecode language="csharp"]
+``` csharp
 private PagedResponse<Photo> RootObjectResponse(RootObject rootObject)
 {
     return new PagedResponse<Photo>(rootObject.photos, rootObject.total_items, rootObject.photos != null ? rootObject.photos.Count : 0);
 }
-[/sourcecode]
+```
 
 Now we need to make the call to the datasource url. This might return us data in different formats, most popularly json or xml. So we would always want to abstract away the loading of data to another class so that we don’t get tied up with the data formats in _IncrementalSource._
 
 IPagedSource<T,K> will do this for us. A sample implementation of this is _PagedSourceLoader _that handles for json return type is below
 
-    
+    ``` csharp
     public interface IPagedSource<R,K>
     {
         Task<IPagedResponse<K>> GetPage(string query, int pageIndex, int pageSize);
@@ -169,7 +169,7 @@ IPagedSource<T,K> will do this for us. A sample implementation of this is _Paged
         #endregion
     }
 
-
+```
 As you see above the _PagedSourceLoader_ gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for _IPagedSource<T,K>, _as your data source would always return you the same data format. In case not you could inject that too into the _IncrementalSource_ class.
 
 I have a sample [here](http://sdrv.ms/RdPtdL) that incrementally loads the photos from a photo site [500px](http://500px.com/flow). You would need to register for an to get the consumer key,which should hardly take some time [here](http://500px.com/settings/applications?from=developers).

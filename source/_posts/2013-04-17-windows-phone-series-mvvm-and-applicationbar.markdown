@@ -26,11 +26,9 @@ ApplicationBar on a windows phone, is to provide users of your app with quick ac
 
 In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below
 
- 
-    
+``` csharp    
      ApplicationBar.Buttons.Add(<your button>);
-
-
+ ```
 
 
 When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same
@@ -53,10 +51,7 @@ Whenever we need to communicate between VM’s or between your view model and Vi
 
 Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.
 
-
-
-
-    
+``` csharp    
     public partial class MainPage : PhoneApplicationPage
     {
         public MainViewModel viewModel
@@ -102,7 +97,7 @@ Below is how the Code-behind would look like . We register for a NotificationMes
         }
     }
 
-
+```
 
 
 
@@ -120,10 +115,7 @@ Below is how the Code-behind would look like . We register for a NotificationMes
 
 Like we use [NavigationService](http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2), for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.
 
-
-
-
-    
+``` csharp    
     public class MyModelBase: ViewModelBase
     {
         public IApplicationBarService ApplicationBar { get; set; }
@@ -138,33 +130,24 @@ Like we use [NavigationService](http://www.geekchamp.com/articles/mvvm-in-real-l
         }
     }
 
-
+```
 
 
 
 The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.
 
-
-
-
-    
+``` csharp    
     public interface IApplicationBarService
     {
         IApplicationBar ApplicationBar { get;} 
     
         void AddButton(string title, Uri imageUrl, Action OnClick);
     }
-
-
-
-
+```
 
 Implementation for this interface is as below
 
-
-
-
-    
+``` csharp    
     public class ApplicationBarService: IApplicationBarService
     {
         public void AddButton(string title, Uri imageUrl, Action OnClick)
@@ -193,10 +176,7 @@ Implementation for this interface is as below
             }
         }
     }
-
-
-
-
+```
 
 The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple
 

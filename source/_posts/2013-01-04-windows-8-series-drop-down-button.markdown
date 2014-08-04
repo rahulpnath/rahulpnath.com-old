@@ -24,7 +24,7 @@ While working on my Windows 8 Store application, [Picfinity](http://apps.microso
 
 I wanted this same behaviour in my application, to provide similar options for the logged in user. The easiest way to achieve this is to use a [Popup](http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.aspx). The xaml snippet below shows how to get a similar look on your application
 
-    
+    ``` xml
     <Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition />
@@ -44,7 +44,7 @@ I wanted this same behaviour in my application, to provide similar options for t
         </StackPanel></span>
     </Grid>
 
-
+```
 On click of the button we need to set the popup’s [IsOpen](http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.isopen.aspx) to true. Setting the [IsLightDismissEnabled](http://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.xaml.controls.primitives.popup.islightdismissenabled) to true the popup closes whenever the user taps outside of the popup.
 [![image](http://rahulpnath.files.wordpress.com/2013/01/image_thumb1.png)](http://rahulpnath.files.wordpress.com/2013/01/image1.png)
 

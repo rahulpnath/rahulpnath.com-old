@@ -14,7 +14,8 @@ tags:
 
 Just a quick tip on how you could change the Expander header content when Expander is in expanded state.I have also modified the expander HeaderTemplate so that the text gets center aligned.
 
-[xml]<Expander  Height="100" HorizontalAlignment="Left" Margin="129,192,0,0"
+```xml
+ <Expander  Height="100" HorizontalAlignment="Left" Margin="129,192,0,0"
            Name="expander1" VerticalAlignment="Top" Width="167">
             <Expander.HeaderTemplate>
                 <DataTemplate>
@@ -44,7 +45,8 @@ Just a quick tip on how you could change the Expander header content when Expand
             <Grid >
                 <Label>Expander Content</Label>
             </Grid>
-        </Expander>[/xml]
+        </Expander>
+        ```
 
 
 We could also end up doing this using a converter or explicitly handling for the Expanded/Collapsed events.

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Wp7 | Rahul Nath]]></title>
   <link href="http://yoursite.com/blog/categories/wp7/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2014-08-03T12:42:52+05:30</updated>
+  <updated>2014-08-04T21:28:31+05:30</updated>
   <id>http://yoursite.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -22,97 +22,105 @@
 Jumplist can be implemented using LongListSelector, which is part of the <a href="http://phone.codeplex.com/">Windows Phone toolkit</a> for Windows phone 7. With Windows Phone 8 this is included along with the sdk. Implementing jump list with the longlistselector is easy enough, that you can get this into your application in a few minutes. Lets see how.
 If you are already using a listbox then you should be changing it to a longlistselector or if you are already using that, then you might be using it in the “ungrouped mode”, by setting IsFlatList=”True”. Change this to False.</p>
 
-<p>[xml]&lt;toolkit:LongListSelector Name=&ldquo;allPersons&rdquo; IsFlatList=&ldquo;False&rdquo; >
-&lt;/toolkit:LongListSelector>[/xml]</p>
+<pre><code class="xml">&lt;toolkit:LongListSelector Name="allPersons" IsFlatList="False" &gt;
+&lt;/toolkit:LongListSelector&gt;
+</code></pre>
 
 <p>We need to specify a few templates for the date to be rendered to our needs as shown below. In this example we would be looking at a contacts sample.</p>
 
 <p><a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1_thumb.png" alt="JumpList1" /></a> <a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList_thumb.png" alt="JumpList" /></a></p>
 
-<p><strong>ItemTemplate
-</strong>The itemtemplate specifies how the bound list of items should be displayed. This would be the same as that you have been using earlier for your listbox.</p>
+<p><strong>ItemTemplate</strong></p>
 
-<p>[xml]&lt;toolkit:LongListSelector.ItemTemplate>
-    <DataTemplate>
-        <TextBlock Text="{Binding Name}" FontSize="30" />
-    </DataTemplate>
-&lt;/toolkit:LongListSelector.ItemTemplate>[/xml]</p>
+<p>The itemtemplate specifies how the bound list of items should be displayed. This would be the same as that you have been using earlier for your listbox.</p>
 
-<p><strong>GroupHeaderTemplate
-</strong>The groupheadertemplate specifies the template for each header of the group.</p>
+<pre><code class="xml">&lt;toolkit:LongListSelector.ItemTemplate&gt;
+    &lt;DataTemplate&gt;
+        &lt;TextBlock Text="{Binding Name}" FontSize="30" /&gt;
+    &lt;/DataTemplate&gt;
+&lt;/toolkit:LongListSelector.ItemTemplate&gt;
+</code></pre>
 
-<p>[xml]&lt;toolkit:LongListSelector.GroupHeaderTemplate>
-    <DataTemplate>
-       <Border Background="Red" HorizontalAlignment="Left" Width="50" Height="50">
-         <TextBlock Text="{Binding Title}" FontSize="30" HorizontalAlignment="Center"/>
-       </Border>
-    </DataTemplate>
-&lt;/toolkit:LongListSelector.GroupHeaderTemplate>[/xml]</p>
+<p><strong>GroupHeaderTemplate</strong></p>
 
-<p><strong>GroupItemTemplate
-</strong>The groupitemtemplate specifies the template for the headers, when in group view mode. This is the display that would be presented when we are to choose a group to navigate to.</p>
+<p>The groupheadertemplate specifies the template for each header of the group.</p>
 
-<p>[xml]&lt;toolkit:LongListSelector.GroupItemTemplate>
-    <DataTemplate>
-        <Button IsEnabled="{Binding HasData}" BorderThickness="0" Background="Transparent">
-            <Border Background="Red" BorderThickness="0" Width="60" Height="60">
-                <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="38" Margin="4" Text="{Binding Title}" />
-            </Border>
-        </Button>
-    </DataTemplate>
-&lt;/toolkit:LongListSelector.GroupItemTemplate>[/xml]</p>
+<pre><code class="xml"> &lt;toolkit:LongListSelector.GroupHeaderTemplate&gt;
+    &lt;DataTemplate&gt;
+       &lt;Border Background="Red" HorizontalAlignment="Left" Width="50" Height="50"&gt;
+         &lt;TextBlock Text="{Binding Title}" FontSize="30" HorizontalAlignment="Center"/&gt;
+       &lt;/Border&gt;
+    &lt;/DataTemplate&gt;
+&lt;/toolkit:LongListSelector.GroupHeaderTemplate&gt;
+</code></pre>
+
+<p><strong>GroupItemTemplate</strong></p>
+
+<p>The groupitemtemplate specifies the template for the headers, when in group view mode. This is the display that would be presented when we are to choose a group to navigate to.</p>
+
+<pre><code class="xml"> &lt;toolkit:LongListSelector.GroupItemTemplate&gt;
+    &lt;DataTemplate&gt;
+        &lt;Button IsEnabled="{Binding HasData}" BorderThickness="0" Background="Transparent"&gt;
+            &lt;Border Background="Red" BorderThickness="0" Width="60" Height="60"&gt;
+                &lt;TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="38" Margin="4" Text="{Binding Title}" /&gt;
+            &lt;/Border&gt;
+        &lt;/Button&gt;
+    &lt;/DataTemplate&gt;
+&lt;/toolkit:LongListSelector.GroupItemTemplate&gt;
+</code></pre>
 
 <p><strong>GroupItemsPanel</strong></p>
 
 <p>The groupitemspanel specifies the panel to be used to display the groupitems. If we are using only alphabets as the group headers, then we would want to wrap each of these items. If our group items are long enough then it would be better to leave it as default which would be a stackpanel.</p>
 
-<p>[xml]&lt;toolkit:LongListSelector.GroupItemsPanel>
-    <ItemsPanelTemplate>
-        &lt;toolkit:WrapPanel Margin=&ldquo;5&rdquo; Background=&ldquo;Black&rdquo; />
-    </ItemsPanelTemplate>
-&lt;/toolkit:LongListSelector.GroupItemsPanel>[/xml]</p>
+<pre><code class="xml"> &lt;toolkit:LongListSelector.GroupItemsPanel&gt;
+    &lt;ItemsPanelTemplate&gt;
+        &lt;toolkit:WrapPanel Margin="5" Background="Black" /&gt;
+    &lt;/ItemsPanelTemplate&gt;
+&lt;/toolkit:LongListSelector.GroupItemsPanel&gt;
+</code></pre>
 
 <p>We need to group the data that gets bound to the list. For a normal listbox you would either bind a List or an ObservableCollection. In this we would need to group the data that gets bound to the control as groups that we want to display. In this example our data is a list of Persons, and we would want to group the data with their starting character. If the starting character is an alphabet, then we would display that person under that character. For any non-alphabet we would group it under ‘#’. The GroupedPersons in our DataRepository would return the data for us.</p>
 
-<p>[csharp]public static IEnumerable&lt;Group<Person>> GroupedPersons
+<pre><code class="csharp"> public static IEnumerable&lt;Group&lt;Person&gt;&gt; GroupedPersons
 {
     get
     {
-        List&lt;Group<Person>> groupedArticles = new List&lt;Group<Person>>();
-        char[] az = Enumerable.Range(&lsquo;a&rsquo;, 26).Select(a => (char)a).ToArray();</p>
+        List&lt;Group&lt;Person&gt;&gt; groupedArticles = new List&lt;Group&lt;Person&gt;&gt;();
+        char[] az = Enumerable.Range('a', 26).Select(a =&gt; (char)a).ToArray();
 
-<pre><code>    foreach (char letter in az)
-    {
-        Group&lt;Person&gt; groupedLetter = new Group&lt;Person&gt;()
+        foreach (char letter in az)
         {
-            Title = letter.ToString(),
-            Items = Persons.Where(a =&gt; a.Name.StartsWith(letter.ToString(), StringComparison.CurrentCultureIgnoreCase)).Where(a =&gt; a != null).ToList()
-        };
-        groupedLetter.HasData = groupedLetter.Items.Any();
-        groupedArticles.Add(groupedLetter);
+            Group&lt;Person&gt; groupedLetter = new Group&lt;Person&gt;()
+            {
+                Title = letter.ToString(),
+                Items = Persons.Where(a =&gt; a.Name.StartsWith(letter.ToString(), StringComparison.CurrentCultureIgnoreCase)).Where(a =&gt; a != null).ToList()
+            };
+            groupedLetter.HasData = groupedLetter.Items.Any();
+            groupedArticles.Add(groupedLetter);
+        }
+
+        // Articles that start with a number should be added to # tag
+        var list = groupedArticles.SelectMany(a =&gt; a.Items).ToList();
+        var nonAlphabetIssues = Persons.Except(list);
+        groupedArticles.Insert(
+            0,
+            new Group&lt;Person&gt;()
+            {
+                Items = nonAlphabetIssues.ToList(),
+                Title = "#",
+                HasData = nonAlphabetIssues.Any()
+            });
+
+        return groupedArticles;
     }
-
-    // Articles that start with a number should be added to # tag
-    var list = groupedArticles.SelectMany(a =&gt; a.Items).ToList();
-    var nonAlphabetIssues = Persons.Except(list);
-    groupedArticles.Insert(
-        0,
-        new Group&lt;Person&gt;()
-        {
-            Items = nonAlphabetIssues.ToList(),
-            Title = "#",
-            HasData = nonAlphabetIssues.Any()
-        });
-
-    return groupedArticles;
 }
 </code></pre>
 
-<p>}[/csharp]</p>
-
 <p>To get all the characters from A-Z we use the below code, after which it is some simple logics, that would is self explanatory</p>
 
-<p>[csharp]char[] az = Enumerable.Range(&lsquo;a&rsquo;, 26).Select(a => (char)a).ToArray();[/csharp]</p>
+<pre><code class="csharp"> char[] az = Enumerable.Range('a', 26).Select(a =&gt; (char)a).ToArray();
+</code></pre>
 
 <p>This should now have made your flat list into a easily navigable jump list, that your users would love to use and make it easier for them to use you application.</p>
 
@@ -129,7 +137,7 @@ If you are already using a listbox then you should be changing it to a longlists
 
 <p>In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below</p>
 
-<pre><code> ApplicationBar.Buttons.Add(&lt;your button&gt;);
+<pre><code class="csharp    ">     ApplicationBar.Buttons.Add(&lt;your button&gt;);
 </code></pre>
 
 <p>When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same</p>
@@ -140,50 +148,50 @@ If you are already using a listbox then you should be changing it to a longlists
 
 <p>Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.</p>
 
-<pre><code>public partial class MainPage : PhoneApplicationPage
-{
-    public MainViewModel viewModel
+<pre><code class="csharp    ">    public partial class MainPage : PhoneApplicationPage
     {
-        get
+        public MainViewModel viewModel
         {
-            return this.DataContext as MainViewModel;
-        }
-    }
-
-    private ApplicationBarIconButton settingsButton;
-    // Constructor
-    public MainPage()
-    {
-        InitializeComponent();
-        settingsButton = new ApplicationBarIconButton()
-        {
-            Text = "Settings",
-            IconUri = new Uri("Images/appbar.feature.settings.rest.png", UriKind.Relative)
-        };
-        settingsButton.Click += settingsButton_Click;
-        // Register for the messenger 
-        Messenger.Default.Register&lt;NotificationMessage&gt;(this, OnNotificationMessage);
-    }
-
-    void settingsButton_Click(object sender, EventArgs e)
-    {
-        viewModel.SettingsCommand.Execute(null);
-    }
-
-    private void OnNotificationMessage(NotificationMessage message)
-    {
-        // Check here for the notification
-        // You can also build cutoms notification message here for this by inheriting from MessageBase
-        if (message.Notification == "AddSettings")
-        {
-            if (ApplicationBar == null)
+            get
             {
-                ApplicationBar = new ApplicationBar();
+                return this.DataContext as MainViewModel;
             }
-            ApplicationBar.Buttons.Add(settingsButton);
+        }
+
+        private ApplicationBarIconButton settingsButton;
+        // Constructor
+        public MainPage()
+        {
+            InitializeComponent();
+            settingsButton = new ApplicationBarIconButton()
+            {
+                Text = "Settings",
+                IconUri = new Uri("Images/appbar.feature.settings.rest.png", UriKind.Relative)
+            };
+            settingsButton.Click += settingsButton_Click;
+            // Register for the messenger 
+            Messenger.Default.Register&lt;NotificationMessage&gt;(this, OnNotificationMessage);
+        }
+
+        void settingsButton_Click(object sender, EventArgs e)
+        {
+            viewModel.SettingsCommand.Execute(null);
+        }
+
+        private void OnNotificationMessage(NotificationMessage message)
+        {
+            // Check here for the notification
+            // You can also build cutoms notification message here for this by inheriting from MessageBase
+            if (message.Notification == "AddSettings")
+            {
+                if (ApplicationBar == null)
+                {
+                    ApplicationBar = new ApplicationBar();
+                }
+                ApplicationBar.Buttons.Add(settingsButton);
+            }
         }
     }
-}
 </code></pre>
 
 <hr />
@@ -192,61 +200,61 @@ If you are already using a listbox then you should be changing it to a longlists
 
 <p>Like we use <a href="http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2">NavigationService</a>, for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</p>
 
-<pre><code>public class MyModelBase: ViewModelBase
-{
-    public IApplicationBarService ApplicationBar { get; set; }
-
-    public MyModelBase()
+<pre><code class="csharp    ">    public class MyModelBase: ViewModelBase
     {
+        public IApplicationBarService ApplicationBar { get; set; }
 
+        public MyModelBase()
+        {
+
+        }
+        public MyModelBase(IApplicationBarService appBar)
+        {
+            ApplicationBar = appBar;
+        }
     }
-    public MyModelBase(IApplicationBarService appBar)
-    {
-        ApplicationBar = appBar;
-    }
-}
 </code></pre>
 
 <p>The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.</p>
 
-<pre><code>public interface IApplicationBarService
-{
-    IApplicationBar ApplicationBar { get;} 
+<pre><code class="csharp    ">    public interface IApplicationBarService
+    {
+        IApplicationBar ApplicationBar { get;} 
 
-    void AddButton(string title, Uri imageUrl, Action OnClick);
-}
+        void AddButton(string title, Uri imageUrl, Action OnClick);
+    }
 </code></pre>
 
 <p>Implementation for this interface is as below</p>
 
-<pre><code>public class ApplicationBarService: IApplicationBarService
-{
-    public void AddButton(string title, Uri imageUrl, Action OnClick)
+<pre><code class="csharp    ">    public class ApplicationBarService: IApplicationBarService
     {
-        ApplicationBarIconButton newButton = new ApplicationBarIconButton()
-            {
-                Text = title, 
-                IconUri = imageUrl, 
-            };
-        newButton.Click += ((sender,e) =&gt; {OnClick.Invoke();}) ;
-
-        ApplicationBar.Buttons.Add(newButton);
-
-    }
-
-    public IApplicationBar ApplicationBar
-    {
-        get
+        public void AddButton(string title, Uri imageUrl, Action OnClick)
         {
-            var currentPage = ((App)Application.Current).RootFrame.Content as PhoneApplicationPage;
-            if (currentPage.ApplicationBar == null)
+            ApplicationBarIconButton newButton = new ApplicationBarIconButton()
+                {
+                    Text = title, 
+                    IconUri = imageUrl, 
+                };
+            newButton.Click += ((sender,e) =&gt; {OnClick.Invoke();}) ;
+
+            ApplicationBar.Buttons.Add(newButton);
+
+        }
+
+        public IApplicationBar ApplicationBar
+        {
+            get
             {
-                currentPage.ApplicationBar = new ApplicationBar();
+                var currentPage = ((App)Application.Current).RootFrame.Content as PhoneApplicationPage;
+                if (currentPage.ApplicationBar == null)
+                {
+                    currentPage.ApplicationBar = new ApplicationBar();
+                }
+                return currentPage.ApplicationBar;
             }
-            return currentPage.ApplicationBar;
         }
     }
-}
 </code></pre>
 
 <p>The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple</p>
@@ -301,39 +309,40 @@ If you are already using a listbox then you should be changing it to a longlists
 
 <p>In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(<strong>MyFiles.tt</strong>)</p>
 
-<pre><code>&lt;#@ template debug="false" hostspecific="true" language="C#" #&gt;
-&lt;#@ output extension=".gen.cs" #&gt;
-&lt;#@ import namespace="System.IO"#&gt;
-// &lt;auto-generated /&gt;
+<pre><code class="csharp    ">    &lt;#@ template debug="false" hostspecific="true" language="C#" #&gt;
+    &lt;#@ output extension=".gen.cs" #&gt;
+    &lt;#@ import namespace="System.IO"#&gt;
+    // &lt;auto-generated /&gt;
 
-namespace PreloadedContent
-{
-    public class MyFiles
+    namespace PreloadedContent
     {
-        private static string[] MyPreloadedContentFiles()
+        public class MyFiles
         {
-            return new[] {
-&lt;#
-            DirectoryInfo directoryInfo = new DirectoryInfo(
-               Path.Combine(Path.GetDirectoryName(Host.TemplateFile),"MyPreloadedContent"));
-        foreach(FileInfo file in directoryInfo.GetFiles("*.*", SearchOption.AllDirectories))
+            private static string[] MyPreloadedContentFiles()
             {
-                if (!file.FullName.Contains(@"."))
-                {#&gt;
-                      "&lt;#= file.FullName.Substring(
-                      file.FullName.IndexOf("MyPreloadedContent")).Replace(@"", "/") #&gt;",
-&lt;#              }
+                return new[] {
+    &lt;#
+                DirectoryInfo directoryInfo = new DirectoryInfo(
+                   Path.Combine(Path.GetDirectoryName(Host.TemplateFile),"MyPreloadedContent"));
+            foreach(FileInfo file in directoryInfo.GetFiles("*.*", SearchOption.AllDirectories))
+                {
+                    if (!file.FullName.Contains(@"."))
+                    {#&gt;
+                          "&lt;#= file.FullName.Substring(
+                          file.FullName.IndexOf("MyPreloadedContent")).Replace(@"", "/") #&gt;",
+    &lt;#              }
+                }
+    #&gt;
+                            };
             }
-#&gt;
-                        };
         }
     }
-}
 </code></pre>
 
 <p>It just says to read the directory MyPreloadedContent and iterate to get all the files in that and writes it out by trimming of the absolute path and putting in only the relative path. Save the MyFiles.tt, and in Visual Studio right click on it and say “Run Custom Tool”. This would generate the cs file with an extension “.gen.cs” as we have mentioned in “<strong>&lt;#@ output extension=&ldquo;.gen.cs&rdquo; #>”.  </strong>The generated class would look like below</p>
 
-<pre><code>namespace PreloadedContent
+<pre><code>``` csharp
+namespace PreloadedContent
 {
     public class MyFiles
     {
@@ -352,7 +361,8 @@ namespace PreloadedContent
 }
 </code></pre>
 
-<p>The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
+<p>&#8220;`
+The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
 
 <p>There are a couple of ways, by which you can ensure that the template file is run before the actual code gets compiled. This is to make sure that this generated class is going to be updated with the latest files that would be copied into the folder at build time i.e your templates are transformed at build time. This <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx">article</a> details out the methods to get that integrated into the build. On a build server where you dont have Visual Studio installed you would need to copy out these files mentioned <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx#buildserver">here</a> explicitly</p>
 
@@ -394,26 +404,26 @@ namespace PreloadedContent
 
 <p>Below is the piece of code that will fetch us the photo from the <a href="http://developers.500px.com/">500px api</a> to populate the listbox data.</p>
 
-<p>[csharp]private static int requestPerPage = 20;
+<pre><code class="csharp">private static int requestPerPage = 20;
 private int currentPage = 1;
-private bool isCurrentlyLoading = false;</p>
+private bool isCurrentlyLoading = false;
 
-<p>private ObservableCollection<Photo> Photos = new ObservableCollection<Photo>();</p>
+private ObservableCollection&lt;Photo&gt; Photos = new ObservableCollection&lt;Photo&gt;();
 
-<p>private string datasourceUrl=&ldquo;<a href="https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=">https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=</a>&rdquo;
-          + consumerKey + &ldquo;&amp;rpp=&rdquo; + requestPerPage.ToString() + &ldquo;&amp;page={0}&rdquo;;</p>
+private string datasourceUrl="https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=" 
+          + consumerKey + "&amp;rpp=" + requestPerPage.ToString() + "&amp;page={0}";
 
-<p>private void LoadDataFromSource()
+private void LoadDataFromSource()
 {
     isCurrentlyLoading = true;
     var query = string.Format(datasourceUrl, currentPage);
     WebClient client = new WebClient();
     client.DownloadStringCompleted += client_DownloadStringCompleted;
-    client.DownloadStringAsync(new Uri(query));</p>
+    client.DownloadStringAsync(new Uri(query));
 
-<p>}</p>
+}
 
-<p>void client_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
+void client_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
 {
     using (var reader = new MemoryStream(Encoding.Unicode.GetBytes(e.Result)))
     {
@@ -422,7 +432,7 @@ private bool isCurrentlyLoading = false;</p>
         currentPage = obj.current_page + 1;
         if (obj != null)
         {
-            this.Dispatcher.BeginInvoke(() =>
+            this.Dispatcher.BeginInvoke(() =&gt;
                 {
                     foreach (var photo in obj.photos)
                     {
@@ -432,11 +442,12 @@ private bool isCurrentlyLoading = false;</p>
                 });
         }
     }
-}[/csharp]</p>
+}
+</code></pre>
 
 <p>In the ItemRealized/Link event based on whether you are developing for Windows Phone 7 or 8, below would be the code that goes into that. We need to check the current item that is realized i.e rendered on the UI and see if it is</p>
 
-<p>[csharp]private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
+<pre><code class="csharp">private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
 {
     Photo photo = e.Container.Content as Photo;
     if (photo != null)
@@ -449,55 +460,53 @@ private bool isCurrentlyLoading = false;</p>
             LoadDataFromSource();
         }
     }
-}[/csharp]</p>
+}
+</code></pre>
 
 <p>In case you want to use a normal listbox, you can do that also. We would need to hook up with VisualStateGroups. This <a href="http://blogs.msdn.com/b/slmperf/archive/2011/06/30/windows-phone-mango-change-listbox-how-to-detect-compression-end-of-scroll-states.aspx">link</a> explains this in details, and I have just reused parts of it as is. We need to override the scrollviewer style to hook into this new StateGroups. We need to look for CompressionBottom state, for the currentstatechanged event of the scrollviewer.</p>
 
-<p>[csharp]private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
+<pre><code class="csharp">private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
 {
     SetScrollViewer();
-}</p>
+}
 
-<p>private void SetScrollViewer()
+private void SetScrollViewer()
 {
-    // Visual States are always on the first child of the control template
-    FrameworkElement element = VisualTreeHelper.GetChild(myScrollViewer, 0)
+    // Visual States are always on the first child of the control template 
+    FrameworkElement element = VisualTreeHelper.GetChild(myScrollViewer, 0) 
                             as FrameworkElement;
     if (element != null)
     {
-        VisualStateGroup vgroup = FindVisualState(element, &ldquo;VerticalCompression&rdquo;);</p>
+        VisualStateGroup vgroup = FindVisualState(element, "VerticalCompression");
 
-<pre><code>    if (vgroup != null)
+        if (vgroup != null)
+        {
+            vgroup.CurrentStateChanging += 
+                 new EventHandler&lt;VisualStateChangedEventArgs&gt;(vgroup_CurrentStateChanging);
+        }
+    }
+}
+
+private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventArgs e)
+{
+    if (e.NewState.Name == "CompressionTop")
     {
-        vgroup.CurrentStateChanging += 
-             new EventHandler&lt;VisualStateChangedEventArgs&gt;(vgroup_CurrentStateChanging);
+
+    }
+
+    if (e.NewState.Name == "CompressionBottom")
+    {
+        if (!isCurrentlyLoading )
+        {
+            LoadDataFromSource();
+        }
+    }
+    if (e.NewState.Name == "NoVerticalCompression")
+    {
+
     }
 }
 </code></pre>
-
-<p>}</p>
-
-<p>private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventArgs e)
-{
-    if (e.NewState.Name == &ldquo;CompressionTop&rdquo;)
-    {</p>
-
-<pre><code>}
-
-if (e.NewState.Name == "CompressionBottom")
-{
-    if (!isCurrentlyLoading )
-    {
-        LoadDataFromSource();
-    }
-}
-if (e.NewState.Name == "NoVerticalCompression")
-{
-
-}
-</code></pre>
-
-<p>}[/csharp]</p>
 
 <p>You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble <a href="https://github.com/rahulpnath/IncrementalLoadingPhone">here</a>. The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates</p>
 

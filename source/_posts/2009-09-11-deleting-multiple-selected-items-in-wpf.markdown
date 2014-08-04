@@ -15,7 +15,9 @@ tags:
 Hi,
 Many a times while using listbox,listview etc there might be a need to delete the multiple selected items.
 This can be easily achieved by the following piece of code
-[csharp]While ControlName.SelectedItems.Count &gt; 0 
+```csharp
+ While ControlName.SelectedItems.Count &gt; 0 
    ControlName.Items.Remove(ControlName.SelectedItem)
-End While[/csharp]
+End While
+```
 Happy Coding :)

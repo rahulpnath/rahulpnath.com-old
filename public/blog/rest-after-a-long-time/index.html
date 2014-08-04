@@ -16,7 +16,7 @@
   
   <link rel="canonical" href="http://yoursite.com/blog/rest-after-a-long-time">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -126,15 +126,26 @@
 
 <p>REST simplifies a lot on the interface that is exposed to the client.As for REST there is not explicit &lsquo;<em>contracts</em>&rsquo;  to be specified.The HTTP verbs,GET,PUT POST and DELETE are the interface that is used in REST.This makes it much simple and uniform.Also rest takes a Resource Oriented programming where everything under consideration is a resource and the HTTP interface acts on that.At an implementation level you would still have functions for any of those Create,Read,Update and Delete(CRUD) operations,with the only difference being it would be all mapped to the HTTP verbs.</p>
 
-<p>As for WCF is concerned you have 2 attributes,WebGet and WebInvoke, that would decorate you functions to indicate the mapping with the http interface.WebGet is used to map to the GET of http and all other verbs map to WebInvoke,which inturn has Method property that indicates what method of http it actually maps to.
-[csharp][WebGet(UriTemplate = &ldquo;users/{username}&rdquo;)]
-[OperationContract]
-User GetUserDetails(string userName)</p>
+<p>As for WCF is concerned you have 2 attributes,WebGet and WebInvoke, that would decorate you functions to indicate the mapping with the http interface.WebGet is used to map to the GET of http and all other verbs map to WebInvoke,which inturn has Method property that indicates what method of http it actually maps to.</p>
 
-<p>[WebInvoke(Method = &ldquo;PUT&rdquo;, UriTemplate = &ldquo;users/{username}&rdquo;)]
-[OperationContract]
-void PutNewUser(string userName, User user) {&hellip;}[/csharp]
-As seen in the above snippet,the same resource,users,supports 2 different kind of methods to be invoked on it.So the function that actually gets invoked would be decided by the Http.So you see the client never calls a GetUserDetails or PutNewUser.All it knows is HTTP and its interface,which gives a uniformity across resources and also makes life simple.</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[WebGet(UriTemplate = &quot;users/{username}&quot;)]</span>
+</span><span class='line'><span class="na">[OperationContract]</span>
+</span><span class='line'><span class="n">User</span> <span class="nf">GetUserDetails</span><span class="p">(</span><span class="kt">string</span> <span class="n">userName</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">[WebInvoke(Method = &quot;PUT&quot;, UriTemplate = &quot;users/{username}&quot;)]</span>
+</span><span class='line'><span class="na">[OperationContract]</span>
+</span><span class='line'><span class="k">void</span> <span class="nf">PutNewUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">userName</span><span class="p">,</span> <span class="n">User</span> <span class="n">user</span><span class="p">)</span> <span class="p">{...}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As seen in the above snippet,the same resource,users,supports 2 different kind of methods to be invoked on it.So the function that actually gets invoked would be decided by the Http.So you see the client never calls a GetUserDetails or PutNewUser.All it knows is HTTP and its interface,which gives a uniformity across resources and also makes life simple.</p>
 
 <p>REST is an architectural style,so obviously you need to shift your thought process from previous styles that you would have been exposed to.Wherever you see about REST,it mentions about the basic operations of CRUD over a resource.So often the thought of &lsquo;<em>Are only these operations are suported?</em>&rsquo; comes.So here is one of the shifts in thinking that you would have to think.In REST everything is a resource,be it a person or some activity that he does.So as long as you have different resources for everything you only end up doing the CRUD operations on all those.So its about how you model out these resources.For eg.A transaction that you might need to do can by itself be a resource,over which you would end up doing the basic CRUD operations</p>
 

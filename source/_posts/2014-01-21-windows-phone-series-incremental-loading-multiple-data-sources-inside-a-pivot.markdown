@@ -25,23 +25,12 @@ An ideal example for this would be the [500px api](http://developers.500px.com/)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.
 
 In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.
 
-[csharp]private static string[] photoCollections =
+``` csharp
+private static string[] photoCollections =
     {
         "popular",
         "upcoming",
@@ -58,13 +47,15 @@ public MainViewModel()
     {
         this.PhotoCollectionViewModels.Add(new PhotoCollectionViewModel(photoCollection));
     }
-}[/csharp]
+}
+```
 
 In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by [registering an application here](http://500px.com/settings/applications) and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(**_page={0}_**) that would be populated by the IncrementalLoader on each load.
 
 The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.
 
-[csharp]public class IncrementalLoader<T> where T : class
+``` csharp 
+public class IncrementalLoader<T> where T : class
 {
     private string BaseUrl;
 
@@ -106,11 +97,12 @@ The IncrementalLoader is a generic class that takes in url from which it has to 
         return returnObject;
     }
 
-}[/csharp]
+}
+```
 
 In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.
 
-[xml]
+``` xml
 
 <Grid x:Name="ContentPanel" Grid.Row="1" >
  <phone:Pivot Name="photoCollection" ItemsSource="{Binding PhotoCollectionViewModels}">
@@ -133,11 +125,11 @@ In the Main page, the view Model is bound to a Pivot control, which has the temp
  </phone:Pivot>
 </Grid>
 
-[/xml]
+```
 
 In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.
 
-    
+``` csharp
     private void Photo_Loaded(object sender, ItemRealizationEventArgs e)
     {
         LongListSelector longList = sender as LongListSelector;
@@ -145,9 +137,6 @@ In the ItemRealized method of the LongListSelector, we decide on whether to load
     
         vm.LoadMorePhotos(e.Container.Content as Photo);
     }
-
-
-
     
     public async Task LoadMorePhotos(Photo currentPhoto)
     {
@@ -167,6 +156,7 @@ In the ItemRealized method of the LongListSelector, we decide on whether to load
         }
     }
 
+```
 
 Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.
 

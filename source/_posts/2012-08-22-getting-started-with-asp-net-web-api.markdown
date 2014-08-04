@@ -38,11 +38,13 @@ If you see in the solution explorer in Visual Studio,you notice that you already
 Web Api also uses routes to map URI’s to controller actions.But the difference with MVC route is that,here we have no actions specified in the route value.The HTTP method becomes the action.So your controller would have functions with the same names as the HTTP verbs(GET,PUT,POST,DELETE).If you don’t like these function names then there are attributes too that you can use to mark your own function names.We will see all this in our code.
 
 The default route that is created for Web Api can be found in the _App_Start/WebApiConfig  _
-[code]config.Routes.MapHttpRoute(
+``` csharp 
+config.Routes.MapHttpRoute(
 name: "DefaultApi",
 routeTemplate: "api/{controller}/{id}",
 defaults: new { id = RouteParameter.Optional }
-);[/code]
+);
+```
 Now that you have seen the API route,lets try invoking the _ValuesController _that got created automatically.Following the route that is specified above we need to prefix the controller with an _api/._This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the _ValuesController_ we would need to invoke it with ‘_api/values_’.
 To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ & ‘value2’ as returned in the GET of the _ValuesController_) in json format,as that is the default formatter that is used.
 
@@ -51,7 +53,8 @@ To issue a GET on the controller,issue the request using the web browser as show
 To check the remaining of HTTP actions we would need to write the implementations for those functions as the _ValuesController _does not have that implemented.
 
 So lets get back to the Cafeteria business.We will create a model to represent the FoodDishes that the cafeteria has to offer.For now we will just have a id,name and description field in the model.
-[csharp]public class FoodDish
+``` csharp 
+public class FoodDish
 {
 public int FoodDishId { get; set; }
 
@@ -59,7 +62,8 @@ public int FoodDishId { get; set; }
 public string FoodDishName { get; set; }
 
 public string Description { get; set; }
-}[/csharp]
+}
+```
 Note the ‘_[Required]_’ attribute on the property FoodDishName.This ensures that a value is always present for that property.This is similar to the validation in MVC.A list of supported attributes can be found [here](http://msdn.microsoft.com/en-us/library/system.componentmodel.dataannotations.aspx)
 Visual Studio will do most of  the job in creating out the controllers and the data context’s for us,with just a couple of clicks.To group the WEB API controllers together lets create a folder under the Controllers folder named ‘_api_’. This is just for a convention and is not mandatory.Right Click on the newly created ‘_api’ _folder and say Add –> Controller
 
@@ -86,7 +90,8 @@ Now this can be accessed from any device that supports issuing HTTP calls and yo
 
 Lets take a deeper look in the controller,to see how all this is happening.Will look into the GET and POST here in this post as DELETE and PUT would be then easy to follow.
 The GET method that visual studio scaffolded for us,just returns the requested fooddish from the database.If the food item does not exists it returns a ‘NotFound’/404 error.Notice that here we are using HTTP’s error code’s so that client can easily understand the error.
-[csharp]public FoodDish GetFoodDish(int id)
+``` csharp 
+public FoodDish GetFoodDish(int id)
 {
 FoodDish fooddish = db.FoodDishes.Find(id);
 if (fooddish == null)
@@ -95,9 +100,11 @@ throw new HttpResponseException(Request.CreateResponse(HttpStatusCode.NotFound))
 }
 
 return fooddish;
-}[/csharp]
+}
+```
 The POST method,checks if the new fooddish entered is valid.In our case we have FoodDishName as a required attribute,so as long as that property is present the ModelState.IsValid would be true.If you have additional validation attributes those would be checked too.If the state is valid then the item is inserted into the database and in the response we write the Location where this new fooddish can be accessed from.This location is what we saw above in the fiddler response.If the ModelState is not valid we sent a BadRequest,so that client can recheck the data send.We can send customized error messages too back to the client,so that the client understands where exactly the issue is.I will be covering validation,authentication and error reporting in a separate post,as that calls for a deeper explanation
-[csharp][HttpPost]
+```csharp 
+[HttpPost]
 public HttpResponseMessage CreateNewFoodDish(FoodDish fooddish)
 {
 if (ModelState.IsValid)
@@ -113,7 +120,8 @@ else
 {
 return Request.CreateResponse(HttpStatusCode.BadRequest);
 }
-}[/csharp]
+}
+```
 DELETE and PUT is very similar and should be easy to understand.
 
 So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.

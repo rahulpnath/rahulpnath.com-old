@@ -17,37 +17,47 @@ One of the best things about the windows phone is that way you can navigate larg
 Jumplist can be implemented using LongListSelector, which is part of the [Windows Phone toolkit](http://phone.codeplex.com/) for Windows phone 7. With Windows Phone 8 this is included along with the sdk. Implementing jump list with the longlistselector is easy enough, that you can get this into your application in a few minutes. Lets see how.
 If you are already using a listbox then you should be changing it to a longlistselector or if you are already using that, then you might be using it in the “ungrouped mode”, by setting IsFlatList=”True”. Change this to False.
 
-[xml]<toolkit:LongListSelector Name="allPersons" IsFlatList="False" >
-</toolkit:LongListSelector>[/xml]
+```xml
+<toolkit:LongListSelector Name="allPersons" IsFlatList="False" >
+</toolkit:LongListSelector>
+```
 
 We need to specify a few templates for the date to be rendered to our needs as shown below. In this example we would be looking at a contacts sample.
 
 [![JumpList1](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1.png) [![JumpList](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList.png)
 
-**ItemTemplate
-**The itemtemplate specifies how the bound list of items should be displayed. This would be the same as that you have been using earlier for your listbox.
+**ItemTemplate**
 
-[xml]<toolkit:LongListSelector.ItemTemplate>
+The itemtemplate specifies how the bound list of items should be displayed. This would be the same as that you have been using earlier for your listbox.
+
+```xml
+<toolkit:LongListSelector.ItemTemplate>
     <DataTemplate>
         <TextBlock Text="{Binding Name}" FontSize="30" />
     </DataTemplate>
-</toolkit:LongListSelector.ItemTemplate>[/xml]
+</toolkit:LongListSelector.ItemTemplate>
+```
 
-**GroupHeaderTemplate
-**The groupheadertemplate specifies the template for each header of the group.
+**GroupHeaderTemplate**
 
-[xml]<toolkit:LongListSelector.GroupHeaderTemplate>
+The groupheadertemplate specifies the template for each header of the group.
+
+```xml
+ <toolkit:LongListSelector.GroupHeaderTemplate>
     <DataTemplate>
        <Border Background="Red" HorizontalAlignment="Left" Width="50" Height="50">
          <TextBlock Text="{Binding Title}" FontSize="30" HorizontalAlignment="Center"/>
        </Border>
     </DataTemplate>
-</toolkit:LongListSelector.GroupHeaderTemplate>[/xml]
+</toolkit:LongListSelector.GroupHeaderTemplate>
+```
 
-**GroupItemTemplate
-**The groupitemtemplate specifies the template for the headers, when in group view mode. This is the display that would be presented when we are to choose a group to navigate to.
+**GroupItemTemplate**
 
-[xml]<toolkit:LongListSelector.GroupItemTemplate>
+The groupitemtemplate specifies the template for the headers, when in group view mode. This is the display that would be presented when we are to choose a group to navigate to.
+
+```xml
+ <toolkit:LongListSelector.GroupItemTemplate>
     <DataTemplate>
         <Button IsEnabled="{Binding HasData}" BorderThickness="0" Background="Transparent">
             <Border Background="Red" BorderThickness="0" Width="60" Height="60">
@@ -55,21 +65,25 @@ We need to specify a few templates for the date to be rendered to our needs as s
             </Border>
         </Button>
     </DataTemplate>
-</toolkit:LongListSelector.GroupItemTemplate>[/xml]
+</toolkit:LongListSelector.GroupItemTemplate>
+```
 
 **GroupItemsPanel**
 
 The groupitemspanel specifies the panel to be used to display the groupitems. If we are using only alphabets as the group headers, then we would want to wrap each of these items. If our group items are long enough then it would be better to leave it as default which would be a stackpanel.
 
-[xml]<toolkit:LongListSelector.GroupItemsPanel>
+```xml
+ <toolkit:LongListSelector.GroupItemsPanel>
     <ItemsPanelTemplate>
         <toolkit:WrapPanel Margin="5" Background="Black" />
     </ItemsPanelTemplate>
-</toolkit:LongListSelector.GroupItemsPanel>[/xml]
+</toolkit:LongListSelector.GroupItemsPanel>
+```
 
 We need to group the data that gets bound to the list. For a normal listbox you would either bind a List or an ObservableCollection. In this we would need to group the data that gets bound to the control as groups that we want to display. In this example our data is a list of Persons, and we would want to group the data with their starting character. If the starting character is an alphabet, then we would display that person under that character. For any non-alphabet we would group it under ‘#’. The GroupedPersons in our DataRepository would return the data for us.
 
-[csharp]public static IEnumerable<Group<Person>> GroupedPersons
+```csharp
+ public static IEnumerable<Group<Person>> GroupedPersons
 {
     get
     {
@@ -101,11 +115,14 @@ We need to group the data that gets bound to the list. For a normal listbox you 
 
         return groupedArticles;
     }
-}[/csharp]
+}
+```
 
 To get all the characters from A-Z we use the below code, after which it is some simple logics, that would is self explanatory
 
-[csharp]char[] az = Enumerable.Range('a', 26).Select(a => (char)a).ToArray();[/csharp]
+```csharp
+ char[] az = Enumerable.Range('a', 26).Select(a => (char)a).ToArray();
+ ```
 
 This should now have made your flat list into a easily navigable jump list, that your users would love to use and make it easier for them to use you application.
 

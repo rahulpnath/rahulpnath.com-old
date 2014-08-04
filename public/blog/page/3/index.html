@@ -14,9 +14,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://yoursite.com/posts/3">
+  <link rel="canonical" href="http://yoursite.com/blog/page/3">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -123,28 +123,67 @@
 
 <p>In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below</p>
 
-<pre><code> ApplicationBar.Buttons.Add(&lt;your button&gt;);
-</code></pre>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'> <span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(&lt;</span><span class="n">your</span> <span class="n">button</span><span class="p">&gt;);</span>
+</span><span class='line'> <span class="err">```</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">When</span> <span class="n">you</span> <span class="n">are</span> <span class="k">using</span> <span class="nn">MVVM</span> <span class="n">you</span> <span class="n">would</span> <span class="n">want</span> <span class="n">to</span> <span class="k">do</span> <span class="k">this</span> <span class="k">from</span> <span class="n">your</span> <span class="nf">ViewModel</span><span class="p">(</span><span class="n">VM</span><span class="p">).</span> <span class="n">Below</span> <span class="n">are</span> <span class="n">the</span> <span class="n">approaches</span> <span class="n">that</span> <span class="n">you</span> <span class="n">could</span> <span class="n">use</span> <span class="n">to</span> <span class="n">achieve</span> <span class="n">the</span> <span class="n">same</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="p">**</span><span class="m">1.</span> <span class="n">Mesenger</span> <span class="n">Service</span><span class="p">**</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">Whenever</span> <span class="n">we</span> <span class="n">need</span> <span class="n">to</span> <span class="n">communicate</span> <span class="n">between</span> <span class="n">VM</span><span class="err">’</span><span class="n">s</span> <span class="n">or</span> <span class="n">between</span> <span class="n">your</span> <span class="n">view</span> <span class="n">model</span> <span class="n">and</span> <span class="n">View</span> <span class="n">then</span> <span class="n">we</span> <span class="n">would</span> <span class="n">want</span> <span class="n">to</span> <span class="k">do</span> <span class="n">that</span> <span class="k">in</span> <span class="n">the</span> <span class="n">most</span> <span class="n">decoupled</span> <span class="n">manner</span><span class="p">.</span> <span class="n">When</span> <span class="k">using</span> <span class="err">[</span><span class="nn">MVVMLight</span><span class="p">](</span><span class="n">http</span><span class="p">:</span><span class="c1">//www.galasoft.ch/mvvm/), we could use the Messenger class to achieve this. We would send a message indicating that we want to add a new appbar button from the ViewModel, and the View code behind, which already has registered for such an event would get notified and add the icon for us .</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">Below</span> <span class="k">is</span> <span class="n">how</span> <span class="n">the</span> <span class="n">Code</span><span class="p">-</span><span class="n">behind</span> <span class="n">would</span> <span class="n">look</span> <span class="n">like</span> <span class="p">.</span> <span class="n">We</span> <span class="n">register</span> <span class="k">for</span> <span class="n">a</span> <span class="n">NotificationMessage</span><span class="p">(</span><span class="n">you</span> <span class="n">could</span> <span class="n">also</span> <span class="n">use</span> <span class="n">your</span> <span class="n">own</span> <span class="n">notification</span> <span class="k">class</span> <span class="nc">for</span> <span class="k">this</span><span class="p">),</span> <span class="n">and</span> <span class="n">see</span> <span class="n">what</span> <span class="n">kind</span> <span class="n">of</span> <span class="n">button</span> <span class="n">needs</span> <span class="n">to</span> <span class="n">be</span> <span class="n">added</span> <span class="n">and</span> <span class="n">adds</span> <span class="n">that</span> <span class="n">to</span> <span class="n">the</span> <span class="n">ApplicationBar</span><span class="p">.</span> <span class="n">On</span> <span class="n">click</span> <span class="n">of</span> <span class="n">the</span> <span class="n">appbar</span> <span class="n">button</span><span class="p">,</span> <span class="n">we</span> <span class="n">wire</span> <span class="n">up</span> <span class="n">the</span> <span class="n">click</span> <span class="k">event</span> <span class="n">to</span> <span class="n">a</span> <span class="n">command</span> <span class="n">of</span> <span class="n">the</span> <span class="n">ViewModel</span><span class="p">.</span> <span class="n">Though</span> <span class="n">there</span> <span class="k">is</span> <span class="n">some</span> <span class="n">code</span> <span class="n">behind</span> <span class="k">in</span> <span class="n">here</span><span class="p">,</span> <span class="n">we</span> <span class="n">are</span> <span class="n">not</span> <span class="n">going</span> <span class="n">away</span> <span class="k">from</span> <span class="n">MVVM</span> <span class="n">here</span><span class="p">,</span> <span class="k">as</span> <span class="n">we</span> <span class="n">still</span> <span class="n">have</span> <span class="n">clear</span> <span class="n">separation</span> <span class="n">of</span> <span class="n">concerns</span> <span class="n">and</span> <span class="n">also</span> <span class="n">testability</span> <span class="k">is</span> <span class="n">not</span> <span class="n">affected</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same</p>
 
-<p><strong>1. Mesenger Service</strong></p>
-
-<p>Whenever we need to communicate between VM’s or between your view model and View then we would want to do that in the most decoupled manner. When using <a href="http://www.galasoft.ch/mvvm/">MVVMLight</a>, we could use the Messenger class to achieve this. We would send a message indicating that we want to add a new appbar button from the ViewModel, and the View code behind, which already has registered for such an event would get notified and add the icon for us .</p>
-
-<p>Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.</p>
-
-<pre><code>public partial class MainPage : PhoneApplicationPage
-{
-    public MainViewModel viewModel
+<p> csharp  <br/>
+    public partial class MainPage : PhoneApplicationPage
     {
-        get
+        public MainViewModel viewModel
         {
-            return this.DataContext as MainViewModel;
-        }
-    }
+            get
+            {
+                return this.DataContext as MainViewModel;
+            }
+        }</p>
 
-    private ApplicationBarIconButton settingsButton;
+<pre><code>    private ApplicationBarIconButton settingsButton;
     // Constructor
     public MainPage()
     {
@@ -180,17 +219,41 @@
 }
 </code></pre>
 
-<hr />
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">****</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="p">**</span><span class="m">2.</span> <span class="n">ApplicationBar</span> <span class="n">Service</span><span class="p">**</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">Like</span> <span class="n">we</span> <span class="n">use</span> <span class="p">[</span><span class="n">NavigationService</span><span class="p">](</span><span class="n">http</span><span class="p">:</span><span class="c1">//www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2), for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p><strong>2. ApplicationBar Service</strong></p>
 
-<p>Like we use <a href="http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2">NavigationService</a>, for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</p>
+<p> csharp  <br/>
+    public class MyModelBase: ViewModelBase
+    {
+        public IApplicationBarService ApplicationBar { get; set; }</p>
 
-<pre><code>public class MyModelBase: ViewModelBase
-{
-    public IApplicationBarService ApplicationBar { get; set; }
-
-    public MyModelBase()
+<pre><code>    public MyModelBase()
     {
 
     }
@@ -201,30 +264,38 @@
 }
 </code></pre>
 
-<p>The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">The</span> <span class="k">interface</span> <span class="n">IApplicationBarService</span><span class="p">,</span> <span class="n">would</span> <span class="n">have</span> <span class="n">the</span> <span class="n">functions</span> <span class="n">that</span> <span class="n">we</span> <span class="n">would</span> <span class="n">want</span> <span class="n">to</span> <span class="n">Add</span><span class="p">/</span><span class="n">Remove</span> <span class="n">icons</span> <span class="k">from</span> <span class="n">the</span> <span class="n">application</span> <span class="n">bar</span><span class="p">.</span> <span class="n">For</span> <span class="n">now</span> <span class="n">I</span> <span class="n">have</span> <span class="n">just</span> <span class="n">put</span> <span class="k">in</span> <span class="n">the</span> <span class="n">AddButton</span><span class="p">.</span> <span class="n">You</span> <span class="n">could</span> <span class="n">also</span> <span class="k">add</span> <span class="n">RemoveButton</span> <span class="n">and</span> <span class="n">any</span> <span class="n">other</span> <span class="n">things</span> <span class="n">that</span> <span class="n">you</span> <span class="n">would</span> <span class="n">want</span> <span class="k">in</span> <span class="n">there</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public interface IApplicationBarService
-{
-    IApplicationBar ApplicationBar { get;} 
 
-    void AddButton(string title, Uri imageUrl, Action OnClick);
+<p> csharp  <br/>
+    public interface IApplicationBarService
+    {
+        IApplicationBar ApplicationBar { get;}</p>
+
+<pre><code>    void AddButton(string title, Uri imageUrl, Action OnClick);
 }
 </code></pre>
 
-<p>Implementation for this interface is as below</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Implementation</span> <span class="k">for</span> <span class="k">this</span> <span class="k">interface</span> <span class="k">is</span> <span class="k">as</span> <span class="n">below</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public class ApplicationBarService: IApplicationBarService
-{
-    public void AddButton(string title, Uri imageUrl, Action OnClick)
+
+<p> csharp  <br/>
+    public class ApplicationBarService: IApplicationBarService
     {
-        ApplicationBarIconButton newButton = new ApplicationBarIconButton()
-            {
-                Text = title, 
-                IconUri = imageUrl, 
-            };
-        newButton.Click += ((sender,e) =&gt; {OnClick.Invoke();}) ;
+        public void AddButton(string title, Uri imageUrl, Action OnClick)
+        {
+            ApplicationBarIconButton newButton = new ApplicationBarIconButton()
+                {
+                    Text = title,
+                    IconUri = imageUrl,
+                };
+            newButton.Click += ((sender,e) => {OnClick.Invoke();}) ;</p>
 
-        ApplicationBar.Buttons.Add(newButton);
+<pre><code>        ApplicationBar.Buttons.Add(newButton);
 
     }
 
@@ -242,6 +313,8 @@
     }
 }
 </code></pre>
+
+<p>&#8220;`</p>
 
 <p>The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple</p>
 
@@ -323,39 +396,69 @@
 
 <p>In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(<strong>MyFiles.tt</strong>)</p>
 
-<pre><code>&lt;#@ template debug="false" hostspecific="true" language="C#" #&gt;
-&lt;#@ output extension=".gen.cs" #&gt;
-&lt;#@ import namespace="System.IO"#&gt;
-// &lt;auto-generated /&gt;
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">template</span> <span class="n">debug</span><span class="p">=</span><span class="s">&quot;false&quot;</span> <span class="n">hostspecific</span><span class="p">=</span><span class="s">&quot;true&quot;</span> <span class="n">language</span><span class="p">=</span><span class="s">&quot;C#&quot;</span> <span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">output</span> <span class="n">extension</span><span class="p">=</span><span class="s">&quot;.gen.cs&quot;</span> <span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">import</span> <span class="n">namespace</span><span class="p">=</span><span class="s">&quot;System.IO&quot;</span><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="c1">// &lt;auto-generated /&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">PreloadedContent</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">MyFiles</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">private</span> <span class="k">static</span> <span class="kt">string</span><span class="p">[]</span> <span class="nf">MyPreloadedContentFiles</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span><span class="p">[]</span> <span class="p">{</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#</span>
+</span><span class='line'>            <span class="n">DirectoryInfo</span> <span class="n">directoryInfo</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DirectoryInfo</span><span class="p">(</span>
+</span><span class='line'>               <span class="n">Path</span><span class="p">.</span><span class="n">Combine</span><span class="p">(</span><span class="n">Path</span><span class="p">.</span><span class="n">GetDirectoryName</span><span class="p">(</span><span class="n">Host</span><span class="p">.</span><span class="n">TemplateFile</span><span class="p">),</span><span class="s">&quot;MyPreloadedContent&quot;</span><span class="p">));</span>
+</span><span class='line'>        <span class="k">foreach</span><span class="p">(</span><span class="n">FileInfo</span> <span class="n">file</span> <span class="k">in</span> <span class="n">directoryInfo</span><span class="p">.</span><span class="n">GetFiles</span><span class="p">(</span><span class="s">&quot;*.*&quot;</span><span class="p">,</span> <span class="n">SearchOption</span><span class="p">.</span><span class="n">AllDirectories</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(!</span><span class="n">file</span><span class="p">.</span><span class="n">FullName</span><span class="p">.</span><span class="n">Contains</span><span class="p">(</span><span class="s">@&quot;.&quot;</span><span class="p">))</span>
+</span><span class='line'>                <span class="p">{</span><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'>                      <span class="s">&quot;&lt;#= file.FullName.Substring(</span>
+</span><span class='line'>                      <span class="n">file</span><span class="p">.</span><span class="n">FullName</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="s">&quot;MyPreloadedContent&quot;</span><span class="p">)).</span><span class="n">Replace</span><span class="p">(</span><span class="s">@&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">)</span> <span class="err">#</span><span class="p">&gt;</span><span class="s">&quot;,</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#</span>              <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'>                        <span class="p">};</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-namespace PreloadedContent
-{
-    public class MyFiles
-    {
-        private static string[] MyPreloadedContentFiles()
-        {
-            return new[] {
-&lt;#
-            DirectoryInfo directoryInfo = new DirectoryInfo(
-               Path.Combine(Path.GetDirectoryName(Host.TemplateFile),"MyPreloadedContent"));
-        foreach(FileInfo file in directoryInfo.GetFiles("*.*", SearchOption.AllDirectories))
-            {
-                if (!file.FullName.Contains(@"."))
-                {#&gt;
-                      "&lt;#= file.FullName.Substring(
-                      file.FullName.IndexOf("MyPreloadedContent")).Replace(@"", "/") #&gt;",
-&lt;#              }
-            }
-#&gt;
-                        };
-        }
-    }
-}
-</code></pre>
 
 <p>It just says to read the directory MyPreloadedContent and iterate to get all the files in that and writes it out by trimming of the absolute path and putting in only the relative path. Save the MyFiles.tt, and in Visual Studio right click on it and say “Run Custom Tool”. This would generate the cs file with an extension “.gen.cs” as we have mentioned in “<strong>&lt;#@ output extension=&ldquo;.gen.cs&rdquo; #>”.  </strong>The generated class would look like below</p>
 
-<pre><code>namespace PreloadedContent
+<pre><code>``` csharp
+namespace PreloadedContent
 {
     public class MyFiles
     {
@@ -374,7 +477,8 @@ namespace PreloadedContent
 }
 </code></pre>
 
-<p>The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
+<p>&#8220;`
+The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
 
 <p>There are a couple of ways, by which you can ensure that the template file is run before the actual code gets compiled. This is to make sure that this generated class is going to be updated with the latest files that would be copied into the folder at build time i.e your templates are transformed at build time. This <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx">article</a> details out the methods to get that integrated into the build. On a build server where you dont have Visual Studio installed you would need to copy out these files mentioned <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx#buildserver">here</a> explicitly</p>
 
@@ -472,110 +576,206 @@ namespace PreloadedContent
 
 <p>Below is the piece of code that will fetch us the photo from the <a href="http://developers.500px.com/">500px api</a> to populate the listbox data.</p>
 
-<p>[csharp]private static int requestPerPage = 20;
-private int currentPage = 1;
-private bool isCurrentlyLoading = false;</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="n">requestPerPage</span> <span class="p">=</span> <span class="m">20</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">int</span> <span class="n">currentPage</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;</span> <span class="n">Photos</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="kt">string</span> <span class="n">datasourceUrl</span><span class="p">=</span><span class="s">&quot;https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=&quot;</span>
+</span><span class='line'>          <span class="p">+</span> <span class="n">consumerKey</span> <span class="p">+</span> <span class="s">&quot;&amp;rpp=&quot;</span> <span class="p">+</span> <span class="n">requestPerPage</span><span class="p">.</span><span class="n">ToString</span><span class="p">()</span> <span class="p">+</span> <span class="s">&quot;&amp;page={0}&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">LoadDataFromSource</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">datasourceUrl</span><span class="p">,</span> <span class="n">currentPage</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">WebClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebClient</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringCompleted</span> <span class="p">+=</span> <span class="n">client_DownloadStringCompleted</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">query</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">void</span> <span class="nf">client_DownloadStringCompleted</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">DownloadStringCompletedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">reader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Result</span><span class="p">)))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ser</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">RootObject</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">RootObject</span> <span class="n">obj</span> <span class="p">=</span> <span class="p">(</span><span class="n">RootObject</span><span class="p">)</span><span class="n">ser</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">currentPage</span> <span class="p">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">current_page</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">obj</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Dispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="n">obj</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>                    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>                <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>private ObservableCollection<Photo> Photos = new ObservableCollection<Photo>();</p>
-
-<p>private string datasourceUrl=&ldquo;<a href="https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=">https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=</a>&rdquo;
-          + consumerKey + &ldquo;&amp;rpp=&rdquo; + requestPerPage.ToString() + &ldquo;&amp;page={0}&rdquo;;</p>
-
-<p>private void LoadDataFromSource()
-{
-    isCurrentlyLoading = true;
-    var query = string.Format(datasourceUrl, currentPage);
-    WebClient client = new WebClient();
-    client.DownloadStringCompleted += client_DownloadStringCompleted;
-    client.DownloadStringAsync(new Uri(query));</p>
-
-<p>}</p>
-
-<p>void client_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
-{
-    using (var reader = new MemoryStream(Encoding.Unicode.GetBytes(e.Result)))
-    {
-        var ser = new DataContractJsonSerializer(typeof(RootObject));
-        RootObject obj = (RootObject)ser.ReadObject(reader);
-        currentPage = obj.current_page + 1;
-        if (obj != null)
-        {
-            this.Dispatcher.BeginInvoke(() =>
-                {
-                    foreach (var photo in obj.photos)
-                    {
-                        Photos.Add(photo);
-                    }
-                    isCurrentlyLoading = false;
-                });
-        }
-    }
-}[/csharp]</p>
 
 <p>In the ItemRealized/Link event based on whether you are developing for Windows Phone 7 or 8, below would be the code that goes into that. We need to check the current item that is realized i.e rendered on the UI and see if it is</p>
 
-<p>[csharp]private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
-{
-    Photo photo = e.Container.Content as Photo;
-    if (photo != null)
-    {
-        int offset = 2;
-        // Only if there is no data that is currently getting loaded
-        // would be initiate the loading again
-        if (!isCurrentlyLoading &amp;&amp; Photos.Count - Photos.IndexOf(photo) &lt;= offset)
-        {
-            LoadDataFromSource();
-        }
-    }
-}[/csharp]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">photosList_ItemRealized_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Photo</span> <span class="n">photo</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">photo</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">offset</span> <span class="p">=</span> <span class="m">2</span><span class="p">;</span>
+</span><span class='line'>        <span class="c1">// Only if there is no data that is currently getting loaded</span>
+</span><span class='line'>        <span class="c1">// would be initiate the loading again</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">&amp;&amp;</span> <span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">photo</span><span class="p">)</span> <span class="p">&lt;=</span> <span class="n">offset</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>In case you want to use a normal listbox, you can do that also. We would need to hook up with VisualStateGroups. This <a href="http://blogs.msdn.com/b/slmperf/archive/2011/06/30/windows-phone-mango-change-listbox-how-to-detect-compression-end-of-scroll-states.aspx">link</a> explains this in details, and I have just reused parts of it as is. We need to override the scrollviewer style to hook into this new StateGroups. We need to look for CompressionBottom state, for the currentstatechanged event of the scrollviewer.</p>
 
-<p>[csharp]private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
-{
-    SetScrollViewer();
-}</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">myScrollViewer_Loaded_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">RoutedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SetScrollViewer</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SetScrollViewer</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Visual States are always on the first child of the control template </span>
+</span><span class='line'>    <span class="n">FrameworkElement</span> <span class="n">element</span> <span class="p">=</span> <span class="n">VisualTreeHelper</span><span class="p">.</span><span class="n">GetChild</span><span class="p">(</span><span class="n">myScrollViewer</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">as</span> <span class="n">FrameworkElement</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">element</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">VisualStateGroup</span> <span class="n">vgroup</span> <span class="p">=</span> <span class="n">FindVisualState</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;VerticalCompression&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">vgroup</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">vgroup</span><span class="p">.</span><span class="n">CurrentStateChanging</span> <span class="p">+=</span>
+</span><span class='line'>                 <span class="k">new</span> <span class="n">EventHandler</span><span class="p">&lt;</span><span class="n">VisualStateChangedEventArgs</span><span class="p">&gt;(</span><span class="n">vgroup_CurrentStateChanging</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">vgroup_CurrentStateChanging</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">VisualStateChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionTop&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionBottom&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;NoVerticalCompression&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>private void SetScrollViewer()
-{
-    // Visual States are always on the first child of the control template
-    FrameworkElement element = VisualTreeHelper.GetChild(myScrollViewer, 0)
-                            as FrameworkElement;
-    if (element != null)
-    {
-        VisualStateGroup vgroup = FindVisualState(element, &ldquo;VerticalCompression&rdquo;);</p>
-
-<pre><code>    if (vgroup != null)
-    {
-        vgroup.CurrentStateChanging += 
-             new EventHandler&lt;VisualStateChangedEventArgs&gt;(vgroup_CurrentStateChanging);
-    }
-}
-</code></pre>
-
-<p>}</p>
-
-<p>private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventArgs e)
-{
-    if (e.NewState.Name == &ldquo;CompressionTop&rdquo;)
-    {</p>
-
-<pre><code>}
-
-if (e.NewState.Name == "CompressionBottom")
-{
-    if (!isCurrentlyLoading )
-    {
-        LoadDataFromSource();
-    }
-}
-if (e.NewState.Name == "NoVerticalCompression")
-{
-
-}
-</code></pre>
-
-<p>}[/csharp]</p>
 
 <p>You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble <a href="https://github.com/rahulpnath/IncrementalLoadingPhone">here</a>. The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates</p>
 
@@ -753,7 +953,8 @@ Below are some snaps of the my bag. I did find a good <a href="http://www.youtub
 
 <p>I wanted this same behaviour in my application, to provide similar options for the logged in user. The easiest way to achieve this is to use a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.aspx">Popup</a>. The xaml snippet below shows how to get a similar look on your application</p>
 
-<pre><code>&lt;Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}"&gt;
+<pre><code>``` xml
+&lt;Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}"&gt;
     &lt;Grid.ColumnDefinitions&gt;
         &lt;ColumnDefinition /&gt;
         &lt;ColumnDefinition Width="Auto" /&gt;
@@ -773,7 +974,8 @@ Below are some snaps of the my bag. I did find a good <a href="http://www.youtub
 &lt;/Grid&gt;
 </code></pre>
 
-<p>On click of the button we need to set the popup’s <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.isopen.aspx">IsOpen</a> to true. Setting the <a href="http://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.xaml.controls.primitives.popup.islightdismissenabled">IsLightDismissEnabled</a> to true the popup closes whenever the user taps outside of the popup.
+<p>&#8220;`
+On click of the button we need to set the popup’s <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.isopen.aspx">IsOpen</a> to true. Setting the <a href="http://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.xaml.controls.primitives.popup.islightdismissenabled">IsLightDismissEnabled</a> to true the popup closes whenever the user taps outside of the popup.
 <a href="http://rahulpnath.files.wordpress.com/2013/01/image1.png"><img src="http://rahulpnath.files.wordpress.com/2013/01/image_thumb1.png" alt="image" /></a></p>
 
 <p>Style and color it the way you want it to look and there you have an easy drop-down button for Windows 8.</p>
@@ -820,7 +1022,8 @@ Implementing these over and over for different data sources that you would want 
 
 <p>First lets get the class that implements <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">ISupportIncrementalLoading</a>, IList and INotifyCollectionChanged. To keep things simple lets inherit from ObservableCollection,which in turn inherits the latter 2 interfaces</p>
 
-<pre><code>public class IncrementalSource&lt;T, K&gt; : ObservableCollection&lt;K&gt;, ISupportIncrementalLoading
+<pre><code>``` csharp
+public class IncrementalSource&lt;T, K&gt; : ObservableCollection&lt;K&gt;, ISupportIncrementalLoading
     where T: class
 {
     private string Query { get; set; }
@@ -882,47 +1085,80 @@ Implementing these over and over for different data sources that you would want 
 }
 </code></pre>
 
-<p>Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(<strong><em>K</em></strong>) whose list we are trying to load incrementally. Another one the type of object(<strong><em>T</em></strong>) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(**_K_**) whose list we are trying to load incrementally. Another one the type of object(**_T_**) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse
+</span><span class='line'>
+</span><span class='line'>    ``` csharp
+</span><span class='line'>    public interface IPagedResponse&lt;T&gt;
+</span><span class='line'>    {
+</span><span class='line'>        IEnumerable&lt;T&gt; Items { get; }
+</span><span class='line'>        int VirtualCount { get; }
+</span><span class='line'>        int rpp { get; set; } // rpp - requests per page
+</span><span class='line'>    }
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    
+</span><span class='line'>    public class PagedResponse&lt;K&gt; : IPagedResponse&lt;K&gt;
+</span><span class='line'>    {
+</span><span class='line'>        public PagedResponse(IEnumerable&lt;K&gt; items, int virtualCount,int itemsPerPage)
+</span><span class='line'>        {
+</span><span class='line'>            this.Items = items;
+</span><span class='line'>            this.VirtualCount = virtualCount;
+</span><span class='line'>            rpp = itemsPerPage;
+</span><span class='line'>        }
+</span><span class='line'>    
+</span><span class='line'>        public int VirtualCount { get; private set; }
+</span><span class='line'>        public int rpp { get;  set; }
+</span><span class='line'>        public IEnumerable&lt;K&gt; Items { get; private set; }
+</span><span class='line'>    }
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public interface IPagedResponse&lt;T&gt;
-{
-    IEnumerable&lt;T&gt; Items { get; }
-    int VirtualCount { get; }
-    int rpp { get; set; } // rpp - requests per page
-}
-
-
-
-
-public class PagedResponse&lt;K&gt; : IPagedResponse&lt;K&gt;
-{
-    public PagedResponse(IEnumerable&lt;K&gt; items, int virtualCount,int itemsPerPage)
-    {
-        this.Items = items;
-        this.VirtualCount = virtualCount;
-        rpp = itemsPerPage;
-    }
-
-    public int VirtualCount { get; private set; }
-    public int rpp { get;  set; }
-    public IEnumerable&lt;K&gt; Items { get; private set; }
-}
-</code></pre>
 
 <p>That said lets see the  <em>IncremetnalSource</em> class. It takes in the object type <strong><em>T </em></strong>and <strong><em>K.</em></strong>The constructor takes in the url where the datasource can be found.The Func&lt;T, IPagedResponse<K>> parameter represents a function that takes in the return type of the call to the url as a parameter and returns the PagedResponse type. In other words that function converts the paged request call type to the type that we use to represent it, IPagedResponse.See a sample below.</p>
 
-<p>[sourcecode language=&ldquo;csharp&rdquo;]
-private PagedResponse<Photo> RootObjectResponse(RootObject rootObject)
-{
-    return new PagedResponse<Photo>(rootObject.photos, rootObject.total_items, rootObject.photos != null ? rootObject.photos.Count : 0);
-}
-[/sourcecode]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">PagedResponse</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;</span> <span class="n">RootObjectResponse</span><span class="p">(</span><span class="n">RootObject</span> <span class="n">rootObject</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="n">PagedResponse</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;(</span><span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span><span class="p">,</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">total_items</span><span class="p">,</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">:</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>Now we need to make the call to the datasource url. This might return us data in different formats, most popularly json or xml. So we would always want to abstract away the loading of data to another class so that we don’t get tied up with the data formats in <em>IncrementalSource.</em></p>
 
 <p>IPagedSource&lt;T,K> will do this for us. A sample implementation of this is <em>PagedSourceLoader </em>that handles for json return type is below</p>
 
-<pre><code>public interface IPagedSource&lt;R,K&gt;
+<pre><code>``` csharp
+public interface IPagedSource&lt;R,K&gt;
 {
     Task&lt;IPagedResponse&lt;K&gt;&gt; GetPage(string query, int pageIndex, int pageSize);
 }
@@ -956,7 +1192,8 @@ public class PagedSourceLoader&lt;T,K&gt; : IPagedSource&lt;T,K&gt;
 }
 </code></pre>
 
-<p>As you see above the <em>PagedSourceLoader</em> gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for <em>IPagedSource&lt;T,K>, </em>as your data source would always return you the same data format. In case not you could inject that too into the <em>IncrementalSource</em> class.</p>
+<p>&#8220;`
+As you see above the <em>PagedSourceLoader</em> gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for <em>IPagedSource&lt;T,K>, </em>as your data source would always return you the same data format. In case not you could inject that too into the <em>IncrementalSource</em> class.</p>
 
 <p>I have a sample <a href="http://sdrv.ms/RdPtdL">here</a> that incrementally loads the photos from a photo site <a href="http://500px.com/flow">500px</a>. You would need to register for an to get the consumer key,which should hardly take some time <a href="http://500px.com/settings/applications?from=developers">here</a>.</p>
 
@@ -1060,7 +1297,8 @@ Parameters with names beginning with oauth_.</p>
 
 <p><strong> </strong>To get the request token we need to make a POST request to <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_requesttoken.md"><em>oauth/request_token</em></a>, which expects the parameters <em>CallbackUrl,ConsumerKey,Nonce,SignatureMethod,Timestamp and OAuthVersion. </em>All these should be in the same order,i.e alphabetical. All these parameters needs to be signed using the consumer secret and the signature too needs to be attached in the request data. This data goes as part of the ‘<em>Authorization’</em> header of the request.</p>
 
-<pre><code>public async Task&lt;OauthToken&gt; RequestToken() 
+<pre><code>``` csharp
+public async Task&lt;OauthToken&gt; RequestToken() 
        { 
            AuthorizationParameters = new Dictionary&lt;string, string&gt;(){                                
                              {OauthParameter.OauthCallback, OAuthCallbackUrl}, 
@@ -1077,17 +1315,31 @@ Parameters with names beginning with oauth_.</p>
 ……… 
 </code></pre>
 
-<p>The above function handles adding the parameters required and executing the request.</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>The above function handles adding the parameters required and executing the request. 
+</span><span class='line'>    
+</span><span class='line'>The _MakeRequest_ call specifies the kind of HTTP call that you want to make, here it being a POST. The call to the function _Sign, _signs the parameters and adds the signature details to the parameter list. It uses the same signature method as specified in the parameter list, _HMAC-SHA1_
+</span></code></pre></td></tr></table></div></figure>
 
-<p>The <em>MakeRequest</em> call specifies the kind of HTTP call that you want to make, here it being a POST. The call to the function <em>Sign, </em>signs the parameters and adds the signature details to the parameter list. It uses the same signature method as specified in the parameter list, <em>HMAC-SHA1</em></p>
 
-<pre><code>private Oauth500px Sign(string Url, string tokenSecret) 
-       { 
-           String SigBaseStringParams = String.Join("&amp;", AuthorizationParameters.Select(key =&gt; key.Key + "=" + Uri.EscapeDataString(key.Value))); 
-           String SigBaseString = requestType.ToString() + "&amp;"; 
-           SigBaseString += Uri.EscapeDataString(Url) + "&amp;" + Uri.EscapeDataString(SigBaseStringParams);
+<p> csharp  <br/>
+    private Oauth500px Sign(string Url, string tokenSecret)
+           {
+               String SigBaseStringParams = String.Join(&ldquo;&amp;&rdquo;, AuthorizationParameters.Select(key => key.Key + &ldquo;=&rdquo; + Uri.EscapeDataString(key.Value)));
+               String SigBaseString = requestType.ToString() + &ldquo;&amp;&rdquo;;
+               SigBaseString += Uri.EscapeDataString(Url) + &ldquo;&amp;&rdquo; + Uri.EscapeDataString(SigBaseStringParams);</p>
 
-           IBuffer KeyMaterial = CryptographicBuffer.ConvertStringToBinary(consumerSecret + "&amp;" + tokenSecret, BinaryStringEncoding.Utf8); 
+<pre><code>           IBuffer KeyMaterial = CryptographicBuffer.ConvertStringToBinary(consumerSecret + "&amp;" + tokenSecret, BinaryStringEncoding.Utf8); 
            MacAlgorithmProvider HmacSha1Provider = MacAlgorithmProvider.OpenAlgorithm(OAuthSignatureMethodName); 
            CryptographicKey MacKey = HmacSha1Provider.CreateKey(KeyMaterial); 
            IBuffer DataToBeSigned = CryptographicBuffer.ConvertStringToBinary(SigBaseString, BinaryStringEncoding.Utf8); 
@@ -1098,57 +1350,139 @@ Parameters with names beginning with oauth_.</p>
        } 
 </code></pre>
 
-<p>The <em>ExecueRequest</em> handles adding the details to the authorization header and making the request and returning the response.</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>The _ExecueRequest_ handles adding the details to the authorization header and making the request and returning the response. 
+</span><span class='line'>
+</span><span class='line'>    
+</span><span class='line'>A successful call to request token will return _Request Token_ and a _token secret _which is to be used in the subsequent call to Authorize
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>**Authorize**
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>The call to authorize brings up the login page of the Service Provider(500px),if the user is not already logged in and is used to authorize the request token that has been just obtained. The request to authorize is to be made at [oauth/authorize](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_authorize.md), with the request token received in the previous call.
+</span></code></pre></td></tr></table></div></figure>
 
-<p>A successful call to request token will return <em>Request Token</em> and a <em>token secret </em>which is to be used in the subsequent call to Authorize</p>
 
-<p><strong>Authorize</strong></p>
+<p> csharp  <br/>
+    public async Task<OauthToken> AuthorizeToken()
+           {
+               var tempAuthorizeUrl = OAuthAuthorizeUrl + &ldquo;?oauth_token=&rdquo; + Token.Token;
+               System.Uri StartUri = new Uri(tempAuthorizeUrl);
+               System.Uri EndUri = new Uri(OAuthCallbackUrl);
+               var auth =
+                   await
+                   WebAuthenticationBroker.AuthenticateAsync(WebAuthenticationOptions.None, StartUri, EndUri);
+               var responseData = auth.ResponseData;</p>
 
-<p>The call to authorize brings up the login page of the Service Provider(500px),if the user is not already logged in and is used to authorize the request token that has been just obtained. The request to authorize is to be made at <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_authorize.md">oauth/authorize</a>, with the request token received in the previous call.</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>Since this is for Windows8 I use the WebAuthenticationBroker to issue the request to authorize the user, which will open up a nice UI asking the user credentials. On entering the login details and getting successfully authorized, we would get the _request token_ and the _oauth_verifier_ code.
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>**Access Token**
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>This final step gives you the access token, that is used for any request to a protected resource. A POST request it to made to the url [oauth/access_token](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_accesstoken.md), with the parameters _ConsumerKey, Nonce, SignatureMethod, Timestamp, RequestToken, VerifierCode and OAuthVersion, _again all alphabetical sorted and signed using the consumer key and token secret that we got in the call to request token.
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public async Task&lt;OauthToken&gt; AuthorizeToken() 
-       { 
-           var tempAuthorizeUrl = OAuthAuthorizeUrl + "?oauth_token=" + Token.Token;
-           System.Uri StartUri = new Uri(tempAuthorizeUrl); 
-           System.Uri EndUri = new Uri(OAuthCallbackUrl);
-           var auth = 
-               await 
-               WebAuthenticationBroker.AuthenticateAsync(WebAuthenticationOptions.None, StartUri, EndUri);
-           var responseData = auth.ResponseData;
+
+<p> csharp  <br/>
+    public async Task<OauthToken> AccessToken()
+           {
+               AuthorizationParameters = new Dictionary&lt;string, string>()
+                       {
+                           {OauthParameter.OauthConsumerKey, consumerKey},
+                           {OauthParameter.OauthNonce, Nonce()},
+                           {OauthParameter.OauthSignatureMethod,OAuthSignatureMethod},
+                           {OauthParameter.OauthTimestamp, TimeStamp()},
+                           {OauthParameter.OauthToken,Token.Token},
+                           {OauthParameter.OauthVerifier,Token.Verifier},
+                           {OauthParameter.OauthVersion, OAuthVersion}
+                       };
+               var response = await this.MakeRequest(RequestType.POST)
+                   .Sign(OAuthAccessUrl, Token.SecretCode)
+                   .ExecuteRequest(OAuthAccessUrl);</p>
+
+<pre><code>……. 
 </code></pre>
 
-<p>Since this is for Windows8 I use the WebAuthenticationBroker to issue the request to authorize the user, which will open up a nice UI asking the user credentials. On entering the login details and getting successfully authorized, we would get the <em>request token</em> and the <em>oauth_verifier</em> code.</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>The SecretCode, that was obtained from the call to Requesttoken is also passed to the function _Sign. 
+</span><span class='line'>      
+</span><span class='line'>_A successful call would return you the AccessToken and the Access token’s secret code for that. All subsequent request to any protected resource needs the AccessToken and should be signed using ConsumerKey and the access token’s secret code. 
+</span><span class='line'>
+</span><span class='line'>    
+</span><span class='line'>From now on any request to a protected resource should be made with the following parameters: _ConsumerKey,Nonce,SignatureMethod,Timestamp,OAuthToken and OAuthVersion_ along with any additional parameters_. _This should be signed using the consumer secret and the access token secret code. 
+</span><span class='line'>
+</span><span class='line'>    
+</span><span class='line'>The ExecuteRequest handles for this and is a genenric function that would allow you to specify the return type that you are expecting and the Url of the protected resource
+</span></code></pre></td></tr></table></div></figure>
 
-<p><strong>Access Token</strong></p>
 
-<p>This final step gives you the access token, that is used for any request to a protected resource. A POST request it to made to the url <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_accesstoken.md">oauth/access_token</a>, with the parameters <em>ConsumerKey, Nonce, SignatureMethod, Timestamp, RequestToken, VerifierCode and OAuthVersion, </em>again all alphabetical sorted and signed using the consumer key and token secret that we got in the call to request token.</p>
-
-<pre><code>public async Task&lt;OauthToken&gt; AccessToken() 
-       { 
-           AuthorizationParameters = new Dictionary&lt;string, string&gt;() 
-                   { 
-                       {OauthParameter.OauthConsumerKey, consumerKey}, 
-                       {OauthParameter.OauthNonce, Nonce()}, 
-                       {OauthParameter.OauthSignatureMethod,OAuthSignatureMethod}, 
-                       {OauthParameter.OauthTimestamp, TimeStamp()}, 
-                       {OauthParameter.OauthToken,Token.Token}, 
-                       {OauthParameter.OauthVerifier,Token.Verifier}, 
-                       {OauthParameter.OauthVersion, OAuthVersion} 
-                   }; 
-           var response = await this.MakeRequest(RequestType.POST) 
-               .Sign(OAuthAccessUrl, Token.SecretCode) 
-               .ExecuteRequest(OAuthAccessUrl);
-
-……. 
-</code></pre>
-
-<p>The SecretCode, that was obtained from the call to Requesttoken is also passed to the function _Sign.</p>
-
-<p>_A successful call would return you the AccessToken and the Access token’s secret code for that. All subsequent request to any protected resource needs the AccessToken and should be signed using ConsumerKey and the access token’s secret code.</p>
-
-<p>From now on any request to a protected resource should be made with the following parameters: <em>ConsumerKey,Nonce,SignatureMethod,Timestamp,OAuthToken and OAuthVersion</em> along with any additional parameters<em>. </em>This should be signed using the consumer secret and the access token secret code.</p>
-
-<p>The ExecuteRequest handles for this and is a genenric function that would allow you to specify the return type that you are expecting and the Url of the protected resource</p>
+<p> csharp</p>
 
 <pre><code>public async Task&lt;T&gt; ExecuteRequest&lt;T&gt;(string Url, Dictionary&lt;string, string&gt; Parameters) where T : class 
      { 
@@ -1184,11 +1518,25 @@ Parameters with names beginning with oauth_.</p>
      }
 </code></pre>
 
-<p>A sample way to use this would be as below</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>A sample way to use this would be as below
+</span><span class='line'>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>[sourcecode language=&ldquo;csharp&rdquo;]Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetails&gt;(
+
+<p> csharp
+Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetails&gt;(
                     photoDetails, null);
-[/sourcecode]</p>
+&#8220;`</p>
 
 <p>The code for the OAuth wrapper for 500px specific toWindows8 is available <a href="http://sdrv.ms/PWyHQR">here</a> for download. Feel free to modify it and use it.</p>
 
@@ -1252,30 +1600,52 @@ Let’s get started building our Web API.!!</p>
 
 <p>Web Api also uses routes to map URI’s to controller actions.But the difference with MVC route is that,here we have no actions specified in the route value.The HTTP method becomes the action.So your controller would have functions with the same names as the HTTP verbs(GET,PUT,POST,DELETE).If you don’t like these function names then there are attributes too that you can use to mark your own function names.We will see all this in our code.</p>
 
-<p>The default route that is created for Web Api can be found in the <em>App_Start/WebApiConfig  _
-[code]config.Routes.MapHttpRoute(
-name: &ldquo;DefaultApi&rdquo;,
-routeTemplate: &ldquo;api/{controller}/{id}&rdquo;,
-defaults: new { id = RouteParameter.Optional }
-);[/code]
-Now that you have seen the API route,lets try invoking the </em>ValuesController <em>that got created automatically.Following the route that is specified above we need to prefix the controller with an </em>api/.<em>This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the </em>ValuesController<em> we would need to invoke it with ‘</em>api/values<em>’.
-To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ &amp; ‘value2’ as returned in the GET of the </em>ValuesController_) in json format,as that is the default formatter that is used.</p>
+<p>The default route that is created for Web Api can be found in the _App_Start/WebApiConfig  _</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">config</span><span class="p">.</span><span class="n">Routes</span><span class="p">.</span><span class="n">MapHttpRoute</span><span class="p">(</span>
+</span><span class='line'><span class="n">name</span><span class="p">:</span> <span class="s">&quot;DefaultApi&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="n">routeTemplate</span><span class="p">:</span> <span class="s">&quot;api/{controller}/{id}&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="n">defaults</span><span class="p">:</span> <span class="k">new</span> <span class="p">{</span> <span class="n">id</span> <span class="p">=</span> <span class="n">RouteParameter</span><span class="p">.</span><span class="n">Optional</span> <span class="p">}</span>
+</span><span class='line'><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that you have seen the API route,lets try invoking the <em>ValuesController </em>that got created automatically.Following the route that is specified above we need to prefix the controller with an <em>api/.</em>This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the <em>ValuesController</em> we would need to invoke it with ‘<em>api/values</em>’.
+To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ &amp; ‘value2’ as returned in the GET of the <em>ValuesController</em>) in json format,as that is the default formatter that is used.</p>
 
 <p><a href="http://rahulpnath.files.wordpress.com/2012/08/image2.png"><img src="http://rahulpnath.files.wordpress.com/2012/08/image_thumb2.png" alt="image" /></a></p>
 
 <p>To check the remaining of HTTP actions we would need to write the implementations for those functions as the <em>ValuesController </em>does not have that implemented.</p>
 
-<p>So lets get back to the Cafeteria business.We will create a model to represent the FoodDishes that the cafeteria has to offer.For now we will just have a id,name and description field in the model.
-[csharp]public class FoodDish
-{
-public int FoodDishId { get; set; }</p>
+<p>So lets get back to the Cafeteria business.We will create a model to represent the FoodDishes that the cafeteria has to offer.For now we will just have a id,name and description field in the model.</p>
 
-<p>[Required]
-public string FoodDishName { get; set; }</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">FoodDish</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">public</span> <span class="kt">int</span> <span class="n">FoodDishId</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">[Required]</span>
+</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">FoodDishName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">Description</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>public string Description { get; set; }
-}[/csharp]
-Note the ‘<em>[Required]</em>’ attribute on the property FoodDishName.This ensures that a value is always present for that property.This is similar to the validation in MVC.A list of supported attributes can be found <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.dataannotations.aspx">here</a>
+
+<p>Note the ‘<em>[Required]</em>’ attribute on the property FoodDishName.This ensures that a value is always present for that property.This is similar to the validation in MVC.A list of supported attributes can be found <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.dataannotations.aspx">here</a>
 Visual Studio will do most of  the job in creating out the controllers and the data context’s for us,with just a couple of clicks.To group the WEB API controllers together lets create a folder under the Controllers folder named ‘<em>api</em>’. This is just for a convention and is not mandatory.Right Click on the newly created ‘<em>api’ </em>folder and say Add –> Controller</p>
 
 <p>Give the controller name as ‘FoodDishesController’.From the template drop down select the ‘API Controller with read/write actions,using Entity Framework’ option.This is what is automatically going to put out the all the code that we would required.Select the ModelClass that we created,<em>FoodDish.</em>(If you don&rsquo;t see the class in the models, build the solution before adding new controller).For the DataContext select ‘<em><New Data Context…></em>’ and enter <em>FoodDishesContext.</em>Refer the image below.</p>
@@ -1300,36 +1670,71 @@ In Fiddler select the Composer tab and enter in the details that is required.Mak
 Now this can be accessed from any device that supports issuing HTTP calls and you have your first WEB API ready,which just does a <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> over your FoodDishes.</p>
 
 <p>Lets take a deeper look in the controller,to see how all this is happening.Will look into the GET and POST here in this post as DELETE and PUT would be then easy to follow.
-The GET method that visual studio scaffolded for us,just returns the requested fooddish from the database.If the food item does not exists it returns a ‘NotFound’/404 error.Notice that here we are using HTTP’s error code’s so that client can easily understand the error.
-[csharp]public FoodDish GetFoodDish(int id)
-{
-FoodDish fooddish = db.FoodDishes.Find(id);
-if (fooddish == null)
-{
-throw new HttpResponseException(Request.CreateResponse(HttpStatusCode.NotFound));
-}</p>
+The GET method that visual studio scaffolded for us,just returns the requested fooddish from the database.If the food item does not exists it returns a ‘NotFound’/404 error.Notice that here we are using HTTP’s error code’s so that client can easily understand the error.</p>
 
-<p>return fooddish;
-}[/csharp]
-The POST method,checks if the new fooddish entered is valid.In our case we have FoodDishName as a required attribute,so as long as that property is present the ModelState.IsValid would be true.If you have additional validation attributes those would be checked too.If the state is valid then the item is inserted into the database and in the response we write the Location where this new fooddish can be accessed from.This location is what we saw above in the fiddler response.If the ModelState is not valid we sent a BadRequest,so that client can recheck the data send.We can send customized error messages too back to the client,so that the client understands where exactly the issue is.I will be covering validation,authentication and error reporting in a separate post,as that calls for a deeper explanation
-[csharp][HttpPost]
-public HttpResponseMessage CreateNewFoodDish(FoodDish fooddish)
-{
-if (ModelState.IsValid)
-{
-db.FoodDishes.Add(fooddish);
-db.SaveChanges();</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">FoodDish</span> <span class="nf">GetFoodDish</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="n">FoodDish</span> <span class="n">fooddish</span> <span class="p">=</span> <span class="n">db</span><span class="p">.</span><span class="n">FoodDishes</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">fooddish</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">throw</span> <span class="k">new</span> <span class="nf">HttpResponseException</span><span class="p">(</span><span class="n">Request</span><span class="p">.</span><span class="n">CreateResponse</span><span class="p">(</span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">NotFound</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">return</span> <span class="n">fooddish</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.Created, fooddish);
-response.Headers.Location = new Uri(Url.Link(&ldquo;DefaultApi&rdquo;, new { id = fooddish.FoodDishId }));
-return response;
-}
-else
-{
-return Request.CreateResponse(HttpStatusCode.BadRequest);
-}
-}[/csharp]
-DELETE and PUT is very similar and should be easy to understand.</p>
+
+<p>The POST method,checks if the new fooddish entered is valid.In our case we have FoodDishName as a required attribute,so as long as that property is present the ModelState.IsValid would be true.If you have additional validation attributes those would be checked too.If the state is valid then the item is inserted into the database and in the response we write the Location where this new fooddish can be accessed from.This location is what we saw above in the fiddler response.If the ModelState is not valid we sent a BadRequest,so that client can recheck the data send.We can send customized error messages too back to the client,so that the client understands where exactly the issue is.I will be covering validation,authentication and error reporting in a separate post,as that calls for a deeper explanation</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[HttpPost]</span>
+</span><span class='line'><span class="k">public</span> <span class="n">HttpResponseMessage</span> <span class="nf">CreateNewFoodDish</span><span class="p">(</span><span class="n">FoodDish</span> <span class="n">fooddish</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">ModelState</span><span class="p">.</span><span class="n">IsValid</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="n">db</span><span class="p">.</span><span class="n">FoodDishes</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">fooddish</span><span class="p">);</span>
+</span><span class='line'><span class="n">db</span><span class="p">.</span><span class="n">SaveChanges</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">HttpResponseMessage</span> <span class="n">response</span> <span class="p">=</span> <span class="n">Request</span><span class="p">.</span><span class="n">CreateResponse</span><span class="p">(</span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">Created</span><span class="p">,</span> <span class="n">fooddish</span><span class="p">);</span>
+</span><span class='line'><span class="n">response</span><span class="p">.</span><span class="n">Headers</span><span class="p">.</span><span class="n">Location</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">Url</span><span class="p">.</span><span class="n">Link</span><span class="p">(</span><span class="s">&quot;DefaultApi&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="p">{</span> <span class="n">id</span> <span class="p">=</span> <span class="n">fooddish</span><span class="p">.</span><span class="n">FoodDishId</span> <span class="p">}));</span>
+</span><span class='line'><span class="k">return</span> <span class="n">response</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">return</span> <span class="n">Request</span><span class="p">.</span><span class="n">CreateResponse</span><span class="p">(</span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">BadRequest</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>DELETE and PUT is very similar and should be easy to understand.</p>
 
 <p>So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.
 This should help you get started on with ASP.NET web api.There are a lot more features in ASP.Net Web api like Formatters,Odata support,hosting etc. I would be covering these too in other blog posts.There are a lot of design considerations that need to be taken on while developing API’s.There are a lot of good resource that can help you with tackling down it.I have mentioned a few below in the resources section.</p>
@@ -1412,11 +1817,11 @@ Web API is nothing but services exposed over http,providing reach to various dev
 
     <ul class="pager">
       
-        <li class="previous"><a href="/posts/4">&larr;&nbsp;Older</a></li>
+        <li class="previous"><a href="/blog/page/4">&larr;&nbsp;Older</a></li>
       
       <li><a href="/blog/archives">Blog Archives</a></li>
       
-        <li class="next"><a href="/posts/2">Newer&nbsp;&rarr;</a></li>
+        <li class="next"><a href="/blog/page/2">Newer&nbsp;&rarr;</a></li>
       
     </ul>
   </div>

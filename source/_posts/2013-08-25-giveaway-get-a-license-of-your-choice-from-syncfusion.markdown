@@ -19,7 +19,8 @@ Syncfusion was generous enough to giveaway a license for the readers of this blo
 
 Check out the form below on how.
 
-[a Rafflecopter giveaway](http://www.rafflecopter.com/rafl/display/52158e0/)
+<p><a class="rafl" id="rc-52158e0" href="http://www.rafflecopter.com/rafl/display/52158e0/" rel="nofollow">a Rafflecopter giveaway</a><br />
+<script type="text/javascript" src="//d12vno17mo87cx.cloudfront.net/embed/rafl/cptr.js"></script></p>
 
 
 Once the winner is decided you would be notified via email. Choosing the lucky one would be this blog admins responsibility. Any decision made by the admin would be final.

@@ -16,14 +16,15 @@ In our busy lives, with multiple roles to play at home and work, everyone needs 
 I have always tried the pen-paper method to keep track of things to get done, but somehow I could never keep up with it. I always lost track of it as most of my work is **not _track able with paper_**. Most of my work is done using a computer and I thought something that best suites me would be some tool that is right in my computer. I have tried with a variety of tasks application and some of them are pretty good in how it organizes tasks. But again it yet did not integrate into my life that easily, as there was always an overhead of entering tasks.
 
 
-<blockquote>Contemplating over why all these systems itself was an overhead, one thing that I have realized that I was always trying to live two lives - **personal and official**, with these systems.</blockquote>
+> Contemplating over why all these systems itself was an overhead, one thing that I have realized that I was always trying to live two lives - **personal and official**, with these systems.
 
 
 Major part of my day is spend at office where work mostly comes over email. Keeping track of it on a different task list manager or paper is really an overhead. So mostly I ended my leaving my office tasks in my mails itself and only tried to manage my personal tasks on the tool. This is why I _was living two lives_. There were two systems of management(or even more as bugs are assigned in [Visual Studio TFS](http://www.visualstudio.com/en-us/products/tfs-overview-vs.aspx)) which by itself made tasks management an overhead and unmanageable.
 
 After a  lot of reading and researching around the common productivity tools and systems finally I reached back to what I have been using day in and day out – **_Outlook. _**Outlook is more than a mere mailbox management tool. It has a lot of features that is built into it which is seldom used and overlooked upon. One advantage with outlook is that it is available everywhere – desktop, web, tablet and phone.
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/02/image_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/02/image.png)
+{% img left http://rahulpnath.com/blog/wp-content/uploads/2014/02/image_thumb.png %}
+
 Most of us, even me used to just use flags on messages to indicate the messages that I had to take actions on. But this would soon turn out unmanageable, as it is hard to prioritize out from a single large list. Outlook has an important feature of [categorization](http://office.microsoft.com/en-in/outlook-help/create-and-assign-color-categories-HA010217901.aspx) and also [folderization](http://help.outlook.com/en-us/140/bb899478.aspx). Either of this feature can be used to maximize the way in which we manage tasks.
 
 I have chosen to use folders for the only reason that it is easier to sync folders on to my mobile, than categorized tasks, for which I would again need another application. As mentioned in the [Getting Things Done](http://www.amazon.in/gp/product/0142000280/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=0142000280&linkCode=as2&tag=rahulpnath-21), by David Allen I have created various folders to categorize the tasks that come in
@@ -39,26 +40,28 @@ I have chosen to use folders for the only reason that it is easier to sync folde
 And many of such folders that makes sense to me. You should create folders that makes sense to you.So all my official and personal tasks are now managed in my mailbox. For any tasks that do not come over a mail, I send a mail to myself.
 
 
-**Reaching Zero Inbox
-**Having a [zero mail inbox](http://inboxzero.com/) is a very important thing – but not at any given point of time. Mails definitely can wait some time, before you take action on them. Allocate time to check mails and try to follow it. Once you check mails allocate them into the various folders that you already have. If it is something that you can answer to in less than a few minutes then do that immediately than allocating them to a folder and then picking it up from there. For anything else allocate them to different folders and act upon them later as per their priority. Create calendar entries/reminders only if it is strictly time bound, which has to happen at a specific time or date, like birthdays, booking time etc.
+**Reaching Zero Inbox**
+
+Having a [zero mail inbox](http://inboxzero.com/) is a very important thing – but not at any given point of time. Mails definitely can wait some time, before you take action on them. Allocate time to check mails and try to follow it. Once you check mails allocate them into the various folders that you already have. If it is something that you can answer to in less than a few minutes then do that immediately than allocating them to a folder and then picking it up from there. For anything else allocate them to different folders and act upon them later as per their priority. Create calendar entries/reminders only if it is strictly time bound, which has to happen at a specific time or date, like birthdays, booking time etc.
 
 Create meaningful [mail rules](http://office.microsoft.com/en-in/outlook-help/manage-email-messages-by-using-rules-HA010355682.aspx) so that you get to see what is urgent/important first. You need not scan all mail rule folders at all times. Mails that directly are addressed to you, mostly would need your attention. So the first rule would be to have messages that are directly addressed to you, to come to your inbox. Messages that you are _cc’ed_  in are mostly for information and should go to a different folder(Inbox-cc). But there are high chances that people who send messages  to you might not take a good look on when replying to messages in which field you are in. I have seen this, where it was directly addressed to me in the subject, but was cc’ed. But at least make sure you do not make this mistake. Always check the to and cc fields before sending/replying to mail. All other mails that reached me because I am in certain distribution lists goes into specific folders, which I scan only once a day.
 
-                   Create a mail scanning process for yourself, whatever works for you. But try to stick to it.
+Create a mail scanning process for yourself, whatever works for you. But try to stick to it.
 
-**Managing Attention
-**The biggest thing for staying productive and organized is attention management than time management. Even if you have scheduled your time for tasks, if you don't have the attention required then there is no point in managing your time. It is easy to manage your attention. Find things that distracts you and try to avoid them. One of the main thing in today's world that distracts us the most is – **push notifications**. Turn them off.Yes your heard it right. Turn them off right now. There is nothing that important coming over those notifications that is more important than keeping your attention to what you want. Notifications should be only for phone calls if you feel them important, because I do. I keep my internet turned on, as I would still want to have emails, tweets or other updates to be still updated onto my phone when I need them.
+**Managing Attention**
 
-
-<blockquote>             **Turn off  Push Notifications**. This is really going to help you manage your attention.</blockquote>
+The biggest thing for staying productive and organized is attention management than time management. Even if you have scheduled your time for tasks, if you don't have the attention required then there is no point in managing your time. It is easy to manage your attention. Find things that distracts you and try to avoid them. One of the main thing in today's world that distracts us the most is – **push notifications**. Turn them off.Yes your heard it right. Turn them off right now. There is nothing that important coming over those notifications that is more important than keeping your attention to what you want. Notifications should be only for phone calls if you feel them important, because I do. I keep my internet turned on, as I would still want to have emails, tweets or other updates to be still updated onto my phone when I need them.
 
 
-Try to forcefully keep your attention to the task at hand. You can try out [The Pomodoro Technique](http://pomodorotechnique.com/). There are many apps for the phone that will work as a timer for the technique. I use [Clockwork Tomato](https://play.google.com/store/apps/details?id=net.phlam.android.clockworktomato&hl=en). - Yes for some time I am on an android Nexus 5.
+>**Turn off  Push Notifications**. This is really going to help you manage your attention.
+
+
+Try to forcefully keep your attention to the task at hand. You can try out [The Pomodoro Technique](http://pomodorotechnique.com/). There are many apps for the phone that will work as a timer for the technique. I use [Clockwork Tomato](https://play.google.com/store/apps/details?id=net.phlam.android.clockworktomato&hl=en) - Yes for some time I am on an android Nexus5.
 
 Plan your day so that you have a goal to achieve everyday, that just reacting to mails and working on someone else’s priorities. Don’t start your checking mails in the morning immediately after getting up. Have fixed times for checking mails, but definitely not the first thing in the morning.It might be hard for couple of days but it is only a matter of getting used to. You will definitely see a difference once you start following it.
 
 
-<blockquote>          Stop checking your mails the first thing in the morning immediately after getting up.</blockquote>
+>Stop checking your mails the first thing in the morning immediately after getting up.
 
 
 Its not been long since I have started to follow this, but I felt interesting enough to share this if it helps someone who is also searching for tools and methodologies to keep yourself productive and manage your tasks and responsibilities. There are a lot of resources that has inspired into this process and would be wrong to not mention it here

@@ -16,7 +16,7 @@
   
   <link rel="canonical" href="http://yoursite.com/blog/windows-phone-series-preloading-content">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -153,39 +153,69 @@
 
 <p>In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(<strong>MyFiles.tt</strong>)</p>
 
-<pre><code>&lt;#@ template debug="false" hostspecific="true" language="C#" #&gt;
-&lt;#@ output extension=".gen.cs" #&gt;
-&lt;#@ import namespace="System.IO"#&gt;
-// &lt;auto-generated /&gt;
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">template</span> <span class="n">debug</span><span class="p">=</span><span class="s">&quot;false&quot;</span> <span class="n">hostspecific</span><span class="p">=</span><span class="s">&quot;true&quot;</span> <span class="n">language</span><span class="p">=</span><span class="s">&quot;C#&quot;</span> <span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">output</span> <span class="n">extension</span><span class="p">=</span><span class="s">&quot;.gen.cs&quot;</span> <span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#@</span> <span class="n">import</span> <span class="n">namespace</span><span class="p">=</span><span class="s">&quot;System.IO&quot;</span><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'><span class="c1">// &lt;auto-generated /&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">PreloadedContent</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">MyFiles</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">private</span> <span class="k">static</span> <span class="kt">string</span><span class="p">[]</span> <span class="nf">MyPreloadedContentFiles</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span><span class="p">[]</span> <span class="p">{</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#</span>
+</span><span class='line'>            <span class="n">DirectoryInfo</span> <span class="n">directoryInfo</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DirectoryInfo</span><span class="p">(</span>
+</span><span class='line'>               <span class="n">Path</span><span class="p">.</span><span class="n">Combine</span><span class="p">(</span><span class="n">Path</span><span class="p">.</span><span class="n">GetDirectoryName</span><span class="p">(</span><span class="n">Host</span><span class="p">.</span><span class="n">TemplateFile</span><span class="p">),</span><span class="s">&quot;MyPreloadedContent&quot;</span><span class="p">));</span>
+</span><span class='line'>        <span class="k">foreach</span><span class="p">(</span><span class="n">FileInfo</span> <span class="n">file</span> <span class="k">in</span> <span class="n">directoryInfo</span><span class="p">.</span><span class="n">GetFiles</span><span class="p">(</span><span class="s">&quot;*.*&quot;</span><span class="p">,</span> <span class="n">SearchOption</span><span class="p">.</span><span class="n">AllDirectories</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(!</span><span class="n">file</span><span class="p">.</span><span class="n">FullName</span><span class="p">.</span><span class="n">Contains</span><span class="p">(</span><span class="s">@&quot;.&quot;</span><span class="p">))</span>
+</span><span class='line'>                <span class="p">{</span><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'>                      <span class="s">&quot;&lt;#= file.FullName.Substring(</span>
+</span><span class='line'>                      <span class="n">file</span><span class="p">.</span><span class="n">FullName</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="s">&quot;MyPreloadedContent&quot;</span><span class="p">)).</span><span class="n">Replace</span><span class="p">(</span><span class="s">@&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;/&quot;</span><span class="p">)</span> <span class="err">#</span><span class="p">&gt;</span><span class="s">&quot;,</span>
+</span><span class='line'><span class="p">&lt;</span><span class="err">#</span>              <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'><span class="err">#</span><span class="p">&gt;</span>
+</span><span class='line'>                        <span class="p">};</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-namespace PreloadedContent
-{
-    public class MyFiles
-    {
-        private static string[] MyPreloadedContentFiles()
-        {
-            return new[] {
-&lt;#
-            DirectoryInfo directoryInfo = new DirectoryInfo(
-               Path.Combine(Path.GetDirectoryName(Host.TemplateFile),"MyPreloadedContent"));
-        foreach(FileInfo file in directoryInfo.GetFiles("*.*", SearchOption.AllDirectories))
-            {
-                if (!file.FullName.Contains(@"."))
-                {#&gt;
-                      "&lt;#= file.FullName.Substring(
-                      file.FullName.IndexOf("MyPreloadedContent")).Replace(@"", "/") #&gt;",
-&lt;#              }
-            }
-#&gt;
-                        };
-        }
-    }
-}
-</code></pre>
 
 <p>It just says to read the directory MyPreloadedContent and iterate to get all the files in that and writes it out by trimming of the absolute path and putting in only the relative path. Save the MyFiles.tt, and in Visual Studio right click on it and say “Run Custom Tool”. This would generate the cs file with an extension “.gen.cs” as we have mentioned in “<strong>&lt;#@ output extension=&ldquo;.gen.cs&rdquo; #>”.  </strong>The generated class would look like below</p>
 
-<pre><code>namespace PreloadedContent
+<pre><code>``` csharp
+namespace PreloadedContent
 {
     public class MyFiles
     {
@@ -204,7 +234,8 @@ namespace PreloadedContent
 }
 </code></pre>
 
-<p>The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
+<p>&#8220;`
+The above class has all the file paths to the content and you could iterate that to copy out the files into the IsolatedStorage.</p>
 
 <p>There are a couple of ways, by which you can ensure that the template file is run before the actual code gets compiled. This is to make sure that this generated class is going to be updated with the latest files that would be copied into the folder at build time i.e your templates are transformed at build time. This <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx">article</a> details out the methods to get that integrated into the build. On a build server where you dont have Visual Studio installed you would need to copy out these files mentioned <a href="http://msdn.microsoft.com/en-us/library/ee847423.aspx#buildserver">here</a> explicitly</p>
 

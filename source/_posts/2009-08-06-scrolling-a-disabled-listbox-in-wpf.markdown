@@ -17,7 +17,8 @@ I just found out a way around this.I created a custom listbox(MyScrollableListbo
 
 The Custom Listbox looks like this(just one property added for now)
 
-[code]Public Class MyScrollableListbox
+``` vbnet
+Public Class MyScrollableListbox
     Inherits ListBox
 Public Property IsItemsEnabled() As Boolean
  Get
@@ -34,7 +35,8 @@ Public Shared ReadOnly IsItemsEnabledProperty As DependencyProperty = _
  GetType(Boolean), GetType(MyScrollableListbox), _
  New FrameworkPropertyMetadata(Nothing))
 
-End Class[/code]
+End Class
+```
 
 In the xaml(or if you are going to make it a custom control then you can give it in your Generic.xaml)
 

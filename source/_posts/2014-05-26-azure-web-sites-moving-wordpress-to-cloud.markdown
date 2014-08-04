@@ -43,9 +43,13 @@ Now you are up an running your blog on Azure!!
 4. **If you face any error while trying to connect to the azure hosted web site from [Windows Live Writer](http://www.microsoft.com/en-in/download/details.aspx?id=8621)(WLW), this most likely is because it uses [xmlrpc.php](http://codex.wordpress.org/XML-RPC_Support) for publishing posts to the site and this is accessed over the https enpoint. Since https is not setup for the custom domain, accessing xmlrpc.php over https would present you with the below certificate error.
 
 [![Https error](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error-150x150.jpg)
-](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error.jpg)You could either configure your ssl bindings in azure portal, under the [Configure tab under your website](http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/). SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.
+](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error.jpg)
 
-**Azure Plans & Pricing
-**If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: **Free**, **Shared (Preview)**, **Basic** and **Standard**. The pricing details for each of these is available in detail [here](http://azure.microsoft.com/en-us/pricing/details/web-sites/). To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on [Penny Pinching in the cloud.](http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx)
+You could either configure your ssl bindings in azure portal, under the [Configure tab under your website](http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/). SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.
+
+**Azure Plans & Pricing**
+
+
+If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: **Free**, **Shared (Preview)**, **Basic** and **Standard**. The pricing details for each of these is available in detail [here](http://azure.microsoft.com/en-us/pricing/details/web-sites/). To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on [Penny Pinching in the cloud.](http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx)
 
 Do you plan to move to Azure Web Sites some time soon?

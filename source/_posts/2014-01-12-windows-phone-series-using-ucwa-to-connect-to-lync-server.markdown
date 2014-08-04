@@ -20,20 +20,26 @@ One of the main things that makes enterprise or intranet applications more livel
 
 To connect to a lync server the only details that we would want is the full email address and the password – thanks to [AutoDiscover](http://msdn.microsoft.com/en-us/library/office/jj900169(v=exchg.150).aspx) for exchange, which makes this possible. AutoDiscover is the way to find the users home server so that we can connect to it. The url for auto discover, otherwise called the [Root Url](https://ucwa.lync.com/documentation/GettingStarted-RootURL) can take different forms. In this sample I have assumed that it would take the below form, primarily because it works with the test domain that I was using (microsoft.com).
 
-[csharp]private const string autoDiscoverUrl = "https://lyncdiscover.{0}";[/csharp]
+``` csharp
+private const string autoDiscoverUrl = "https://lyncdiscover.{0}";
+```
 
 Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
 [![HTTP call flow prior to creating an application in UCWA](https://ucwa.lync.com/assets/lync/graph/art/CreateApp.png)](https://ucwa.lync.com/documentation/KeyTasks-CreateApplication)
+
 Issuing a get request to ‘[https://lyncdiscover.microsoft.com/](https://lyncdiscover.microsoft.com/)’, will give the details of the home server that we need to connect to.
 
-[xml]<resource xmlns="http://schemas.microsoft.com/rtc/2012/03/ucwa" rel="root" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com">
+```xml 
+<resource xmlns="http://schemas.microsoft.com/rtc/2012/03/ucwa" rel="root" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com">
     <link rel="user" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=microsoft.com"/>
     <link rel="xframe" href="https://lync32.lyncweb.microsoft.com/Autodiscover/XFrame/XFrame.html"/>
-</resource>[/xml]
+</resource>
+```
 
 We now need to authenticate the user with the home server.for which we need the oauth url. This can be obtained by issuing a dummy get request to the _user _url obtained above. This request will fail with an unauthorized access but also returns the url ([https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken](https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken)) from which the token needs to be obtained
 
-[plain]HTTP/1.1 401 Unauthorized
+```
+HTTP/1.1 401 Unauthorized
 Cache-Control: no-cache
 Content-Type: text/html
 Server: Microsoft-IIS/7.5
@@ -43,11 +49,12 @@ X-MS-Server-Fqdn: 000DCO2L50FE1G.redmond.corp.microsoft.com
 X-Powered-By: ASP.NET
 X-Content-Type-Options: nosniff
 Date: Sun, 12 Jan 2014 10:47:50 GMT
-Content-Length: 1293[/plain]
+Content-Length: 1293
+```
 
 UCWA supports Windows Authentication, Anonymous meeting and Password Authentication mechanisms to authorize the user. i am using the Password Authentication here. On successful authentication a token is returned which can be used to issue the get request on the _user _url with the token in the header.
 
-    
+``` csharp    
     private void Authenticate(string authenticateUrl, string authenticateToken, string authenticateTokenType)
     {
         // Make a GET request to get the ouath url
@@ -60,10 +67,10 @@ UCWA supports Windows Authentication, Anonymous meeting and Password Authenticat
         ucwaClient.ExecuteAsync(request, this.ParseAuthenticateResponse);
     }
 
-
+```
 A successful request for the above returns the applications url. The applications url might be hosted on a different server in which case we would need to get a separate token for creating a new application. The host of applications url and the oauth url we got above should be same , or else we need to get a new token. When creating a new application, we add the token only if the host’s are same. Not adding this will again fail with Unauthorized exception giving us the new oauth url.
 
-    
+``` csharp
     private void CreateNewApplications(string applications)
     {
         request = new RestRequest(applications, Method.POST);
@@ -86,7 +93,7 @@ A successful request for the above returns the applications url. The application
         // Check if the token is for the correct domain
         return new Uri(url1).Host == new Uri(url2).Host;
     }
-
+```
 
 Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a [lot more](https://ucwa.lync.com/documentation/core-features).
 

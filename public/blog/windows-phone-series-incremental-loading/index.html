@@ -16,7 +16,7 @@
   
   <link rel="canonical" href="http://yoursite.com/blog/windows-phone-series-incremental-loading">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -124,110 +124,206 @@
 
 <p>Below is the piece of code that will fetch us the photo from the <a href="http://developers.500px.com/">500px api</a> to populate the listbox data.</p>
 
-<p>[csharp]private static int requestPerPage = 20;
-private int currentPage = 1;
-private bool isCurrentlyLoading = false;</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="n">requestPerPage</span> <span class="p">=</span> <span class="m">20</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">int</span> <span class="n">currentPage</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;</span> <span class="n">Photos</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="kt">string</span> <span class="n">datasourceUrl</span><span class="p">=</span><span class="s">&quot;https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=&quot;</span>
+</span><span class='line'>          <span class="p">+</span> <span class="n">consumerKey</span> <span class="p">+</span> <span class="s">&quot;&amp;rpp=&quot;</span> <span class="p">+</span> <span class="n">requestPerPage</span><span class="p">.</span><span class="n">ToString</span><span class="p">()</span> <span class="p">+</span> <span class="s">&quot;&amp;page={0}&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">LoadDataFromSource</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">datasourceUrl</span><span class="p">,</span> <span class="n">currentPage</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">WebClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebClient</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringCompleted</span> <span class="p">+=</span> <span class="n">client_DownloadStringCompleted</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">query</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">void</span> <span class="nf">client_DownloadStringCompleted</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">DownloadStringCompletedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">reader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Result</span><span class="p">)))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ser</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">RootObject</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">RootObject</span> <span class="n">obj</span> <span class="p">=</span> <span class="p">(</span><span class="n">RootObject</span><span class="p">)</span><span class="n">ser</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">currentPage</span> <span class="p">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">current_page</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">obj</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Dispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="n">obj</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>                    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>                <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>private ObservableCollection<Photo> Photos = new ObservableCollection<Photo>();</p>
-
-<p>private string datasourceUrl=&ldquo;<a href="https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=">https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=</a>&rdquo;
-          + consumerKey + &ldquo;&amp;rpp=&rdquo; + requestPerPage.ToString() + &ldquo;&amp;page={0}&rdquo;;</p>
-
-<p>private void LoadDataFromSource()
-{
-    isCurrentlyLoading = true;
-    var query = string.Format(datasourceUrl, currentPage);
-    WebClient client = new WebClient();
-    client.DownloadStringCompleted += client_DownloadStringCompleted;
-    client.DownloadStringAsync(new Uri(query));</p>
-
-<p>}</p>
-
-<p>void client_DownloadStringCompleted(object sender, DownloadStringCompletedEventArgs e)
-{
-    using (var reader = new MemoryStream(Encoding.Unicode.GetBytes(e.Result)))
-    {
-        var ser = new DataContractJsonSerializer(typeof(RootObject));
-        RootObject obj = (RootObject)ser.ReadObject(reader);
-        currentPage = obj.current_page + 1;
-        if (obj != null)
-        {
-            this.Dispatcher.BeginInvoke(() =>
-                {
-                    foreach (var photo in obj.photos)
-                    {
-                        Photos.Add(photo);
-                    }
-                    isCurrentlyLoading = false;
-                });
-        }
-    }
-}[/csharp]</p>
 
 <p>In the ItemRealized/Link event based on whether you are developing for Windows Phone 7 or 8, below would be the code that goes into that. We need to check the current item that is realized i.e rendered on the UI and see if it is</p>
 
-<p>[csharp]private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
-{
-    Photo photo = e.Container.Content as Photo;
-    if (photo != null)
-    {
-        int offset = 2;
-        // Only if there is no data that is currently getting loaded
-        // would be initiate the loading again
-        if (!isCurrentlyLoading &amp;&amp; Photos.Count - Photos.IndexOf(photo) &lt;= offset)
-        {
-            LoadDataFromSource();
-        }
-    }
-}[/csharp]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">photosList_ItemRealized_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Photo</span> <span class="n">photo</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">photo</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">offset</span> <span class="p">=</span> <span class="m">2</span><span class="p">;</span>
+</span><span class='line'>        <span class="c1">// Only if there is no data that is currently getting loaded</span>
+</span><span class='line'>        <span class="c1">// would be initiate the loading again</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">&amp;&amp;</span> <span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">photo</span><span class="p">)</span> <span class="p">&lt;=</span> <span class="n">offset</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>In case you want to use a normal listbox, you can do that also. We would need to hook up with VisualStateGroups. This <a href="http://blogs.msdn.com/b/slmperf/archive/2011/06/30/windows-phone-mango-change-listbox-how-to-detect-compression-end-of-scroll-states.aspx">link</a> explains this in details, and I have just reused parts of it as is. We need to override the scrollviewer style to hook into this new StateGroups. We need to look for CompressionBottom state, for the currentstatechanged event of the scrollviewer.</p>
 
-<p>[csharp]private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
-{
-    SetScrollViewer();
-}</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">myScrollViewer_Loaded_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">RoutedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SetScrollViewer</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SetScrollViewer</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Visual States are always on the first child of the control template </span>
+</span><span class='line'>    <span class="n">FrameworkElement</span> <span class="n">element</span> <span class="p">=</span> <span class="n">VisualTreeHelper</span><span class="p">.</span><span class="n">GetChild</span><span class="p">(</span><span class="n">myScrollViewer</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">as</span> <span class="n">FrameworkElement</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">element</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">VisualStateGroup</span> <span class="n">vgroup</span> <span class="p">=</span> <span class="n">FindVisualState</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;VerticalCompression&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">vgroup</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">vgroup</span><span class="p">.</span><span class="n">CurrentStateChanging</span> <span class="p">+=</span>
+</span><span class='line'>                 <span class="k">new</span> <span class="n">EventHandler</span><span class="p">&lt;</span><span class="n">VisualStateChangedEventArgs</span><span class="p">&gt;(</span><span class="n">vgroup_CurrentStateChanging</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">vgroup_CurrentStateChanging</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">VisualStateChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionTop&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionBottom&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;NoVerticalCompression&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>private void SetScrollViewer()
-{
-    // Visual States are always on the first child of the control template
-    FrameworkElement element = VisualTreeHelper.GetChild(myScrollViewer, 0)
-                            as FrameworkElement;
-    if (element != null)
-    {
-        VisualStateGroup vgroup = FindVisualState(element, &ldquo;VerticalCompression&rdquo;);</p>
-
-<pre><code>    if (vgroup != null)
-    {
-        vgroup.CurrentStateChanging += 
-             new EventHandler&lt;VisualStateChangedEventArgs&gt;(vgroup_CurrentStateChanging);
-    }
-}
-</code></pre>
-
-<p>}</p>
-
-<p>private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventArgs e)
-{
-    if (e.NewState.Name == &ldquo;CompressionTop&rdquo;)
-    {</p>
-
-<pre><code>}
-
-if (e.NewState.Name == "CompressionBottom")
-{
-    if (!isCurrentlyLoading )
-    {
-        LoadDataFromSource();
-    }
-}
-if (e.NewState.Name == "NoVerticalCompression")
-{
-
-}
-</code></pre>
-
-<p>}[/csharp]</p>
 
 <p>You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble <a href="https://github.com/rahulpnath/IncrementalLoadingPhone">here</a>. The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates</p>
 

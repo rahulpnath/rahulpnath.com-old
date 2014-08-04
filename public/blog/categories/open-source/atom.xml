@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Open Source | Rahul Nath]]></title>
   <link href="http://yoursite.com/blog/categories/open-source/atom.xml" rel="self"/>
   <link href="http://yoursite.com/"/>
-  <updated>2014-08-03T12:42:52+05:30</updated>
+  <updated>2014-08-04T21:28:31+05:30</updated>
   <id>http://yoursite.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -24,14 +24,15 @@
 
 <p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
 
-<p>[xml]<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>[/xml]</p>
+<pre><code class="xml">&lt;Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/&gt;
+</code></pre>
 
 <p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
 
-<p>[csharp]public class JetImageLoaderImplementation
+<pre><code class="csharp">public class JetImageLoaderImplementation
 {
-    public static readonly BaseMemoryCache&lt;string,stream> MemoryCacheImpl = new WeakMemoryCache&lt;string,stream>();
-    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), &ldquo;\image_cache&rdquo;, new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);</p>
+    public static readonly BaseMemoryCache&lt;string,stream&gt; MemoryCacheImpl = new WeakMemoryCache&lt;string,stream&gt;();
+    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), "\\image_cache", new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);&lt;/p&gt;
     public static JetImageLoaderConfig GetJetImageLoaderConfig()
     {
         return new JetImageLoaderConfig.Builder
@@ -43,21 +44,22 @@
             StorageCacheImpl = StorageCacheImpl
         }.Build();
     }
-}[/csharp]
-[csharp]public class JetImageLoaderConverter : BaseJetImageLoaderConverter
+}
+</code></pre>
+
+<pre><code class="csharp">public class JetImageLoaderConverter : BaseJetImageLoaderConverter
 {
     protected override JetImageLoaderConfig GetJetImageLoaderConfig()
     {
         return JetImageLoaderImplementation.GetJetImageLoaderConfig();
-    }</p>
+    }
 
-<pre><code>public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-{
-    return base.Convert(value, targetType, parameter, culture);
+    public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    {
+        return base.Convert(value, targetType, parameter, culture);
+    }
 }
 </code></pre>
-
-<p>}[/csharp]</p>
 
 <p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
 

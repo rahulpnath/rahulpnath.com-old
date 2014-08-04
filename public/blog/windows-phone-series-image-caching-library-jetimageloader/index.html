@@ -16,7 +16,7 @@
   
   <link rel="canonical" href="http://yoursite.com/blog/windows-phone-series-image-caching-library-jetimageloader">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -59,7 +59,7 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
@@ -124,40 +124,74 @@
 
 <p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
 
-<p>[xml]<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>[/xml]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}&quot;</span><span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
 
-<p>[csharp]public class JetImageLoaderImplementation
-{
-    public static readonly BaseMemoryCache&lt;string,stream> MemoryCacheImpl = new WeakMemoryCache&lt;string,stream>();
-    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), &ldquo;\image_cache&rdquo;, new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);</p>
-    public static JetImageLoaderConfig GetJetImageLoaderConfig()
-    {
-        return new JetImageLoaderConfig.Builder
-        {
-            IsLogEnabled = true,
-            CacheMode = CacheMode.MemoryAndStorageCache,
-            DownloaderImpl = new HttpWebRequestDownloader(),
-            MemoryCacheImpl = MemoryCacheImpl,
-            StorageCacheImpl = StorageCacheImpl
-        }.Build();
-    }
-}[/csharp]
-[csharp]public class JetImageLoaderConverter : BaseJetImageLoaderConverter
-{
-    protected override JetImageLoaderConfig GetJetImageLoaderConfig()
-    {
-        return JetImageLoaderImplementation.GetJetImageLoaderConfig();
-    }</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderImplementation</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;</span> <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WeakMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseStorageCache</span> <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LimitedStorageCache</span><span class="p">(</span><span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">(),</span> <span class="s">&quot;\\image_cache&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">SHA1CacheFileNameGenerator</span><span class="p">(),</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">10</span><span class="p">);&lt;/</span><span class="n">p</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">JetImageLoaderConfig</span><span class="p">.</span><span class="n">Builder</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">IsLogEnabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">CacheMode</span> <span class="p">=</span> <span class="n">CacheMode</span><span class="p">.</span><span class="n">MemoryAndStorageCache</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">DownloaderImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpWebRequestDownloader</span><span class="p">(),</span>
+</span><span class='line'>            <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="n">MemoryCacheImpl</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="n">StorageCacheImpl</span>
+</span><span class='line'>        <span class="p">}.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<pre><code>public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
-{
-    return base.Convert(value, targetType, parameter, culture);
-}
-</code></pre>
 
-<p>}[/csharp]</p>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderConverter</span> <span class="p">:</span> <span class="n">BaseJetImageLoaderConverter</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">JetImageLoaderImplementation</span><span class="p">.</span><span class="n">GetJetImageLoaderConfig</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">object</span> <span class="nf">Convert</span><span class="p">(</span><span class="kt">object</span> <span class="k">value</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Type</span> <span class="n">targetType</span><span class="p">,</span> <span class="kt">object</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Globalization</span><span class="p">.</span><span class="n">CultureInfo</span> <span class="n">culture</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="k">value</span><span class="p">,</span> <span class="n">targetType</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">culture</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 
 <p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
 

@@ -29,7 +29,8 @@ While using a LongListSelector, we can use the Link event(if you are using [Wind
 
 Below is the piece of code that will fetch us the photo from the [500px api](http://developers.500px.com/) to populate the listbox data.
 
-[csharp]private static int requestPerPage = 20;
+``` csharp
+private static int requestPerPage = 20;
 private int currentPage = 1;
 private bool isCurrentlyLoading = false;
 
@@ -67,11 +68,13 @@ void client_DownloadStringCompleted(object sender, DownloadStringCompletedEventA
                 });
         }
     }
-}[/csharp]
+}
+```
 
 In the ItemRealized/Link event based on whether you are developing for Windows Phone 7 or 8, below would be the code that goes into that. We need to check the current item that is realized i.e rendered on the UI and see if it is
 
-[csharp]private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
+``` csharp
+private void photosList_ItemRealized_1(object sender, ItemRealizationEventArgs e)
 {
     Photo photo = e.Container.Content as Photo;
     if (photo != null)
@@ -84,11 +87,13 @@ In the ItemRealized/Link event based on whether you are developing for Windows P
             LoadDataFromSource();
         }
     }
-}[/csharp]
+}
+```
 
 In case you want to use a normal listbox, you can do that also. We would need to hook up with VisualStateGroups. This [link](http://blogs.msdn.com/b/slmperf/archive/2011/06/30/windows-phone-mango-change-listbox-how-to-detect-compression-end-of-scroll-states.aspx) explains this in details, and I have just reused parts of it as is. We need to override the scrollviewer style to hook into this new StateGroups. We need to look for CompressionBottom state, for the currentstatechanged event of the scrollviewer.
 
-[csharp]private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
+``` csharp
+private void myScrollViewer_Loaded_1(object sender, RoutedEventArgs e)
 {
     SetScrollViewer();
 }
@@ -128,7 +133,8 @@ private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventA
     {
 
     }
-}[/csharp]
+}
+```
 
 You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble [here](https://github.com/rahulpnath/IncrementalLoadingPhone). The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates
 
