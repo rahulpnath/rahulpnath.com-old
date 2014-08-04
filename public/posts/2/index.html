@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://yoursite.com/posts/2">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/blog/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="q" value="site:yoursite.com">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9">
+    <div class="blog-index" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="" />
+    <meta itemprop="url" content="http://yoursite.com" />
+      
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-21T13:25:25+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 21<sup>st</sup>, 2014</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/" itemprop="url">Windows Phone Series – Incremental Loading Multiple Data Sources Inside a Pivot</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
+
+<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
+
+<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image7.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb7.png" alt="image" /></a></p>
+
+<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
+
+<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
+
+<p>[csharp]private static string[] photoCollections =
+    {
+        &ldquo;popular&rdquo;,
+        &ldquo;upcoming&rdquo;,
+        &ldquo;editors&rdquo;,
+        &ldquo;fresh_today&rdquo;
+    };</p>
+
+<p>public List PhotoCollectionViewModels { get; set; }</p>
+
+<p>public MainViewModel()
+{
+    PhotoCollectionViewModels = new List();
+    foreach (var photoCollection in photoCollections)
+    {
+        this.PhotoCollectionViewModels.Add(new PhotoCollectionViewModel(photoCollection));
+    }
+}[/csharp]</p>
+
+<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
+
+<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
+
+<p>[csharp]public class IncrementalLoader<T> where T : class
+{
+    private string BaseUrl;</p>
+
+<pre><code>private int CurrentPageNumber;
+
+private bool isCurrentlyLoading;
+
+private string CurrentUrl
+{
+    get
+    {
+        return string.Format(this.BaseUrl, ++this.CurrentPageNumber);
+    }
+}
+
+public IncrementalLoader(string baseUrl)
+{
+    this.BaseUrl = baseUrl;
+}
+
+public async Task&lt;T&gt; LoadNextPage()
+{
+    if (this.isCurrentlyLoading)
+    {
+        // call in progress
+        return null;
+    }
+
+    this.isCurrentlyLoading = true;
+    HttpClient client = new HttpClient();
+
+    // Add Microsoft.Bcl.Async nuget for await to work on PCL.
+
+    var response = await client.GetStringAsync(this.CurrentUrl);
+    var serializer = new DataContractJsonSerializer(typeof(T));
+    var returnObject = serializer.ReadObject(new MemoryStream(Encoding.Unicode.GetBytes(response))) as T;
+    this.isCurrentlyLoading = false;
+
+    return returnObject;
+}
+</code></pre>
+
+<p>}[/csharp]</p>
+
+<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
+
+<p>[xml]</p>
+
+<p><Grid x:Name="ContentPanel" Grid.Row="1" >
+ &lt;phone:Pivot Name=&ldquo;photoCollection&rdquo; ItemsSource=&ldquo;{Binding PhotoCollectionViewModels}&rdquo;>
+ &lt;phone:Pivot.ItemTemplate>
+ <DataTemplate>
+ &lt;phone:LongListSelector ItemRealized=&ldquo;Photo_Loaded&rdquo; ItemsSource=&ldquo;{Binding Photos}&rdquo; IsGroupingEnabled=&ldquo;False&rdquo;>
+ &lt;phone:LongListSelector.ItemTemplate>
+ <DataTemplate>
+ <Image Source="{Binding image_url}" Margin="10" Width="500" />
+ </DataTemplate>
+ &lt;/phone:LongListSelector.ItemTemplate>
+ &lt;/phone:LongListSelector>
+ </DataTemplate>
+ &lt;/phone:Pivot.ItemTemplate>
+ &lt;phone:Pivot.HeaderTemplate>
+ <DataTemplate>
+ <TextBlock Text="{Binding Title}" />
+ </DataTemplate>
+ &lt;/phone:Pivot.HeaderTemplate>
+ &lt;/phone:Pivot>
+</Grid></p>
+
+<p>[/xml]</p>
+
+<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
+
+<pre><code>private void Photo_Loaded(object sender, ItemRealizationEventArgs e)
+{
+    LongListSelector longList = sender as LongListSelector;
+    PhotoCollectionViewModel vm = longList.DataContext as PhotoCollectionViewModel;
+
+    vm.LoadMorePhotos(e.Container.Content as Photo);
+}
+
+
+
+
+public async Task LoadMorePhotos(Photo currentPhoto)
+{
+    if (currentPhoto != null)
+    {
+        var index = this.Photos.IndexOf(currentPhoto);
+        if (this.Photos.Count - 3 &gt; index)
+        {
+            return ;
+        }
+    }
+    this.currentCollection = await this.incrementalLoader.LoadNextPage();
+
+    foreach (var photo in this.currentCollection.photos)
+    {
+        this.Photos.Add(photo);
+    }
+}
+</code></pre>
+
+<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
+
+<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-12T15:35:08+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 12<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server/" itemprop="url">Windows Phone Series – Using UCWA to Connect to Lync Server</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>One of the main things that makes enterprise or intranet applications more lively and connected with your business contacts, is to integrate with <a href="http://office.microsoft.com/en-in/lync/">Lync</a> (formerly Microsoft Office Communicator) and provide options to interact with them. UCWA(Unified Communications Web Api) is a REST API that exposes Lync Server and its presence capabilities, which can be used to enhance your application capabilities. This can also be used to integrate with Windows phone applications as well and will see how to get started with it here.</p>
+
+<p>To connect to a lync server the only details that we would want is the full email address and the password – thanks to <a href="http://msdn.microsoft.com/en-us/library/office/jj900169(v=exchg.150">AutoDiscover</a>.aspx) for exchange, which makes this possible. AutoDiscover is the way to find the users home server so that we can connect to it. The url for auto discover, otherwise called the <a href="https://ucwa.lync.com/documentation/GettingStarted-RootURL">Root Url</a> can take different forms. In this sample I have assumed that it would take the below form, primarily because it works with the test domain that I was using (microsoft.com).</p>
+
+<p>[csharp]private const string autoDiscoverUrl = &ldquo;<a href="https://lyncdiscover.">https://lyncdiscover.</a>{0}&rdquo;;[/csharp]</p>
+
+<p>Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
+<a href="https://ucwa.lync.com/documentation/KeyTasks-CreateApplication"><img src="https://ucwa.lync.com/assets/lync/graph/art/CreateApp.png" alt="HTTP call flow prior to creating an application in UCWA" /></a>
+Issuing a get request to ‘<a href="https://lyncdiscover.microsoft.com/">https://lyncdiscover.microsoft.com/</a>’, will give the details of the home server that we need to connect to.</p>
+
+<p>[xml]<resource xmlns="http://schemas.microsoft.com/rtc/2012/03/ucwa" rel="root" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com">
+    <link rel="user" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=microsoft.com"/>
+    <link rel="xframe" href="https://lync32.lyncweb.microsoft.com/Autodiscover/XFrame/XFrame.html"/>
+</resource>[/xml]</p>
+
+<p>We now need to authenticate the user with the home server.for which we need the oauth url. This can be obtained by issuing a dummy get request to the <em>user </em>url obtained above. This request will fail with an unauthorized access but also returns the url (<a href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken">https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken</a>) from which the token needs to be obtained</p>
+
+<p>[plain]HTTP/1.1 401 Unauthorized
+Cache-Control: no-cache
+Content-Type: text/html
+Server: Microsoft-IIS/7.5
+WWW-Authenticate: Bearer trusted_issuers=&ldquo;00000002-0000-0ff1-ce00-000000000000@3bdbdd27-2373-4baf-9469-4b10e76564c6,00000001-0001-0000-c000-000000000000@f686d426-8d16-42db-81b7-ab578e110ccd,00000001-0000-0000-c000-000000000000@72f988bf-86f1-41af-91ab-2d7cd011db47&rdquo;, client_id=&ldquo;00000004-0000-0ff1-ce00-000000000000&rdquo;
+WWW-Authenticate: MsRtcOAuth href=&ldquo;<a href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken">https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken</a>&rdquo;,grant_type=&ldquo;urn:microsoft.rtc:windows,urn:microsoft.rtc:passive,urn:microsoft.rtc:anonmeeting,password&rdquo;
+X-MS-Server-Fqdn: 000DCO2L50FE1G.redmond.corp.microsoft.com
+X-Powered-By: ASP.NET
+X-Content-Type-Options: nosniff
+Date: Sun, 12 Jan 2014 10:47:50 GMT
+Content-Length: 1293[/plain]</p>
+
+<p>UCWA supports Windows Authentication, Anonymous meeting and Password Authentication mechanisms to authorize the user. i am using the Password Authentication here. On successful authentication a token is returned which can be used to issue the get request on the <em>user </em>url with the token in the header.</p>
+
+<pre><code>private void Authenticate(string authenticateUrl, string authenticateToken, string authenticateTokenType)
+{
+    // Make a GET request to get the ouath url
+    request = new RestRequest(authenticateUrl);
+    request.AddHeader("Accept", "application/json");
+    if (!string.IsNullOrEmpty(userToken))
+    {
+        request.AddHeader("Authorization", String.Format("{0} {1}", authenticateTokenType, authenticateToken));
+    }
+    ucwaClient.ExecuteAsync(request, this.ParseAuthenticateResponse);
+}
+</code></pre>
+
+<p>A successful request for the above returns the applications url. The applications url might be hosted on a different server in which case we would need to get a separate token for creating a new application. The host of applications url and the oauth url we got above should be same , or else we need to get a new token. When creating a new application, we add the token only if the host’s are same. Not adding this will again fail with Unauthorized exception giving us the new oauth url.</p>
+
+<pre><code>private void CreateNewApplications(string applications)
+{
+    request = new RestRequest(applications, Method.POST);
+    if (CheckIfSameDomain(applications, oauthUrl))
+    {
+        request.AddHeader("Authorization", String.Format("{0} {1}", applicationTokenType, applicationToken));
+    }
+    var applicationBody = @"""UserAgent"":""{0}"",""EndpointId"":""{1}"",""Culture"":""en-US""";
+    request.RequestFormat = DataFormat.Xml;
+    request.AddParameter(
+        "application/json",
+       "{" + string.Format(applicationBody, "UCWAWindowsPhoneSample", Guid.NewGuid().ToString()) + "}",
+        ParameterType.RequestBody);
+    request.AddHeader("Accept", "application/json");
+    ucwaClient.ExecuteAsync(request, this.CreateNewApplicationsResponse);
+}
+
+private bool CheckIfSameDomain(string url1, string url2)
+{
+    // Check if the token is for the correct domain
+    return new Uri(url1).Host == new Uri(url2).Host;
+}
+</code></pre>
+
+<p>Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a <a href="https://ucwa.lync.com/documentation/core-features">lot more</a>.</p>
+
+<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb.png" alt="image" /></a>   <a href="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image1.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb1.png" alt="image" /></a></p>
+
+<p>You can find the sample <a href="https://github.com/rahulpnath/Blog/tree/master/UCWA.WindowsPhone">here</a>.Hope this helps you to build connected enterprise applications.</p>
+
+<p><strong>PS</strong>: I have tested this only against <strong>microsoft.com</strong> domain. In case you find any issues with the domain that you are using please do put it in the comments.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-07T21:35:28+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 7<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/mvvm-a-windows-phone-scenario-part-2/" itemprop="url">MVVM – a Windows Phone Scenario – Part 2</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>We had looked into many of the common MVVM scenarios, that we come across while developing windows phone applications in <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario/">MVVM – A Windows Phone Scenario.</a> We will see some more that we were left off, in this post.</p>
+
+<p><strong>5. Page Navigations and Parameters</strong></p>
+
+<p>For almost all the application, we would need to transfer the control from one page to another, so that the user can navigate through the various contents on the application. In a MVVM application, these navigations would be basically triggered from the ViewModel, as it is there where we need to know where the next control should go to.
+Navigation is basically a platform specific feature and we would not want to bring in any dependency between a platform specific feature and our ViewModels. So the best way here is to <em>inverse the dependency</em>, using an interface and inject the dependency via an IoC container. Will call the interface here as <em>INavigationService </em>as given below, and the implementation <em>NavigationService</em>.</p>
+
+<pre><code>public interface INavigationService
+ {
+ void Navigate(string uri);
+ void Navigate(string uri, Dictionary&lt;string, string&gt; parameters);
+ void PerformActionOnUIThread(Action action);
+ void GoBack();
+}
+
+
+
+
+public class NavigationService : INavigationService
+{
+    public void Navigate(string uri)
+    {
+        DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+            {
+                ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+            });
+    }
+
+    public void Navigate(string uri, Dictionary&lt;string, string&gt; parameters)
+    {
+        StringBuilder uriBuilder = new StringBuilder();
+        uriBuilder.Append(uri);
+        if (parameters != null &amp;&amp; parameters.Count &gt; 0)
+        {
+            uriBuilder.Append("?");
+            bool prependAmp = false;
+            foreach (KeyValuePair&lt;string, string&gt; parameterPair in parameters)
+            {
+                if (prependAmp)
+                {
+                    uriBuilder.Append("&amp;");
+                }
+
+                uriBuilder.AppendFormat("{0}={1}", parameterPair.Key, parameterPair.Value);
+                prependAmp = true;
+            }
+        }
+
+        uri = uriBuilder.ToString();
+        DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+        {
+            ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+        });
+    }
+
+    public void PerformActionOnUIThread(Action action)
+    {
+        DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt; action.Invoke());
+    }
+
+    public void GoBack()
+    {
+        DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+        {
+            ((PhoneApplicationFrame)Application.Current.RootVisual).GoBack();
+        });
+    }
+  }
+</code></pre>
+
+<p>This is just a sample implementation that you can use. The <em>DispatcherHelper </em>used here is from MVVMLight, which needs to be initialized when the application starts. This can be in the App.xaml.cs in the application constructor</p>
+
+<p>[csharp]DispatcherHelper.Initialize();[/csharp]</p>
+
+<p>Here in the above example the parameters are considered to be primitive data-types, which is why it is added as query parameters to the navigation uri. In case you want to have complex parameters passed between pages, you could have a property on the INavigationService, which can be set when calling the Naivgate method. This values can be retrieved when the OnNavigatedTo in the ViewModel.</p>
+
+<pre><code>public static object Parameters { get; set; }
+
+public void Navigate(string uri, object parameters)
+{
+    Parameters = parameters;
+    DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+        {
+            ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+        });
+}
+</code></pre>
+
+<p>The NavigationService needs to be registered with the MVVM IoC in ViewModelLocator (or anywhere else), and then you could either constructor inject it or create an instance in the BaseViewModel class, so that all ViewModels has a reference to this for navigation.</p>
+
+<p>[csharp]SimpleIoc.Default.Register&lt;INavigationService, NavigationService>();[/csharp]</p>
+
+<p>When developing applications for both Windows phone and Windows 8 or x-platform, your ViewModels would remain the same and the NavigationService implementations only would change, and would be accordingly injected into the IoC, when the application starts. So for any platform specific features/dependencies this would be the approach that you would need to choose to minimize the dependencies for your ViewModel. Other cases that I can think of right now is for Push Notifications, where each platform would have their own implementations for registering and raising notifications. So you would use the same approach to <em>inverse the dependencies.</em></p>
+
+<p><strong>6. Page Events</strong></p>
+
+<p>Most of the processing/data loading work in done usually on the OnNavigatedTo of the page. To hook to this event in the ViewModel, we would go ahead and introduce some base classes so that we can reuse this in all over ViewModels. We have a application specific base class for the PhoneApplicationPage. We override the <em>OnNavigatedTo</em> event here and call on to the application specific base ViewModel’s OnNavigatedTo event. For any ViewModel to hook into this event just needs to override this method on the ViewModel, as shown in the sample below</p>
+
+<pre><code>public abstract class ApplicationPageBase: PhoneApplicationPage
+{
+    protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        (this.DataContext as ApplicationViewModelBase).OnPageNavigatedTo(this.NavigationContext.QueryString);
+
+    }
+}
+
+
+
+
+public class ApplicationViewModelBase: ViewModelBase
+{
+    public virtual void OnPageNavigatedTo(Dictionary&lt;string, string&gt; parameters)
+    {
+        // Override this in any of the ViewModel to hook to the OnNavigatedTo event on the page
+    }
+}
+</code></pre>
+
+<p>Similarly for any of the other page events also you could create it in the page base class and call the corresponding function on the ViewModel base.</p>
+
+<p><strong>7. Application Bar</strong></p>
+
+<p>I have already put out a detailed post on how to implement an application bar using MVVM. It details out 2 approaches one using Messenger and another having the applciation bar as a service. Check it out at  - <a href="http://rahulpnath.com/blog/windows-phone-series-mvvm-and-applicationbar/">Windows Phone Series – MVVM and ApplicationBar</a></p>
+
+<p>We have seen most of the basic scenarios that we normally come across while developing an application for windows phone and on how MVVM can be applied to that, so that we can make the best out of it. With lots of devices getting out there and having the need to have your application on all platform demands the maximum reuse, so that you can be out there quickly. MVVM plays a very important role in structuring your code making this possible. Even while developing cross platform application using <a href="http://xamarin.com/">Xamarin</a>, MVVM can be used to advantage so that all the application logic is neatly abstracted away from UI.</p>
+
+<p>Do comment in on any of the missed scenarios that you normally come across while developing applications for the Windows platform.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-09-17T19:01:58+05:30"  data-updated="true" itemprop="datePublished dateCreated">Sep 17<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/get-started-with-your-blog/" itemprop="url">Get Started With Your Blog</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>If you are a programmer and don’t have a blog, then there is no better time than now to start one. <a href="http://channel9.msdn.com/Shows/HanselminutesOn9/Hanselminutes-on-9-Social-Networking-for-Developers-Part-1-Every-Developer-Needs-a-Blog">Every developer should have a blog</a>, for a very simple reason – <strong>Otherwise all your work is just going wasted!.</strong> I can bet that the best of your code or ideas would either be in some old email that you hardly have access to or archived or in some backup hard-disk waiting to be formatted or already formatted and all gone. All the thought, research and creativity that you would have spent would be lying just wasted and with little or no use. Having an online presence has really become a necessity in today&rsquo;s connected world, and a blog is the best place to show your presence. I started off answering <a href="http://rahulpnath.com/blog/stars-do-count/">mdsn forums</a> and then figured that most of the people had similar questions and I was giving the same answers many a times, which gave me the thought of blogging answers and posting links to them. So anytime someone asks you something or you do something awesome blog it, so that your work does not get wasted and more people would find it useful. As with the <a href="http://en.wikipedia.org/wiki/Rule_of_three_(computer_programming">rule of three</a>) for refactoring, with blogging it’s just rule of one – <em><strong>blog it always </strong>(</em>even this blog is because some one asked me after I recently moved on to a self hosted blog<em>).</em>
+I have had a taste of blogspot and WordPress blog web hosting service,  before moving on to a self-hosted blog here. I think you would have guessed which one I would suggest you to get if you are starting your blog – a self hosted one. Indeed there is some effort that goes in to maintain the blog, but its worth every effort that you put.
+I use WordPress as the blogging software and am running it on a Linux server (had to change over from windows, as there were a lot of compatibility issues that I faced). WordPress is a very popular blogging engine and so has an immense collection of themes, plug-in and add-on that are available to enhance yours and your readers experience. Once you get your wordpress installed on your self hosted domain, which should be as easy as clicking a button, install the below plugin’s.</p>
+
+<ol>
+<li><p> The first thing would be to <strong>connect with </strong><a href="http://jetpack.me/"><strong>jetpack</strong></a>. This would give you a lot of features including stats, social integration, publicize options and many more.</p></li>
+<li><p> Connect with <a href="http://akismet.com/"><strong>akismet</strong></a> using the <a href="http://wordpress.org/plugins/akismet/">plug-in</a> for preventing/moderating spam comments. Akismet provides a free subscription for personal users.</p></li>
+<li><p> <a href="http://feedburner.google.com/"><strong>Claim your feed</strong></a> and put it on your blog. You can again use a <a href="http://wordpress.org/plugins/feedburner-form/">feedburner-form</a> if you want.</p></li>
+<li><p> Integrate with<strong> </strong><a href="http://www.google.com/analytics/"><strong>Google analytics</strong></a>, if you want more detailed statistics than the one provided with jetpack. Once you get your code, you can use the <a href="http://wordpress.org/plugins/googleanalytics/">plug-in</a> to integrate with your site. This will add the necessary code in all your pages header.</p></li>
+<li><p> Make sure you have a <strong>backup plan</strong>, as you would not want all your data to vanish off if something happens with the hosting server. You could either use vaultpress or use freely available plug-in to back up to popular cloud storage like Dropbox, Skydrive or Google drive.</p></li>
+<li><p> Get a <strong>good theme</strong> for your blog, there a lot of free and paid ones out there.</p></li>
+</ol>
+
+
+<p>Now that you have most of the things setup, it’s time for you to put up your first page, <a href="http://rahulpnath.com/blog/about/">About me</a>. This is very important as it gives a sense of credibility to your readers, so make sure you have one. For creating content on to your blog, you can either use the online editor or use some offline editor. Personally I use <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows live writer</a>. I love using this and all my blogs are written using this. The one plug-in that you would want to get, if you are a developer is <a href="http://precode.codeplex.com/">PreCode</a>, which makes inserting code really easy.
+There are a lot more things that your blog would need, you would soon find that out and when you do, please leave a note of it in the comments section below. Happy Blogging!</p>
+
+<p><strong>Edit</strong>: Couple of people were asking about getting started with a free blog. <a href="http://wordpress.com/">Wordpress.com</a> or <a href="https://www.tumblr.com/">Tumblr</a> would be a very good option to start with. Personally I used Wordpress as I felt that better. The advantage with tumblr over wordpress is that you can <a href="http://www.tumblr.com/docs/en/custom_domains">link your custom domain name with tumblr for free</a> while <a href="http://en.support.wordpress.com/domains/map-existing-domain/">worpress charges for linking a custom domain</a>. (You would need to pay for the custom domain in either cases). But then I ended up hosting all myself after moving away from Wordpress.com.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-09-08T22:03:31+05:30"  data-updated="true" itemprop="datePublished dateCreated">Sep 8<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/photography-learning-to-click/" itemprop="url">Photography - Learning to Click</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>                          “<em>If you want to learn to do something you must figure out how you would do it yourself  </em>”.</p>
+
+<p>This is not something that one would want to hear when setting out to learn something new. But I think this is very true whenever you set out to learn something new, it is finally about finding your way, our way rather <strong>my way</strong> <strong>of doing things.
+</strong>I used to be amazed by most of the photos that&rsquo;s floating around in the social and photography sites. I wondered how people could take these pictures and thought it was some art that one has to be born with. But soon I started seeing lots of my friends too putting up awesome shots of their trips or their neighborhoods. For most of the photos one thing was common, <strong><em>a DSLR.
+</em></strong>I got myself a <a href="http://www.amazon.in/gp/product/B007O6HQZ0/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B007O6HQZ0&amp;linkCode=as2&amp;tag=rahulpnath-21">Canon EOS 550D</a><img src="http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&amp;l=as2&amp;o=31&amp;a=B007O6HQZ0" alt="" /> along with the basic 18-55mm kit lens thinking that was the answer to all the wonderful photos that I wanted to take.  But only to find that my pictures were blurry, out of focus, lacking contrast  and sharpness and mostly no subject at all. I never found life in my photos, which made me believe that I ‘<em>lacked that inborn talent</em>’.
+But I didn&rsquo;t want to give up that fast. I started reading, reading a lot on these figuring out what people did, I started talking to my friends whose photos I liked , watching video tutorials and last but not the least, started clicking a lot. As a beginner to dslr photography the learning curve is very high, but not hard. In this post I just want to put out those things that helped me to improve on my photography skills at least to a point where I don&rsquo;t regret shelling out the money to get this awesome equipment.</p>
+
+<p>1.<strong> Read the manual:</strong> Knowing the equipment is the only way you can use it your benefit, so the very first thing to make sure is to know your camera and its controls well. It would really pay off to take up that manual you left off in the camera packaged box and start reading. If you don&rsquo;t like the way the manual is put out get a book that explains your camera., for me it was <a href="http://www.amazon.in/gp/product/B003NX731K/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B003NX731K&amp;linkCode=as2&amp;tag=rahulpnath-21">Canon EOS Rebel T2i / 550D For Dummies</a><img src="http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&amp;l=as2&amp;o=31&amp;a=B003NX731K" alt="" /> . There would be one for your camera too.</p>
+
+<ol>
+<li><p><strong>Know the basics: </strong>One of the most popular mistakes we make as a beginner is to not hold the camera properly. <a href="http://digital-photography-school.com/how-to-hold-a-digital-camera">Learn how to hold the camera properly</a> and practice it over and over again. Learn about <a href="http://digital-photography-school.com/aperture">aperture</a>, <a href="http://digital-photography-school.com/using-focal-points-in-photography">focal points</a>, focal length, <a href="http://digital-photography-school.com/shutter-speed">shutter speed</a>, <a href="http://digital-photography-school.com/iso-settings">iso</a> and <a href="http://digital-photography-school.com/introduction-to-white-balance">white balance</a>. These are not rocket science and something that we all would have learned in our physics classes. Just try to read through it over and over again, until have a fairly good idea. Remember to give it some time to get into you and don’t hurry into anything. Read through different articles on the internet and watch some videos in YouTube to get a better understanding.</p></li>
+<li><p><strong>Learn the rules: </strong>I was not the guy with that inborn talent, so had to learn how to compose. Composition simply means  choosing what to include and what to exclude from your photos. In addition to that there are also some simple techniques that one can use to improve your composition. <a href="http://digital-photography-school.com/rule-of-thirds">Rule of thirds</a> is the first rule that you want to start using, and also <a href="http://digital-photography-school.com/digital-photography-composition-tips">a lot more</a> like diagonal lines, frames, geometric shapes and much more. But also do learn on how to break the rules.</p></li>
+<li><p><strong>Choose your gear: </strong>Most of us start of with a entry level dslr camera with the kit lens, which is good enough for a beginner. Its better to understand the equipment properly and also your tastes in photography before investing more on costlier lenses. Once you have got the hang of it, then you would figure out what you want all by yourself. You would know what is limiting you and what you really want. But to start with you should have a DSLR, a tripod and a camera bag. When you invest on a tripod make sure you don&rsquo;t go cheap on it. A tripod is really a worthy investment and a good one will last you a long time. I made the mistake of getting a <a href="http://www.linkdelight.com/PK034-YUNTENG-VCT-668-Pro-Tripod-with-Damping-Head-f-SLR-Canon-Nikon.html">cheap one</a> first but soon had to spent on a new one which is a Manfrotto with ball head. I found that the pan head tripod was very hard to use and position. It took me for ever on my first tripod to move all these knobs up and down on the pan head, to position for my shot. I liked the ball head ans it was super fast and easy to position for any shot. You should <a href="http://www.youtube.com/watch?v=CW_mb2yNm9Y">check out for yourself</a> with different models before getting one. Also get a decent bag that can carry your dslr and tripod along. Have in mind the possible lens updates that you would make before buying on a bag, so that you don&rsquo;t end up having to buy a new one when you have more lenses. I chose a <a href="http://rahulpnath.com/blog/2013/01/05/what-made-me-choose-vanguard-up-rise-45/">Vanguard Uprise 45 and here&rsquo;s why</a>.This is what is in my <a href="http://www.digitalrev.com/rahulpnath/bag">bag</a> now.</p></li>
+<li><p><strong>Shoot in RAW: </strong>DSLR has this capability of shooting in jpeg&rsquo;s like most of the other digital camera&rsquo;s out there. But what really makes it apart is its capability to shoot RAW. You are never going to make the difference unless you switch to shooting in RAW. Now you might think what is big thing it is just about a change in settings. But that small change is gonna take you a long way in photography and make that difference in the pictures that you click. When you shoot in jpeg, what happens is the camera does some built in algorithm to optimize the photos that you take, to apply the contrast, sharpness, balance and what not. But it might not always make the right choice. Especially you might have your white balance off and the colors might appear totally different. Unless you are doing product photography you would not have to worry what the exact white balance is. You could always choose your white balance after the shot in a post production software. A lot more advantages are there while shooting in <a href="http://digital-photography-school.com/raw-vs-jpeg">RAW vs JPEG</a>. I always shoot in Raw + Jpeg mode in my canon, just in case if I want to quickly select some images. Also it might be worthy to compare how better you are doing shooting in RAW by comparing it with a JPEG shot.</p></li>
+<li><p><strong>Post Processing: </strong>Shooting in RAW is never complete without talking about post production. With the RAW format it is just like you have an image which does not have any contrast, sharpness, clarity, saturation etc applied by your camera. You need to apply that all yourself using a post production software. Before shooting in RAW I used to use <a href="http://picasa.google.com/">Picasa</a>, to edit my photos mostly to boost up the saturation and increase the clarity. But after moving on to RAW I have figured out that you ought to have better software for editing/post processing. The unanimous choice for all would be <a href="http://www.adobe.com/support/downloads/product.jsp?product=106&amp;platform=Windows">Adobe Camera Raw</a> . If you have <a href="http://www.adobe.com/in/products/photoshop-lightroom.html">Adobe Lightroom</a> it&rsquo;s even better, it is simple camera raw plus a whole lot of other features. And if you have <a href="http://www.adobe.com/in/products/photoshop.html">Adobe Photoshop</a> even better. At the very least you should get Camera Raw.
+<strong> ‘</strong>Ahh!! that is photoshopped’. This is a very popular thing that you come across in photography. Using Photoshop/other post-processing tools is not a crime. It is just like you modifying the image properties yourself than having the camera&rsquo;s pre-written algorithm do that. So you are never avoiding processing, Even  when shooting JPEG your camera is doing the processing for you and here you are doing it for yourself. Some people might say the sky never was like that on that day, come&#8217;on you have faked it. But who cares, there is no international committee that says the sky&rsquo;s color should be #XYZ. It&rsquo;s all how you want it to be and how you want your viewers to see it. So if they are liking it, you are liking it then who cares what the color was that day. If you don&rsquo;t want to try out different color, don&rsquo;t do that too. Keep it the way it was that day.
+I was always overwhelmed whenever I opened camera-raw/lightroom/photoshop. There are innumerous controls that I think rarely anyone would know end to end(Scott Kelby might know, he has got some excellent <a href="http://www.amazon.in/gp/product/B00DZP3KJ0/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B00DZP3KJ0&amp;linkCode=as2&amp;tag=rahulpnath-21">books</a><img src="http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&amp;l=as2&amp;o=31&amp;a=B00DZP3KJ0" alt="" />). There is just a very few set of controls that you would be using always and that you would have to know 90% of the time. So invest your time in understanding them. Check below for some good resources that would help you get started, it really did help me.</p></li>
+<li><p><strong>Listen to the experts: </strong>More than books I have felt that video’s convey a bit more while learning about photography. Some of the popular people I like to watch are <a href="http://www.karltaylorphotography.com/">Karl Taylor</a> and <a href="http://scottkelby.com/">Scott Kelby</a>. There a lot of good resources on YouTube that would help. I have created a playlist of my favorite videos, that has helped me a lot with photography. These include post processing, shooting techniques, composition and a lot more. The videos are in order of how much it helped me, though it might not be the same for you.</p></li>
+</ol>
+
+
+<p>Apart from the videos in the playlist I have also found the videos by <a href="http://www.youtube.com/user/photoexposed">Mike Browne</a> very helpful in understanding the basics on camera and its functionality and also on composition. <a href="http://kelbytraining.com/">Kelby Training</a> also has a very good set of resource that you are sure to enjoy.
+There is a lot more to learn from good photographers. Try to take a look at their work and see what makes you to love those photos. See what is your area of interest and try to work towards that. <a href="http://www.flickr.com/">500px</a> has an amazing collection of awesome photos. &lsquo; <em>The more pictures you see the better you are as a photographer </em>&rsquo;</p>
+
+<ol>
+<li><strong>Share for Feedback: </strong>You should share the pictures that you take with others, family friends or general public. By doing this you are sure to get a lot of feedback and inputs on how you click. Today there is no dearth for the options that you have got to share your photos. Some of the popular ones are <a href="http://500px.com/">500px</a> , <a href="http://www.flickr.com/">flickr</a> , Facebook etc.  Try to join a photography club near you and go for photo-walks or sharing your pictures with them as you would get more feedback from like minded people. Analyse your shots yourself and see what can be improved, what went good and what went wrong. It will really help you the next time you shoot. Try to reproduce shots that you have seen and liked, that will definitely take you through a whole new learning journey.</li>
+</ol>
+
+
+<p>Learning photography seems like a long journey, but this has only put me into the beginner seat and there is a lot more to go. Nevertheless this is an amazing experience and have loved every bit of it. It has opened a whole new me in myself as I see things in different view. Soon you learn to see things through a rectangle frame even without having one. It makes you enjoy the things around you and appreciate nature more. The best places to start clicking without having anyone stare at you are at some parks or zoo&rsquo;s near you. You would have all the time in the world to you and can try out all the tricks that you would have read and learned. Always make sure you click the people who travel with you, so that you keep them happy too :)</p>
+
+<p>Do drop in with comments on anything that helped you learn this amazing art !</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-28T21:41:00+05:30"  data-updated="true" itemprop="datePublished dateCreated">Aug 28<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/converting-a-pdf-for-your-kindle/" itemprop="url">Converting a PDF for Your Kindle</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Earlier I had blogged about reading an <a href="http://rahulpnath.com/blog/2009/09/14/ebook-or-hard-copy/">eBook vs reading a hard copy</a> and I was preferring the hard copy one back then. But after getting a <a href="http://www.amazon.in/gp/product/B007HCFU90/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B007HCFU90&amp;linkCode=as2&amp;tag=rahulpnath-21">Kindle</a><img src="http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&amp;l=as2&amp;o=31&amp;a=B007HCFU90" alt="" /> things have changed. I prefer MOBI now, as that is the one that is supported by Kindle. I think a Kindle needs no introduction and the only thing I can say about it is “<em>If you don’t own one, get one.</em>  The e-ink display is a real comfort for the eye and it just feels like reading from paper.“ I got the most basic version of Kindle and I am happy with that(at least for now).</p>
+
+<p>The easiest way to get books on your Kindle is to buy them from Amazon, right from your Kindle itself. The experience is so seamless that you just cannot resist from. But often you have pdf’s with you that you would want to read in your Kindle. There are a couple of ways(in fact a lot more), that you can get your pdf to the Kindle.</p>
+
+<pre><code>1. ** **The most direct and easy way is to [send it to your kindle mail address](http://www.amazon.com/gp/sendtokindle/email).  The problem with this is it that it makes the font very small that it is difficult to read.
+
+
+2. 
+</code></pre>
+
+<p>There are also a lot of tools that help you manage your eBooks that have kindle support too. <a href="http://calibre-ebook.com/">Calibre</a> is     one such popular tool. Calibre has options to send to Kindle, which would convert pdf to the required mobi format. The problem with this is that it keeps inserting line breaks after every other line.</p>
+
+<p>So with the both the methods I have found that the formatting gets all messed up for the Kindle, making it difficult to have a smooth reading. After a lot of investigating , I have come up with a good method to get my pdf onto the Kindle.</p>
+
+<p>It is a simple <strong><em>3 step</em></strong> process:
+<strong>Step 1:
+</strong>Convert the pdf into html with <a href="http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp">mobipocket creator</a>.  Highlighted in yellow below.</p>
+
+<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator_thumb.png" alt="mobi creator" /></a></p>
+
+<p><strong>Step 2:
+</strong>From the above step you would get a html output file. Import this converted html format into <a href="http://calibre-ebook.com/">Calibre</a></p>
+
+<p><strong>Step 3:
+</strong>Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
+Here is a comparison of the all the 3 methods above in order(kindle email, direct calibre and mobicreator + calibre )</p>
+
+<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail.jpg"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail_thumb.jpg" alt="kindle email" /></a>  <a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault_thumb.png" alt="Caliber Default" /></a> <a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput_thumb.png" alt="mobicreator caliber output" /></a></p>
+
+<p>You can clearly see that last image above is well formatted and matches almost to our original pdf.</p>
+
+<p>This might not be the best way always but most of the time it has got me well formatted books on my Kindle. Please chip in with any better ways in the comments section.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-25T22:03:08+05:30"  data-updated="true" itemprop="datePublished dateCreated">Aug 25<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/giveaway-get-a-license-of-your-choice-from-syncfusion/" itemprop="url">Giveaway : Get a License of Your Choice From Syncfusion</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often we run up into the need for third party controls to give your apps/sites that extra edge that all of us are looking for. Syncfusion provides an excellent collection of controls for various platforms, details of which you can find <a href="http://www.syncfusion.com/products?UTM_medium=rahulblogreview">here</a> .
+Syncfusion was generous enough to giveaway a license for the readers of this blog. I didn&rsquo;t want to restrict you to get a license for a platform of my choice, so its all yours. You get to choose which platform license you want out of the the 9 different option(ASP.NET, ASP.NET MVC, JavaScript, Mobile MVC, Silverlight, WinForms, Windows Phone, WinRT and WPF) on the site. So who would be that lucky one?</p>
+
+<h2><strong>How to be that lucky one?</strong></h2>
+
+<p>Check out the form below on how.</p>
+
+<p><a href="http://www.rafflecopter.com/rafl/display/52158e0/">a Rafflecopter giveaway</a></p>
+
+<p>Once the winner is decided you would be notified via email. Choosing the lucky one would be this blog admins responsibility. Any decision made by the admin would be final.</p>
+
+<p>Hope you are that lucky one !</p>
+
+<p><strong> Edit: </strong>Had a very good response and am really happy to announce the winners. Instead of 1 lucky winner I am planning to make it 3. The lucky 3 would be soon contacted with more details</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-25T09:53:00+05:30"  data-updated="true" itemprop="datePublished dateCreated">Aug 25<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-jump-lists/" itemprop="url">Windows Phone Series – Jump Lists</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>One of the best things about the windows phone is that way you can navigate large lists of data.  Jumplist provides an easy and fast way to navigate large data, just like we do in the contacts hub or the apps collection. It would be great to have this behaviour even in the apps that we develop so that we can give a consistent experience to our application users.
+Jumplist can be implemented using LongListSelector, which is part of the <a href="http://phone.codeplex.com/">Windows Phone toolkit</a> for Windows phone 7. With Windows Phone 8 this is included along with the sdk. Implementing jump list with the longlistselector is easy enough, that you can get this into your application in a few minutes. Lets see how.
+If you are already using a listbox then you should be changing it to a longlistselector or if you are already using that, then you might be using it in the “ungrouped mode”, by setting IsFlatList=”True”. Change this to False.</p>
+
+<p>[xml]&lt;toolkit:LongListSelector Name=&ldquo;allPersons&rdquo; IsFlatList=&ldquo;False&rdquo; >
+&lt;/toolkit:LongListSelector>[/xml]</p>
+
+<p>We need to specify a few templates for the date to be rendered to our needs as shown below. In this example we would be looking at a contacts sample.</p>
+
+<p><a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1_thumb.png" alt="JumpList1" /></a> <a href="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList.png"><img src="http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList_thumb.png" alt="JumpList" /></a></p>
+
+<p><strong>ItemTemplate
+</strong>The itemtemplate specifies how the bound list of items should be displayed. This would be the same as that you have been using earlier for your listbox.</p>
+
+<p>[xml]&lt;toolkit:LongListSelector.ItemTemplate>
+    <DataTemplate>
+        <TextBlock Text="{Binding Name}" FontSize="30" />
+    </DataTemplate>
+&lt;/toolkit:LongListSelector.ItemTemplate>[/xml]</p>
+
+<p><strong>GroupHeaderTemplate
+</strong>The groupheadertemplate specifies the template for each header of the group.</p>
+
+<p>[xml]&lt;toolkit:LongListSelector.GroupHeaderTemplate>
+    <DataTemplate>
+       <Border Background="Red" HorizontalAlignment="Left" Width="50" Height="50">
+         <TextBlock Text="{Binding Title}" FontSize="30" HorizontalAlignment="Center"/>
+       </Border>
+    </DataTemplate>
+&lt;/toolkit:LongListSelector.GroupHeaderTemplate>[/xml]</p>
+
+<p><strong>GroupItemTemplate
+</strong>The groupitemtemplate specifies the template for the headers, when in group view mode. This is the display that would be presented when we are to choose a group to navigate to.</p>
+
+<p>[xml]&lt;toolkit:LongListSelector.GroupItemTemplate>
+    <DataTemplate>
+        <Button IsEnabled="{Binding HasData}" BorderThickness="0" Background="Transparent">
+            <Border Background="Red" BorderThickness="0" Width="60" Height="60">
+                <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="38" Margin="4" Text="{Binding Title}" />
+            </Border>
+        </Button>
+    </DataTemplate>
+&lt;/toolkit:LongListSelector.GroupItemTemplate>[/xml]</p>
+
+<p><strong>GroupItemsPanel</strong></p>
+
+<p>The groupitemspanel specifies the panel to be used to display the groupitems. If we are using only alphabets as the group headers, then we would want to wrap each of these items. If our group items are long enough then it would be better to leave it as default which would be a stackpanel.</p>
+
+<p>[xml]&lt;toolkit:LongListSelector.GroupItemsPanel>
+    <ItemsPanelTemplate>
+        &lt;toolkit:WrapPanel Margin=&ldquo;5&rdquo; Background=&ldquo;Black&rdquo; />
+    </ItemsPanelTemplate>
+&lt;/toolkit:LongListSelector.GroupItemsPanel>[/xml]</p>
+
+<p>We need to group the data that gets bound to the list. For a normal listbox you would either bind a List or an ObservableCollection. In this we would need to group the data that gets bound to the control as groups that we want to display. In this example our data is a list of Persons, and we would want to group the data with their starting character. If the starting character is an alphabet, then we would display that person under that character. For any non-alphabet we would group it under ‘#’. The GroupedPersons in our DataRepository would return the data for us.</p>
+
+<p>[csharp]public static IEnumerable&lt;Group<Person>> GroupedPersons
+{
+    get
+    {
+        List&lt;Group<Person>> groupedArticles = new List&lt;Group<Person>>();
+        char[] az = Enumerable.Range(&lsquo;a&rsquo;, 26).Select(a => (char)a).ToArray();</p>
+
+<pre><code>    foreach (char letter in az)
+    {
+        Group&lt;Person&gt; groupedLetter = new Group&lt;Person&gt;()
+        {
+            Title = letter.ToString(),
+            Items = Persons.Where(a =&gt; a.Name.StartsWith(letter.ToString(), StringComparison.CurrentCultureIgnoreCase)).Where(a =&gt; a != null).ToList()
+        };
+        groupedLetter.HasData = groupedLetter.Items.Any();
+        groupedArticles.Add(groupedLetter);
+    }
+
+    // Articles that start with a number should be added to # tag
+    var list = groupedArticles.SelectMany(a =&gt; a.Items).ToList();
+    var nonAlphabetIssues = Persons.Except(list);
+    groupedArticles.Insert(
+        0,
+        new Group&lt;Person&gt;()
+        {
+            Items = nonAlphabetIssues.ToList(),
+            Title = "#",
+            HasData = nonAlphabetIssues.Any()
+        });
+
+    return groupedArticles;
+}
+</code></pre>
+
+<p>}[/csharp]</p>
+
+<p>To get all the characters from A-Z we use the below code, after which it is some simple logics, that would is self explanatory</p>
+
+<p>[csharp]char[] az = Enumerable.Range(&lsquo;a&rsquo;, 26).Select(a => (char)a).ToArray();[/csharp]</p>
+
+<p>This should now have made your flat list into a easily navigable jump list, that your users would love to use and make it easier for them to use you application.</p>
+
+<p>You can find the code for this sample <a href="https://github.com/rahulpnath/JumpList">here</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-18T21:34:48+05:30"  data-updated="true" itemprop="datePublished dateCreated">Aug 18<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/http-a-short-dive/" itemprop="url">HTTP – a Short Dive</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Day in and day out, knowingly or unknowingly we get to use http. While accessing a web site, even the current one that you are reading, you are using http. Http is an application protocol that forms the basis of data communication for the web. As an end user of web pages, it is not necessary to be aware of the protocol, but as developers we ought to know in detail about the protocol and its possibilities.</p>
+
+<p>You could find in detail about the entire protocol spec, <a href="http://www.w3.org/Protocols/rfc2616/rfc2616.html">here</a>.  If you have already gone through it in its entirety then this blog might be of very little or no help at all. For the others, who I suppose majority of us would be this is just about pointing you to another resource that would take hardly a couple of hours of your time, to get enough information on the protocol.</p>
+
+<p><a href="http://www.syncfusion.com/resources/techportal/ebooks/http?UTM_medium=rahulblogreview"><img src="http://www.syncfusion.com/Content/en-US/Downloads/Images/Ebooks/Landing%20Page/http_succinctly_download.PNG?UTM_medium=rahulblogreview" alt="" /></a>
+With all the concise and precise information ,            <strong><a href="http://www.syncfusion.com/resources/techportal/ebooks?UTM_medium=rahulblogreview">Syncfusion’s Succinctly series</a></strong> has a very good resource covering <a href="http://www.syncfusion.com/resources/techportal/ebooks/http?UTM_medium=rahulblogreview"><strong>HTTP</strong></a>.  As the name, succinctly suggests, this book series gives you enough information that enables you to master a wide range of topics.  All you need to do is to fill up a contact form and get access to all the books in kindle and pdf format, all for free.  As a company this is a a very good contribution that Syncfusion is making to the community giving away all these resources for free.</p>
+
+<p>The HTTP Succinctly book is written by <a href="http://odetocode.com/">Scott Allen</a> and it covers Resources, Messages, Connections, Web Architecture, State and Security.</p>
+
+<p>The book details on the url format , encoding and various media types and how they are served when a request is made. It expands on the request , response  messages and and different response status codes.  Scott goes on to explain on how http uses the underlying tcp protocol, to transfer messages across the network and how browsers open parallel connections to speed up the way web sites are delivered to us.  If it was not for proxies and caching the web would not be as scalable as it is today. The protocol would not be complete without mentioning about these and so does this one.  Http being a stateless protocol, maintaining state is a very important thing for developers to provide a good experience to the users. The book touches on cookies, its uses, types and downsides. The book closes on discussing about security and different modes of authentication.
+The HTTP Succinctly discusses on all the important topics of the protocol required to us as developers, and I would strongly urge any web developer to read through this 55 pages of concise and precise information. Having such books takes away the need for searching through the web and figuring out all related articles and blog posts to get the required information.  Hope to see more books getting added into this series of books.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-07-26T10:51:51+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jul 26<sup>th</sup>, 2013</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/mvvm-a-windows-phone-scenario/" itemprop="url">MVVM – a Windows Phone Scenario</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>With multiple platforms/devices, embracing the same technology, common architectural patterns become more popular as they provide us with what we want the most – <strong>Reusability. </strong>MVVM has turned out to be a must use architectural pattern while developing for Windows phone/Windows 8 store apps. I had blogged on this, <a href="http://rahulpnath.com/blog/mvvm-does-it-really-matter/">Why MVVM matters</a>.</p>
+
+<p>In this post will take a quick look into the scenarios that would come across while we develop a windows phone app and how that could possibly(as there could be many other ways/approaches too) be implemented using MVVM. I would be covering shorter scenarios in this same post, and those that would be better off in a different one would be linked here . <a href="http://mvvmlight.codeplex.com/">MVVM Light</a> is a very popular toolkit that assists in getting started with MVVM quickly and we would also be using the same. This can be easily added in as a <a href="http://nuget.org/packages/mvvmLight">nuget package</a>
+MVVM Light does come with a ViewModelBase class, that all your View Models are to inherit so that you do not have to worry about implementing the <a href="http://msdn.microsoft.com/en-in/library/system.componentmodel.inotifypropertychanged.aspx">INotifyPropertyChanged</a> interface. I would still think of having a intermediate view model base class specific to our app and have all the reusable piece of code that you want across your ViewModels.</p>
+
+<p>Common MVVM scenarios that we come across while developing and probable approaches are discussed below. There might be different ways of achieving the same, and at times we might go off the ‘purist’  MVVM implementation,  i.e.  of not having a code behind at all. As for me I am ok to have code behind at a minimum if it is really required and does not affect the original intent of MVVM(separations of concerns, testability and reusability)</p>
+
+<p><strong>Scenarios</strong></p>
+
+<ol>
+<li><p> Binding the View – ViewModel</p></li>
+<li><p> ViewModel and Model</p></li>
+<li><p> Basic Commanding</p></li>
+<li><p> Advanced Commanding</p></li>
+<li><p> Page Navigations and Parameters</p></li>
+<li><p> Page Events</p></li>
+<li><p> Application Bar<strong> </strong></p></li>
+</ol>
+
+
+<p>We will discuss each on in details and the sample that we would be using is that of a photo browser, for <a href="http://500px.com/">500px</a>. You can get the api access <a href="http://developers.500px.com/">here</a></p>
+
+<p><strong>1. Binding the View-ViewModel</strong></p>
+
+<p>MVVM Light comes default with a ViewModelLocator(<strong>VML</strong>) class that will help you with the binding of the ViewModels(<strong>VM’s</strong>) with the corresponding View. The VML will have public properties for the different view models that you have. You can either have different public properties for each of your view model here, or have a property for MainViewModel and then that would in turn have other ViewModel properties. The VML uses a SimpleIOC container to resolve type instances. In simple terms, with an IoC container all we are trying to solve is to minimize the dependency between different types/classes, so that we would never have to instantiate one class(complex type) in another. So whenever a instance of a class is required, the IoC container would generate it for us , and all we would be concerned would be of the interface that we require. For IoC to resolve types for us we need to register the interface and the original class that implements the interface.
+Below you see how we are registering for the interface IDataService and setting its implementation class to DataService. Similarly we can also register classes, which would be how we would be registering our VM’s.</p>
+
+<p>[xml]SimpleIoc.Default.Register&lt;IDataService, DataService>();
+SimpleIoc.Default.Register<MainViewModel>();[/xml]</p>
+
+<p>When installing the nuget package itself an instance of the VML is added into the app.xaml class, which can be used in all the View classes to data-bind to the VM.</p>
+
+<p>[xml]&lt;Application.Resources>
+       <ResourceDictionary>
+           <!--Global View Model Locator-->
+           &lt;vm:ViewModelLocator x:Key=&ldquo;Locator&rdquo;
+               d:IsDataSource=&ldquo;True&rdquo; />
+ &hellip;..
+&lt;Application.Resources>[/xml]</p>
+
+<p>This instance is used in all the view classes as below  in the xaml.</p>
+
+<p>[xml]DataContext=&ldquo;{Binding Main, Source={StaticResource Locator}}&rdquo;[/xml]</p>
+
+<p>The Main property returns the View model that should be bound with the view. The ‘ServiceLocator.Current’, returns the default instance of the SimpleIoc. The GetInstance always returns the same instance of the ViewModel as if it would have for a Singleton. If you need a new instance then you would need to pass a specific key(any identifier value) to get a different instance.</p>
+
+<p>[csharp]public MainViewModel Main
+{
+    get
+    {
+        return ServiceLocator.Current.GetInstance<MainViewModel>();
+    }
+}[/csharp]</p>
+
+<p><strong>What about the other Views and View Models?</strong></p>
+
+<p>Mostly the main VM would be the one that would be like a hub page, from which the user be able to navigate onto other pages and detailed views., say from a list of friends to a friend, a list of photos to a specific photo. One common thing that we do wrong is to think of View – ViewModel as a one-to-one relationship, meaning one view will have only one ViewModel bound to it.  In our sample app we have a list of photos that needs to be displayed on the main page and on selecting one of the photo, we should be taken to the photo’s detail page. So the mistake to do here would be to have an observable list of Photos in the MainViewModel. We should rather have a list of PhotoViewModel , that would be bound to the list control in the main page. So the MainViewModel would have a property SelectedPhoto, which would be of PhotoViewModel type, that would become the data context of the PhotoDetail page.</p>
+
+<p>[code]DataContext=&ldquo;{Binding Main.SelectedPhoto, Source={StaticResource Locator}}&rdquo;[/code]</p>
+
+<p>For views that are not at all related to each other, we can have separate properties in the VML, like say for Settings, About page.</p>
+
+<p>[code]DataContext=&ldquo;{Binding About, Source={StaticResource Locator}}&rdquo;[/code]
+[csharp]public AboutViewModel About
+ {
+    get
+    {
+        return ServiceLocator.Current.GetInstance&lt;AboutViewModel&gt;();
+    }
+  }[/csharp]</p>
+
+<p>So whenever you have hierarchical pages, it would mostly be that your parent/callee will have the ViewModel property that you would bind to like SelectedPhoto in MainViewModel and for cases you have separate navigations you can have a property exposed in VML like About, Main.</p>
+
+<p><strong>2. ViewModel and Model</strong></p>
+
+<p>Like I mentioned above, one common mistake that we make is to think of View-ViewModel as a one-to-one relationship and normally end up binding the UI to models and not VM’s. We soon tend to hit into problems, such as adding custom properties into models, not finding ways to trigger property changed etc. So it is always best to wrap your models in the VMs. In cases where you are sure you would never want to change/format the data format then you can directly bind to a model. In  cases where you would want to format the data (like say you have a First Name &amp; Last Name property on the model and you want to display Full Name)  you would rather wrap the data into a VM and bind that. You could always use <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter.aspx">ValueConverters</a>, to format the data specific to the UI, but that always comes with a price, especially on a phone device. Phone’s come with lesser hardware resource and you would want to make the maximum use of it. So it is better to have properties exposed on VM itself rather than having converters all over the UI to format the data. But still you would be in positions where you would absolutely want to use a converter where you should. That is a wise decision that one should make for yourself. (a <a href="https://groups.google.com/forum/?fromgroups#!topic/wpf-disciples/P-JwzRB_GE8">thread</a> that discusses on this )</p>
+
+<p><strong>3. Basic Commanding</strong></p>
+
+<p>It’s not just the data that gets displayed needs to be separated out cleanly. User actions and actions taken should also be cleanly separated from the UI. Commands is what would help us here. Commanding support is currently only for elements that inherit from <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.buttonbase.aspx">ButtonBase</a>. As in any mvvm implementation, mvvmlight also has a wrapper that implements <a href="http://msdn.microsoft.com/en-us/library/system.windows.input.icommand.aspx">ICommand</a> interface for us, which is RelayCommand. An instance of this can be directly bound to the Command property, for those elements that inherits from ButtonBase. Below is how you would wire up the command to a button on a page</p>
+
+<p>[xml]<Button Content="My Command" Command="{Binding MyCommand}"
+    VerticalAlignment="Center" HorizontalAlignment="Center" />[/xml]
+[csharp]public MainViewModel()
+{
+    MyCommand = new RelayCommand(OnMyCommand);
+}
+public RelayCommand MyCommand { get; set; }</p>
+
+<p>private void OnMyCommand()
+{
+MessageBox.Show(&ldquo;You clicked me :)&rdquo;);
+}[/csharp]</p>
+
+<p><strong>4. Advanced Commanding</strong></p>
+
+<p>It’s not just UI elements that inherit from Buttonbase that we would be using, and hence we definitely need alternatives to bind events of such elements. ListBox SelectionChanged, Page loaded etc are very common events that one would be interested in while developing phone apps. There are a couple of approaches that one could follow here</p>
+
+<ul>
+<li><strong>Wire-up the command from code behind</strong></li>
+</ul>
+
+
+<p>We could  easily wire up all such events from the code-behind class, and have it invoked on the view model. Some might argue here that we are going off the MVVM pattern, which says ‘no code behind’. I don’t this it ever said that in the first place. It is just about decoupling the UI from the code and this is still done. Even binding/commanding is still going to generate code and do the wiring of commands. As long as there is a clear separation of logics and concerns we are good. So I think this this is very well acceptable and the easiest in fact of all the approaches.</p>
+
+<p>Code Behind:</p>
+
+<pre><code>private MainViewModel viewModel
+{
+ get { return this.DataContext as MainViewModel; }   
+}
+
+protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+{
+base.OnNavigatedTo(e);
+viewModel.OnnavigatedToCommand.Execute(NavigationContext.QueryString);
+}
+</code></pre>
+
+<p>View Model</p>
+
+<pre><code>public MainViewModel()
+{
+    OnnavigatedToCommand = new RelayCommand&lt;IDictionary&lt;string, string&gt;&gt;(OnNavigatedTo);
+}
+public RelayCommand&lt;IDictionary&lt;string, string&gt;&gt; OnnavigatedToCommand { get; set; }
+
+private void OnNavigatedTo(IDictionary&lt;string,string&gt; parameters)
+{
+// do whatever you want to here
+}
+</code></pre>
+
+<ul>
+<li> <strong>EventToCommand Behavior</strong></li>
+</ul>
+
+
+<p>With the EventToCommand behavior introduced for Blend, can be used to bind an ICommand from the UI elements. Though it was introduced for Blend, it can be used independently. You would need to add a reference to System.Windows.Interactivity.dll, which is were all these behaviors are implemented. There is a detailed <a href="http://geekswithblogs.net/lbugnion/archive/2009/11/05/mvvm-light-toolkit-v3-alpha-2-eventtocommand-behavior.aspx">post</a> out here on to how to use EventToCommand to trigger commands directly from the UI.</p>
+
+<p>Just to keep a sample here, below would be how it would look like</p>
+
+<p>[xml]xmlns:i=&ldquo;clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity&rdquo;
+xmlns:command=&ldquo;clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Extras.WP71&rdquo;
+&hellip;
+<ListBox>
+&lt;i:Interaction.Triggers>
+&lt;i:EventTrigger EventName=&ldquo;SelectionChanged&rdquo;>
+&lt;command:EventToCommand Command=&ldquo;{Binding SelectionChangedCommand}&rdquo; />
+&lt;/i:EventTrigger>
+&lt;/i:Interaction.Triggers>
+&lt;ListBox.Items>
+&lt;ListBoxItem&gt;Item1&lt;/ListBoxItem>
+&lt;ListBoxItem&gt;Item2&lt;/ListBoxItem>
+&lt;ListBoxItem&gt;Item3&lt;/ListBoxItem>
+&lt;/ListBox.Items>
+</ListBox>[/xml]
+[csharp]public MainViewModel()
+{
+    SelectionChangedCommand = new RelayCommand(OnSelectionChangedCommand);
+}
+public RelayCommand SelectionChangedCommand { get; set; }
+private void OnSelectionChangedCommand()
+{
+// do whatever you want to here
+}[/csharp]</p>
+
+<ul>
+<li><strong>Messenger</strong></li>
+</ul>
+
+
+<p>We could also use a messenger service, to propogate UI events to VM’s. MVVMLight  has a built in messenger service that can be used for this. In simple terms a messenger is nothing but a decoupled eventing system, something of a publisher-subscriber model. In the messenger one entity  would send a message and there would be another entity that listens for this message and acts upon it.</p>
+
+<p>[csharp]private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+{
+    Messenger.Default.Send<NotificationMessage>(
+        new NotificationMessage(&ldquo;You could have your own items here by using a generic NotificationMessage&lt;>&rdquo;));
+}
+…</p>
+
+<p>public MainViewModel()
+{
+    MessengerInstance.Register<NotificationMessage>(this, OnSelectionChanged);
+}
+private void OnSelectionChanged(NotificationMessage message)
+{
+// do whatever you want to here
+}[/csharp]</p>
+
+<p>As you see above, in the code behind we send a Notification message indicating a click has happened. In the VM we register for the notification message and act upon it. We could send generic objects via the notification message and also create our own messages by inheriting from MessageBase of mvvmlight. This <a href="http://msdn.microsoft.com/en-us/magazine/jj694937.aspx">article</a> gives more information and scenarios around this</p>
+
+<p>We are still left with a lot more scenarios to cover here and I would be covering them in a separate post to keep this one &lsquo;short&rsquo; :)</p>
+
+<p><strong>Edit</strong>: Check out <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/">MVVM – A Windows Phone Scenario – Part 2</a> for the rest of the scenarios</p>
+
+<p> </p>
+</div>
+  
+  
+
+
+        </article>
+      
+    </div>
+
+    <ul class="pager">
+      
+        <li class="previous"><a href="/posts/3">&larr;&nbsp;Older</a></li>
+      
+      <li><a href="/blog/archives">Blog Archives</a></li>
+      
+        <li class="next"><a href="/index.html">Newer&nbsp;&rarr;</a></li>
+      
+    </ul>
+  </div>
+
+  
+    <aside class="sidebar col-md-3">
+      
+        <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/knockoutjs-for-xaml-developers/">KnockoutJS for XAML Developers</a>
+    
+    <a class="list-group-item " href="/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/">Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad</a>
+    
+    <a class="list-group-item " href="/blog/azure-web-sites-moving-wordpress-to-cloud/">Azure Web Sites: Moving Wordpress to Cloud</a>
+    
+    <a class="list-group-item " href="/blog/windows-phone-series-image-caching-library-jetimageloader/">Windows Phone Series: Image Caching Library - JetImageLoader</a>
+    
+    <a class="list-group-item " href="/blog/review-two-months-and-counting-android-and-nexus-5/">Review: Two Months and Counting - Android and Nexus 5</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+      
+    </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2014 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

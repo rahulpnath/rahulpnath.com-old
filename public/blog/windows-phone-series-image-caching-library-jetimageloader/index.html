@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Windows Phone Series: Image Caching Library - JetImageLoader - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://yoursite.com/blog/windows-phone-series-image-caching-library-jetimageloader">
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link href="/atom.xml" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/blog/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="/atom.xml" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="https://www.google.com/search" method="GET">
+                    <input type="hidden" name="q" value="site:yoursite.com">
+                    <div class="form-group">
+                        <input class="form-control" type="text" name="q" placeholder="Search">
+                    </div>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="" />
+    <meta itemprop="url" content="http://yoursite.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-04-18T05:26:17+05:30"  data-updated="true" itemprop="datePublished dateCreated">Apr 18<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Windows Phone Series: Image Caching Library - JetImageLoader
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Recently on a client project, I had a requirement to cache images locally on the phone and then load it from there from subsequent requests. Initially I had plans for custom implementing this using sqlite and custom code. While googling for this, I came across an awesome custom library that solved my problem with just a few lines of code – <a href="https://github.com/artem-zinnatullin/jet-image-loader">JetImageLoader</a> by <a href="https://github.com/artem-zinnatullin">Artem</a>. This is available via nuget, making it easy to install</p>
+
+<p><a href="http://www.nuget.org/packages/WP-JetImagLoader/0.8.5"><img src="http://rahulpnath.com/blog/wp-content/uploads/2014/04/image_thumb.png" alt="image" /></a></p>
+
+<p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
+
+<p>[xml]<Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/>[/xml]</p>
+
+<p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
+
+<p>[csharp]public class JetImageLoaderImplementation
+{
+    public static readonly BaseMemoryCache&lt;string,stream> MemoryCacheImpl = new WeakMemoryCache&lt;string,stream>();
+    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), &ldquo;\image_cache&rdquo;, new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);</p>
+    public static JetImageLoaderConfig GetJetImageLoaderConfig()
+    {
+        return new JetImageLoaderConfig.Builder
+        {
+            IsLogEnabled = true,
+            CacheMode = CacheMode.MemoryAndStorageCache,
+            DownloaderImpl = new HttpWebRequestDownloader(),
+            MemoryCacheImpl = MemoryCacheImpl,
+            StorageCacheImpl = StorageCacheImpl
+        }.Build();
+    }
+}[/csharp]
+[csharp]public class JetImageLoaderConverter : BaseJetImageLoaderConverter
+{
+    protected override JetImageLoaderConfig GetJetImageLoaderConfig()
+    {
+        return JetImageLoaderImplementation.GetJetImageLoaderConfig();
+    }</p>
+
+<pre><code>public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+{
+    return base.Convert(value, targetType, parameter, culture);
+}
+</code></pre>
+
+<p>}[/csharp]</p>
+
+<p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
+
+<p>The nuget is for Windows 8 library, but there is also a version for <a href="https://github.com/artem-zinnatullin/jet-image-loader/tree/master/JetImageLoader.Wp7">WP7.1 avaialble on Github</a> (which apparently is a pull request from me, indeed my very first on Github that got merged)</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">rahulpnath</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-04-18T05:26:17+05:30"  data-updated="true" itemprop="datePublished dateCreated">Apr 18<sup>th</sup>, 2014</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/nuget/'>nuget</a>, <a class='category' href='/blog/categories/open-source/'>open source</a>, <a class='category' href='/blog/categories/windows-phone/'>windows phone</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://yoursite.com/blog/windows-phone-series-image-caching-library-jetimageloader/" data-via="" data-counturl="http://yoursite.com/blog/windows-phone-series-image-caching-library-jetimageloader/" >Tweet</a>
+  
+  
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/review-two-months-and-counting-android-and-nexus-5/" title="Previous Post: Review: Two Months and Counting - Android and Nexus 5">&laquo; Review: Two Months and Counting - Android and Nexus 5</a></li>
+            
+            
+            <li class="next"><a href="/blog/azure-web-sites-moving-wordpress-to-cloud/" title="Next Post: Azure Web Sites: Moving Wordpress to Cloud">Azure Web Sites: Moving Wordpress to Cloud &raquo;</a></li>
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      <section class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Recent Posts</h3>
+  </div>
+  
+  <div id="recent_posts" class="list-group">
+    
+    <a class="list-group-item " href="/blog/knockoutjs-for-xaml-developers/">KnockoutJS for XAML Developers</a>
+    
+    <a class="list-group-item " href="/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/">Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad</a>
+    
+    <a class="list-group-item " href="/blog/azure-web-sites-moving-wordpress-to-cloud/">Azure Web Sites: Moving Wordpress to Cloud</a>
+    
+    <a class="list-group-item active" href="/blog/windows-phone-series-image-caching-library-jetimageloader/">Windows Phone Series: Image Caching Library - JetImageLoader</a>
+    
+    <a class="list-group-item " href="/blog/review-two-months-and-counting-android-and-nexus-5/">Review: Two Months and Counting - Android and Nexus 5</a>
+    
+  </div>
+</section>
+
+
+
+
+
+
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2014 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
