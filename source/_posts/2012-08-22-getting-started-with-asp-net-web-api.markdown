@@ -127,7 +127,7 @@ DELETE and PUT is very similar and should be easy to understand.
 So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.
 This should help you get started on with ASP.NET web api.There are a lot more features in ASP.Net Web api like Formatters,Odata support,hosting etc. I would be covering these too in other blog posts.There are a lot of design considerations that need to be taken on while developing API’s.There are a lot of good resource that can help you with tackling down it.I have mentioned a few below in the resources section.
 
-Happy Coding ![Smile](http://rahulpnath.files.wordpress.com/2012/08/wlemoticon-smile.png)
+Happy Coding !
 
 **Resources:
 **None of them are specific to ASP.NET Web Api,but they should help you to get the bigger picture and also help you in designing good Web API.

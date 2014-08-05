@@ -27,7 +27,7 @@ For over an year I was using the bag that came with my dslr and decided now to u
 1. [Lowepro Flipside 300](http://products.lowepro.com/product/flipside-300,2083.htm)
 2. [Lowepro Video Fastpack 250aw](http://products.lowepro.com/product/DSLR-Video%20Fastpack%20250%20AW,2282.htm)
 3. [Lowepro Pro Runner 200AW](http://products.lowepro.com/product/Pro-Runner-200-AW,2181,14.htm)
-4. [Manfrotto Veloce III](http://www.manfrotto.com/product/0/MB%2BSB390-3BC/_/Veloce_III_Camera_Backpack_for_DSLR_(Bungee_Cord))
+4. [Manfrotto Veloce III](http://www.manfrotto.com/product/0/MB%2BSB390-3BC/_/Veloce_III_Camera_Backpack_for_DSLR_(Bungee_Cord\))
 
 Deciding to drop into a store to see them was the best thing that I did, and I suggest everyone planning to buy a dslr bag to do that. What’s good for me, might not work out for you. Except the flipside one I did see everything else. For me the fastpack 250aw was a bit bulky, the Pro Runner a bit too small and lacking a quick access entry. Manfrotto was decent enough but then my tripod would not go through the tripod strap, since my tripod has all its legs connected to the centre rod.
 I happened to see the Vanguard Up-rise 43, which was actually a sling bag but had all the other features I was looking for. It was sleek looking, well padded,had a tripod holder(now this one had a adjustable strap to hold the tripod), a quick access,rain cover.
@@ -37,63 +37,37 @@ Below are some snaps of the my bag. I did find a good [video](http://www.youtube
 
 
 
-<table cellpadding="0" cellspacing="0" style="outline: none; border-style: none; margin: 0; padding: 0; width: 408px; border-collapse: collapse;" border="0" >
-<tbody >
-<tr >
-
-<td colspan="2" style="outline: none; border-style: none; margin: 0; padding: 5px 0 5px 5px; width: 159px; vertical-align: bottom;" >[ ![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/19393306067e1fa083.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3950&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
-
-<td colspan="3" style="vertical-align: middle; margin: 0; padding: 5px 5px 5px 0; outline: none; border-style: none; width: 226px;" >
-
-
-
-
-
-[Vanguard Up-Rise 45](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=browse&resid=D5A8034107ADC30C!3949&type=5&authkey=!ABkuQXjWWoHjsww&Bsrc=Photomail&Bpub=SDX.Photos)
-
-
-
-
-
-<table cellpadding="0" cellspacing="0" style="margin: 0; padding: 0; outline: none; border-style: none; border-collapse: collapse; width: auto;" border="0" >
-<tbody >
-<tr >
-
-<td style="vertical-align: top; outline: none; border-style: none; margin: 0; padding: 10px 15px 6px 0;" >[VIEW SLIDE SHOW](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3949&type=5&authkey=!ABkuQXjWWoHjsww&Bsrc=Photomail&Bpub=SDX.Photos)
-</td>
-
-<td style="vertical-align: top; outline: none; border-style: none; margin: 0; padding: 10px 0 6px;" >[DOWNLOAD ALL](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=downloadphotos&resid=D5A8034107ADC30C!3949&type=5&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
+<div class="wlWriterEditableSmartContent" id="scid:66721397-FF69-4ca6-AEC4-17E6B3208830:a7930e23-e5d9-4bbf-a9d8-0bb834e7717a" style="float: none; margin: 0; display: inline; padding: 0;">
+<table style="outline: none; border-style: none; margin: 0; padding: 0; width: 408px; border-collapse: collapse;" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td style="outline: none; border-style: none; margin: 0; padding: 5px 0 5px 5px; width: 159px; vertical-align: bottom;" colspan="2"><a style="outline: none; border-style: none; margin: 0; padding: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3950&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"> <img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/19393306067e1fa083.png" width="159" height="159" border="0" /></a></td>
+<td style="vertical-align: middle; margin: 0; padding: 5px 5px 5px 0; outline: none; border-style: none; width: 226px;" colspan="3">
+<div style="margin-left: 10px; top: -3%;">
+<div style="width: 226px; overflow: visible;"><a style="text-decoration: none;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=browse&amp;resid=D5A8034107ADC30C!3949&amp;type=5&amp;authkey=!ABkuQXjWWoHjsww&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos" target="_blank"><span style="line-height: 1.26em; padding: 0; width: 226px; font-size: 26pt; font-family: 'Segoe UI', helvetica, arial, sans-serif;">Vanguard Up-Rise 45</span></a></div>
+<div style="padding: 10px 0 0; margin: 0;">
+<table style="margin: 0; padding: 0; outline: none; border-style: none; border-collapse: collapse; width: auto;" border="0" cellspacing="0" cellpadding="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; outline: none; border-style: none; margin: 0; padding: 10px 15px 6px 0;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3949&amp;type=5&amp;authkey=!ABkuQXjWWoHjsww&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos" target="_blank">VIEW SLIDE SHOW</a></td>
+<td style="vertical-align: top; outline: none; border-style: none; margin: 0; padding: 10px 0 6px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=downloadphotos&amp;resid=D5A8034107ADC30C!3949&amp;type=5&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank">DOWNLOAD ALL</a></td>
 </tr>
 </tbody>
 </table>
-
-
-
-
-
+</div>
+</div>
 </td>
 </tr>
-<tr >
-
-<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px; margin: 0; width: 77px; height: 77px;" >[![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/1693865447509e80c0.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3951&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
-
-<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;" >[![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/110869255509e80c0.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3952&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
-
-<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;" >[![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/752237557e8bd378.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3953&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
-
-<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;" >[![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/1009512067e8bd378.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3954&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
-
-<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;" >[![View album](http://rahulpnath.com/blog/wp-content/uploads/2013/01/93012880699a5105.png)](https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&page=play&resid=D5A8034107ADC30C!3955&parid=D5A8034107ADC30C!3949&type=1&Bsrc=Photomail&Bpub=SDX.Photos&authkey=!ABkuQXjWWoHjsww)
-</td>
+<tr>
+<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px; margin: 0; width: 77px; height: 77px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3951&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"><img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/1693865447509e80c0.png" width="77" height="77" border="0" /></a></td>
+<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3952&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"><img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/110869255509e80c0.png" width="77" height="77" border="0" /></a></td>
+<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3953&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"><img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/752237557e8bd378.png" width="77" height="77" border="0" /></a></td>
+<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3954&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"><img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/1009512067e8bd378.png" width="77" height="77" border="0" /></a></td>
+<td style="vertical-align: bottom; outline: none; border-style: none; padding: 0 5px 5px 0; margin: 0; width: 77px; height: 77px;"><a style="font-family: 'Segoe UI', helvetica, arial, sans-serif; font-size: 8pt; outline: none; border-style: none; text-decoration: none; padding: 0; margin: 0;" href="https://skydrive.live.com/redir.aspx?cid=d5a8034107adc30c&amp;page=play&amp;resid=D5A8034107ADC30C!3955&amp;parid=D5A8034107ADC30C!3949&amp;type=1&amp;Bsrc=Photomail&amp;Bpub=SDX.Photos&amp;authkey=!ABkuQXjWWoHjsww" target="_blank"><img style="outline: none; border-style: none; padding: 0; margin: 0; border: 0; background: none; background-image: none; vertical-align: bottom;" title="View album" alt="View album" src="http://rahulpnath.com/blog/wp-content/uploads/2013/01/93012880699a5105.png" width="77" height="77" border="0" /></a></td>
 </tr>
 </tbody>
 </table>
+</div>
 
 
 
@@ -126,4 +100,4 @@ In short the main things that made my choose the Vanguard Up-Rise 45
   * a compartment for accessories
 
 
-Hope you have a good time choosing your bag ![Smile](http://rahulpnath.files.wordpress.com/2013/01/wlemoticon-smile.png)
+Hope you have a good time choosing your bag !

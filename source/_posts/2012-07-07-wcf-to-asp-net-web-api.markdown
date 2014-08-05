@@ -24,8 +24,7 @@ WCF had embraced SOAP,moving away from the [restful web](http://rahulpnath.wordp
  
 
 I found Scott’s summary the best,as in this [podcast](http://www.hanselminutes.com/264/this-is-not-your-fathers-wcf-all-about-the-webapi-with-glenn-block),when he speaks of WCF       
-”_If you are giving me an api whose strong point is it can talk over multi transport and   
-has abstracted me away from the details that i actually need in the name of flexibility that i am not going to use,then that is just baggage_”
+> ”_If you are giving me an api whose strong point is it can talk over multi transport and has abstracted me away from the details that i actually need in the name of flexibility that i am not going to use,then that is just baggage_”
 
  
 

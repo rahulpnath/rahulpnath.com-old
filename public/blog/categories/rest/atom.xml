@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: Rest | Rahul Nath]]></title>
-  <link href="http://yoursite.com/blog/categories/rest/atom.xml" rel="self"/>
-  <link href="http://yoursite.com/"/>
-  <updated>2014-08-04T21:28:31+05:30</updated>
-  <id>http://yoursite.com/</id>
+  <link href="http://rahulpnath.com/blog/categories/rest/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-05T14:15:09+05:30</updated>
+  <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Windows 8 Series - Incremental Loading]]></title>
-    <link href="http://yoursite.com/blog/windows-8-series-incremental-loading/"/>
+    <link href="http://rahulpnath.com/blog/windows-8-series-incremental-loading/"/>
     <updated>2012-10-28T20:11:31+05:30</updated>
-    <id>http://yoursite.com/blog/windows-8-series-incremental-loading</id>
+    <id>http://rahulpnath.com/blog/windows-8-series-incremental-loading</id>
     <content type="html"><![CDATA[<p>Fast and fluid experience is one of the most important characteristics of a Windows 8 application. As the data becomes larger , it might not be always possible to get the entire data loaded before hand.We might want to have a incremental or sequential data loading so that the user has a better experience.
 While developing windows 8 this can be easily achieved by using <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">ISupportIncrementalLoading</a>
 interface which would load the data incrementally.The class that implements this should also implement the <a href="http://msdn.microsoft.com/en-us/library/system.collections.ilist.aspx">IList</a> and <a href="http://msdn.microsoft.com/en-us/library/system.collections.specialized.inotifycollectionchanged.aspx">INotifyColectionChanged</a>. A sample on how to implement this interface can be seen <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">here</a>.
@@ -25,73 +25,71 @@ Implementing these over and over for different data sources that you would want 
 
 <p>First lets get the class that implements <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">ISupportIncrementalLoading</a>, IList and INotifyCollectionChanged. To keep things simple lets inherit from ObservableCollection,which in turn inherits the latter 2 interfaces</p>
 
-<pre><code>``` csharp
-public class IncrementalSource&lt;T, K&gt; : ObservableCollection&lt;K&gt;, ISupportIncrementalLoading
-    where T: class
-{
-    private string Query { get; set; }
-    private int VirtualCount { get; set; }
-    private int CurrentPage { get; set; }
-    private IPagedSource&lt;T,K&gt; Source { get; set; }
-    private int rpp { get; set; }
-
-    public IncrementalSource(string query, Func&lt;T, IPagedResponse&lt;K&gt;&gt; GetPagedResponse)
+<pre><code class="csharp">    public class IncrementalSource&lt;T, K&gt; : ObservableCollection&lt;K&gt;, ISupportIncrementalLoading
+        where T: class
     {
-        this.Source = new PagedSourceLoader&lt;T, K&gt;(GetPagedResponse);
-        this.VirtualCount = int.MaxValue;
-        this.CurrentPage = 0;
-        this.Query = query;
-    }
+        private string Query { get; set; }
+        private int VirtualCount { get; set; }
+        private int CurrentPage { get; set; }
+        private IPagedSource&lt;T,K&gt; Source { get; set; }
+        private int rpp { get; set; }
 
-    #region ISupportIncrementalLoading
-
-    public bool HasMoreItems
-    {
-        get { return this.VirtualCount &gt; this.CurrentPage * (rpp == 0 ? 10 :rpp); }
-    }
-
-    public IAsyncOperation&lt;LoadMoreItemsResult&gt; LoadMoreItemsAsync(uint count)
-    {
-        CoreDispatcher dispatcher = Window.Current != null ? Window.Current.Dispatcher : Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher;
-        if (count &gt; 50 || count &lt;= 0)
+        public IncrementalSource(string query, Func&lt;T, IPagedResponse&lt;K&gt;&gt; GetPagedResponse)
         {
-            // default load count to be set to 50
-            count = 50;
+            this.Source = new PagedSourceLoader&lt;T, K&gt;(GetPagedResponse);
+            this.VirtualCount = int.MaxValue;
+            this.CurrentPage = 0;
+            this.Query = query;
         }
 
-        return Task.Run&lt;LoadMoreItemsResult&gt;(
-            async () =&gt;
+        #region ISupportIncrementalLoading
+
+        public bool HasMoreItems
+        {
+            get { return this.VirtualCount &gt; this.CurrentPage * (rpp == 0 ? 10 :rpp); }
+        }
+
+        public IAsyncOperation&lt;LoadMoreItemsResult&gt; LoadMoreItemsAsync(uint count)
+        {
+            CoreDispatcher dispatcher = Window.Current != null ? Window.Current.Dispatcher : Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher;
+            if (count &gt; 50 || count &lt;= 0)
             {
+                // default load count to be set to 50
+                count = 50;
+            }
 
-                IPagedResponse&lt;K&gt; result = await this.Source.GetPage(string.Format(this.Query,count), ++this.CurrentPage, (int)count);
-
-                this.VirtualCount = result.VirtualCount;
-                if (rpp == 0)
+            return Task.Run&lt;LoadMoreItemsResult&gt;(
+                async () =&gt;
                 {
-                    rpp = result.rpp;
-                }
 
-                await dispatcher.RunAsync(
-                    CoreDispatcherPriority.Normal,
-                    () =&gt;
+                    IPagedResponse&lt;K&gt; result = await this.Source.GetPage(string.Format(this.Query,count), ++this.CurrentPage, (int)count);
+
+                    this.VirtualCount = result.VirtualCount;
+                    if (rpp == 0)
                     {
-                        foreach (K item in result.Items)
-                            this.Add(item);
-                    });
+                        rpp = result.rpp;
+                    }
 
-                return new LoadMoreItemsResult() { Count = (uint)result.Items.Count() };
+                    await dispatcher.RunAsync(
+                        CoreDispatcherPriority.Normal,
+                        () =&gt;
+                        {
+                            foreach (K item in result.Items)
+                                this.Add(item);
+                        });
 
-            }).AsAsyncOperation&lt;LoadMoreItemsResult&gt;();
+                    return new LoadMoreItemsResult() { Count = (uint)result.Items.Count() };
+
+                }).AsAsyncOperation&lt;LoadMoreItemsResult&gt;();
+        }
+
+        #endregion
     }
-
-    #endregion
-}
 </code></pre>
 
-<pre><code>Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(**_K_**) whose list we are trying to load incrementally. Another one the type of object(**_T_**) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse
+<p>Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(<strong><em>K</em></strong>) whose list we are trying to load incrementally. Another one the type of object(<strong><em>T</em></strong>) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse</p>
 
-    ``` csharp
-    public interface IPagedResponse&lt;T&gt;
+<pre><code class="csharp">    public interface IPagedResponse&lt;T&gt;
     {
         IEnumerable&lt;T&gt; Items { get; }
         int VirtualCount { get; }
@@ -128,43 +126,41 @@ public class IncrementalSource&lt;T, K&gt; : ObservableCollection&lt;K&gt;, ISup
 
 <p>IPagedSource&lt;T,K> will do this for us. A sample implementation of this is <em>PagedSourceLoader </em>that handles for json return type is below</p>
 
-<pre><code>``` csharp
-public interface IPagedSource&lt;R,K&gt;
-{
-    Task&lt;IPagedResponse&lt;K&gt;&gt; GetPage(string query, int pageIndex, int pageSize);
-}
-
-
-
-
-public class PagedSourceLoader&lt;T,K&gt; : IPagedSource&lt;T,K&gt;
-    where T:class 
-{
-    private Func&lt;T, IPagedResponse&lt;K&gt;&gt; getPagedResponse;
-    public PagedSourceLoader(Func&lt;T, IPagedResponse&lt;K&gt;&gt; GetPagedResponse)
+<pre><code class="csharp">    public interface IPagedSource&lt;R,K&gt;
     {
-        getPagedResponse = GetPagedResponse;
+        Task&lt;IPagedResponse&lt;K&gt;&gt; GetPage(string query, int pageIndex, int pageSize);
     }
 
-    #region IPagedSource
 
-    public async Task&lt;IPagedResponse&lt;K&gt;&gt; GetPage(string query, int pageIndex, int pageSize)
+
+
+    public class PagedSourceLoader&lt;T,K&gt; : IPagedSource&lt;T,K&gt;
+        where T:class 
     {
-        query += "&amp;page="+pageIndex;
-        HttpClient client = new HttpClient();
-        HttpResponseMessage response = await client.GetAsync(query);
-        var data = await response.Content.ReadAsStreamAsync();
-        DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(T));
-        T dat = json.ReadObject(data) as T;
-        return getPagedResponse(dat);
-    }
+        private Func&lt;T, IPagedResponse&lt;K&gt;&gt; getPagedResponse;
+        public PagedSourceLoader(Func&lt;T, IPagedResponse&lt;K&gt;&gt; GetPagedResponse)
+        {
+            getPagedResponse = GetPagedResponse;
+        }
 
-    #endregion
-}
+        #region IPagedSource
+
+        public async Task&lt;IPagedResponse&lt;K&gt;&gt; GetPage(string query, int pageIndex, int pageSize)
+        {
+            query += "&amp;page="+pageIndex;
+            HttpClient client = new HttpClient();
+            HttpResponseMessage response = await client.GetAsync(query);
+            var data = await response.Content.ReadAsStreamAsync();
+            DataContractJsonSerializer json = new DataContractJsonSerializer(typeof(T));
+            T dat = json.ReadObject(data) as T;
+            return getPagedResponse(dat);
+        }
+
+        #endregion
+    }
 </code></pre>
 
-<p>&#8220;`
-As you see above the <em>PagedSourceLoader</em> gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for <em>IPagedSource&lt;T,K>, </em>as your data source would always return you the same data format. In case not you could inject that too into the <em>IncrementalSource</em> class.</p>
+<p>As you see above the <em>PagedSourceLoader</em> gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for <em>IPagedSource&lt;T,K>, </em>as your data source would always return you the same data format. In case not you could inject that too into the <em>IncrementalSource</em> class.</p>
 
 <p>I have a sample <a href="http://sdrv.ms/RdPtdL">here</a> that incrementally loads the photos from a photo site <a href="http://500px.com/flow">500px</a>. You would need to register for an to get the consumer key,which should hardly take some time <a href="http://500px.com/settings/applications?from=developers">here</a>.</p>
 
@@ -183,9 +179,9 @@ As you see above the <em>PagedSourceLoader</em> gets the json from the datasourc
   
   <entry>
     <title type="html"><![CDATA[Getting Started With ASP.NET Web Api]]></title>
-    <link href="http://yoursite.com/blog/getting-started-with-asp-net-web-api/"/>
+    <link href="http://rahulpnath.com/blog/getting-started-with-asp-net-web-api/"/>
     <updated>2012-08-22T12:08:11+05:30</updated>
-    <id>http://yoursite.com/blog/getting-started-with-asp-net-web-api</id>
+    <id>http://rahulpnath.com/blog/getting-started-with-asp-net-web-api</id>
     <content type="html"><![CDATA[<p>A web api is to expose your application’s programming interface over the web,using the HTTP interface.This makes the api accessible from any device that can make HTTP calls.With the wide range of devices that’s available nowadays,Web Api would be the best way to reach out to all of them.Web Api helps you to open up your application to other developers and encourage them to build device specific application.</p>
 
 <p>Since Web Api uses HTTP,this can be accessed from any device that supports HTTP.A brief glance through the <a href="http://www.w3.org/Protocols/HTTP/1.1/rfc2616.pdf">HTTP spec</a> would be good for a better understanding on the capabilities of HTTP.The web was mostly used for human-to-machine conversations and we never felt the need of these API’s.But increasingly with different devices and applications talking with each other,machine-to-machine conversations is on the rise,making the <a href="http://www.programmableweb.com/">web programmable</a>.</p>
@@ -297,7 +293,7 @@ DELETE and PUT is very similar and should be easy to understand.</p>
 <p>So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.
 This should help you get started on with ASP.NET web api.There are a lot more features in ASP.Net Web api like Formatters,Odata support,hosting etc. I would be covering these too in other blog posts.There are a lot of design considerations that need to be taken on while developing API’s.There are a lot of good resource that can help you with tackling down it.I have mentioned a few below in the resources section.</p>
 
-<p>Happy Coding <img src="http://rahulpnath.files.wordpress.com/2012/08/wlemoticon-smile.png" alt="Smile" /></p>
+<p>Happy Coding !</p>
 
 <p><strong>Resources:
 </strong>None of them are specific to ASP.NET Web Api,but they should help you to get the bigger picture and also help you in designing good Web API.</p>

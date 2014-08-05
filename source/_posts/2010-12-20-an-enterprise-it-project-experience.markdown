@@ -25,10 +25,10 @@ On an implementation level,the process model that we had followed for the projec
 
 
 	
-  1. Should have known/read of [SOLID](http://en.wikipedia.org/wiki/Solid_(object-oriented_design)) ,[GRASP](http://en.wikipedia.org/wiki/GRASP_(object-oriented_design)) principles.
+  1. Should have known/read of [SOLID](http://en.wikipedia.org/wiki/Solid_(object-oriented_design\)) ,[GRASP](http://en.wikipedia.org/wiki/GRASP_(object-oriented_design\)) principles.
 
 	
-  2. Awareness of certain [design patterns](http://en.wikipedia.org/wiki/Design_pattern_(computer_science)) would have helped to create a better design.
+  2. Awareness of certain [design patterns](http://en.wikipedia.org/wiki/Design_pattern_(computer_science\)) would have helped to create a better design.
 
 
 Different approaches might be taken to tackle the same problem.But always make sure that the common cross cutting concerns are handled in a centralized manner.This includes things like exception handling,error logging,data validation,transaction and many other things.Handling this in a centralized manner makes things easier for you and targeting changes relating to any of these in an elegant,simple manner.The [Enterprise Library](http://msdn.microsoft.com/library/cc467894.aspx) is one such example which assists in the .net world.You could probably come up with your own frameworks.But always make sure you have,because I have learned this too..the hard way.

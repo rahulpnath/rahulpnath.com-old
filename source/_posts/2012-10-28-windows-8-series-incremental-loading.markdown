@@ -31,7 +31,7 @@ Implementing these over and over for different data sources that you would want 
 
 First lets get the class that implements [ISupportIncrementalLoading](http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916), IList and INotifyCollectionChanged. To keep things simple lets inherit from ObservableCollection,which in turn inherits the latter 2 interfaces
 
-    ``` csharp
+``` csharp
     public class IncrementalSource<T, K> : ObservableCollection<K>, ISupportIncrementalLoading
         where T: class
     {
@@ -96,7 +96,7 @@ First lets get the class that implements [ISupportIncrementalLoading](http://msd
 ```
 Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(**_K_**) whose list we are trying to load incrementally. Another one the type of object(**_T_**) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse
 
-    ``` csharp
+``` csharp
     public interface IPagedResponse<T>
     {
         IEnumerable<T> Items { get; }
@@ -135,7 +135,7 @@ Now we need to make the call to the datasource url. This might return us data in
 
 IPagedSource<T,K> will do this for us. A sample implementation of this is _PagedSourceLoader _that handles for json return type is below
 
-    ``` csharp
+``` csharp
     public interface IPagedSource<R,K>
     {
         Task<IPagedResponse<K>> GetPage(string query, int pageIndex, int pageSize);

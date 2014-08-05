@@ -105,12 +105,13 @@ Commanding is how user interactions are bound to actions/functions on ViewModel,
 The [IValueConverter](http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx) interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is [writable computed observable](http://knockoutjs.com/documentation/computedObservables.html) to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.
 
 
+{% codepen dJhLm rahulpnath js %}
+
 
 
 
 There are a lot of useful resources on the web that are freely available to get started with KnockoutJS. Some of them are listed below
 
-{% codepen dJhLm rahulpnath js %}
 
   * [Official Documentation](http://knockoutjs.com/documentation/introduction.html)
 

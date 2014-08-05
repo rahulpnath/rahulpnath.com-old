@@ -17,7 +17,9 @@ But what good does it come to if the reader base for your blogs are less.It's tr
 <del>Being in Microsoft I have this privilege of having a space in the msdn blogs.Its been a long time since I had started an account [there](http://blogs.msdn.com/b/rahulpnath/) and kept thinking on what to post.I think its high time to start off with that and enjoy one of the biggest reader base for technical topics.</del>
 
 <del>Why from today but???.....Thanks to the guys who motivated me to move on and venture out. :)
-</del>**Edit:** Yes I still do have the privilege, but I think it is better to have it here in my on domain than anywhere else, as it will always be mine. So I have decided to keep all my thoughts and posts on this site. I have even moved from wordpress hosting to a self hosted one so I have more control.
+</del>
+
+**Edit:** Yes I still do have the privilege, but I think it is better to have it here in my on domain than anywhere else, as it will always be mine. So I have decided to keep all my thoughts and posts on this site. I have even moved from wordpress hosting to a self hosted one so I have more control.
 
 “_Human beings, who are almost unique in having the ability to learn from the experience of others, are also remarkable for their apparent disinclination to do so._”
 

@@ -53,28 +53,17 @@ The following definitions, as from the [OAuth specification](http://oauth.net/co
 
  
 
-Service Provider:      
-A web application that allows access via OAuth.       
-User:       
-An individual who has an account with the Service Provider.       
-Consumer:       
-A website or application that uses OAuth to access the Service Provider on behalf of the User.       
-Protected Resource(s):       
-Data controlled by the Service Provider, which the Consumer can access through authentication.       
-Consumer Developer:       
-An individual or organization that implements a Consumer.       
-Consumer Key:       
-A value used by the Consumer to identify itself to the Service Provider.       
-Consumer Secret:       
-A secret used by the Consumer to establish ownership of the Consumer Key.       
-Request Token:       
-A value used by the Consumer to obtain authorization from the User, and exchanged for an Access Token.       
-Access Token:       
-A value used by the Consumer to gain access to the Protected Resources on behalf of the User, instead of using the User’s Service Provider credentials.       
-Token Secret:       
-A secret used by the Consumer to establish ownership of a given Token.       
-OAuth Protocol Parameters:       
-Parameters with names beginning with oauth_.       
+*Service Provider:* A web application that allows access via OAuth.       
+*User:* An individual who has an account with the Service Provider.       
+*Consumer:* A website or application that uses OAuth to access the Service Provider on behalf of the User.       
+*Protected Resource(s):* Data controlled by the Service Provider, which the Consumer can access through authentication.       
+*Consumer Developer:* An individual or organization that implements a Consumer.       
+*Consumer Key:* A value used by the Consumer to identify itself to the Service Provider.       
+*Consumer Secret:* A secret used by the Consumer to establish ownership of the Consumer Key.       
+*Request Token:* A value used by the Consumer to obtain authorization from the User, and exchanged for an Access Token.       
+*Access Token:* A value used by the Consumer to gain access to the Protected Resources on behalf of the User, instead of using the User’s Service Provider credentials.       
+*Token Secret:* A secret used by the Consumer to establish ownership of a given Token.       
+*OAuth Protocol Parameters:* Parameters with names beginning with oauth_.       
 
 
  
@@ -93,16 +82,11 @@ The base URL for 500px web-api is ‘[https://api.500px.com/v1/](https://api.500
 
 **Getting the Request Token**
 
- 
 
-****
-
- 
-
-** **To get the request token we need to make a POST request to [_oauth/request_token_](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_requesttoken.md), which expects the parameters _CallbackUrl,ConsumerKey,Nonce,SignatureMethod,Timestamp and OAuthVersion. _All these should be in the same order,i.e alphabetical. All these parameters needs to be signed using the consumer secret and the signature too needs to be attached in the request data. This data goes as part of the ‘_Authorization’_ header of the request.
+To get the request token we need to make a POST request to [_oauth/request_token_](https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_requesttoken.md), which expects the parameters _CallbackUrl,ConsumerKey,Nonce,SignatureMethod,Timestamp and OAuthVersion. _All these should be in the same order,i.e alphabetical. All these parameters needs to be signed using the consumer secret and the signature too needs to be attached in the request data. This data goes as part of the ‘_Authorization’_ header of the request.
 
  
-    ``` csharp
+``` csharp
     public async Task<OauthToken> RequestToken() 
            { 
                AuthorizationParameters = new Dictionary<string, string>(){                                
@@ -214,9 +198,9 @@ This final step gives you the access token, that is used for any request to a pr
 
 
 
-The SecretCode, that was obtained from the call to Requesttoken is also passed to the function _Sign. 
+The SecretCode, that was obtained from the call to Requesttoken is also passed to the function _Sign_. 
       
-_A successful call would return you the AccessToken and the Access token’s secret code for that. All subsequent request to any protected resource needs the AccessToken and should be signed using ConsumerKey and the access token’s secret code. 
+A successful call would return you the AccessToken and the Access token’s secret code for that. All subsequent request to any protected resource needs the AccessToken and should be signed using ConsumerKey and the access token’s secret code. 
 
     
 From now on any request to a protected resource should be made with the following parameters: _ConsumerKey,Nonce,SignatureMethod,Timestamp,OAuthToken and OAuthVersion_ along with any additional parameters_. _This should be signed using the consumer secret and the access token secret code. 
@@ -277,15 +261,7 @@ Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetail
 
 
     
-The code for the OAuth wrapper for 500px specific toWindows8 is available [here](http://sdrv.ms/PWyHQR) for download. Feel free to modify it and use it. 
-
-    
-I will be refactoring the code out a bit more and also add a few functionalities. So in case you wanted this specific version do keep a copy for yourself.
-
-
-
-
-
+The code for the OAuth wrapper for 500px specific toWindows8 is available [here](http://sdrv.ms/PWyHQR) for download. Feel free to modify it and use it. I will be refactoring the code out a bit more and also add a few functionalities. So in case you wanted this specific version do keep a copy for yourself.
 
 
 

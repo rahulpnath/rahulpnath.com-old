@@ -26,9 +26,9 @@ ApplicationBar on a windows phone, is to provide users of your app with quick ac
 
 In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below
 
-``` csharp    
-     ApplicationBar.Buttons.Add(<your button>);
- ```
+``` csharp     
+ApplicationBar.Buttons.Add(<your button>);
+```
 
 
 When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same

@@ -24,4 +24,5 @@ The common statements that I heard, whenever people see me browse the forum.
 None of these were the reason for my addiction though.It was just the personal satisfaction I get from answering the questions, a new learning  and a different perspective for some of the problems I had already faced.  
 
     
-    <br></br><span style="font-weight:bold;">"It's not money that always counts.....<br></br>                  .....Stars too count"</span><br></br>
+> "It's not money that always counts.....
+                 .....Stars too count"

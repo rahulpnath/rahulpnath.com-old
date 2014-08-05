@@ -25,7 +25,7 @@ Mostly phone apps, connect to a service for the data and wrap them up to a cool 
 
 We would not be creating a fully functional sample here, but would be touching on important aspects and the approaches that can be used to tackle similar scenarios and some code snippets
 
-This [article](http://blogs.windows.com/windows_phone/b/wpdev/archive/2013/03/12/using-the-sqlite-database-engine-with-windows-phone-8-apps.aspx) here would help you out on setting up sqlite for windows phone apps. Mostly we would be storing metadata of files/media that gets preloaded in the sqlite and keep the original files/media(preloaded content) packaged along with the xap, ideally by setting the [Build Action to Content](http://msdn.microsoft.com/en-in/library/windowsphone/develop/ff967560(v=vs.105).aspx#BKMK_Media).  Now in cases where we are expecting to update the existing content and also get new content we would have to copy out the entire media/files into the IsolatedStorage, so that we can do any further updates or additions.
+This [article](http://blogs.windows.com/windows_phone/b/wpdev/archive/2013/03/12/using-the-sqlite-database-engine-with-windows-phone-8-apps.aspx) here would help you out on setting up sqlite for windows phone apps. Mostly we would be storing metadata of files/media that gets preloaded in the sqlite and keep the original files/media(preloaded content) packaged along with the xap, ideally by setting the [Build Action to Content](http://msdn.microsoft.com/en-in/library/windowsphone/develop/ff967560\(v=vs.105\).aspx#BKMK_Media).  Now in cases where we are expecting to update the existing content and also get new content we would have to copy out the entire media/files into the IsolatedStorage, so that we can do any further updates or additions.
 
 Assuming that we have a folder “MyPreloadedContent” as indicated in the image below, which would be where all our preloaded content is going to be . Most of the time with preloaded content, we would not know what exact data would be in there. It might contain files, images, folders etc. We would want an easy way to set Build Action to Content for all the files/folders that gets placed under the folder( even if it is done outside of Visual Studio).
 
@@ -90,7 +90,7 @@ In a T4 template it would be a mix of text and code, that would be used to gener
 
 It just says to read the directory MyPreloadedContent and iterate to get all the files in that and writes it out by trimming of the absolute path and putting in only the relative path. Save the MyFiles.tt, and in Visual Studio right click on it and say “Run Custom Tool”. This would generate the cs file with an extension “.gen.cs” as we have mentioned in “**<#@ output extension=".gen.cs" #>”.  **The generated class would look like below
 
-    ``` csharp
+``` csharp
     namespace PreloadedContent
     {
         public class MyFiles

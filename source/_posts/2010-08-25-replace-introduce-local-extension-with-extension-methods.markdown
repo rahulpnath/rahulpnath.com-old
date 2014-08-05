@@ -19,12 +19,14 @@ You need not do the subclassing or wrapper technique of ILE.
 This can be a third way of implementing ILE :).Thanks to the framework team for keeping it simple.
 The same date example using the 'Extension Methods' way of refactoring
 
-[csharp]public static class MyExtensionMethods
+``` csharp
+public static class MyExtensionMethods
    {
      public static DateTime NextDay(this DateTime date)
      {
       return new DateTime(date.Year, date.Month, date.Day+1);
      }
-   }[/csharp]
+   }
+```
 The function NextDay is now available on any DateTime object,just as if you have written if you had access to the source code. It's the usage of ILE and IFM that has paved way for the inclusion of Extension Methods in the framework I guess.Thanks to [Fowler ](http://martinfowler.com/)for that.
 [CodeProject](http://anyurl.com)

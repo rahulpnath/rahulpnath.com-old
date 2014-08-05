@@ -14,9 +14,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://yoursite.com/blog/wp7-application-model">
+  <link rel="canonical" href="http://rahulpnath.com/blog/wp7-application-model">
   <link href="/favicon.png" type="image/png" rel="icon">
-  <link href="" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
 
   <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -28,6 +28,17 @@
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
 
   
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
 
 </head>
 
@@ -59,20 +70,13 @@
             </ul>
             <ul class="nav navbar-nav navbar-right">
                 <li>
-                    <a class="subscribe-rss" href="" title="subscribe via RSS">
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
                         <span class="visible-xs">RSS</span>
                         <img class="hidden-xs" src="/images/rss.png" alt="RSS">
                     </a>
                 </li>
                 
             </ul>
-            
-                <form class="search navbar-form navbar-right" action="https://www.google.com/search" method="GET">
-                    <input type="hidden" name="q" value="site:yoursite.com">
-                    <div class="form-group">
-                        <input class="form-control" type="text" name="q" placeholder="Search">
-                    </div>
-                </form>
             
         </div>
     </div>
@@ -86,7 +90,7 @@
   <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
     <meta itemprop="name" content="Rahul Nath" />
     <meta itemprop="description" content="" />
-    <meta itemprop="url" content="http://yoursite.com" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
     <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
       
   <header class="page-header">
@@ -124,7 +128,7 @@
 
 <p>On start of a new instance of an application,which happens whenever an application is opened other than by switching to it using the back button,a launching event is raised after which the application moves on into the running state.It&#8217;s advised not to perform any time consuming activities in the Launching event handler,as any latency of more than 10 seconds causes the application to be bought down by the phone.So any IsolatedStorage access is recommended to be done after the application is up and running,making the app more responsive,which is our primary goal.On normal close the application raises a Closing event,where you might be saving persistent data to the IsolatedStorage.Data relating to a particular instance of application need not be saved here as the only way now to start the application is coming right from the beginning,raising the Launching even all over again.Again saving to the IsolatedStorage can be a little tricky.If it takes more than 10 seconds,the application will be terminated forcefully.The key here is that any data to be persisted should be done as and when you have the data and in a asynchronous manner.The earlier this happens the better it is for your application.Otherwise you may run into forceful termination of your application and loosing data and thereby decreasing you application&#8217;s reliability and use.</p>
 
-<p>Tombstoning opens up a whole new path for the application lifecylcle,introducing additional two events,Activated and Deactivated.The State Dictionary maintained by the <a href="http://msdn.microsoft.com/en-us/library/microsoft.phone.shell.phoneapplicationservice(v=VS.92">PhoneApplicationService</a>.aspx)(which also provides all the above mentioned events) is kept as is between application switches.That is whatever is saved in that before deactivating the app will be available after the application is activated.This is how maintaining application state is achieved between application switches.On start of a new application instance the State Dictionary would be empty.Data that is required for just a particular application instance goes into the State Dictionary and the data that is required for all application instances gets saved into the IsolatedStorage.Applications may get tombstoned due to many reasons.It maybe due to user hitting the start button when in an application,launching choosers or launchers(in some cases of doesn&rsquo;t get tombstoned,but its always better to handle for this),due to phone going into idle state(which again can be handled).</p>
+<p>Tombstoning opens up a whole new path for the application lifecylcle,introducing additional two events,Activated and Deactivated.The State Dictionary maintained by the <a href="http://msdn.microsoft.com/en-us/library/microsoft.phone.shell.phoneapplicationservice(v=VS.92).aspx">PhoneApplicationService</a>(which also provides all the above mentioned events) is kept as is between application switches.That is whatever is saved in that before deactivating the app will be available after the application is activated.This is how maintaining application state is achieved between application switches.On start of a new application instance the State Dictionary would be empty.Data that is required for just a particular application instance goes into the State Dictionary and the data that is required for all application instances gets saved into the IsolatedStorage.Applications may get tombstoned due to many reasons.It maybe due to user hitting the start button when in an application,launching choosers or launchers(in some cases of doesn&rsquo;t get tombstoned,but its always better to handle for this),due to phone going into idle state(which again can be handled).</p>
 
 <p>The below diagram,as from msdn, gives the complete picture of the application model.</p>
 
@@ -134,7 +138,7 @@
 
 <p><strong><em>References:</em></strong></p>
 
-<p>Execution Model For Windows Phone(<a href="http://msdn.microsoft.com/en-us/library/ff769557(v=VS.92">http://msdn.microsoft.com/en-us/library/ff769557(v=VS.92).aspx</a>.aspx))</p>
+<p><a href="http://msdn.microsoft.com/en-us/library/ff769557(v=VS.92).aspx">Execution Model For Windows Phone</a></p>
 </div>
 
 
@@ -173,9 +177,11 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://yoursite.com/blog/wp7-application-model/" data-via="" data-counturl="http://yoursite.com/blog/wp7-application-model/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/wp7-application-model/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/wp7-application-model/" >Tweet</a>
   
   
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
   
 </div>
 
@@ -192,6 +198,12 @@
         
       </footer>
     </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
     
   </div>
 
@@ -221,6 +233,17 @@
 
 
 
+<section class="googleplus googleplus-hidden panel panel-default">
+  <div class="panel-body">
+    <h1>
+      <a href="https://plus.google.com/+RahulNath?rel=author">
+        <img src="http://www.google.com/images/icons/ui/gprofile_button-32.png" width="32" height="32">
+        Google+
+      </a>
+    </h1>
+  </div>
+</section>
+
 
 
     
@@ -244,7 +267,32 @@
 </footer>
     
 
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/wp7-application-model/';
+        var disqus_url = 'http://rahulpnath.com/blog/wp7-application-model/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
 
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
 
 
 

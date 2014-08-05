@@ -46,7 +46,7 @@ Just a quick tip on how you could change the Expander header content when Expand
                 <Label>Expander Content</Label>
             </Grid>
         </Expander>
-        ```
+```
 
 
 We could also end up doing this using a converter or explicitly handling for the Expanded/Collapsed events.

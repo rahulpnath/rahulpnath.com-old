@@ -110,7 +110,7 @@ public AboutViewModel About
  {
     get
     {
-        return ServiceLocator.Current.GetInstance&lt;AboutViewModel&gt;();
+        return ServiceLocator.Current.GetInstance<AboutViewModel>();
     }
   }
 ```
@@ -202,9 +202,9 @@ xmlns:command="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLi
 </i:EventTrigger>
 </i:Interaction.Triggers>
 <ListBox.Items>
-<ListBoxItem&gt;Item1&lt;/ListBoxItem>
-<ListBoxItem&gt;Item2&lt;/ListBoxItem>
-<ListBoxItem&gt;Item3&lt;/ListBoxItem>
+<ListBoxItem>Item1</ListBoxItem>
+<ListBoxItem>Item2</ListBoxItem>
+<ListBoxItem>Item3</ListBoxItem>
 </ListBox.Items>
 </ListBox>
 ```
