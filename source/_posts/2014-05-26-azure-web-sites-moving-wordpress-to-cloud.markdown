@@ -19,15 +19,15 @@ It’s been almost an year since I have moved to this custom hosted blog and is 
 
 **Setting up Wordpress** on Azure is very easy and is just a matter of few clicks from the [Management Portal](https://manage.windowsazure.com). You can find the detailed steps to get this done [here](http://azure.microsoft.com/en-us/documentation/articles/web-sites-php-web-site-gallery/). By default Azure Web Sites are installed in the root directory of IIS. To move this into a sub-folder of your choice, you can use any FTP client(FileZilla). The connection details can be obtained from the Management Portal as shown in the below screen shot.
 
-![Portal Quick glance](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/PortalQuickglance4.jpg) ![Portal Quick glance 1](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/PortalQuickglance13.jpg)
+![Portal Quick glance]({{ site.images_root}}/PortalQuickglance.jpg) ![Portal Quick glance 1]({{ site.images_root}}/PortalQuickglance1.jpg)
 
 **Mapping your custom domain **to the new wordpress site is about adding a [CName record for awverify or www](http://azure.microsoft.com/en-us/documentation/articles/web-sites-custom-domain-name/) in your Domain dashboard provided by the domain registrar. Once you have the required CName entries you can map the custom domain in the portal using the ‘Manage Domains’ option.
 
-![Custom Domain](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/CustomDomain3.jpg)
+![Custom Domain]({{ site.images_root}}/CustomDomain.jpg)
 
 **Restoring your content **from my current host was easy as I am using [Vaultpress](http://vaultpress.com) for my site backup and it provides an option to [backup to a different web site too](http://help.vaultpress.com/restore-to-a-new-site/). If not you could also use [FTP to move your current site content which is detailed out here](http://www.davebost.com/2013/07/11/moving-a-wordpress-blog-to-windows-azure-transferring-your-content). Once the content is restored you would need to update the Wordpress Url and Site address url in the General Settings of your blog dashboard. You could also update this directly on the MySQL database in the _wp_options_ table(_home_ and _siteurl_ property). To connect to the database you would get the connection string details from the portal and you can use [MySQL Workbench](http://www.mysql.com/products/workbench/) to connect to it. You might have to recheck your permalink setting on the Wordpress dashboard to ensure that it is the same as you were using earlier.
 
-![General Settings](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/GeneralSettings3.jpg)
+![General Settings]({{ site.images_root}}/AzureGeneralSettings.jpg)
 
 Now you are up an running your blog on Azure!!
 
@@ -42,8 +42,8 @@ Now you are up an running your blog on Azure!!
 **Edit:
 4. **If you face any error while trying to connect to the azure hosted web site from [Windows Live Writer](http://www.microsoft.com/en-in/download/details.aspx?id=8621)(WLW), this most likely is because it uses [xmlrpc.php](http://codex.wordpress.org/XML-RPC_Support) for publishing posts to the site and this is accessed over the https enpoint. Since https is not setup for the custom domain, accessing xmlrpc.php over https would present you with the below certificate error.
 
-[![Https error](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error-150x150.jpg)
-](http://www.rahulpnath.com/blog/wp-content/uploads/2014/05/Https-error.jpg)
+![Https error]({{ site.images_root}}/wlw_https_error.jpg)
+
 
 You could either configure your ssl bindings in azure portal, under the [Configure tab under your website](http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/). SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.
 

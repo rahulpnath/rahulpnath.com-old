@@ -20,7 +20,7 @@ After a very long time since I have actually wanted to move out to web developme
 
 
 
-[![MVVM Knockout](http://www.rahulpnath.com/blog/wp-content/uploads/2014/07/MVVMKO_thumb.jpg)](http://www.rahulpnath.com/blog/wp-content/uploads/2014/07/MVVMKO.jpg)
+![MVVM Knockout]({{ site.images_root}}/MVVM_Knockoutjs.jpg)
 
 KnockoutJS acts as the binding engine in XAML and binds your ViewModel(VM) with your View as shown in the figure. As you expect, like in XAML it provides a way to specify declarative-bindings on html using the [data-bind](http://knockoutjs.com/documentation/binding-syntax.html) attribute and is also widely [supported across different browsers](http://knockoutjs.com/documentation/browser-support.html). The Model is the data that is populated from the server after your business logics applied,  mostly populated out of Ajax JSON calls from a web service/api. This Model data might mostly need some transformation to map to your View needs which is what exactly the ViewModel does. It transforms the Model data and wraps over it to provide features like 2-way-binding, client side validation, transformation of properties, UI specific state and a lot more
 
