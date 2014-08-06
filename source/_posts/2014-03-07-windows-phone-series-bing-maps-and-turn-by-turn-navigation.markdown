@@ -110,11 +110,11 @@ private void SpeakText(string message)
 ```
 You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb1.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image1.png) [![image](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb2.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image2.png)[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb3.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image3.png)
+![Bing_wp_route]({{ site.images_root}}/Bing_wp_route.png)![Bing_wp_place_search]({{ site.images_root}}/Bing_wp_place_search.png)![Bing_wp_directions_text]({{ site.images_root}}/Bing_wp_directions_text.png)
 
 **Testing**
 
 Using the [additional tools along with the phone emulator](http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105).aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb4.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/03/image4.png)
+![Bing_wp_simulator_geolocation]({{ site.images_root}}/Bing_wp_simulator_geolocation.png)
 
 You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code [here](https://github.com/rahulpnath/Blog/tree/master/SimpleGPS) and feel free to use it.

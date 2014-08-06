@@ -32,7 +32,7 @@ It is a simple **_3 step_** process:
 
 Convert the pdf into html with [mobipocket creator](http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp).  Highlighted in yellow below.
 
-[![mobi creator](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreator.png)
+![mobi creator]({{ site.images_root}}/mobicreator.png)
 
 **Step 2:**
 
@@ -43,7 +43,7 @@ From the above step you would get a html output file. Import this converted html
 Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
 Here is a comparison of the all the 3 methods above in order(kindle email, direct calibre and mobicreator + calibre )
 
-[![kindle email](http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail_thumb.jpg)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/kindleemail.jpg)  [![Caliber Default](http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/CaliberDefault.png) [![mobicreator caliber output](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/mobicreatorcaliberoutput.png)
+![kindle email]({{ site.images_root}}/kindle_email.jpg)![Kindle Caliber]({{ site.images_root}}/Kindle_Caliber.png)![Kindle mobicreator caliber]({{ site.images_root}}/kindle_mobicreator_caliber.png)
 
 You can clearly see that last image above is well formatted and matches almost to our original pdf.
 

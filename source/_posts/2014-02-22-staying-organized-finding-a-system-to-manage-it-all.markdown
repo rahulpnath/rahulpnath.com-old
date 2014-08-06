@@ -23,7 +23,8 @@ Major part of my day is spend at office where work mostly comes over email. Keep
 
 After a  lot of reading and researching around the common productivity tools and systems finally I reached back to what I have been using day in and day out – **_Outlook. _**Outlook is more than a mere mailbox management tool. It has a lot of features that is built into it which is seldom used and overlooked upon. One advantage with outlook is that it is available everywhere – desktop, web, tablet and phone.
 
-{% img left http://rahulpnath.com/blog/wp-content/uploads/2014/02/image_thumb.png %}
+
+<img class="left" src="{{ site.images_root}}/Outlook_folders_productivity.png" alt="Outlook_folders_productivity" />
 
 Most of us, even me used to just use flags on messages to indicate the messages that I had to take actions on. But this would soon turn out unmanageable, as it is hard to prioritize out from a single large list. Outlook has an important feature of [categorization](http://office.microsoft.com/en-in/outlook-help/create-and-assign-color-categories-HA010217901.aspx) and also [folderization](http://help.outlook.com/en-us/140/bb899478.aspx). Either of this feature can be used to maximize the way in which we manage tasks.
 

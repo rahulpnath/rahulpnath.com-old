@@ -25,7 +25,7 @@ private const string autoDiscoverUrl = "https://lyncdiscover.{0}";
 ```
 
 Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
-[![HTTP call flow prior to creating an application in UCWA](https://ucwa.lync.com/assets/lync/graph/art/CreateApp.png)](https://ucwa.lync.com/documentation/KeyTasks-CreateApplication)
+[![HTTP call flow prior to creating an application in UCWA]({{ site.images_root}}/ucwa_createapp.png)](https://ucwa.lync.com/documentation/KeyTasks-CreateApplication)
 
 Issuing a get request to ‘[https://lyncdiscover.microsoft.com/](https://lyncdiscover.microsoft.com/)’, will give the details of the home server that we need to connect to.
 
@@ -97,7 +97,7 @@ A successful request for the above returns the applications url. The application
 
 Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a [lot more](https://ucwa.lync.com/documentation/core-features).
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image.png)   [![image](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb1.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image1.png)
+![image]({{ site.images_root}}/ucwa_wp_login.png)![image]({{ site.images_root}}/ucwa_wp_loggedIn_details.png)
 
 You can find the sample [here](https://github.com/rahulpnath/Blog/tree/master/UCWA.WindowsPhone).Hope this helps you to build connected enterprise applications.
 

@@ -21,7 +21,7 @@ We had seen on how [incremental loading can be done in a Windows phone](http://r
 
 An ideal example for this would be the [500px api](http://developers.500px.com/), where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about [mvvm](http://rahulpnath.com/blog/tag/mvvm/), all along will implement this using MVVM.
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image_thumb7.png)](http://rahulpnath.com/blog/wp-content/uploads/2014/01/image7.png)
+![image]({{ site.images_root}}/WP_IncrementalLoading.png)
 
 
 

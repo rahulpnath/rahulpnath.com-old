@@ -18,7 +18,7 @@ tags:
 
 Recently on a client project, I had a requirement to cache images locally on the phone and then load it from there from subsequent requests. Initially I had plans for custom implementing this using sqlite and custom code. While googling for this, I came across an awesome custom library that solved my problem with just a few lines of code – [JetImageLoader](https://github.com/artem-zinnatullin/jet-image-loader) by [Artem](https://github.com/artem-zinnatullin). This is available via nuget, making it easy to install
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2014/04/image_thumb.png)](http://www.nuget.org/packages/WP-JetImagLoader/0.8.5)
+[![WP-JetImagLoader]({{ site.images_root}}/WP-JetImagLoader.png)](http://www.nuget.org/packages/WP-JetImagLoader/0.8.5)
 
 Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.
 

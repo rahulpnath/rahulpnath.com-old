@@ -57,7 +57,7 @@ Setting up PhoneGap is pretty easy and direct with its integration with [node.js
 
 	This will create the basic folder structure for your PhoneGap project which looks like below.
 
-	{% img left http://rahulpnath.com/blog/wp-content/uploads/2014/03/image_thumb.png %}
+	<img class="left" src="{{ site.images_root}}/cordova_folder_structure.png" alt="cordova_folder_structure" />
 
 	**.cordova: **This directory contains files related to cordova.
 
@@ -91,7 +91,7 @@ With PhoneGap/Cordova, you can see how easy it is to have an app in various plat
 
 
 
-![WP](http://rahulpnath.com/blog/wp-content/uploads/2014/03/WP_thumb.png)
-![Android](http://rahulpnath.com/blog/wp-content/uploads/2014/03/Android_thumb.png)
+![Cordova_WP]({{ site.images_root}}/Cordova_WP.png)
+![Cordova_Android]({{ site.images_root}}/Cordova_Android.png)
 
 The source code for the sample is available [here](https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap). Don’t forget to update the [api key for 500px](http://developers.500px.com/) before you run the application.
