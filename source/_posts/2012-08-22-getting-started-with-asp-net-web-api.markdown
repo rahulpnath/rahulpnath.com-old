@@ -27,11 +27,11 @@ Fire up your Visual Studio.Get the [ASP.NET MVC4](http://www.asp.net/mvc/mvc4) i
 
 Create a New Project: File –> New Project –> ASP.NET MVC4 Web Application.Enter your path and solution name and pressing Ok will give you another screen where you can select what kind of template you want to use.For this we would be using Web Api template.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb.png)](http://rahulpnath.files.wordpress.com/2012/08/image.png)
+![wep_api_visual_studio_template]({{ site.images_root}}/web_api_visual_studio_template.png)
 
 On pressing Ok Visual Studio will create you a set of default controllers and views to start with.Build and run to verify that we have all set up correctly.You should be seeing a nice welcome screen if everything is fine.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb1.png)](http://rahulpnath.files.wordpress.com/2012/08/image1.png)
+![web_api_default_template_welcome_screen]({{ site.images_root}}/web_api_default_template_welcome_screen.png)
 
 If you see in the solution explorer in Visual Studio,you notice that you already have 2 Controllers that are  created by the default template.A ‘_HomeController’_ that derives from _Controller_ which is your default MVC controller that just rendered out the beautiful page that you just saw above and a ‘_ValuesController’_ that derives from _ApiController _which is actually our web api controller.
 
@@ -48,7 +48,7 @@ defaults: new { id = RouteParameter.Optional }
 Now that you have seen the API route,lets try invoking the _ValuesController _that got created automatically.Following the route that is specified above we need to prefix the controller with an _api/._This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the _ValuesController_ we would need to invoke it with ‘_api/values_’.
 To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ & ‘value2’ as returned in the GET of the _ValuesController_) in json format,as that is the default formatter that is used.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb2.png)](http://rahulpnath.files.wordpress.com/2012/08/image2.png)
+![web_api_request_response_fiddler]({{ site.images_root}}/web_api_request_response_fiddler.png)
 
 To check the remaining of HTTP actions we would need to write the implementations for those functions as the _ValuesController _does not have that implemented.
 
@@ -69,21 +69,21 @@ Visual Studio will do most of  the job in creating out the controllers and the 
 
 Give the controller name as ‘FoodDishesController’.From the template drop down select the ‘API Controller with read/write actions,using Entity Framework’ option.This is what is automatically going to put out the all the code that we would required.Select the ModelClass that we created,_FoodDish._(If you don't see the class in the models, build the solution before adding new controller).For the DataContext select ‘_<New Data Context…>_’ and enter _FoodDishesContext._Refer the image below.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb3.png)](http://rahulpnath.files.wordpress.com/2012/08/image3.png)
+![web_api_controller_scaffolding_dialog]({{ site.images_root}}/web_api_controller_scaffolding_dialog.png)
 
 On clicking Add,the controller gets created successfully and also the database connections are setup automatically using [EF Code First approach](http://weblogs.asp.net/scottgu/archive/2010/07/16/code-first-development-with-entity-framework-4.aspx).Let’s take a deeper look into the Controller that has got created.
 You notice that all the methods in the controller has one of the HTTP verb prefixed.ASP.NET WEB API is intelligent enough to understand this naming convention too.So if you don’t like just the http verbs as function name you can use this approach too.Below image shows the possible combinations of function naming.You can use anyone that suites you.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb4.png)](http://rahulpnath.files.wordpress.com/2012/08/image4.png)
+![web_api_method_definitions]({{ site.images_root}}/web_api_method_definitions.png)
 
 The WEB API is all set to be tested.To issues a GET,same as we did before,from the browser hit the ‘_/api/FoodDishes_’.The first request might take up some time to return as Entity Framework needs to set up the database.But in sometime you should get back the json result.But this time it would be a blank one as are yet to add any food dishes to the database.For that we need to do a POST to the _FoodDishes _controller.For this we will be using [_Fiddler_](http://www.fiddler2.com/fiddler2/)_,_which is an excellent tool for web debugging.You should be getting to download it for free from [here](http://www.fiddler2.com/fiddler2/version.asp).
 In Fiddler select the Composer tab and enter in the details that is required.Make the HTTP action as POST,enter the ValuesController URI,specify the _Content-Type_ as ‘_application/json_’_  _and also provide the sample data as shown in the image below.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb5.png)](http://rahulpnath.files.wordpress.com/2012/08/image5.png)
+![web_api_request_headers_fiddler]({{ site.images_root}}/web_api_request_headers_fiddler.png)
 
 On clicking execute you should be seeing an entry in fiddler with HTTP status code 201,indicating that the entry has been successfully created.In the response you can see the location of this newly created food dish and how to reach that.For me it is at ‘_http://localhost:61150/api/FoodDishes/1_'.So we have successfully created a new fooddish.
 
-[![image](http://rahulpnath.files.wordpress.com/2012/08/image_thumb6.png)](http://rahulpnath.files.wordpress.com/2012/08/image6.png)
+![web_api_response_fiddler]({{ site.images_root}}/web_api_response_fiddler.png)
 
 Now to see the newly created dish you can either use a GET on ‘/api/FoodDishes’ to get all the food dishes or GET on /api/FoodDishes/1’ to get the specific Food dish.
 Now this can be accessed from any device that supports issuing HTTP calls and you have your first WEB API ready,which just does a [CRUD](http://en.wikipedia.org/wiki/Create,_read,_update_and_delete) over your FoodDishes.

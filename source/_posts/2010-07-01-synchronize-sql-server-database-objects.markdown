@@ -14,7 +14,7 @@ tags:
 - Sql Server
 ---
 
-[![](http://rahulpnath.files.wordpress.com/2010/07/dbsync.jpg?w=300)](http://rahulpnath.files.wordpress.com/2010/07/dbsync.jpg)  
+<img class ="left" alt="Database Synchronization" src="{{ site.images_root}}/database_sync.jpg" />
 Updating an old database, with newly created/modified database objects(mostly stored procedures,views,functions and table value parameters), from a new database was a very common,tedious,error prone task that was performed at my workplace for the past few months.This came up with the client requesting to retain their existing data and just make updates to their old database from our development database(which of course is the new/latest one), whenever a deliverable was made.  
 When the very work I do is to automate peoples work,I felt perturbed seeing this being done manually.So decided on to automate it :)  
 Writing SQL scripts would be db expert way I guess.But I am no expert in that so decided to do it in my way.  
@@ -28,4 +28,4 @@ A help is there within the app.
   
 Thanks to .Net once more :)  
   
-Download the source [code ](http://www.4shared.com/document/EuSkVkhN/Db_Reconcile.html)(rename to .rar)
+<!--- Download the source [code ](http://www.4shared.com/document/EuSkVkhN/Db_Reconcile.html)(rename to .rar ) --->

@@ -12,7 +12,7 @@ tags:
 - Visual Studio
 ---
 
-[![](http://rahulpnath.files.wordpress.com/2010/03/vs_debug.png?w=250)](http://rahulpnath.files.wordpress.com/2010/03/vs_debug.png)  
+<img class ="left" alt="visual studio debug not working" src="{{ site.images_root}}/vs_debug_not_working.png" />
 Quite a few days back,I faced a peculiar problem :).Visual Studio was not having the green play button(the one for Start Debugging) enabled.No way was I able to start debugging.  
 Google gave many suggestions,none was of help.  
 I soon found out that,in Startup Projects(From the menu Project -> Properties),the option multiple was selected and all the projects were set to an action None)(Setting this to Start Without debugging also creates this same problem) :)   

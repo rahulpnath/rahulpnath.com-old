@@ -20,7 +20,7 @@ Tombstoning opens up a whole new path for the application lifecylcle,introducing
 
 The below diagram,as from msdn, gives the complete picture of the application model.
 
-[![](http://rahulpnath.files.wordpress.com/2010/11/wp7-application-model.png)](http://rahulpnath.files.wordpress.com/2010/11/wp7-application-model.png)
+![wp7 application model]({{ site.images_root}}/wp7_application_model.png)
 
 
 

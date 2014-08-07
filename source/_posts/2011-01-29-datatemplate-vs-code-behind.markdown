@@ -52,13 +52,13 @@ But still many people move on to WPF from older technologies fail to absorb this
     ```
 
 
-[![adfx1oqi](http://rahulpnath.files.wordpress.com/2011/01/adfx1oqi_thumb.jpg)](http://rahulpnath.files.wordpress.com/2011/01/adfx1oqi.jpg)
+![binding displaymemberpath]({{ site.images_root}}/binding_displaymemberpath.jpg)
 
 But the scenario changes when the item to be displayed has to be more informative.Say you need a image to come up with some text,or maybe a button/checkbox etc.Now people tend to shift to the older approaches of creating the listbox items display from code.As that’s how it had been done before and also that seems easier.
 
 The code changes to something similar to shown below.
 
-[![fkhzijyk](http://rahulpnath.files.wordpress.com/2011/01/fkhzijyk_thumb.jpg)](http://rahulpnath.files.wordpress.com/2011/01/fkhzijyk.jpg)
+![binding code behind]({{ site.images_root}}/binding_code_behind.jpg)
 
 Or another approach might be slightly better than this one,by creating a user control to hold this data and then create the User control in the code behind and then add that to the listbox items.
 
@@ -66,7 +66,7 @@ This is where people tend to loose focus of the real power of WPF ..**Templating
 
 All this code can be easily replaced and also clearly separate that UI details from the behaviour.The property that's the key here is _ItemTemplate,_and this would how the new code look like.
 
-[![wettkgy2](http://rahulpnath.files.wordpress.com/2011/01/wettkgy2_thumb.jpg)](http://rahulpnath.files.wordpress.com/2011/01/wettkgy2.jpg)
+![binding data template]({{ site.images_root}}/binding_data_template.jpg)
 
 And the code in the behind all vanishes,and is as simple in our first case,by just setting up the listbox1’s ItemsSource.
 
