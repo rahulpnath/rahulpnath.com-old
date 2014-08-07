@@ -16,7 +16,7 @@ My name is Rahul Nath. I am a programmer and work out of Hyderabad,India for [Me
 
 **This blog and its contents are all opinions of my own.**
 
-I would be more than happy to have you ![Rss feed]({{ site.images_root}}/icon-rss.png) [subscribe to my blog's RSS feeds](http://feeds2.feedburner.com/rahulpnath). I am also on ![gplus-icon]({{ site.images_root}}/icon-gplus.png) [Google+](https://www.google.com/+RahulNath), ![twitter-icon]({{ site.images_root}}/icon-twitter.png) [Twitter](https://twitter.com/rahulpnath) and ![fb-icon]({{ site.images_root}}/icon-fb.png)  [Facebook](https://www.facebook.com/rahulpnath). 
+I would be more than happy to have you <img style="border:0" alt="Rss feed" src="{{ site.images_root}}/icon-rss.png" /> [subscribe to my blog's RSS feeds](http://feeds2.feedburner.com/rahulpnath). I am also on <img style="border:0" alt="Google+" src="{{ site.images_root}}/icon-gplus.png" /> <a href="https://www.google.com/+RahulNath?rel=me" rel="me">Google+</a>, <img style="border:0" alt="Twitter" src="{{ site.images_root}}/icon-twitter.png" /> <a href="https://twitter.com/rahulpnath" rel="me">Twitter</a>, <img style="border:0" alt="Facebook" src="{{ site.images_root}}/icon-fb.png" /> <a href="https://www.facebook.com/rahulpnath" rel="me">Facebook</a> and <img style="border:0" alt="Instagram" src="{{ site.images_root}}/icon-instagram.png" /> <a href="http://instagram.com/rahulpnath/" rel="me">Instagram</a>
 
 If you want to drop a mail, feel free to drop to [me@rahulpnath.com](mailto:me@rahulpnath.com?subject=Hello Rahul)
 
