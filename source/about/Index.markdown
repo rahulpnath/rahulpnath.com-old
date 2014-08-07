@@ -6,6 +6,7 @@ slug: about
 title: About Me
 wordpress_id: 5
 navbar: About
+alias: /blog/about/
 ---
 
 ![Rahul P Nath]({{ site.images_root}}/rahul.jpg)

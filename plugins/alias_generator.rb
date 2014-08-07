@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0099)https://raw.githubusercontent.com/tsmango/jekyll_alias_generator/master/_plugins/alias_generator.rb -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body><div id="dic_bubble" class="selection_bubble" style="z-index: 9999; visibility: hidden;" fetching="false"></div><pre style="word-wrap: break-word; white-space: pre-wrap;"># Alias Generator for Posts.
+# Alias Generator for Posts.
 #
 # Generates redirect pages for posts with aliases set in the YAML Front Matter.
 #
@@ -31,7 +29,7 @@
 
 module Jekyll
 
-  class AliasGenerator &lt; Generator
+  class AliasGenerator < Generator
 
     def generate(site)
       @site = site
@@ -54,7 +52,7 @@ module Jekyll
 
     def generate_aliases(destination_path, aliases)
       alias_paths ||= Array.new
-      alias_paths &lt;&lt; aliases
+      alias_paths << aliases
       alias_paths.compact!
 
       alias_paths.flatten.each do |alias_path|
@@ -72,27 +70,28 @@ module Jekyll
           file.write(alias_template(destination_path))
         end
 
-        (alias_index_path.split('/').size + 1).times do |sections|
-          @site.static_files &lt;&lt; Jekyll::AliasFile.new(@site, @site.dest, alias_index_path.split('/')[0, sections].join('/'), '')
+        (alias_index_path.split('/').size).times do |sections|
+        @site.static_files << Jekyll::AliasFile.new(@site, @site.dest, alias_index_path.split('/')[1, sections + 1].join('/'), '')
+
         end
       end
     end
 
     def alias_template(destination_path)
-      &lt;&lt;-EOF
-      &lt;!DOCTYPE html&gt;
-      &lt;html&gt;
-      &lt;head&gt;
-      &lt;link rel="canonical" href="#{destination_path}"/&gt;
-      &lt;meta http-equiv="content-type" content="text/html; charset=utf-8" /&gt;
-      &lt;meta http-equiv="refresh" content="0;url=#{destination_path}" /&gt;
-      &lt;/head&gt;
-      &lt;/html&gt;
+      <<-EOF
+      <!DOCTYPE html>
+      <html>
+      <head>
+      <link rel="canonical" href="#{destination_path}"/>
+      <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+      <meta http-equiv="refresh" content="0;url=#{destination_path}" />
+      </head>
+      </html>
       EOF
     end
   end
 
-  class AliasFile &lt; StaticFile
+  class AliasFile < StaticFile
     require 'set'
 
     def destination(dest)
@@ -108,4 +107,3 @@ module Jekyll
     end
   end
 end
-</pre></body></html>
