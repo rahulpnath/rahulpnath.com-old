@@ -20,7 +20,7 @@ tags:
 
 While working on my Windows 8 Store application, [Picfinity](http://apps.microsoft.com/windows/en-us/app/picfinity/33ba9249-a9f4-44df-973c-21962376c3ea) I came across a need for a drop-down button(which I thought was the correct term for this). A similar control is there on the start screen of Windows 8 that gives us options on clicking the logged in user’s image to Change Account picture, Lock, Sign Out etc.
 
-[![image](http://rahulpnath.files.wordpress.com/2013/01/image_thumb.png)](http://rahulpnath.files.wordpress.com/2013/01/image.png)
+![windows8 dropdown button]({{ site.images_root}}/windows8_dropdown_button.png)
 
 I wanted this same behaviour in my application, to provide similar options for the logged in user. The easiest way to achieve this is to use a [Popup](http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.aspx). The xaml snippet below shows how to get a similar look on your application
 
@@ -47,6 +47,6 @@ I wanted this same behaviour in my application, to provide similar options for t
 ```
 On click of the button we need to set the popup’s [IsOpen](http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.isopen.aspx) to true. Setting the [IsLightDismissEnabled](http://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.xaml.controls.primitives.popup.islightdismissenabled) to true the popup closes whenever the user taps outside of the popup.
 
-[![image](http://rahulpnath.files.wordpress.com/2013/01/image_thumb1.png)](http://rahulpnath.files.wordpress.com/2013/01/image1.png)
+![windows8 dropdown button]({{ site.images_root}}/windows8_dropdown_button_plain.png)
 
 Style and color it the way you want it to look and there you have an easy drop-down button for Windows 8.

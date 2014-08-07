@@ -24,7 +24,7 @@ If you are already using a listbox then you should be changing it to a longlists
 
 We need to specify a few templates for the date to be rendered to our needs as shown below. In this example we would be looking at a contacts sample.
 
-[![JumpList1](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList1.png) [![JumpList](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList_thumb.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/08/JumpList.png)
+![windows_phone_jumplist_items]({{ site.images_root}}/wp_jumplist_items.png)![windows_phone_jumplist_groups]({{ site.images_root}}/wp_jumplist_groups.png)
 
 **ItemTemplate**
 

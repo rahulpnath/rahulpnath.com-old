@@ -19,7 +19,7 @@ Day in and day out, knowingly or unknowingly we get to use http. While accessing
 
 You could find in detail about the entire protocol spec, [here](http://www.w3.org/Protocols/rfc2616/rfc2616.html).  If you have already gone through it in its entirety then this blog might be of very little or no help at all. For the others, who I suppose majority of us would be this is just about pointing you to another resource that would take hardly a couple of hours of your time, to get enough information on the protocol.
 
-{% img left http://www.syncfusion.com/Content/en-US/Downloads/Images/Ebooks/Landing%20Page/http_succinctly_download.PNG?UTM_medium=rahulblogreview %}
+<img class="left" src="{{ site.images_root}}/http_succinctly.png"  alt="http succinctly" />
 
 With all the concise and precise information , **[Syncfusion’s Succinctly series](http://www.syncfusion.com/resources/techportal/ebooks?UTM_medium=rahulblogreview)** has a very good resource covering [**HTTP**](http://www.syncfusion.com/resources/techportal/ebooks/http?UTM_medium=rahulblogreview).  As the name, succinctly suggests, this book series gives you enough information that enables you to master a wide range of topics.  All you need to do is to fill up a contact form and get access to all the books in kindle and pdf format, all for free.  As a company this is a a very good contribution that Syncfusion is making to the community giving away all these resources for free.
 

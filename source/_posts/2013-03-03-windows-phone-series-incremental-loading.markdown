@@ -140,7 +140,7 @@ You can use either of these two ways to incrementally load data on a windows pho
 
 
 
-[![LongListSelector](http://rahulpnath.com/blog/wp-content/uploads/2013/03/wp_ss_20130303_0001_thumb.jpg)](http://rahulpnath.com/blog/wp-content/uploads/2013/03/wp_ss_20130303_0001.jpg) [![ScrollStates](http://rahulpnath.com/blog/wp-content/uploads/2013/03/wp_ss_20130303_0002_thumb.jpg)](http://rahulpnath.com/blog/wp-content/uploads/2013/03/wp_ss_20130303_0002.jpg)
+![windows phone incremental loading using longlistselector]({{ site.images_root}}/wp_incremental_loading_longlistselector.jpg)![windows phone incremental loading using scrollstates]({{ site.images_root}}/wp_incremental_loading_scrollstates.jpg)
 
 Hope this helps you to incrementally load data on your windows phone application
 

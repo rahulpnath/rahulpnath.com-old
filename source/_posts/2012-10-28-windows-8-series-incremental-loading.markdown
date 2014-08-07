@@ -175,11 +175,11 @@ As you see above the _PagedSourceLoader_ gets the json from the datasource url a
 I have a sample [here](http://sdrv.ms/RdPtdL) that incrementally loads the photos from a photo site [500px](http://500px.com/flow). You would need to register for an to get the consumer key,which should hardly take some time [here](http://500px.com/settings/applications?from=developers).
 
 
-[![](http://rahulpnath.files.wordpress.com/2012/10/incrementalloading.png?w=300)](http://rahulpnath.files.wordpress.com/2012/10/incrementalloading.png)
+![windows8 incremental loading]({{ site.images_root}}/windows8_incremental_loading.png)
 
 
 
-[Download the sample source code](http://sdrv.ms/RdPtdL)
+[Download the sample source code](https://github.com/rahulpnath/Blog/tree/master/Windows8%20-%20IncrementalLoading)
 
 Keep a sample of the source code for yourself in case you wanted this specific version. I might refine this to a more usable library with couple of default _PagedSourceLoader._
 

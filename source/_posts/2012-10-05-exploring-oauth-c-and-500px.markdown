@@ -36,7 +36,7 @@ I chose the web-api provided by [500px](http://developers.500px.com/), which doe
 
  
 
-[![image](http://rahulpnath.files.wordpress.com/2012/10/image_thumb.png)](http://rahulpnath.files.wordpress.com/2012/10/image.png)
+![oauth_500px_authentication]({{ site.images_root}}/oauth_500px_authentication.png)
 
  
 
@@ -72,7 +72,7 @@ Before getting on to the steps we would need to register the application that is
 
  
 
-[![image](http://rahulpnath.files.wordpress.com/2012/10/image_thumb1.png)](http://rahulpnath.files.wordpress.com/2012/10/image1.png)
+![oauth_500px_application_details]({{ site.images_root}}/oauth_500px_application_details.png)
 
  
 
@@ -261,7 +261,7 @@ Oauth500Px.MakeRequest(Oauth500px.RequestType.GET).ExecuteRequest&lt;PhotoDetail
 
 
     
-The code for the OAuth wrapper for 500px specific toWindows8 is available [here](http://sdrv.ms/PWyHQR) for download. Feel free to modify it and use it. I will be refactoring the code out a bit more and also add a few functionalities. So in case you wanted this specific version do keep a copy for yourself.
+The code for the OAuth wrapper for 500px specific toWindows8 is available [here](https://github.com/rahulpnath/Blog/blob/master/Oauth500px.cs) for download. Feel free to modify it and use it. I will be refactoring the code out a bit more and also add a few functionalities. So in case you wanted this specific version do keep a copy for yourself.
 
 
 

@@ -196,7 +196,7 @@ Hope this helps you to decouple your application bar icons from the ViewModel.Yo
 
 
 
-[![image](http://rahulpnath.com/blog/wp-content/uploads/2013/04/image_thumb4.png)](http://rahulpnath.com/blog/wp-content/uploads/2013/04/image4.png)
+![windows phone applicationbar mvvm]({{ site.images_root}}/wp_applicationbar_icon_mvvm.png)
 
 
 
