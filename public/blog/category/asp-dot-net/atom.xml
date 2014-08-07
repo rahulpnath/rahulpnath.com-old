@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: asp.net | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/category/asp-dot-net/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-07T15:34:00+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Getting Started With ASP.NET Web Api]]></title>
+    <link href="http://rahulpnath.com/blog/getting-started-with-asp-net-web-api/"/>
+    <updated>2012-08-22T12:08:11+05:30</updated>
+    <id>http://rahulpnath.com/blog/getting-started-with-asp-net-web-api</id>
+    <content type="html"><![CDATA[<p>A web api is to expose your application’s programming interface over the web,using the HTTP interface.This makes the api accessible from any device that can make HTTP calls.With the wide range of devices that’s available nowadays,Web Api would be the best way to reach out to all of them.Web Api helps you to open up your application to other developers and encourage them to build device specific application.</p>
+
+<p>Since Web Api uses HTTP,this can be accessed from any device that supports HTTP.A brief glance through the <a href="http://www.w3.org/Protocols/HTTP/1.1/rfc2616.pdf">HTTP spec</a> would be good for a better understanding on the capabilities of HTTP.The web was mostly used for human-to-machine conversations and we never felt the need of these API’s.But increasingly with different devices and applications talking with each other,machine-to-machine conversations is on the rise,making the <a href="http://www.programmableweb.com/">web programmable</a>.</p>
+
+<p>We will be building a web api for a Cafeteria(over many blog posts) that is looking out to have a web presence,so that they can reach out easily to their customers on various devices.The cafeteria has lots of food items and beverages and they are looking for a solution where there customers can see all these items from their mobile/laptops and order these items and collect them from the counter.In this blog post we would be concentrating only on viewing/managing the food dishes/beverages and we would be building on the solution in later posts
+Let’s get started building our Web API.!!</p>
+
+<p>Fire up your Visual Studio.Get the <a href="http://www.asp.net/mvc/mvc4">ASP.NET MVC4</a> installed before that.I am having <a href="http://www.microsoft.com/visualstudio/11/en-us">VS2012</a> which has it by default.</p>
+
+<p>Create a New Project: File –> New Project –> ASP.NET MVC4 Web Application.Enter your path and solution name and pressing Ok will give you another screen where you can select what kind of template you want to use.For this we would be using Web Api template.</p>
+
+<p><img src="/web_api_visual_studio_template.png" alt="wep_api_visual_studio_template" /></p>
+
+<p>On pressing Ok Visual Studio will create you a set of default controllers and views to start with.Build and run to verify that we have all set up correctly.You should be seeing a nice welcome screen if everything is fine.</p>
+
+<p><img src="/web_api_default_template_welcome_screen.png" alt="web_api_default_template_welcome_screen" /></p>
+
+<p>If you see in the solution explorer in Visual Studio,you notice that you already have 2 Controllers that are  created by the default template.A ‘<em>HomeController’</em> that derives from <em>Controller</em> which is your default MVC controller that just rendered out the beautiful page that you just saw above and a ‘<em>ValuesController’</em> that derives from <em>ApiController </em>which is actually our web api controller.</p>
+
+<p>Web Api also uses routes to map URI’s to controller actions.But the difference with MVC route is that,here we have no actions specified in the route value.The HTTP method becomes the action.So your controller would have functions with the same names as the HTTP verbs(GET,PUT,POST,DELETE).If you don’t like these function names then there are attributes too that you can use to mark your own function names.We will see all this in our code.</p>
+
+<p>The default route that is created for Web Api can be found in the <em>App_Start/WebApiConfig  _
+<code>csharp
+config.Routes.MapHttpRoute(
+name: "DefaultApi",
+routeTemplate: "api/{controller}/{id}",
+defaults: new { id = RouteParameter.Optional }
+);
+</code>
+Now that you have seen the API route,lets try invoking the </em>ValuesController <em>that got created automatically.Following the route that is specified above we need to prefix the controller with an </em>api/.<em>This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the </em>ValuesController<em> we would need to invoke it with ‘</em>api/values<em>’.
+To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ &amp; ‘value2’ as returned in the GET of the </em>ValuesController_) in json format,as that is the default formatter that is used.</p>
+
+<p><img src="/web_api_request_response_fiddler.png" alt="web_api_request_response_fiddler" /></p>
+
+<p>To check the remaining of HTTP actions we would need to write the implementations for those functions as the <em>ValuesController </em>does not have that implemented.</p>
+
+<p>So lets get back to the Cafeteria business.We will create a model to represent the FoodDishes that the cafeteria has to offer.For now we will just have a id,name and description field in the model.
+&#8220;` csharp
+public class FoodDish
+{
+public int FoodDishId { get; set; }</p>
+
+<p>[Required]
+public string FoodDishName { get; set; }</p>
+
+<p>public string Description { get; set; }
+}
+&#8220;`
+Note the ‘<em>[Required]</em>’ attribute on the property FoodDishName.This ensures that a value is always present for that property.This is similar to the validation in MVC.A list of supported attributes can be found <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.dataannotations.aspx">here</a>
+Visual Studio will do most of  the job in creating out the controllers and the data context’s for us,with just a couple of clicks.To group the WEB API controllers together lets create a folder under the Controllers folder named ‘<em>api</em>’. This is just for a convention and is not mandatory.Right Click on the newly created ‘<em>api’ </em>folder and say Add –> Controller</p>
+
+<p>Give the controller name as ‘FoodDishesController’.From the template drop down select the ‘API Controller with read/write actions,using Entity Framework’ option.This is what is automatically going to put out the all the code that we would required.Select the ModelClass that we created,<em>FoodDish.</em>(If you don&rsquo;t see the class in the models, build the solution before adding new controller).For the DataContext select ‘<em><New Data Context…></em>’ and enter <em>FoodDishesContext.</em>Refer the image below.</p>
+
+<p><img src="/web_api_controller_scaffolding_dialog.png" alt="web_api_controller_scaffolding_dialog" /></p>
+
+<p>On clicking Add,the controller gets created successfully and also the database connections are setup automatically using <a href="http://weblogs.asp.net/scottgu/archive/2010/07/16/code-first-development-with-entity-framework-4.aspx">EF Code First approach</a>.Let’s take a deeper look into the Controller that has got created.
+You notice that all the methods in the controller has one of the HTTP verb prefixed.ASP.NET WEB API is intelligent enough to understand this naming convention too.So if you don’t like just the http verbs as function name you can use this approach too.Below image shows the possible combinations of function naming.You can use anyone that suites you.</p>
+
+<p><img src="/web_api_method_definitions.png" alt="web_api_method_definitions" /></p>
+
+<p>The WEB API is all set to be tested.To issues a GET,same as we did before,from the browser hit the ‘<em>/api/FoodDishes</em>’.The first request might take up some time to return as Entity Framework needs to set up the database.But in sometime you should get back the json result.But this time it would be a blank one as are yet to add any food dishes to the database.For that we need to do a POST to the <em>FoodDishes </em>controller.For this we will be using <a href="http://www.fiddler2.com/fiddler2/"><em>Fiddler</em></a><em>,</em>which is an excellent tool for web debugging.You should be getting to download it for free from <a href="http://www.fiddler2.com/fiddler2/version.asp">here</a>.
+In Fiddler select the Composer tab and enter in the details that is required.Make the HTTP action as POST,enter the ValuesController URI,specify the <em>Content-Type</em> as ‘<em>application/json</em>’<em>  </em>and also provide the sample data as shown in the image below.</p>
+
+<p><img src="/web_api_request_headers_fiddler.png" alt="web_api_request_headers_fiddler" /></p>
+
+<p>On clicking execute you should be seeing an entry in fiddler with HTTP status code 201,indicating that the entry has been successfully created.In the response you can see the location of this newly created food dish and how to reach that.For me it is at ‘_<a href="http://localhost:61150/api/FoodDishes/1_">http://localhost:61150/api/FoodDishes/1_</a>&lsquo;.So we have successfully created a new fooddish.</p>
+
+<p><img src="/web_api_response_fiddler.png" alt="web_api_response_fiddler" /></p>
+
+<p>Now to see the newly created dish you can either use a GET on ‘/api/FoodDishes’ to get all the food dishes or GET on /api/FoodDishes/1’ to get the specific Food dish.
+Now this can be accessed from any device that supports issuing HTTP calls and you have your first WEB API ready,which just does a <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> over your FoodDishes.</p>
+
+<p>Lets take a deeper look in the controller,to see how all this is happening.Will look into the GET and POST here in this post as DELETE and PUT would be then easy to follow.
+The GET method that visual studio scaffolded for us,just returns the requested fooddish from the database.If the food item does not exists it returns a ‘NotFound’/404 error.Notice that here we are using HTTP’s error code’s so that client can easily understand the error.
+&#8220;` csharp
+public FoodDish GetFoodDish(int id)
+{
+FoodDish fooddish = db.FoodDishes.Find(id);
+if (fooddish == null)
+{
+throw new HttpResponseException(Request.CreateResponse(HttpStatusCode.NotFound));
+}</p>
+
+<p>return fooddish;
+}
+<code>
+The POST method,checks if the new fooddish entered is valid.In our case we have FoodDishName as a required attribute,so as long as that property is present the ModelState.IsValid would be true.If you have additional validation attributes those would be checked too.If the state is valid then the item is inserted into the database and in the response we write the Location where this new fooddish can be accessed from.This location is what we saw above in the fiddler response.If the ModelState is not valid we sent a BadRequest,so that client can recheck the data send.We can send customized error messages too back to the client,so that the client understands where exactly the issue is.I will be covering validation,authentication and error reporting in a separate post,as that calls for a deeper explanation
+</code>csharp
+[HttpPost]
+public HttpResponseMessage CreateNewFoodDish(FoodDish fooddish)
+{
+if (ModelState.IsValid)
+{
+db.FoodDishes.Add(fooddish);
+db.SaveChanges();</p>
+
+<p>HttpResponseMessage response = Request.CreateResponse(HttpStatusCode.Created, fooddish);
+response.Headers.Location = new Uri(Url.Link(&ldquo;DefaultApi&rdquo;, new { id = fooddish.FoodDishId }));
+return response;
+}
+else
+{
+return Request.CreateResponse(HttpStatusCode.BadRequest);
+}
+}
+&#8220;`
+DELETE and PUT is very similar and should be easy to understand.</p>
+
+<p>So we have our first WEB API exposed and accessible to everyone from a wide range of devices or different technology.This can be consumed for a website or a mobile or slate etc.To put it simple from any device that supports HTTP.
+This should help you get started on with ASP.NET web api.There are a lot more features in ASP.Net Web api like Formatters,Odata support,hosting etc. I would be covering these too in other blog posts.There are a lot of design considerations that need to be taken on while developing API’s.There are a lot of good resource that can help you with tackling down it.I have mentioned a few below in the resources section.</p>
+
+<p>Happy Coding !</p>
+
+<p><strong>Resources:
+</strong>None of them are specific to ASP.NET Web Api,but they should help you to get the bigger picture and also help you in designing good Web API.</p>
+
+<ol>
+<li><p><a href="http://www.w3.org/Protocols/HTTP/1.1/rfc2616.pdf">HTTP Spec</a></p></li>
+<li><p><a href="http://shop.oreilly.com/product/0636920021575.do">REST Api Design Rulebook</a></p></li>
+<li><p><a href="http://shop.oreilly.com/product/9780596805838.do">REST in Practice Hypermedia and Systems Architecture</a></p></li>
+<li><p><a href="http://shop.oreilly.com/product/9780596529260.do">RESTful Web Services</a></p></li>
+<li><p><a href="http://shop.oreilly.com/product/0636920020530.do">Building Hypermedia APIs with HTML5 and Node</a></p></li>
+<li><p><a href="http://info.apigee.com/Portals/62317/docs/web%20api.pdf">Web API Design</a></p></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WCF to ASP.NET Web API]]></title>
+    <link href="http://rahulpnath.com/blog/wcf-to-asp-net-web-api/"/>
+    <updated>2012-07-07T15:46:57+05:30</updated>
+    <id>http://rahulpnath.com/blog/wcf-to-asp-net-web-api</id>
+    <content type="html"><![CDATA[<p>Windows Communication Foundation(WCF) brought around a unified programming model for building service oriented application.All the previous technologies that was used to build services like MSMQ, remoting, ASMX Web Services,all came under one umbrella.</p>
+
+<p>WCF had embraced SOAP,moving away from the <a href="http://rahulpnath.wordpress.com/2011/06/11/rest-after-a-long-time/">restful web</a> giving all sorts of flexibility and configurability.Everyone was happy for sometime thinking about the power that actually WCF gave by just changing a set of configurations and embraced it entirely.But then most of this configuration did not apply to many of the user scenario,and just went unused,coming with the extra ‘baggage’ that SOAP had to carry around.</p>
+
+<p>I found Scott’s summary the best,as in this <a href="http://www.hanselminutes.com/264/this-is-not-your-fathers-wcf-all-about-the-webapi-with-glenn-block">podcast</a>,when he speaks of WCF</p>
+
+<blockquote><p>”<em>If you are giving me an api whose strong point is it can talk over multi transport and has abstracted me away from the details that i actually need in the name of flexibility that i am not going to use,then that is just baggage</em>”</p></blockquote>
+
+<p>WCF had its own way of being restful,so came WCF WebHTTP,WCF Rest Starter Kit and even a WCF Web Api.Apparently ASP.NET MVC,which is inherently restful,was also having getting capabilities to build basic web Api’s.</p>
+
+<p>With <a href="http://www.asp.net/mvc/mvc4">ASP.NET MVC 4</a> , both the paths that REST had taken merges as <a href="http://www.asp.net/web-api">ASP.NET Web API</a>.     <br/>
+So yes this is the ideal platform for building Restful services on the .NET Framework.    <br/>
+Web API is nothing but services exposed over http,providing reach to various devices and platforms without doubt,as http is supported across platforms and devices.SOAP did use http,but it used it more as a transport than an application protocol,by sending message packets over http.But with Web Api the ‘contract’ is the actions of HTTP –GET ,PUT ,POST ,DELETE etc..</p>
+
+<p>All said WCF still holds good in cases where SOAP is necessary,where it was actually intended to be used.It’s just the REST’ful part take a new form.</p>
+
+<p>Can’t wait to get you hands dirty!!!! Jump in with <a href="http://channel9.msdn.com/Events/TechEd/NorthAmerica/2012/DEV309">this</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[REST...after a Long Time]]></title>
+    <link href="http://rahulpnath.com/blog/rest-after-a-long-time/"/>
+    <updated>2011-06-11T19:52:28+05:30</updated>
+    <id>http://rahulpnath.com/blog/rest-after-a-long-time</id>
+    <content type="html"><![CDATA[<p>It&rsquo;s not been too long since I have been  into Web development,but I have already started hearing the buzz word every now and then.</p>
+
+<p>REpresentational State Transfer(REST).</p>
+
+<p>Aaron Skonnard left me with enough curiosity and confusions with his <a href="http://channel9.msdn.com/blogs/matthijs/why-rest-by-aaron-skonnard">Why we need REST</a> talk,to make me dig deeper into it.It takes more time to unlearn things than to learn .With REST it was really something like that.There was this whole concept of SOAP and its API&rsquo;s that came to my mind every now and then.But then is it actually SOAP that REST is trying to replace.Actually no.It&rsquo;s basically an alternate way to Remote Procedure Call(RPC) methodology and it so happens that almost all the SOAP implementation use RPC today.SOAP gave a lot of things out of the box,but most of it never got used,which meant it was just adding up complexity unnecessarily.But as always it&rsquo;s never a &lsquo;SOAP vs REST&rsquo;,it&rsquo;s about what you are trying to achieve that would drive the decision.</p>
+
+<p>REST simplifies a lot on the interface that is exposed to the client.As for REST there is not explicit &lsquo;<em>contracts</em>&rsquo;  to be specified.The HTTP verbs,GET,PUT POST and DELETE are the interface that is used in REST.This makes it much simple and uniform.Also rest takes a Resource Oriented programming where everything under consideration is a resource and the HTTP interface acts on that.At an implementation level you would still have functions for any of those Create,Read,Update and Delete(CRUD) operations,with the only difference being it would be all mapped to the HTTP verbs.</p>
+
+<p>As for WCF is concerned you have 2 attributes,WebGet and WebInvoke, that would decorate you functions to indicate the mapping with the http interface.WebGet is used to map to the GET of http and all other verbs map to WebInvoke,which inturn has Method property that indicates what method of http it actually maps to.
+&#8220;` csharp
+[WebGet(UriTemplate = &ldquo;users/{username}&rdquo;)]
+[OperationContract]
+User GetUserDetails(string userName)</p>
+
+<p>[WebInvoke(Method = &ldquo;PUT&rdquo;, UriTemplate = &ldquo;users/{username}&rdquo;)]
+[OperationContract]
+void PutNewUser(string userName, User user) {&hellip;}
+&#8220;`
+As seen in the above snippet,the same resource,users,supports 2 different kind of methods to be invoked on it.So the function that actually gets invoked would be decided by the Http.So you see the client never calls a GetUserDetails or PutNewUser.All it knows is HTTP and its interface,which gives a uniformity across resources and also makes life simple.</p>
+
+<p>REST is an architectural style,so obviously you need to shift your thought process from previous styles that you would have been exposed to.Wherever you see about REST,it mentions about the basic operations of CRUD over a resource.So often the thought of &lsquo;<em>Are only these operations are suported?</em>&rsquo; comes.So here is one of the shifts in thinking that you would have to think.In REST everything is a resource,be it a person or some activity that he does.So as long as you have different resources for everything you only end up doing the CRUD operations on all those.So its about how you model out these resources.For eg.A transaction that you might need to do can by itself be a resource,over which you would end up doing the basic CRUD operations</p>
+
+<p>Another powerful feature that REST uses is Caching that is inbuilt into the HTTP.Right from no caching to conditional caching can be achieved very easily for your rest services.This reduces the number of roundtrips  and makes a better use of the bandwidth.This is one important feature that makes web what it is today,and you have this power at your disposal,with actually no or very little work.Details on HTTP caching and different machanisms are <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html">here</a></p>
+
+<p>With ASP.NET MVC,you can expose you website also as a service,more interestingly you can do that in a RESTful manner.This makes your website to be used not only by humans but also by machines/programs.You would be using AcceptVerbs attribute as you used WebInvoke/WebGet for WCF.This makes it easy for you to expose your website itself as a service.You can have it return HTML for humans and JSON/XML/any other data format for a machine/program.</p>
+
+<p>REST really makes things simpler and its more towards the way originally the web was intended to be.There is a very good article again by Aaron on <a href="http://msdn.microsoft.com/en-us/library/dd203052.aspx">Building restful services</a>.</p>
+
+<p>Now I need some REST ;)</p>
+]]></content>
+  </entry>
+  
+</feed>
