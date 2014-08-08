@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Tag: Windows Phone 8 | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/tag/windows-phone-8/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-08T10:04:27+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Thanks to Everyone Who Attended My First Public Talk At C#Corner Hyderabad UG]]></title>
+    <link href="http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug/"/>
+    <updated>2014-02-03T12:09:27+05:30</updated>
+    <id>http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug</id>
+    <content type="html"><![CDATA[<p>Thanks to everyone who attended <a href="http://www.c-sharpcorner.com/Events/64/">my very first public talk</a>, at the <a href="http://www.c-sharpcorner.com/">C#Corner</a> <a href="http://www.c-sharpcorner.com/Chapters/6/hyderabad-chapter.aspx">Hyderabad Chapter User Group(UG)</a> on February 1, Saturday on Windows Phone Development. Summary of the event is available <a href="http://www.c-sharpcorner.com/UploadFile/subhendude/C-Sharp-corner-hyderabad-user-group-meet-1-february-2014-offici/">here</a>. It was a very good experience speaking for the first time in front of a large audience, and from my side felt it went well. Here&rsquo;s some follow up information on the talk and also the code samples and presentations used.</p>
+
+<ul>
+<li><p>There might be a lot of you who would be planning to get started with phone development or yet in the dilema of whether or not to - <em><strong>&lsquo;Don&rsquo;t think much and just start <a href="http://developer.windowsphone.com/en-us">getting your hands dirty</a></strong></em>&rsquo;.</p></li>
+<li><p>If your current project/work does not demand you to use whatever we have got started with it, develop a simple application on your free time/weekends. You would get lot of app ideas at <a href="http://www.dvlup.com/SignIn">DVLUP</a> and may even get rewarded if you crack some of their challenges - <em><strong>Stay motivated.</strong></em></p></li>
+<li><p>Make sure whatever you develop is always properly backed up and stored - <em><strong>Use a source control</strong></em>.
+<a href="http://www.visualstudio.com/en-us/products/visual-studio-online-overview-vs#SKUDetailList_1">Visual Studio Online</a> or <a href="https://github.com/">Github</a> are great free services that could get you started with.</p></li>
+<li><p>Learn more about <a href="http://rahulpnath.com/blog/tag/mvvm/">MVVM</a>.The mvvm toolkit that we were using at the demo is <a href="http://mvvmlight.codeplex.com/">MVVM Light</a>. There are a couple of videos in <a href="http://mvvmlight.codeplex.com/">there</a> that will help you get started with it. <a href="http://compositewpf.codeplex.com/">Prism</a> is also another alternative that we had talked about. - <em><strong>Reuse across platforms</strong></em></p></li>
+<li><p>As we had discussed, Getting Started in Windows Phone Development means you have acquired the same skills to Get Started on Windows 8 application too - <em><strong>Get started <a href="http://msdn.microsoft.com/en-in/windows/apps/br211386.aspx">here</a></strong></em>.</p></li>
+<li><p>There are a lot of applications that are waiting to be developed for Windows phone and Windows 8 for which people are even ready to pay you. So if you want to earn out of your side projects, then try looking for projects in freelancing communities - <a href="https://www.odesk.com/">ODesk</a>, <a href="http://www.freelancer.in/">Freelancer</a>, <a href="https://www.elance.com/">Elance</a> are some to get you started - <em><strong>Earn while you Learn</strong></em></p></li>
+</ul>
+
+
+<p>Feel free to get in touch in case you need any help while on your Windows phone journey.</p>
+
+<p>The samples and presentation slides is available in the event summary above or <a href="https://github.com/rahulpnath/Speaking/tree/master/Getting%20Started%20with%20Windows%20Phone%208%20App%20Development">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series – Incremental Loading multiple data sources inside a Pivot]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/"/>
+    <updated>2014-01-21T13:25:25+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot</id>
+    <content type="html"><![CDATA[<p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
+
+<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
+
+<p><img src="/WP_IncrementalLoading.png" alt="image" /></p>
+
+<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
+
+<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
+
+<pre><code class="csharp">private static string[] photoCollections =
+    {
+        "popular",
+        "upcoming",
+        "editors",
+        "fresh_today"
+    };
+
+public List PhotoCollectionViewModels { get; set; }
+
+public MainViewModel()
+{
+    PhotoCollectionViewModels = new List();
+    foreach (var photoCollection in photoCollections)
+    {
+        this.PhotoCollectionViewModels.Add(new PhotoCollectionViewModel(photoCollection));
+    }
+}
+</code></pre>
+
+<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
+
+<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
+
+<pre><code class="csharp ">public class IncrementalLoader&lt;T&gt; where T : class
+{
+    private string BaseUrl;
+
+    private int CurrentPageNumber;
+
+    private bool isCurrentlyLoading;
+
+    private string CurrentUrl
+    {
+        get
+        {
+            return string.Format(this.BaseUrl, ++this.CurrentPageNumber);
+        }
+    }
+
+    public IncrementalLoader(string baseUrl)
+    {
+        this.BaseUrl = baseUrl;
+    }
+
+    public async Task&lt;T&gt; LoadNextPage()
+    {
+        if (this.isCurrentlyLoading)
+        {
+            // call in progress
+            return null;
+        }
+
+        this.isCurrentlyLoading = true;
+        HttpClient client = new HttpClient();
+
+        // Add Microsoft.Bcl.Async nuget for await to work on PCL.
+
+        var response = await client.GetStringAsync(this.CurrentUrl);
+        var serializer = new DataContractJsonSerializer(typeof(T));
+        var returnObject = serializer.ReadObject(new MemoryStream(Encoding.Unicode.GetBytes(response))) as T;
+        this.isCurrentlyLoading = false;
+
+        return returnObject;
+    }
+
+}
+</code></pre>
+
+<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
+
+<pre><code class="xml">
+&lt;Grid x:Name="ContentPanel" Grid.Row="1" &gt;
+ &lt;phone:Pivot Name="photoCollection" ItemsSource="{Binding PhotoCollectionViewModels}"&gt;
+ &lt;phone:Pivot.ItemTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;phone:LongListSelector ItemRealized="Photo_Loaded" ItemsSource="{Binding Photos}" IsGroupingEnabled="False"&gt;
+ &lt;phone:LongListSelector.ItemTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;Image Source="{Binding image_url}" Margin="10" Width="500" /&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:LongListSelector.ItemTemplate&gt;
+ &lt;/phone:LongListSelector&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:Pivot.ItemTemplate&gt;
+ &lt;phone:Pivot.HeaderTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;TextBlock Text="{Binding Title}" /&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:Pivot.HeaderTemplate&gt;
+ &lt;/phone:Pivot&gt;
+&lt;/Grid&gt;
+</code></pre>
+
+<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
+
+<pre><code class="csharp">    private void Photo_Loaded(object sender, ItemRealizationEventArgs e)
+    {
+        LongListSelector longList = sender as LongListSelector;
+        PhotoCollectionViewModel vm = longList.DataContext as PhotoCollectionViewModel;
+
+        vm.LoadMorePhotos(e.Container.Content as Photo);
+    }
+
+    public async Task LoadMorePhotos(Photo currentPhoto)
+    {
+        if (currentPhoto != null)
+        {
+            var index = this.Photos.IndexOf(currentPhoto);
+            if (this.Photos.Count - 3 &gt; index)
+            {
+                return ;
+            }
+        }
+        this.currentCollection = await this.incrementalLoader.LoadNextPage();
+
+        foreach (var photo in this.currentCollection.photos)
+        {
+            this.Photos.Add(photo);
+        }
+    }
+</code></pre>
+
+<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
+
+<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series – Using UCWA to connect to Lync Server]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server/"/>
+    <updated>2014-01-12T15:35:08+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server</id>
+    <content type="html"><![CDATA[<p>One of the main things that makes enterprise or intranet applications more lively and connected with your business contacts, is to integrate with <a href="http://office.microsoft.com/en-in/lync/">Lync</a> (formerly Microsoft Office Communicator) and provide options to interact with them. UCWA(Unified Communications Web Api) is a REST API that exposes Lync Server and its presence capabilities, which can be used to enhance your application capabilities. This can also be used to integrate with Windows phone applications as well and will see how to get started with it here.</p>
+
+<p>To connect to a lync server the only details that we would want is the full email address and the password – thanks to <a href="http://msdn.microsoft.com/en-us/library/office/jj900169(v=exchg.150">AutoDiscover</a>.aspx) for exchange, which makes this possible. AutoDiscover is the way to find the users home server so that we can connect to it. The url for auto discover, otherwise called the <a href="https://ucwa.lync.com/documentation/GettingStarted-RootURL">Root Url</a> can take different forms. In this sample I have assumed that it would take the below form, primarily because it works with the test domain that I was using (microsoft.com).</p>
+
+<pre><code class="csharp">private const string autoDiscoverUrl = "https://lyncdiscover.{0}";
+</code></pre>
+
+<p>Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
+<a href="https://ucwa.lync.com/documentation/KeyTasks-CreateApplication"><img src="/ucwa_createapp.png" alt="HTTP call flow prior to creating an application in UCWA" /></a></p>
+
+<p>Issuing a get request to ‘<a href="https://lyncdiscover.microsoft.com/">https://lyncdiscover.microsoft.com/</a>’, will give the details of the home server that we need to connect to.</p>
+
+<pre><code class="xml ">&lt;resource xmlns="http://schemas.microsoft.com/rtc/2012/03/ucwa" rel="root" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com"&gt;
+    &lt;link rel="user" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=microsoft.com"/&gt;
+    &lt;link rel="xframe" href="https://lync32.lyncweb.microsoft.com/Autodiscover/XFrame/XFrame.html"/&gt;
+&lt;/resource&gt;
+</code></pre>
+
+<p>We now need to authenticate the user with the home server.for which we need the oauth url. This can be obtained by issuing a dummy get request to the <em>user </em>url obtained above. This request will fail with an unauthorized access but also returns the url (<a href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken">https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken</a>) from which the token needs to be obtained</p>
+
+<pre><code>HTTP/1.1 401 Unauthorized
+Cache-Control: no-cache
+Content-Type: text/html
+Server: Microsoft-IIS/7.5
+WWW-Authenticate: Bearer trusted_issuers="00000002-0000-0ff1-ce00-000000000000@3bdbdd27-2373-4baf-9469-4b10e76564c6,00000001-0001-0000-c000-000000000000@f686d426-8d16-42db-81b7-ab578e110ccd,00000001-0000-0000-c000-000000000000@72f988bf-86f1-41af-91ab-2d7cd011db47", client_id="00000004-0000-0ff1-ce00-000000000000"
+WWW-Authenticate: MsRtcOAuth href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken",grant_type="urn:microsoft.rtc:windows,urn:microsoft.rtc:passive,urn:microsoft.rtc:anonmeeting,password"
+X-MS-Server-Fqdn: 000DCO2L50FE1G.redmond.corp.microsoft.com
+X-Powered-By: ASP.NET
+X-Content-Type-Options: nosniff
+Date: Sun, 12 Jan 2014 10:47:50 GMT
+Content-Length: 1293
+</code></pre>
+
+<p>UCWA supports Windows Authentication, Anonymous meeting and Password Authentication mechanisms to authorize the user. i am using the Password Authentication here. On successful authentication a token is returned which can be used to issue the get request on the <em>user </em>url with the token in the header.</p>
+
+<pre><code class="csharp    ">    private void Authenticate(string authenticateUrl, string authenticateToken, string authenticateTokenType)
+    {
+        // Make a GET request to get the ouath url
+        request = new RestRequest(authenticateUrl);
+        request.AddHeader("Accept", "application/json");
+        if (!string.IsNullOrEmpty(userToken))
+        {
+            request.AddHeader("Authorization", String.Format("{0} {1}", authenticateTokenType, authenticateToken));
+        }
+        ucwaClient.ExecuteAsync(request, this.ParseAuthenticateResponse);
+    }
+</code></pre>
+
+<p>A successful request for the above returns the applications url. The applications url might be hosted on a different server in which case we would need to get a separate token for creating a new application. The host of applications url and the oauth url we got above should be same , or else we need to get a new token. When creating a new application, we add the token only if the host’s are same. Not adding this will again fail with Unauthorized exception giving us the new oauth url.</p>
+
+<pre><code class="csharp">    private void CreateNewApplications(string applications)
+    {
+        request = new RestRequest(applications, Method.POST);
+        if (CheckIfSameDomain(applications, oauthUrl))
+        {
+            request.AddHeader("Authorization", String.Format("{0} {1}", applicationTokenType, applicationToken));
+        }
+        var applicationBody = @"""UserAgent"":""{0}"",""EndpointId"":""{1}"",""Culture"":""en-US""";
+        request.RequestFormat = DataFormat.Xml;
+        request.AddParameter(
+            "application/json",
+           "{" + string.Format(applicationBody, "UCWAWindowsPhoneSample", Guid.NewGuid().ToString()) + "}",
+            ParameterType.RequestBody);
+        request.AddHeader("Accept", "application/json");
+        ucwaClient.ExecuteAsync(request, this.CreateNewApplicationsResponse);
+    }
+
+    private bool CheckIfSameDomain(string url1, string url2)
+    {
+        // Check if the token is for the correct domain
+        return new Uri(url1).Host == new Uri(url2).Host;
+    }
+</code></pre>
+
+<p>Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a <a href="https://ucwa.lync.com/documentation/core-features">lot more</a>.</p>
+
+<p><img src="/ucwa_wp_login.png" alt="image" /><img src="/ucwa_wp_loggedIn_details.png" alt="image" /></p>
+
+<p>You can find the sample <a href="https://github.com/rahulpnath/Blog/tree/master/UCWA.WindowsPhone">here</a>.Hope this helps you to build connected enterprise applications.</p>
+
+<p><strong>PS</strong>: I have tested this only against <strong>microsoft.com</strong> domain. In case you find any issues with the domain that you are using please do put it in the comments.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[MVVM – A Windows phone scenario]]></title>
+    <link href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario/"/>
+    <updated>2013-07-26T10:51:51+05:30</updated>
+    <id>http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario</id>
+    <content type="html"><![CDATA[<p>With multiple platforms/devices, embracing the same technology, common architectural patterns become more popular as they provide us with what we want the most – <strong>Reusability. </strong>MVVM has turned out to be a must use architectural pattern while developing for Windows phone/Windows 8 store apps. I had blogged on this, <a href="http://rahulpnath.com/blog/mvvm-does-it-really-matter/">Why MVVM matters</a>.</p>
+
+<p>In this post will take a quick look into the scenarios that would come across while we develop a windows phone app and how that could possibly(as there could be many other ways/approaches too) be implemented using MVVM. I would be covering shorter scenarios in this same post, and those that would be better off in a different one would be linked here . <a href="http://mvvmlight.codeplex.com/">MVVM Light</a> is a very popular toolkit that assists in getting started with MVVM quickly and we would also be using the same. This can be easily added in as a <a href="http://nuget.org/packages/mvvmLight">nuget package</a>
+MVVM Light does come with a ViewModelBase class, that all your View Models are to inherit so that you do not have to worry about implementing the <a href="http://msdn.microsoft.com/en-in/library/system.componentmodel.inotifypropertychanged.aspx">INotifyPropertyChanged</a> interface. I would still think of having a intermediate view model base class specific to our app and have all the reusable piece of code that you want across your ViewModels.</p>
+
+<p>Common MVVM scenarios that we come across while developing and probable approaches are discussed below. There might be different ways of achieving the same, and at times we might go off the ‘purist’  MVVM implementation,  i.e.  of not having a code behind at all. As for me I am ok to have code behind at a minimum if it is really required and does not affect the original intent of MVVM(separations of concerns, testability and reusability)</p>
+
+<p><strong>Scenarios</strong></p>
+
+<ol>
+<li><p> Binding the View – ViewModel</p></li>
+<li><p> ViewModel and Model</p></li>
+<li><p> Basic Commanding</p></li>
+<li><p> Advanced Commanding</p></li>
+<li><p> Page Navigations and Parameters</p></li>
+<li><p> Page Events</p></li>
+<li><p> Application Bar<strong> </strong></p></li>
+</ol>
+
+
+<p>We will discuss each on in details and the sample that we would be using is that of a photo browser, for <a href="http://500px.com/">500px</a>. You can get the api access <a href="http://developers.500px.com/">here</a></p>
+
+<p><strong>1. Binding the View-ViewModel</strong></p>
+
+<p>MVVM Light comes default with a ViewModelLocator(<strong>VML</strong>) class that will help you with the binding of the ViewModels(<strong>VM’s</strong>) with the corresponding View. The VML will have public properties for the different view models that you have. You can either have different public properties for each of your view model here, or have a property for MainViewModel and then that would in turn have other ViewModel properties. The VML uses a SimpleIOC container to resolve type instances. In simple terms, with an IoC container all we are trying to solve is to minimize the dependency between different types/classes, so that we would never have to instantiate one class(complex type) in another. So whenever a instance of a class is required, the IoC container would generate it for us , and all we would be concerned would be of the interface that we require. For IoC to resolve types for us we need to register the interface and the original class that implements the interface.
+Below you see how we are registering for the interface IDataService and setting its implementation class to DataService. Similarly we can also register classes, which would be how we would be registering our VM’s.</p>
+
+<pre><code class="csharp">SimpleIoc.Default.Register&lt;IDataService, DataService&gt;();
+SimpleIoc.Default.Register&lt;MainViewModel&gt;();
+</code></pre>
+
+<p>When installing the nuget package itself an instance of the VML is added into the app.xaml class, which can be used in all the View classes to data-bind to the VM.</p>
+
+<pre><code class="xml">&lt;Application.Resources&gt;
+       &lt;ResourceDictionary&gt;
+           &lt;!--Global View Model Locator--&gt;
+           &lt;vm:ViewModelLocator x:Key="Locator"
+               d:IsDataSource="True" /&gt;
+ .....
+&lt;Application.Resources&gt;
+</code></pre>
+
+<p>This instance is used in all the view classes as below  in the xaml.</p>
+
+<pre><code class="xml">DataContext="{Binding Main, Source={StaticResource Locator}}"
+</code></pre>
+
+<p>The Main property returns the View model that should be bound with the view. The ‘ServiceLocator.Current’, returns the default instance of the SimpleIoc. The GetInstance always returns the same instance of the ViewModel as if it would have for a Singleton. If you need a new instance then you would need to pass a specific key(any identifier value) to get a different instance.</p>
+
+<pre><code class="csharp">public MainViewModel Main
+{
+    get
+    {
+        return ServiceLocator.Current.GetInstance&lt;MainViewModel&gt;();
+    }
+}
+</code></pre>
+
+<p><strong>What about the other Views and View Models?</strong></p>
+
+<p>Mostly the main VM would be the one that would be like a hub page, from which the user be able to navigate onto other pages and detailed views., say from a list of friends to a friend, a list of photos to a specific photo. One common thing that we do wrong is to think of View – ViewModel as a one-to-one relationship, meaning one view will have only one ViewModel bound to it.  In our sample app we have a list of photos that needs to be displayed on the main page and on selecting one of the photo, we should be taken to the photo’s detail page. So the mistake to do here would be to have an observable list of Photos in the MainViewModel. We should rather have a list of PhotoViewModel , that would be bound to the list control in the main page. So the MainViewModel would have a property SelectedPhoto, which would be of PhotoViewModel type, that would become the data context of the PhotoDetail page.</p>
+
+<pre><code class="xml">DataContext="{Binding Main.SelectedPhoto, Source={StaticResource Locator}}"
+</code></pre>
+
+<p>For views that are not at all related to each other, we can have separate properties in the VML, like say for Settings, About page.</p>
+
+<pre><code class="xml">DataContext="{Binding About, Source={StaticResource Locator}}"
+</code></pre>
+
+<pre><code class="csharp">public AboutViewModel About
+ {
+    get
+    {
+        return ServiceLocator.Current.GetInstance&lt;AboutViewModel&gt;();
+    }
+  }
+</code></pre>
+
+<p>So whenever you have hierarchical pages, it would mostly be that your parent/callee will have the ViewModel property that you would bind to like SelectedPhoto in MainViewModel and for cases you have separate navigations you can have a property exposed in VML like About, Main.</p>
+
+<p><strong>2. ViewModel and Model</strong></p>
+
+<p>Like I mentioned above, one common mistake that we make is to think of View-ViewModel as a one-to-one relationship and normally end up binding the UI to models and not VM’s. We soon tend to hit into problems, such as adding custom properties into models, not finding ways to trigger property changed etc. So it is always best to wrap your models in the VMs. In cases where you are sure you would never want to change/format the data format then you can directly bind to a model. In  cases where you would want to format the data (like say you have a First Name &amp; Last Name property on the model and you want to display Full Name)  you would rather wrap the data into a VM and bind that. You could always use <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter.aspx">ValueConverters</a>, to format the data specific to the UI, but that always comes with a price, especially on a phone device. Phone’s come with lesser hardware resource and you would want to make the maximum use of it. So it is better to have properties exposed on VM itself rather than having converters all over the UI to format the data. But still you would be in positions where you would absolutely want to use a converter where you should. That is a wise decision that one should make for yourself. (a <a href="https://groups.google.com/forum/?fromgroups#!topic/wpf-disciples/P-JwzRB_GE8">thread</a> that discusses on this )</p>
+
+<p><strong>3. Basic Commanding</strong></p>
+
+<p>It’s not just the data that gets displayed needs to be separated out cleanly. User actions and actions taken should also be cleanly separated from the UI. Commands is what would help us here. Commanding support is currently only for elements that inherit from <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.buttonbase.aspx">ButtonBase</a>. As in any mvvm implementation, mvvmlight also has a wrapper that implements <a href="http://msdn.microsoft.com/en-us/library/system.windows.input.icommand.aspx">ICommand</a> interface for us, which is RelayCommand. An instance of this can be directly bound to the Command property, for those elements that inherits from ButtonBase. Below is how you would wire up the command to a button on a page</p>
+
+<pre><code class="xml">&lt;Button Content="My Command" Command="{Binding MyCommand}"
+    VerticalAlignment="Center" HorizontalAlignment="Center" /&gt;
+</code></pre>
+
+<pre><code class="csharp">public MainViewModel()
+{
+    MyCommand = new RelayCommand(OnMyCommand);
+}
+public RelayCommand MyCommand { get; set; }
+
+private void OnMyCommand()
+{
+MessageBox.Show("You clicked me :)");
+}
+</code></pre>
+
+<p><strong>4. Advanced Commanding</strong></p>
+
+<p>It’s not just UI elements that inherit from Buttonbase that we would be using, and hence we definitely need alternatives to bind events of such elements. ListBox SelectionChanged, Page loaded etc are very common events that one would be interested in while developing phone apps. There are a couple of approaches that one could follow here</p>
+
+<ul>
+<li><strong>Wire-up the command from code behind</strong></li>
+</ul>
+
+
+<p>We could  easily wire up all such events from the code-behind class, and have it invoked on the view model. Some might argue here that we are going off the MVVM pattern, which says ‘no code behind’. I don’t this it ever said that in the first place. It is just about decoupling the UI from the code and this is still done. Even binding/commanding is still going to generate code and do the wiring of commands. As long as there is a clear separation of logics and concerns we are good. So I think this this is very well acceptable and the easiest in fact of all the approaches.</p>
+
+<p>Code Behind:</p>
+
+<pre><code class="csharp">    private MainViewModel viewModel
+    {
+     get { return this.DataContext as MainViewModel; }   
+    }
+
+    protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+    {
+    base.OnNavigatedTo(e);
+    viewModel.OnnavigatedToCommand.Execute(NavigationContext.QueryString);
+    }
+</code></pre>
+
+<p>View Model</p>
+
+<pre><code class="csharp">    public MainViewModel()
+    {
+        OnnavigatedToCommand = new RelayCommand&lt;IDictionary&lt;string, string&gt;&gt;(OnNavigatedTo);
+    }
+    public RelayCommand&lt;IDictionary&lt;string, string&gt;&gt; OnnavigatedToCommand { get; set; }
+
+    private void OnNavigatedTo(IDictionary&lt;string,string&gt; parameters)
+    {
+    // do whatever you want to here
+    }
+</code></pre>
+
+<ul>
+<li> <strong>EventToCommand Behavior</strong></li>
+</ul>
+
+
+<p>With the EventToCommand behavior introduced for Blend, can be used to bind an ICommand from the UI elements. Though it was introduced for Blend, it can be used independently. You would need to add a reference to System.Windows.Interactivity.dll, which is were all these behaviors are implemented. There is a detailed <a href="http://geekswithblogs.net/lbugnion/archive/2009/11/05/mvvm-light-toolkit-v3-alpha-2-eventtocommand-behavior.aspx">post</a> out here on to how to use EventToCommand to trigger commands directly from the UI.</p>
+
+<p>Just to keep a sample here, below would be how it would look like</p>
+
+<pre><code class="xml">xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
+xmlns:command="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Extras.WP71"
+...
+&lt;ListBox&gt;
+&lt;i:Interaction.Triggers&gt;
+&lt;i:EventTrigger EventName="SelectionChanged"&gt;
+&lt;command:EventToCommand Command="{Binding SelectionChangedCommand}" /&gt;
+&lt;/i:EventTrigger&gt;
+&lt;/i:Interaction.Triggers&gt;
+&lt;ListBox.Items&gt;
+&lt;ListBoxItem&gt;Item1&lt;/ListBoxItem&gt;
+&lt;ListBoxItem&gt;Item2&lt;/ListBoxItem&gt;
+&lt;ListBoxItem&gt;Item3&lt;/ListBoxItem&gt;
+&lt;/ListBox.Items&gt;
+&lt;/ListBox&gt;
+</code></pre>
+
+<pre><code class="csharp ">public MainViewModel()
+{
+    SelectionChangedCommand = new RelayCommand(OnSelectionChangedCommand);
+}
+public RelayCommand SelectionChangedCommand { get; set; }
+private void OnSelectionChangedCommand()
+{
+// do whatever you want to here
+}
+</code></pre>
+
+<ul>
+<li><strong>Messenger</strong></li>
+</ul>
+
+
+<p>We could also use a messenger service, to propogate UI events to VM’s. MVVMLight  has a built in messenger service that can be used for this. In simple terms a messenger is nothing but a decoupled eventing system, something of a publisher-subscriber model. In the messenger one entity  would send a message and there would be another entity that listens for this message and acts upon it.</p>
+
+<pre><code class="csharp">private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+{
+    Messenger.Default.Send&lt;NotificationMessage&gt;(
+        new NotificationMessage("You could have your own items here by using a generic NotificationMessage&lt;&gt;"));
+}
+…
+
+public MainViewModel()
+{
+    MessengerInstance.Register&lt;NotificationMessage&gt;(this, OnSelectionChanged);
+}
+private void OnSelectionChanged(NotificationMessage message)
+{
+// do whatever you want to here
+}
+</code></pre>
+
+<p>As you see above, in the code behind we send a Notification message indicating a click has happened. In the VM we register for the notification message and act upon it. We could send generic objects via the notification message and also create our own messages by inheriting from MessageBase of mvvmlight. This <a href="http://msdn.microsoft.com/en-us/magazine/jj694937.aspx">article</a> gives more information and scenarios around this</p>
+
+<p>We are still left with a lot more scenarios to cover here and I would be covering them in a separate post to keep this one &lsquo;short&rsquo; :)</p>
+
+<p><strong>Edit</strong>: Check out <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/">MVVM – A Windows Phone Scenario – Part 2</a> for the rest of the scenarios</p>
+
+<p> </p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series – MVVM and ApplicationBar]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-mvvm-and-applicationbar/"/>
+    <updated>2013-04-17T16:34:01+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-mvvm-and-applicationbar</id>
+    <content type="html"><![CDATA[<p>ApplicationBar on a windows phone, is to provide users of your app with quick access to the most commonly used tasks. For a mail app this would be refresh/new mail, for a photo app it might be like/unlike button, settings etc are common buttons that appear in an ApplicationBar . But then not always do we have them as static, and we would want to add/remove icons/menu items to that based on the applications current state.For example, you would want to add the like/unlike button only if the user is logged in, or even the settings icon would be only for logged in users. Whatever might be your scenario, if you are looking for to add/remove icons from the application bar from your code then this article is for you.</p>
+
+<p>In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below</p>
+
+<pre><code class="csharp     ">ApplicationBar.Buttons.Add(&lt;your button&gt;);
+</code></pre>
+
+<p>When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same</p>
+
+<p><strong>1. Mesenger Service</strong></p>
+
+<p>Whenever we need to communicate between VM’s or between your view model and View then we would want to do that in the most decoupled manner. When using <a href="http://www.galasoft.ch/mvvm/">MVVMLight</a>, we could use the Messenger class to achieve this. We would send a message indicating that we want to add a new appbar button from the ViewModel, and the View code behind, which already has registered for such an event would get notified and add the icon for us .</p>
+
+<p>Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.</p>
+
+<pre><code class="csharp    ">    public partial class MainPage : PhoneApplicationPage
+    {
+        public MainViewModel viewModel
+        {
+            get
+            {
+                return this.DataContext as MainViewModel;
+            }
+        }
+
+        private ApplicationBarIconButton settingsButton;
+        // Constructor
+        public MainPage()
+        {
+            InitializeComponent();
+            settingsButton = new ApplicationBarIconButton()
+            {
+                Text = "Settings",
+                IconUri = new Uri("Images/appbar.feature.settings.rest.png", UriKind.Relative)
+            };
+            settingsButton.Click += settingsButton_Click;
+            // Register for the messenger 
+            Messenger.Default.Register&lt;NotificationMessage&gt;(this, OnNotificationMessage);
+        }
+
+        void settingsButton_Click(object sender, EventArgs e)
+        {
+            viewModel.SettingsCommand.Execute(null);
+        }
+
+        private void OnNotificationMessage(NotificationMessage message)
+        {
+            // Check here for the notification
+            // You can also build cutoms notification message here for this by inheriting from MessageBase
+            if (message.Notification == "AddSettings")
+            {
+                if (ApplicationBar == null)
+                {
+                    ApplicationBar = new ApplicationBar();
+                }
+                ApplicationBar.Buttons.Add(settingsButton);
+            }
+        }
+    }
+</code></pre>
+
+<hr />
+
+<p><strong>2. ApplicationBar Service</strong></p>
+
+<p>Like we use <a href="http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2">NavigationService</a>, for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</p>
+
+<pre><code class="csharp    ">    public class MyModelBase: ViewModelBase
+    {
+        public IApplicationBarService ApplicationBar { get; set; }
+
+        public MyModelBase()
+        {
+
+        }
+        public MyModelBase(IApplicationBarService appBar)
+        {
+            ApplicationBar = appBar;
+        }
+    }
+</code></pre>
+
+<p>The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.</p>
+
+<pre><code class="csharp    ">    public interface IApplicationBarService
+    {
+        IApplicationBar ApplicationBar { get;} 
+
+        void AddButton(string title, Uri imageUrl, Action OnClick);
+    }
+</code></pre>
+
+<p>Implementation for this interface is as below</p>
+
+<pre><code class="csharp    ">    public class ApplicationBarService: IApplicationBarService
+    {
+        public void AddButton(string title, Uri imageUrl, Action OnClick)
+        {
+            ApplicationBarIconButton newButton = new ApplicationBarIconButton()
+                {
+                    Text = title, 
+                    IconUri = imageUrl, 
+                };
+            newButton.Click += ((sender,e) =&gt; {OnClick.Invoke();}) ;
+
+            ApplicationBar.Buttons.Add(newButton);
+
+        }
+
+        public IApplicationBar ApplicationBar
+        {
+            get
+            {
+                var currentPage = ((App)Application.Current).RootFrame.Content as PhoneApplicationPage;
+                if (currentPage.ApplicationBar == null)
+                {
+                    currentPage.ApplicationBar = new ApplicationBar();
+                }
+                return currentPage.ApplicationBar;
+            }
+        }
+    }
+</code></pre>
+
+<p>The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple</p>
+
+<p>In cases where you don’t want to add buttons dynamically, but just have static buttons you could also use BindableApplicationBar implementations that are there. One such implementation is there along with the <a href="http://phone7.codeplex.com/">Phone7.Fx</a> library. There are also many other implementations for the same.</p>
+
+<p>Hope this helps you to decouple your application bar icons from the ViewModel.You can find a <a href="https://github.com/rahulpnath/Blog/tree/master/PhoneAppBarMvvm">sample</a> implementation for this. In the sample both these approaches are shown for adding icons. You could figure out the Remove pretty easily.</p>
+
+<p><img src="/wp_applicationbar_icon_mvvm.png" alt="windows phone applicationbar mvvm" /></p>
+
+<p>Hope it helps!!</p>
+]]></content>
+  </entry>
+  
+</feed>

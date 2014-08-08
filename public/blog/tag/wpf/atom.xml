@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Tag: WPF | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/tag/wpf/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-08T10:04:27+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[MVVM – Does it really matter?]]></title>
+    <link href="http://rahulpnath.com/blog/mvvm-does-it-really-matter/"/>
+    <updated>2013-04-08T10:42:07+05:30</updated>
+    <id>http://rahulpnath.com/blog/mvvm-does-it-really-matter</id>
+    <content type="html"><![CDATA[<p>MVVM (Model-View-ViewModel), is a popular architectural pattern since WPF/Silverlight. Separation of concerns(UI/code), testability etc are some of the key things that motivates one to go via the MVVM route. There are innumerous articles out there, just like this <a href="http://msdn.microsoft.com/en-in/library/hh848246.aspx">one</a>, that gets into the details of how and why one should use MVVM.</p>
+
+<p>With Windows phone also embracing xaml and silverlight, any one who knew silverlight turned a phone developer overnight. MVVM did find its way into this space too. But most of the phone app developers, unlike those who developed for enterprise. would have never cared for MVVM , as they rarely would have written test cases for their apps, nor were they actually concerned on the UI/code separation. Since most of the apps were just out of a hobby, the only idea was just to have it up and available in the store as fast as possible. I might not be fully correct here, but I do know at least a dozen people,including me, who did this, so am good enough to put out that statement</p>
+
+<p>With windows 8 too taking the store way and having the same development platform of silverlight/xaml, don’t be surprised MVVM  showed up there too. Now anyone who had an app on the phone, had to do a lot of copy pasting over the code to have the same application available in both the stores. This gives MVVM a totally new dimension for motivation that was not spoken  about earlier – <strong><em>Reusability. </em></strong></p>
+
+<p>Having an application for phone and windows 8 app store with the minimum amount of rework is best possible by using MVVM and also a couple of other techniques. There is a detailed <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/jj681693(v=vs.105">article</a>.aspx) on msdn on how how to maximize code reuse between Windows Phone 8 and Windows 8.</p>
+
+<p>MVVM does really matter now, if we do not want to end up copy pasting code from phone app to the windows 8 store app. Also fixing and adding in new features would become more easier with following MVVM</p>
+
+<p><a href="http://nuget.org/packages/Portable.MvvmLightLibs/">MVVM Toolkit</a> is a very popular helper library for implementing MVVM pattern, as is available on nuget as a PCL(Portable class library)</p>
+
+<p><strong>MVVM<em>, It really does matter !!!</em></strong></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WPF Expander trigger on IsExpanded to change the header]]></title>
+    <link href="http://rahulpnath.com/blog/wpf-expander-trigger-on-isexpanded-to-change-the-header/"/>
+    <updated>2012-01-28T03:02:54+05:30</updated>
+    <id>http://rahulpnath.com/blog/wpf-expander-trigger-on-isexpanded-to-change-the-header</id>
+    <content type="html"><![CDATA[<p>Just a quick tip on how you could change the Expander header content when Expander is in expanded state.I have also modified the expander HeaderTemplate so that the text gets center aligned.</p>
+
+<pre><code class="xml"> &lt;Expander  Height="100" HorizontalAlignment="Left" Margin="129,192,0,0"
+           Name="expander1" VerticalAlignment="Top" Width="167"&gt;
+            &lt;Expander.HeaderTemplate&gt;
+                &lt;DataTemplate&gt;
+                    &lt;Label Name="headerlabel"
+                        Content="{Binding RelativeSource={RelativeSource
+                        Mode=FindAncestor,
+                        AncestorType={x:Type Expander}},
+                        Path=Header}"
+                        HorizontalContentAlignment="Center"
+                        Width="{Binding
+                        RelativeSource={RelativeSource
+                        Mode=FindAncestor,
+                        AncestorType={x:Type Expander}},
+                        Path=ActualWidth}" /&gt;
+                &lt;/DataTemplate&gt;
+            &lt;/Expander.HeaderTemplate&gt;
+            &lt;Expander.Style&gt;
+                &lt;Style  TargetType="Expander"&gt;
+                    &lt;Setter Property="Header" Value="Show"/&gt;
+                    &lt;Style.Triggers&gt;
+                        &lt;Trigger Property="IsExpanded" Value="True"&gt;
+                            &lt;Setter Property="Header" Value="Hide"/&gt;
+                        &lt;/Trigger&gt;
+                    &lt;/Style.Triggers&gt;
+                &lt;/Style&gt;
+            &lt;/Expander.Style&gt;
+            &lt;Grid &gt;
+                &lt;Label&gt;Expander Content&lt;/Label&gt;
+            &lt;/Grid&gt;
+        &lt;/Expander&gt;
+</code></pre>
+
+<p>We could also end up doing this using a converter or explicitly handling for the Expanded/Collapsed events.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[DataTemplate Vs Code Behind]]></title>
+    <link href="http://rahulpnath.com/blog/datatemplate-vs-code-behind/"/>
+    <updated>2011-01-29T17:26:43+05:30</updated>
+    <id>http://rahulpnath.com/blog/datatemplate-vs-code-behind</id>
+    <content type="html"><![CDATA[<p>Most of the people switching to WPF,got to understand the fact the WPF tries to target one major problem of the technologies that existed before, which was tight coupling of the design and the behaviour.WPF has a ‘<em>lookless control model</em>’,and that simply means that the look and feel of the control is completely separated from the behaviour of the  control.And that is where the whole concept of XAML comes in,which does its part of defining the visual representation.</p>
+
+<p>But still many people move on to WPF from older technologies fail to absorb this core approach.Mostly this happens when the look of something is to be dynamically generated.Say in the case of a Listbox bound to a itemssource.As far as the item is to be displayed in pure text everything goes fine.People figure out that the <em>DisplayMemberPath</em> has to be set to the property that they want to be displayed in the listbox.
+ &#8220;` csharp
+ private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+          listBox1.ItemsSource = PopulateEmployees();
+        }</p>
+
+<pre><code>    private static List&lt;Employee&gt; PopulateEmployees()
+    {
+        List&lt;Employee&gt; employees = new List&lt;Employee&gt;();
+        Employee emp;
+        for int i = 0; i &lt; 10; i++)
+        {
+            emp = new Employee()
+            {
+                FirstName = "Name",
+                LastName = i.ToString(),
+                Id = i
+            };
+            employees.Add(emp);
+        }
+        return employees;
+    }
+}
+
+class Employee
+{
+    public string FirstName { get; set; }
+
+   public string LastName { get; set; }
+
+    public int&lt;/span&gt; Id { get; set; }
+}
+```
+</code></pre>
+
+<p><img src="/binding_displaymemberpath.jpg" alt="binding displaymemberpath" /></p>
+
+<p>But the scenario changes when the item to be displayed has to be more informative.Say you need a image to come up with some text,or maybe a button/checkbox etc.Now people tend to shift to the older approaches of creating the listbox items display from code.As that’s how it had been done before and also that seems easier.</p>
+
+<p>The code changes to something similar to shown below.</p>
+
+<p><img src="/binding_code_behind.jpg" alt="binding code behind" /></p>
+
+<p>Or another approach might be slightly better than this one,by creating a user control to hold this data and then create the User control in the code behind and then add that to the listbox items.</p>
+
+<p>This is where people tend to loose focus of the real power of WPF ..<strong>Templating</strong>.</p>
+
+<p>All this code can be easily replaced and also clearly separate that UI details from the behaviour.The property that&rsquo;s the key here is <em>ItemTemplate,</em>and this would how the new code look like.</p>
+
+<p><img src="/binding_data_template.jpg" alt="binding data template" /></p>
+
+<p>And the code in the behind all vanishes,and is as simple in our first case,by just setting up the listbox1’s ItemsSource.</p>
+
+<p>That is the power of templating and clearly separates the UI aspect from code. Any ItemsControl will have the property ItemTemplate that is to be set to the way you want the data to be displayed.If the display is complex in itself then you can move those into a separate user control and create  that user control  as the ItemTemplate.Anytime you want to change the way your control looks you just need to change in the xaml,clearly bringing in the decoupling.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Role Based Access Control]]></title>
+    <link href="http://rahulpnath.com/blog/role-based-access-control/"/>
+    <updated>2010-06-30T22:09:00+05:30</updated>
+    <id>http://rahulpnath.com/blog/role-based-access-control</id>
+    <content type="html"><![CDATA[<p>RBAC(Role Based Access Control) is something that is very common in the day-to-day world.<br/>
+So what is this all about.It is just about a authorization check on whether you have the access to a particular resource or not.<br/>
+When faced with scenarios like this when developing applications, where you have to implement Role based access for the different users that are to use the system you might be confused on how to implement this.<br/>
+Say you have a WCF service exposing a set of services.You have a WPF thick client consuming this service.Say for example you are exposing a service to Add/Delete/View Employees.Based on the various roles you need to allow/disallow the access to the functionality.The easiest way would be enable/disable the controls that would be used invoke the corresponding functionality,based on the user role.<br/>
+So am I done?<br/>
+What if tomorrow you are exposing this service to some other client of yours,who is to develop his on User Interface(UI) for the service.<br/>
+Do I have a problem here?<br/>
+Yes of course!!!<br/>
+What if he does not make the same check on the UI to enable/disable the controls that would act as his inputs.So here exactly is where you have a access break.Any user will be able to perform all functions irrespective of the access specified for him.<br/>
+So how do I go about?<br/>
+Make this check at the service level itself.Check for access and throw a NoAccess exception if not authorized.What exactly happens when you try to enter a no-access area in your office :)<br/>
+UI synchronization is an added level to this,so that you can stop unnecessary service calls.</p>
+
+<p>Will soon post a implementation sample :)</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Deleting Multiple Selected Items in WPF]]></title>
+    <link href="http://rahulpnath.com/blog/deleting-multiple-selected-items-in-wpf/"/>
+    <updated>2009-09-11T16:27:00+05:30</updated>
+    <id>http://rahulpnath.com/blog/deleting-multiple-selected-items-in-wpf</id>
+    <content type="html"><![CDATA[<p>Hi,
+Many a times while using listbox,listview etc there might be a need to delete the multiple selected items.
+This can be easily achieved by the following piece of code
+<code>csharp
+ While ControlName.SelectedItems.Count &amp;gt; 0 
+   ControlName.Items.Remove(ControlName.SelectedItem)
+End While
+</code>
+Happy Coding :)</p>
+]]></content>
+  </entry>
+  
+</feed>
