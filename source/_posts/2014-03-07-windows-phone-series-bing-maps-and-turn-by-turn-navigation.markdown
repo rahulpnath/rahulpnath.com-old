@@ -110,11 +110,11 @@ private void SpeakText(string message)
 ```
 You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.
 
-![Bing_wp_route]({{ site.images_root}}/Bing_wp_route.png)![Bing_wp_place_search]({{ site.images_root}}/Bing_wp_place_search.png)![Bing_wp_directions_text]({{ site.images_root}}/Bing_wp_directions_text.png)
+![Bing_wp_route]({{ site.images_root}}/Bing_wp_route.jpg)![Bing_wp_place_search]({{ site.images_root}}/Bing_wp_place_search.jpg)![Bing_wp_directions_text]({{ site.images_root}}/Bing_wp_directions_text.jpg)
 
 **Testing**
 
 Using the [additional tools along with the phone emulator](http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105).aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
-![Bing_wp_simulator_geolocation]({{ site.images_root}}/Bing_wp_simulator_geolocation.png)
+![Bing_wp_simulator_geolocation]({{ site.images_root}}/Bing_wp_simulator_geolocation.jpg)
 
 You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code [here](https://github.com/rahulpnath/Blog/tree/master/SimpleGPS) and feel free to use it.

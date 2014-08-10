@@ -53,7 +53,7 @@ We can use [T4 ( Text Templating Transformation Toolkit) templates](http://msdn.
 
 To create a T4 template, add a new item to the project **MyFiles.tt. **Select Ok if you get any warning message
 
-![preloaded content t4 template]({{ site.images_root}}/preloaded_content_t4_template.png)
+![preloaded content t4 template]({{ site.images_root}}/preloaded_content_t4_template.jpg)
 
 In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(**MyFiles.tt**)
 
