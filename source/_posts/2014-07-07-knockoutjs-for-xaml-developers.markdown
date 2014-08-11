@@ -32,7 +32,7 @@ We will see below how some of the major constructs in XAML map over to KnockoutJ
 
 **1. INotifyPropertyChanged**
 
-Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use [INotifyPropertyChanged](http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110).aspx) interface. This is also required on web pages and is handled by KO using _[observables](http://knockoutjs.com/documentation/observables.html)_
+Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use [INotifyPropertyChanged](http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110\).aspx) interface. This is also required on web pages and is handled by KO using _[observables](http://knockoutjs.com/documentation/observables.html)_
 
 ``` javascript
 var personVM = {
@@ -51,11 +51,11 @@ In XAML we set the DataContext as the ViewModel to start binding the data from t
 
 **3. DataBinding**
 
-Binding the data to the UI in XAML is done declaratively using the [Binding](http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110).aspx) syntax. Similarly in KO we use the [data-bind](http://knockoutjs.com/documentation/binding-syntax.html) attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be _data-bind="text: Name" . _You can also use the [with binding](http://knockoutjs.com/documentation/with-binding.html) to create binding contexts for descendant elements as in XAML
+Binding the data to the UI in XAML is done declaratively using the [Binding](http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110\).aspx) syntax. Similarly in KO we use the [data-bind](http://knockoutjs.com/documentation/binding-syntax.html) attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be _data-bind="text: Name" . _You can also use the [with binding](http://knockoutjs.com/documentation/with-binding.html) to create binding contexts for descendant elements as in XAML
 
 **4. INotifyCollectionChanged**
 
-In XAML updates to a collection is usually handled using an [ObservableCollection](http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110).aspx), which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use _observableArray_, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an _observable, _as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. 
+In XAML updates to a collection is usually handled using an [ObservableCollection](http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110\).aspx), which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use _observableArray_, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an _observable, _as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. 
 
 {% codepen FreIv rahulpnath js %}
 
@@ -102,7 +102,7 @@ Commanding is how user interactions are bound to actions/functions on ViewModel,
 
 **7. Value Converters **
 
-The [IValueConverter](http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx) interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is [writable computed observable](http://knockoutjs.com/documentation/computedObservables.html) to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.
+The [IValueConverter](http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110\).aspx) interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is [writable computed observable](http://knockoutjs.com/documentation/computedObservables.html) to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.
 
 
 {% codepen dJhLm rahulpnath js %}
