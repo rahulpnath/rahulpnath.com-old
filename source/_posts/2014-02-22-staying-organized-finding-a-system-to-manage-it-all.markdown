@@ -75,13 +75,13 @@ Its not been long since I have started to follow this, but I felt interesting en
   * [Scott Hanselman is always an inspiration](http://www.hanselman.com/blog/HanselminutesPodcast268PersonalSystemsOfOrganizationReyBangoInterviewsScottHanselman.aspx)
 
 	
-  * [Getting Things Done: The Art of Stress-Free Productivity](http://www.amazon.in/gp/product/0142000280/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=0142000280&linkCode=as2&tag=rahulpnath-21)![](http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&l=as2&o=31&a=0142000280)
+  * [Getting Things Done: The Art of Stress-Free Productivity](http://www.amazon.in/gp/product/0142000280/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=0142000280&linkCode=as2&tag=rahulpnath-21)
 
 	
-  * [Personal Productivity Secrets: Do what you never thought possible with your time and attention... and regain control of your life](http://www.amazon.in/gp/product/1118179676/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=1118179676&linkCode=as2&tag=rahulpnath-21)![](http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&l=as2&o=31&a=1118179676)
+  * [Personal Productivity Secrets: Do what you never thought possible with your time and attention... and regain control of your life](http://www.amazon.in/gp/product/1118179676/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=1118179676&linkCode=as2&tag=rahulpnath-21)
 
 	
-  * [The 7 Habits of Highly Effective People](http://www.amazon.in/gp/product/1471131823/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=1471131823&linkCode=as2&tag=rahulpnath-21)![](http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&l=as2&o=31&a=1471131823)
+  * [The 7 Habits of Highly Effective People](http://www.amazon.in/gp/product/1471131823/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=1471131823&linkCode=as2&tag=rahulpnath-21)
 
 
 What system do you use to manage your life?. Do drop in the comments. I am still looking to refine more if it helps me to stay on top.

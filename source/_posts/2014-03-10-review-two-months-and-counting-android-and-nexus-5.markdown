@@ -112,11 +112,10 @@ I have been alternating between 2 cases for my Nexus 5 from Spigen and liking th
 
 
 
-  * [Spigen Google Nexus 5 Case ULTRA HYBRID](http://www.amazon.in/gp/product/B00HYA10LC/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=B00HYA10LC&linkCode=as2&tag=rahulpnath-21)![](http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&l=as2&o=31&a=B00HYA10LC)
+  * [Spigen Google Nexus 5 Case ULTRA HYBRID](http://www.amazon.in/gp/product/B00HYA10LC/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=B00HYA10LC&linkCode=as2&tag=rahulpnath-21)
 
 
-  * [Spigen Google Nexus 5 Case Protective Neo Hybrid](http://www.amazon.in/gp/product/B00EV8Y6QQ/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=B00EV8Y6QQ&linkCode=as2&tag=rahulpnath-21)![](http://ir-in.amazon-adsystem.com/e/ir?t=rahulpnath-21&l=as2&o=31&a=B00EV8Y6QQ)
-
+  * [Spigen Google Nexus 5 Case Protective Neo Hybrid](http://www.amazon.in/gp/product/B00EV8Y6QQ/ref=as_li_ss_tl?ie=UTF8&camp=3626&creative=24822&creativeASIN=B00EV8Y6QQ&linkCode=as2&tag=rahulpnath-21)
 
 
 
