@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Windows 8 Series - Exploring OAuth: C# and 500px - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/exploring-oauth-c-and-500px">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-10-05T17:30:27+05:30"  data-updated="true" itemprop="datePublished dateCreated">Oct 5<sup>th</sup>, 2012</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Windows 8 Series - Exploring OAuth: C# and 500px
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>The days when we ourselves developed sites and application for our own services are long gone. Now it’s about building api’s, sharing data and going social that&rsquo;s the buzz. No more is it a feasible solution to build applications for the numerous devices, that varies in size,shape and by the software that runs in them. The best thing then would be to expose API’s so that anybody interested can build applications for you. In any case the last thing that you would want to share is your users credentials. This is where OAuth comes into picture. Put it simply OAuth is an open protocol that allows secure access to the data that you want to expose, usually the API.</p>
+
+<p>Most of us would have seen OAuth in action. Whenever you logon to a site using any of the social network sites identity,be it Facebook or Twitter it’s OAuth that is behind the scenes that helps the site to get the required information from the social entity and you don’t have to disclose your social credentials to the site that you actually intended to visit. If you have never seen this now is a good time to. Try it <a href="http://500px.com/">here</a></p>
+
+<p>Now that you have seen how it works lets dig deeper to see how to get this feature into the apps that you are building. There are a lot of c# libraries,so are for other languages, that will handle the OAuth part for you like some listed <a href="http://nuget.org/packages?q=oauth&amp;prerelease=&amp;sortOrder=package-download-count">here</a>, keeping the mystery unsolved.</p>
+
+<p>I chose the web-api provided by <a href="http://developers.500px.com/">500px</a>, which does secure its data using OAuth. You can see the complete documentation of the api <a href="https://github.com/500px/api-documentation">here</a>. It is the Authentication part in that, that we would be concentrating here on, using OAuth 1.0</p>
+
+<p><img src="/images/oauth_500px_authentication.png" alt="oauth_500px_authentication" /></p>
+
+<p>On a high level as seen above,OAuth has 3 steps.    <br/>
+1. Getting a request token     <br/>
+2. Authorizing the user     <br/>
+3. Getting the access token.</p>
+
+<p>The access token is then used to access any protected resource.</p>
+
+<p>The following definitions, as from the <a href="http://oauth.net/core/1.0/">OAuth specification</a> is worth knowing before we delve in</p>
+
+<p><em>Service Provider:</em> A web application that allows access via OAuth.     <br/>
+<em>User:</em> An individual who has an account with the Service Provider.     <br/>
+<em>Consumer:</em> A website or application that uses OAuth to access the Service Provider on behalf of the User.     <br/>
+<em>Protected Resource(s):</em> Data controlled by the Service Provider, which the Consumer can access through authentication.     <br/>
+<em>Consumer Developer:</em> An individual or organization that implements a Consumer.     <br/>
+<em>Consumer Key:</em> A value used by the Consumer to identify itself to the Service Provider.     <br/>
+<em>Consumer Secret:</em> A secret used by the Consumer to establish ownership of the Consumer Key.     <br/>
+<em>Request Token:</em> A value used by the Consumer to obtain authorization from the User, and exchanged for an Access Token.     <br/>
+<em>Access Token:</em> A value used by the Consumer to gain access to the Protected Resources on behalf of the User, instead of using the User’s Service Provider credentials.     <br/>
+<em>Token Secret:</em> A secret used by the Consumer to establish ownership of a given Token.     <br/>
+<em>OAuth Protocol Parameters:</em> Parameters with names beginning with oauth_.</p>
+
+<p>Before getting on to the steps we would need to register the application that is going to consume the web api, to get the Consumer Key and Consumer Secret required in OAuth.You can do that here for <a href="http://500px.com/settings/applications">500px</a>. All web-api’s supporting OAuth would have such a page, as registering provides us with the keys. If the application does not have a callback url, like in case you are developing for a phone or desktop application you can specify any url you want.</p>
+
+<p><img src="/images/oauth_500px_application_details.png" alt="oauth_500px_application_details" /></p>
+
+<p>The base URL for 500px web-api is ‘<a href="https://api.500px.com/v1/">https://api.500px.com/v1/</a>’. All further references to url’s would be relative to this</p>
+
+<p><strong>Getting the Request Token</strong></p>
+
+<p>To get the request token we need to make a POST request to <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_requesttoken.md"><em>oauth/request_token</em></a>, which expects the parameters <em>CallbackUrl,ConsumerKey,Nonce,SignatureMethod,Timestamp and OAuthVersion. </em>All these should be in the same order,i.e alphabetical. All these parameters needs to be signed using the consumer secret and the signature too needs to be attached in the request data. This data goes as part of the ‘<em>Authorization’</em> header of the request.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">OauthToken</span><span class="p">&gt;</span> <span class="n">RequestToken</span><span class="p">()</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>           <span class="n">AuthorizationParameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;(){</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthCallback</span><span class="p">,</span> <span class="n">OAuthCallbackUrl</span><span class="p">},</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthConsumerKey</span><span class="p">,</span> <span class="n">consumerKey</span><span class="p">},</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthNonce</span><span class="p">,</span> <span class="n">Nonce</span><span class="p">()},</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthSignatureMethod</span><span class="p">,</span><span class="n">OAuthSignatureMethod</span><span class="p">},</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthTimestamp</span><span class="p">,</span> <span class="n">TimeStamp</span><span class="p">()},</span>
+</span><span class='line'>                             <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthVersion</span><span class="p">,</span> <span class="n">OAuthVersion</span><span class="p">}</span>
+</span><span class='line'>                               <span class="p">};</span>
+</span><span class='line'>           <span class="kt">string</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">MakeRequest</span><span class="p">(</span><span class="n">RequestType</span><span class="p">.</span><span class="n">POST</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">Sign</span><span class="p">(</span><span class="n">OAuthRequestUrl</span><span class="p">,</span> <span class="n">String</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">ExecuteRequest</span><span class="p">(</span><span class="n">OAuthRequestUrl</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">………</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above function handles adding the parameters required and executing the request.</p>
+
+<p>The <em>MakeRequest</em> call specifies the kind of HTTP call that you want to make, here it being a POST. The call to the function <em>Sign, </em>signs the parameters and adds the signature details to the parameter list. It uses the same signature method as specified in the parameter list, <em>HMAC-SHA1</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">Oauth500px</span> <span class="nf">Sign</span><span class="p">(</span><span class="kt">string</span> <span class="n">Url</span><span class="p">,</span> <span class="kt">string</span> <span class="n">tokenSecret</span><span class="p">)</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>           <span class="n">String</span> <span class="n">SigBaseStringParams</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="s">&quot;&amp;&quot;</span><span class="p">,</span> <span class="n">AuthorizationParameters</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">key</span> <span class="p">=&gt;</span> <span class="n">key</span><span class="p">.</span><span class="n">Key</span> <span class="p">+</span> <span class="s">&quot;=&quot;</span> <span class="p">+</span> <span class="n">Uri</span><span class="p">.</span><span class="n">EscapeDataString</span><span class="p">(</span><span class="n">key</span><span class="p">.</span><span class="n">Value</span><span class="p">)));</span>
+</span><span class='line'>           <span class="n">String</span> <span class="n">SigBaseString</span> <span class="p">=</span> <span class="n">requestType</span><span class="p">.</span><span class="n">ToString</span><span class="p">()</span> <span class="p">+</span> <span class="s">&quot;&amp;&quot;</span><span class="p">;</span>
+</span><span class='line'>           <span class="n">SigBaseString</span> <span class="p">+=</span> <span class="n">Uri</span><span class="p">.</span><span class="n">EscapeDataString</span><span class="p">(</span><span class="n">Url</span><span class="p">)</span> <span class="p">+</span> <span class="s">&quot;&amp;&quot;</span> <span class="p">+</span> <span class="n">Uri</span><span class="p">.</span><span class="n">EscapeDataString</span><span class="p">(</span><span class="n">SigBaseStringParams</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="n">IBuffer</span> <span class="n">KeyMaterial</span> <span class="p">=</span> <span class="n">CryptographicBuffer</span><span class="p">.</span><span class="n">ConvertStringToBinary</span><span class="p">(</span><span class="n">consumerSecret</span> <span class="p">+</span> <span class="s">&quot;&amp;&quot;</span> <span class="p">+</span> <span class="n">tokenSecret</span><span class="p">,</span> <span class="n">BinaryStringEncoding</span><span class="p">.</span><span class="n">Utf8</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">MacAlgorithmProvider</span> <span class="n">HmacSha1Provider</span> <span class="p">=</span> <span class="n">MacAlgorithmProvider</span><span class="p">.</span><span class="n">OpenAlgorithm</span><span class="p">(</span><span class="n">OAuthSignatureMethodName</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">CryptographicKey</span> <span class="n">MacKey</span> <span class="p">=</span> <span class="n">HmacSha1Provider</span><span class="p">.</span><span class="n">CreateKey</span><span class="p">(</span><span class="n">KeyMaterial</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">IBuffer</span> <span class="n">DataToBeSigned</span> <span class="p">=</span> <span class="n">CryptographicBuffer</span><span class="p">.</span><span class="n">ConvertStringToBinary</span><span class="p">(</span><span class="n">SigBaseString</span><span class="p">,</span> <span class="n">BinaryStringEncoding</span><span class="p">.</span><span class="n">Utf8</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">IBuffer</span> <span class="n">SignatureBuffer</span> <span class="p">=</span> <span class="n">CryptographicEngine</span><span class="p">.</span><span class="n">Sign</span><span class="p">(</span><span class="n">MacKey</span><span class="p">,</span> <span class="n">DataToBeSigned</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">String</span> <span class="n">Signature</span> <span class="p">=</span> <span class="n">CryptographicBuffer</span><span class="p">.</span><span class="n">EncodeToBase64String</span><span class="p">(</span><span class="n">SignatureBuffer</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">AuthorizationParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthSignature</span><span class="p">,</span> <span class="n">Signature</span><span class="p">);</span>
+</span><span class='line'>           <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+</span><span class='line'>       <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <em>ExecueRequest</em> handles adding the details to the authorization header and making the request and returning the response.</p>
+
+<p>A successful call to request token will return <em>Request Token</em> and a <em>token secret </em>which is to be used in the subsequent call to Authorize</p>
+
+<p><strong>Authorize</strong></p>
+
+<p>The call to authorize brings up the login page of the Service Provider(500px),if the user is not already logged in and is used to authorize the request token that has been just obtained. The request to authorize is to be made at <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_authorize.md">oauth/authorize</a>, with the request token received in the previous call.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">OauthToken</span><span class="p">&gt;</span> <span class="n">AuthorizeToken</span><span class="p">()</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>           <span class="kt">var</span> <span class="n">tempAuthorizeUrl</span> <span class="p">=</span> <span class="n">OAuthAuthorizeUrl</span> <span class="p">+</span> <span class="s">&quot;?oauth_token=&quot;</span> <span class="p">+</span> <span class="n">Token</span><span class="p">.</span><span class="n">Token</span><span class="p">;</span>
+</span><span class='line'>           <span class="n">System</span><span class="p">.</span><span class="n">Uri</span> <span class="n">StartUri</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">tempAuthorizeUrl</span><span class="p">);</span>
+</span><span class='line'>           <span class="n">System</span><span class="p">.</span><span class="n">Uri</span> <span class="n">EndUri</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">OAuthCallbackUrl</span><span class="p">);</span>
+</span><span class='line'>           <span class="kt">var</span> <span class="n">auth</span> <span class="p">=</span>
+</span><span class='line'>               <span class="k">await</span>
+</span><span class='line'>               <span class="n">WebAuthenticationBroker</span><span class="p">.</span><span class="n">AuthenticateAsync</span><span class="p">(</span><span class="n">WebAuthenticationOptions</span><span class="p">.</span><span class="n">None</span><span class="p">,</span> <span class="n">StartUri</span><span class="p">,</span> <span class="n">EndUri</span><span class="p">);</span>
+</span><span class='line'>           <span class="kt">var</span> <span class="n">responseData</span> <span class="p">=</span> <span class="n">auth</span><span class="p">.</span><span class="n">ResponseData</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since this is for Windows8 I use the WebAuthenticationBroker to issue the request to authorize the user, which will open up a nice UI asking the user credentials. On entering the login details and getting successfully authorized, we would get the <em>request token</em> and the <em>oauth_verifier</em> code.</p>
+
+<p><strong>Access Token</strong></p>
+
+<p>This final step gives you the access token, that is used for any request to a protected resource. A POST request it to made to the url <a href="https://github.com/500px/api-documentation/blob/master/authentication/POST_oauth_accesstoken.md">oauth/access_token</a>, with the parameters <em>ConsumerKey, Nonce, SignatureMethod, Timestamp, RequestToken, VerifierCode and OAuthVersion, </em>again all alphabetical sorted and signed using the consumer key and token secret that we got in the call to request token.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">OauthToken</span><span class="p">&gt;</span> <span class="n">AccessToken</span><span class="p">()</span>
+</span><span class='line'>       <span class="p">{</span>
+</span><span class='line'>           <span class="n">AuthorizationParameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;()</span>
+</span><span class='line'>                   <span class="p">{</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthConsumerKey</span><span class="p">,</span> <span class="n">consumerKey</span><span class="p">},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthNonce</span><span class="p">,</span> <span class="n">Nonce</span><span class="p">()},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthSignatureMethod</span><span class="p">,</span><span class="n">OAuthSignatureMethod</span><span class="p">},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthTimestamp</span><span class="p">,</span> <span class="n">TimeStamp</span><span class="p">()},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthToken</span><span class="p">,</span><span class="n">Token</span><span class="p">.</span><span class="n">Token</span><span class="p">},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthVerifier</span><span class="p">,</span><span class="n">Token</span><span class="p">.</span><span class="n">Verifier</span><span class="p">},</span>
+</span><span class='line'>                       <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthVersion</span><span class="p">,</span> <span class="n">OAuthVersion</span><span class="p">}</span>
+</span><span class='line'>                   <span class="p">};</span>
+</span><span class='line'>           <span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">MakeRequest</span><span class="p">(</span><span class="n">RequestType</span><span class="p">.</span><span class="n">POST</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">Sign</span><span class="p">(</span><span class="n">OAuthAccessUrl</span><span class="p">,</span> <span class="n">Token</span><span class="p">.</span><span class="n">SecretCode</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">ExecuteRequest</span><span class="p">(</span><span class="n">OAuthAccessUrl</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">……</span><span class="p">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The SecretCode, that was obtained from the call to Requesttoken is also passed to the function <em>Sign</em>.</p>
+
+<p>A successful call would return you the AccessToken and the Access token’s secret code for that. All subsequent request to any protected resource needs the AccessToken and should be signed using ConsumerKey and the access token’s secret code.</p>
+
+<p>From now on any request to a protected resource should be made with the following parameters: <em>ConsumerKey,Nonce,SignatureMethod,Timestamp,OAuthToken and OAuthVersion</em> along with any additional parameters<em>. </em>This should be signed using the consumer secret and the access token secret code.</p>
+
+<p>The ExecuteRequest handles for this and is a genenric function that would allow you to specify the return type that you are expecting and the Url of the protected resource</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">ExecuteRequest</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="kt">string</span> <span class="n">Url</span><span class="p">,</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">Parameters</span><span class="p">)</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
+</span><span class='line'>     <span class="err">{ </span>
+</span><span class='line'>         <span class="n">AuthorizationParameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;()</span>
+</span><span class='line'>                                       <span class="p">{</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthConsumerKey</span><span class="p">,</span> <span class="n">consumerKey</span><span class="p">},</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthNonce</span><span class="p">,</span> <span class="n">Nonce</span><span class="p">()},</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthSignatureMethod</span><span class="p">,</span> <span class="n">OAuthSignatureMethod</span><span class="p">},</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthTimestamp</span><span class="p">,</span> <span class="n">TimeStamp</span><span class="p">()},</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthToken</span><span class="p">,</span> <span class="n">Token</span><span class="p">.</span><span class="n">Token</span><span class="p">},</span>
+</span><span class='line'>                                           <span class="p">{</span><span class="n">OauthParameter</span><span class="p">.</span><span class="n">OauthVersion</span><span class="p">,</span> <span class="n">OAuthVersion</span><span class="p">}</span>
+</span><span class='line'>                                       <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>         <span class="kt">string</span> <span class="n">RequestUrl</span><span class="p">;</span>
+</span><span class='line'>         <span class="k">if</span> <span class="p">(</span><span class="n">Parameters</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">Parameters</span><span class="p">.</span><span class="n">Count</span> <span class="p">&gt;</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>         <span class="p">{</span>
+</span><span class='line'>             <span class="n">RequestUrl</span> <span class="p">=</span> <span class="n">Url</span> <span class="p">+</span> <span class="s">&quot;?&quot;</span> <span class="p">+</span>
+</span><span class='line'>                          <span class="n">String</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="s">&quot;&amp;&quot;</span><span class="p">,</span>
+</span><span class='line'>                          <span class="n">Parameters</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Key</span> <span class="p">+</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span> <span class="p">?</span> <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span> <span class="p">:</span> <span class="s">&quot;=&quot;</span> <span class="p">+</span> <span class="n">Uri</span><span class="p">.</span><span class="n">EscapeDataString</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">Value</span><span class="p">))).</span><span class="n">ToArray</span><span class="p">());</span>
+</span><span class='line'>             <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">parameter</span> <span class="k">in</span> <span class="n">Parameters</span><span class="p">)</span>
+</span><span class='line'>             <span class="p">{</span>
+</span><span class='line'>                 <span class="n">AuthorizationParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">parameter</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">parameter</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>             <span class="p">}</span>
+</span><span class='line'>         <span class="p">}</span>
+</span><span class='line'>         <span class="k">else</span>
+</span><span class='line'>             <span class="n">RequestUrl</span> <span class="p">=</span> <span class="n">Url</span><span class="p">;</span>
+</span><span class='line'>         <span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">MakeRequest</span><span class="p">(</span><span class="n">requestType</span><span class="p">).</span><span class="n">Sign</span><span class="p">(</span><span class="n">Url</span><span class="p">,</span> <span class="n">Token</span><span class="p">.</span><span class="n">SecretCode</span><span class="p">).</span><span class="n">ExecuteRequest</span><span class="p">(</span><span class="n">RequestUrl</span><span class="p">);</span>
+</span><span class='line'>         <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+</span><span class='line'>             <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>         <span class="n">DataContractJsonSerializer</span> <span class="n">json</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+</span><span class='line'>         <span class="n">T</span> <span class="n">dat</span> <span class="p">=</span> <span class="n">json</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">UTF8</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">response</span><span class="p">)))</span> <span class="k">as</span> <span class="n">T</span><span class="p">;</span>
+</span><span class='line'>         <span class="k">return</span> <span class="n">dat</span><span class="p">;</span>
+</span><span class='line'>     <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A sample way to use this would be as below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Oauth500Px</span><span class="p">.</span><span class="n">MakeRequest</span><span class="p">(</span><span class="n">Oauth500px</span><span class="p">.</span><span class="n">RequestType</span><span class="p">.</span><span class="n">GET</span><span class="p">).</span><span class="n">ExecuteRequest</span><span class="p">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">PhotoDetails</span><span class="p">&amp;</span><span class="n">gt</span><span class="p">;(</span>
+</span><span class='line'>                    <span class="n">photoDetails</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code for the OAuth wrapper for 500px specific toWindows8 is available <a href="https://github.com/rahulpnath/Blog/blob/master/Oauth500px.cs">here</a> for download. Feel free to modify it and use it. I will be refactoring the code out a bit more and also add a few functionalities. So in case you wanted this specific version do keep a copy for yourself.</p>
+
+<p>PS: Incorporating an offline comment that I had got, on putting a space after each full stop and hope I have not missed any.</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">rahulpnath</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-10-05T17:30:27+05:30"  data-updated="true" itemprop="datePublished dateCreated">Oct 5<sup>th</sup>, 2012</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/windows-8/'>windows 8</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/exploring-oauth-c-and-500px/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/exploring-oauth-c-and-500px/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/getting-started-with-asp-net-web-api/" title="Previous Post: Getting Started with ASP.NET Web Api">&laquo; Getting Started with ASP.NET Web Api</a></li>
+            
+            
+            <li class="next"><a href="/blog/windows-8-series-incremental-loading/" title="Next Post: Windows 8 Series - Incremental Loading">Windows 8 Series - Incremental Loading &raquo;</a></li>
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2014 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/exploring-oauth-c-and-500px/';
+        var disqus_url = 'http://rahulpnath.com/blog/exploring-oauth-c-and-500px/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

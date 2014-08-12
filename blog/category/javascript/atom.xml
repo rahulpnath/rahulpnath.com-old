@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Javascript | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/category/javascript/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-11T07:36:43+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[KnockoutJS for XAML Developers]]></title>
+    <link href="http://rahulpnath.com/blog/knockoutjs-for-xaml-developers/"/>
+    <updated>2014-07-08T05:05:39+05:30</updated>
+    <id>http://rahulpnath.com/blog/knockoutjs-for-xaml-developers</id>
+    <content type="html"><![CDATA[<p>After a very long time since I have actually wanted to move out to web development, recently I have started developing a website as part of my personal project, along with a friend of mine. I have been into desktop/mobile development on Microsoft technologies, using XAML for a very long time. <a href="http://www.rahulpnath.com/blog/tag/mvvm/">Model-View-View Model (MVVM)</a> is a pattern that got popular because of the powerful binding engine in XAML. It is always comforting to see familiar patterns while moving into unexplored technology areas. Same is the reason I chose to explore <a href="http://knockoutjs.com/index.html">KnockoutJS</a>(KO), which simplifies dynamic JavaScript UIs with the MVVM pattern.</p>
+
+<p><img src="/MVVM_Knockoutjs.jpg" alt="MVVM Knockout" /></p>
+
+<p>KnockoutJS acts as the binding engine in XAML and binds your ViewModel(VM) with your View as shown in the figure. As you expect, like in XAML it provides a way to specify declarative-bindings on html using the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute and is also widely <a href="http://knockoutjs.com/documentation/browser-support.html">supported across different browsers</a>. The Model is the data that is populated from the server after your business logics applied,  mostly populated out of Ajax JSON calls from a web service/api. This Model data might mostly need some transformation to map to your View needs which is what exactly the ViewModel does. It transforms the Model data and wraps over it to provide features like 2-way-binding, client side validation, transformation of properties, UI specific state and a lot more</p>
+
+<p>We will see below how some of the major constructs in XAML map over to KnockoutJS.</p>
+
+<blockquote><p><em>I assume that you are a XAML developer and am not including detailed code samples for the XAML part and would be just mentioning them.</em></p></blockquote>
+
+<p><strong>1. INotifyPropertyChanged</strong></p>
+
+<p>Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110).aspx">INotifyPropertyChanged</a> interface. This is also required on web pages and is handled by KO using <em><a href="http://knockoutjs.com/documentation/observables.html">observables</a></em></p>
+
+<pre><code class="javascript">var personVM = {
+    Name: ko.observable('Rahul'),
+    Age: ko.observable(50)
+};
+</code></pre>
+
+<p>Declaring the property as an observable, makes any changes to the property immediately reflect on the bound UI elements, just like it happens on a property of a class that implements INotifyPropertyChanged.</p>
+
+<p><pre class="codepen" data-height="300" data-type="js" data-href="CuIfK" data-user="rahulpnath"><code> </code></pre>
+<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
+
+<p><strong>2. DataContext</strong></p>
+
+<p>In XAML we set the DataContext as the ViewModel to start binding the data from the ViewModel on the UI. Similarly in KO we have to call on to <em>applyBindings </em>method, passing on the ViewModel object to bind. You can see this in the above sample. You can also pass in an additional parameter indicating the part of the document that you want to explicitly bind to.</p>
+
+<p><strong>3. DataBinding</strong></p>
+
+<p>Binding the data to the UI in XAML is done declaratively using the <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110).aspx">Binding</a> syntax. Similarly in KO we use the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be <em>data-bind=&ldquo;text: Name&rdquo; . </em>You can also use the <a href="http://knockoutjs.com/documentation/with-binding.html">with binding</a> to create binding contexts for descendant elements as in XAML</p>
+
+<p><strong>4. INotifyCollectionChanged</strong></p>
+
+<p>In XAML updates to a collection is usually handled using an <a href="http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110).aspx">ObservableCollection</a>, which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use <em>observableArray</em>, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an <em>observable, </em>as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. </p>
+
+<p><pre class="codepen" data-height="300" data-type="js" data-href="FreIv" data-user="rahulpnath"><code> </code></pre>
+<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
+
+<p><strong>5. Dependent Properties</strong></p>
+
+<p>In XAML when there are properties dependent on others , to notify changes we have to explicitly call RaisePropertyChanged on all the dependent properties. A very common example is below</p>
+
+<pre><code class="csharp">private string firstName;
+public string FirstName
+{
+   get { return firstName; }
+   set
+   {
+        if (firstName!= value)
+        {
+            firstName= value;
+            OnPropertyChanged("FirstName");
+            OnPropertyChanged("FullName");
+        }
+   }
+}
+public string FullName
+{
+    get { return FirstName +" " + LastName; }
+}
+</code></pre>
+
+<p>Here whenever FirstName is updated to notify UI elements bound to FullName would be updated only if we explicitly call PropertyChanged on FullName property too. In KO this is handled using <a href="http://knockoutjs.com/documentation/computedObservables.html">computed observables</a> and is much more elegant.</p>
+
+<pre><code class="javascript">this.fullName = ko.computed(function() {
+    return this.firstName() + " " + this.lastName();
+}, this);
+</code></pre>
+
+<p><strong>6. Commanding</strong></p>
+
+<p>Commanding is how user interactions are bound to actions/functions on ViewModel, which will in turn perform something useful for the user. Like e.g. clicking a button. In KO this is handled using the same <a href="http://knockoutjs.com/documentation/click-binding.html">data-bind</a> attribute using key’s corresponding to event handlers. &#8220;</p>
+
+<pre><code class="html">&lt;button data-bind="click: performSomeAction"&gt;Click me&lt;/button&gt;
+</code></pre>
+
+<p><strong>7. Value Converters </strong></p>
+
+<p>The <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx">IValueConverter</a> interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is <a href="http://knockoutjs.com/documentation/computedObservables.html">writable computed observable</a> to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.</p>
+
+<p><pre class="codepen" data-height="300" data-type="js" data-href="dJhLm" data-user="rahulpnath"><code> </code></pre>
+<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
+
+<p>There are a lot of useful resources on the web that are freely available to get started with KnockoutJS. Some of them are listed below</p>
+
+<ul>
+<li><p><a href="http://knockoutjs.com/documentation/introduction.html">Official Documentation</a></p></li>
+<li><p><a href="http://learn.knockoutjs.com/">Learn By Doing</a></p></li>
+<li><p><a href="https://www.youtube.com/results?search_query=knockout+javascript">Videos</a></p></li>
+<li><p><a href="http://channel9.msdn.com/Search?term=knockout#ch9Search">More Videos</a></p></li>
+</ul>
+
+
+<p>Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,550 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Tag: Windows Phone Series | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/tag/windows-phone-series/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-11T07:36:43+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series: Image Caching Library - JetImageLoader]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-image-caching-library-jetimageloader/"/>
+    <updated>2014-04-18T05:26:17+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-image-caching-library-jetimageloader</id>
+    <content type="html"><![CDATA[<p>Recently on a client project, I had a requirement to cache images locally on the phone and then load it from there from subsequent requests. Initially I had plans for custom implementing this using sqlite and custom code. While googling for this, I came across an awesome custom library that solved my problem with just a few lines of code – <a href="https://github.com/artem-zinnatullin/jet-image-loader">JetImageLoader</a> by <a href="https://github.com/artem-zinnatullin">Artem</a>. This is available via nuget, making it easy to install</p>
+
+<p><a href="http://www.nuget.org/packages/WP-JetImagLoader/0.8.5"><img src="/WP-JetImagLoader.png" alt="WP-JetImagLoader" /></a></p>
+
+<p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
+
+<pre><code class="xml">&lt;Image Source="{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}"/&gt;
+</code></pre>
+
+<p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
+
+<pre><code class="csharp">public class JetImageLoaderImplementation
+{
+    public static readonly BaseMemoryCache&lt;string,stream&gt; MemoryCacheImpl = new WeakMemoryCache&lt;string,stream&gt;();
+    public static readonly BaseStorageCache StorageCacheImpl = new LimitedStorageCache(IsolatedStorageFile.GetUserStoreForApplication(), "\\image_cache", new SHA1CacheFileNameGenerator(), 1024 * 1024 * 10);&lt;/p&gt;
+    public static JetImageLoaderConfig GetJetImageLoaderConfig()
+    {
+        return new JetImageLoaderConfig.Builder
+        {
+            IsLogEnabled = true,
+            CacheMode = CacheMode.MemoryAndStorageCache,
+            DownloaderImpl = new HttpWebRequestDownloader(),
+            MemoryCacheImpl = MemoryCacheImpl,
+            StorageCacheImpl = StorageCacheImpl
+        }.Build();
+    }
+}
+</code></pre>
+
+<pre><code class="csharp">public class JetImageLoaderConverter : BaseJetImageLoaderConverter
+{
+    protected override JetImageLoaderConfig GetJetImageLoaderConfig()
+    {
+        return JetImageLoaderImplementation.GetJetImageLoaderConfig();
+    }
+
+    public override object Convert(object value, System.Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    {
+        return base.Convert(value, targetType, parameter, culture);
+    }
+}
+</code></pre>
+
+<p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
+
+<p>The nuget is for Windows 8 library, but there is also a version for <a href="https://github.com/artem-zinnatullin/jet-image-loader/tree/master/JetImageLoader.Wp7">WP7.1 avaialble on Github</a> (which apparently is a pull request from me, indeed my very first on Github that got merged)</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series: Bing Maps and Turn-by-Turn Navigation]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation/"/>
+    <updated>2014-03-08T05:10:39+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation</id>
+    <content type="html"><![CDATA[<p>Many applications today provide features that integrate with users location and provide information on a map based on that. In this blog will see how we can use the Bing maps to show a users current location, search for destination and show route to that location. For this will use Bing maps, and you would have to create an account here and create a key that we would be using. Make sure that you read on the <a href="http://www.microsoft.com/maps/product/terms.html">licensing terms</a> on the api if you are planning to use this in a published application.</p>
+
+<p>To use Maps in windows phone application, you would need to add a reference to ‘<em>Microsoft.Phone.Controls.Maps</em>’ once you create a new Windows phone project. Add the maps control to the application as below to display current location or other map related features.</p>
+
+<pre><code class="xml">&lt;maps:Map Grid.Row="1" Name="mapBing"  AnimationLevel="None" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+          CopyrightVisibility="Collapsed"  LogoVisibility="Collapsed"
+          ZoomBarVisibility="Collapsed"
+          ZoomLevel="12" CredentialsProvider="BING MAPS API KEY" &gt;
+    &lt;maps:MapLayer Name="RouteLayer" /&gt;
+    &lt;maps:MapLayer Name="StartPoint" /&gt;
+    &lt;maps:MapLayer Name="DestinationPoint" /&gt;
+    &lt;maps:MapLayer Name="CurrentPosition" /&gt;
+    &lt;maps:MapLayer Name="MyPathLayer"&gt;
+    &lt;/maps:MapLayer&gt;
+&lt;/maps:Map&gt;
+</code></pre>
+
+<p>This adds a map user control to the application and also different layers to the application, on which we would be displaying the pins, routes etc. Anything that gets shown on the map is shown on different layers. Each of these can be cleared, deleted or toggled for visibility making it easy to work on maps.</p>
+
+<p><strong>Track Me</strong></p>
+
+<p>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.
+&#8220;` csharp
+GeoPosition myPosition;</p>
+
+<p>private void TrackMe()
+{
+    startingPoint = null;
+    CurrentPosition.Children.Clear();
+    if (myWatcher != null)
+    {
+        myWatcher.PositionChanged -= myWatcher_PositionChanged;
+        myWatcher.Dispose();
+        myWatcher = null;
+    }
+    myWatcher = new GeoCoordinateWatcher();
+    myWatcher.TryStart(false, TimeSpan.FromMilliseconds(1000));
+    myWatcher.PositionChanged += myWatcher_PositionChanged;
+}</p>
+
+<p>void myWatcher_PositionChanged(object sender, GeoPositionChangedEventArgs e)
+{
+     myPosition = myWatcher.Position;
+     currentLocation = myWatcher.Position.Location;
+     if (isInDriveMode)
+     {
+         DrawMyCurrentRoute(currentLocation);
+     }</p>
+
+<pre><code> LocationManager.GetLocationName(UpdateLocation, myPosition.Location.Latitude.ToString(), myPosition.Location.Longitude.ToString());
+</code></pre>
+
+<p>}
+&#8220;`
+<strong>Destination and Routes</strong></p>
+
+<p>Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a>
+&#8220;` csharp
+RouteServiceClient routeService = new RouteServiceClient(&ldquo;BasicHttpBinding_IRouteService&rdquo;);</p>
+
+<p>routeService.CalculateRouteCompleted += (sender, e) =&gt;
+{
+    DrawRoute(e);
+};</p>
+
+<p>mapBing.SetView(LocationRect.CreateLocationRect(locations));</p>
+
+<p>routeService.CalculateRouteAsync(new RouteRequest()
+{
+    Credentials = new Credentials()
+    {
+        ApplicationId = LocationManager.bingApiKey
+    },
+    Options = new RouteOptions()
+    {
+        RoutePathType = RoutePathType.Points
+    },
+    Waypoints = new ObservableCollection(
+        locations.Select(x =&gt; new Waypoint()
+        {
+            Location = new Microsoft.Phone.Controls.Maps.Platform.Location() { Latitude = x.Latitude, Longitude = x.Longitude }
+        }))
+});
+<code>
+The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api
+</code> csharp
+public static string speechUrl = &ldquo;<a href="http://translate.google.com/translate_tts?tl=en&amp;amp;q=">http://translate.google.com/translate_tts?tl=en&amp;amp;q=</a>&rdquo;;
+private void SpeakText(string message)
+{
+    // Play the audio
+    med1.Source = new Uri(speechUrl + message);
+    med1.Play();
+}
+&#8220;`
+You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
+
+<p><img src="/Bing_wp_route.jpg" alt="Bing_wp_route" /><img src="/Bing_wp_place_search.jpg" alt="Bing_wp_place_search" /><img src="/Bing_wp_directions_text.jpg" alt="Bing_wp_directions_text" /></p>
+
+<p><strong>Testing</strong></p>
+
+<p>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
+<img src="/Bing_wp_simulator_geolocation.jpg" alt="Bing_wp_simulator_geolocation" /></p>
+
+<p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series – Incremental Loading multiple data sources inside a Pivot]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/"/>
+    <updated>2014-01-21T13:25:25+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot</id>
+    <content type="html"><![CDATA[<p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
+
+<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
+
+<p><img src="/WP_IncrementalLoading.png" alt="image" /></p>
+
+<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
+
+<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
+
+<pre><code class="csharp">private static string[] photoCollections =
+    {
+        "popular",
+        "upcoming",
+        "editors",
+        "fresh_today"
+    };
+
+public List PhotoCollectionViewModels { get; set; }
+
+public MainViewModel()
+{
+    PhotoCollectionViewModels = new List();
+    foreach (var photoCollection in photoCollections)
+    {
+        this.PhotoCollectionViewModels.Add(new PhotoCollectionViewModel(photoCollection));
+    }
+}
+</code></pre>
+
+<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
+
+<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
+
+<pre><code class="csharp ">public class IncrementalLoader&lt;T&gt; where T : class
+{
+    private string BaseUrl;
+
+    private int CurrentPageNumber;
+
+    private bool isCurrentlyLoading;
+
+    private string CurrentUrl
+    {
+        get
+        {
+            return string.Format(this.BaseUrl, ++this.CurrentPageNumber);
+        }
+    }
+
+    public IncrementalLoader(string baseUrl)
+    {
+        this.BaseUrl = baseUrl;
+    }
+
+    public async Task&lt;T&gt; LoadNextPage()
+    {
+        if (this.isCurrentlyLoading)
+        {
+            // call in progress
+            return null;
+        }
+
+        this.isCurrentlyLoading = true;
+        HttpClient client = new HttpClient();
+
+        // Add Microsoft.Bcl.Async nuget for await to work on PCL.
+
+        var response = await client.GetStringAsync(this.CurrentUrl);
+        var serializer = new DataContractJsonSerializer(typeof(T));
+        var returnObject = serializer.ReadObject(new MemoryStream(Encoding.Unicode.GetBytes(response))) as T;
+        this.isCurrentlyLoading = false;
+
+        return returnObject;
+    }
+
+}
+</code></pre>
+
+<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
+
+<pre><code class="xml">
+&lt;Grid x:Name="ContentPanel" Grid.Row="1" &gt;
+ &lt;phone:Pivot Name="photoCollection" ItemsSource="{Binding PhotoCollectionViewModels}"&gt;
+ &lt;phone:Pivot.ItemTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;phone:LongListSelector ItemRealized="Photo_Loaded" ItemsSource="{Binding Photos}" IsGroupingEnabled="False"&gt;
+ &lt;phone:LongListSelector.ItemTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;Image Source="{Binding image_url}" Margin="10" Width="500" /&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:LongListSelector.ItemTemplate&gt;
+ &lt;/phone:LongListSelector&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:Pivot.ItemTemplate&gt;
+ &lt;phone:Pivot.HeaderTemplate&gt;
+ &lt;DataTemplate&gt;
+ &lt;TextBlock Text="{Binding Title}" /&gt;
+ &lt;/DataTemplate&gt;
+ &lt;/phone:Pivot.HeaderTemplate&gt;
+ &lt;/phone:Pivot&gt;
+&lt;/Grid&gt;
+</code></pre>
+
+<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
+
+<pre><code class="csharp">    private void Photo_Loaded(object sender, ItemRealizationEventArgs e)
+    {
+        LongListSelector longList = sender as LongListSelector;
+        PhotoCollectionViewModel vm = longList.DataContext as PhotoCollectionViewModel;
+
+        vm.LoadMorePhotos(e.Container.Content as Photo);
+    }
+
+    public async Task LoadMorePhotos(Photo currentPhoto)
+    {
+        if (currentPhoto != null)
+        {
+            var index = this.Photos.IndexOf(currentPhoto);
+            if (this.Photos.Count - 3 &gt; index)
+            {
+                return ;
+            }
+        }
+        this.currentCollection = await this.incrementalLoader.LoadNextPage();
+
+        foreach (var photo in this.currentCollection.photos)
+        {
+            this.Photos.Add(photo);
+        }
+    }
+</code></pre>
+
+<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
+
+<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Windows Phone Series – Using UCWA to connect to Lync Server]]></title>
+    <link href="http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server/"/>
+    <updated>2014-01-12T15:35:08+05:30</updated>
+    <id>http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server</id>
+    <content type="html"><![CDATA[<p>One of the main things that makes enterprise or intranet applications more lively and connected with your business contacts, is to integrate with <a href="http://office.microsoft.com/en-in/lync/">Lync</a> (formerly Microsoft Office Communicator) and provide options to interact with them. UCWA(Unified Communications Web Api) is a REST API that exposes Lync Server and its presence capabilities, which can be used to enhance your application capabilities. This can also be used to integrate with Windows phone applications as well and will see how to get started with it here.</p>
+
+<p>To connect to a lync server the only details that we would want is the full email address and the password – thanks to <a href="http://msdn.microsoft.com/en-us/library/office/jj900169(v=exchg.150">AutoDiscover</a>.aspx) for exchange, which makes this possible. AutoDiscover is the way to find the users home server so that we can connect to it. The url for auto discover, otherwise called the <a href="https://ucwa.lync.com/documentation/GettingStarted-RootURL">Root Url</a> can take different forms. In this sample I have assumed that it would take the below form, primarily because it works with the test domain that I was using (microsoft.com).</p>
+
+<pre><code class="csharp">private const string autoDiscoverUrl = "https://lyncdiscover.{0}";
+</code></pre>
+
+<p>Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
+<a href="https://ucwa.lync.com/documentation/KeyTasks-CreateApplication"><img src="/ucwa_createapp.png" alt="HTTP call flow prior to creating an application in UCWA" /></a></p>
+
+<p>Issuing a get request to ‘<a href="https://lyncdiscover.microsoft.com/">https://lyncdiscover.microsoft.com/</a>’, will give the details of the home server that we need to connect to.</p>
+
+<pre><code class="xml ">&lt;resource xmlns="http://schemas.microsoft.com/rtc/2012/03/ucwa" rel="root" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com"&gt;
+    &lt;link rel="user" href="https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=microsoft.com"/&gt;
+    &lt;link rel="xframe" href="https://lync32.lyncweb.microsoft.com/Autodiscover/XFrame/XFrame.html"/&gt;
+&lt;/resource&gt;
+</code></pre>
+
+<p>We now need to authenticate the user with the home server.for which we need the oauth url. This can be obtained by issuing a dummy get request to the <em>user </em>url obtained above. This request will fail with an unauthorized access but also returns the url (<a href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken">https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken</a>) from which the token needs to be obtained</p>
+
+<pre><code>HTTP/1.1 401 Unauthorized
+Cache-Control: no-cache
+Content-Type: text/html
+Server: Microsoft-IIS/7.5
+WWW-Authenticate: Bearer trusted_issuers="00000002-0000-0ff1-ce00-000000000000@3bdbdd27-2373-4baf-9469-4b10e76564c6,00000001-0001-0000-c000-000000000000@f686d426-8d16-42db-81b7-ab578e110ccd,00000001-0000-0000-c000-000000000000@72f988bf-86f1-41af-91ab-2d7cd011db47", client_id="00000004-0000-0ff1-ce00-000000000000"
+WWW-Authenticate: MsRtcOAuth href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken",grant_type="urn:microsoft.rtc:windows,urn:microsoft.rtc:passive,urn:microsoft.rtc:anonmeeting,password"
+X-MS-Server-Fqdn: 000DCO2L50FE1G.redmond.corp.microsoft.com
+X-Powered-By: ASP.NET
+X-Content-Type-Options: nosniff
+Date: Sun, 12 Jan 2014 10:47:50 GMT
+Content-Length: 1293
+</code></pre>
+
+<p>UCWA supports Windows Authentication, Anonymous meeting and Password Authentication mechanisms to authorize the user. i am using the Password Authentication here. On successful authentication a token is returned which can be used to issue the get request on the <em>user </em>url with the token in the header.</p>
+
+<pre><code class="csharp    ">    private void Authenticate(string authenticateUrl, string authenticateToken, string authenticateTokenType)
+    {
+        // Make a GET request to get the ouath url
+        request = new RestRequest(authenticateUrl);
+        request.AddHeader("Accept", "application/json");
+        if (!string.IsNullOrEmpty(userToken))
+        {
+            request.AddHeader("Authorization", String.Format("{0} {1}", authenticateTokenType, authenticateToken));
+        }
+        ucwaClient.ExecuteAsync(request, this.ParseAuthenticateResponse);
+    }
+</code></pre>
+
+<p>A successful request for the above returns the applications url. The applications url might be hosted on a different server in which case we would need to get a separate token for creating a new application. The host of applications url and the oauth url we got above should be same , or else we need to get a new token. When creating a new application, we add the token only if the host’s are same. Not adding this will again fail with Unauthorized exception giving us the new oauth url.</p>
+
+<pre><code class="csharp">    private void CreateNewApplications(string applications)
+    {
+        request = new RestRequest(applications, Method.POST);
+        if (CheckIfSameDomain(applications, oauthUrl))
+        {
+            request.AddHeader("Authorization", String.Format("{0} {1}", applicationTokenType, applicationToken));
+        }
+        var applicationBody = @"""UserAgent"":""{0}"",""EndpointId"":""{1}"",""Culture"":""en-US""";
+        request.RequestFormat = DataFormat.Xml;
+        request.AddParameter(
+            "application/json",
+           "{" + string.Format(applicationBody, "UCWAWindowsPhoneSample", Guid.NewGuid().ToString()) + "}",
+            ParameterType.RequestBody);
+        request.AddHeader("Accept", "application/json");
+        ucwaClient.ExecuteAsync(request, this.CreateNewApplicationsResponse);
+    }
+
+    private bool CheckIfSameDomain(string url1, string url2)
+    {
+        // Check if the token is for the correct domain
+        return new Uri(url1).Host == new Uri(url2).Host;
+    }
+</code></pre>
+
+<p>Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a <a href="https://ucwa.lync.com/documentation/core-features">lot more</a>.</p>
+
+<p><img src="/ucwa_wp_login.png" alt="image" /><img src="/ucwa_wp_loggedIn_details.png" alt="image" /></p>
+
+<p>You can find the sample <a href="https://github.com/rahulpnath/Blog/tree/master/UCWA.WindowsPhone">here</a>.Hope this helps you to build connected enterprise applications.</p>
+
+<p><strong>PS</strong>: I have tested this only against <strong>microsoft.com</strong> domain. In case you find any issues with the domain that you are using please do put it in the comments.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[MVVM – A Windows Phone Scenario – Part 2]]></title>
+    <link href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/"/>
+    <updated>2014-01-07T21:35:28+05:30</updated>
+    <id>http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2</id>
+    <content type="html"><![CDATA[<p>We had looked into many of the common MVVM scenarios, that we come across while developing windows phone applications in <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario/">MVVM – A Windows Phone Scenario.</a> We will see some more that we were left off, in this post.</p>
+
+<p><strong>5. Page Navigations and Parameters</strong></p>
+
+<p>For almost all the application, we would need to transfer the control from one page to another, so that the user can navigate through the various contents on the application. In a MVVM application, these navigations would be basically triggered from the ViewModel, as it is there where we need to know where the next control should go to.
+Navigation is basically a platform specific feature and we would not want to bring in any dependency between a platform specific feature and our ViewModels. So the best way here is to <em>inverse the dependency</em>, using an interface and inject the dependency via an IoC container. Will call the interface here as <em>INavigationService </em>as given below, and the implementation <em>NavigationService</em>.</p>
+
+<pre><code class="csharp">    public interface INavigationService
+     {
+     void Navigate(string uri);
+     void Navigate(string uri, Dictionary&lt;string, string&gt; parameters);
+     void PerformActionOnUIThread(Action action);
+     void GoBack();
+    }
+
+    public class NavigationService : INavigationService
+    {
+        public void Navigate(string uri)
+        {
+            DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+                {
+                    ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+                });
+        }
+
+        public void Navigate(string uri, Dictionary&lt;string, string&gt; parameters)
+        {
+            StringBuilder uriBuilder = new StringBuilder();
+            uriBuilder.Append(uri);
+            if (parameters != null &amp;&amp; parameters.Count &gt; 0)
+            {
+                uriBuilder.Append("?");
+                bool prependAmp = false;
+                foreach (KeyValuePair&lt;string, string&gt; parameterPair in parameters)
+                {
+                    if (prependAmp)
+                    {
+                        uriBuilder.Append("&amp;");
+                    }
+
+                    uriBuilder.AppendFormat("{0}={1}", parameterPair.Key, parameterPair.Value);
+                    prependAmp = true;
+                }
+            }
+
+            uri = uriBuilder.ToString();
+            DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+            {
+                ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+            });
+        }
+
+        public void PerformActionOnUIThread(Action action)
+        {
+            DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt; action.Invoke());
+        }
+
+        public void GoBack()
+        {
+            DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+            {
+                ((PhoneApplicationFrame)Application.Current.RootVisual).GoBack();
+            });
+        }
+      }
+</code></pre>
+
+<p>This is just a sample implementation that you can use. The <em>DispatcherHelper </em>used here is from MVVMLight, which needs to be initialized when the application starts. This can be in the App.xaml.cs in the application constructor</p>
+
+<pre><code class="csharp">DispatcherHelper.Initialize();
+</code></pre>
+
+<p>Here in the above example the parameters are considered to be primitive data-types, which is why it is added as query parameters to the navigation uri. In case you want to have complex parameters passed between pages, you could have a property on the INavigationService, which can be set when calling the Naivgate method. This values can be retrieved when the OnNavigatedTo in the ViewModel.</p>
+
+<pre><code class="csharp    ">    public static object Parameters { get; set; }
+
+    public void Navigate(string uri, object parameters)
+    {
+        Parameters = parameters;
+        DispatcherHelper.UIDispatcher.BeginInvoke(() =&gt;
+            {
+                ((PhoneApplicationFrame)Application.Current.RootVisual).Navigate(new Uri(uri, UriKind.Relative));
+            });
+    }
+</code></pre>
+
+<p>The NavigationService needs to be registered with the MVVM IoC in ViewModelLocator (or anywhere else), and then you could either constructor inject it or create an instance in the BaseViewModel class, so that all ViewModels has a reference to this for navigation.</p>
+
+<pre><code class="csharp ">SimpleIoc.Default.Register&lt;INavigationService, NavigationService&gt;();
+</code></pre>
+
+<p>When developing applications for both Windows phone and Windows 8 or x-platform, your ViewModels would remain the same and the NavigationService implementations only would change, and would be accordingly injected into the IoC, when the application starts. So for any platform specific features/dependencies this would be the approach that you would need to choose to minimize the dependencies for your ViewModel. Other cases that I can think of right now is for Push Notifications, where each platform would have their own implementations for registering and raising notifications. So you would use the same approach to <em>inverse the dependencies.</em></p>
+
+<p><strong>6. Page Events</strong></p>
+
+<p>Most of the processing/data loading work in done usually on the OnNavigatedTo of the page. To hook to this event in the ViewModel, we would go ahead and introduce some base classes so that we can reuse this in all over ViewModels. We have a application specific base class for the PhoneApplicationPage. We override the <em>OnNavigatedTo</em> event here and call on to the application specific base ViewModel’s OnNavigatedTo event. For any ViewModel to hook into this event just needs to override this method on the ViewModel, as shown in the sample below</p>
+
+<pre><code class="csharp">    public abstract class ApplicationPageBase: PhoneApplicationPage
+    {
+        protected override void OnNavigatedTo(System.Windows.Navigation.NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            (this.DataContext as ApplicationViewModelBase).OnPageNavigatedTo(this.NavigationContext.QueryString);
+
+        }
+    }
+
+
+    public class ApplicationViewModelBase: ViewModelBase
+    {
+        public virtual void OnPageNavigatedTo(Dictionary&lt;string, string&gt; parameters)
+        {
+            // Override this in any of the ViewModel to hook to the OnNavigatedTo event on the page
+        }
+    }
+</code></pre>
+
+<p>Similarly for any of the other page events also you could create it in the page base class and call the corresponding function on the ViewModel base.</p>
+
+<p><strong>7. Application Bar</strong></p>
+
+<p>I have already put out a detailed post on how to implement an application bar using MVVM. It details out 2 approaches one using Messenger and another having the applciation bar as a service. Check it out at  - <a href="http://rahulpnath.com/blog/windows-phone-series-mvvm-and-applicationbar/">Windows Phone Series – MVVM and ApplicationBar</a></p>
+
+<p>We have seen most of the basic scenarios that we normally come across while developing an application for windows phone and on how MVVM can be applied to that, so that we can make the best out of it. With lots of devices getting out there and having the need to have your application on all platform demands the maximum reuse, so that you can be out there quickly. MVVM plays a very important role in structuring your code making this possible. Even while developing cross platform application using <a href="http://xamarin.com/">Xamarin</a>, MVVM can be used to advantage so that all the application logic is neatly abstracted away from UI.</p>
+
+<p>Do comment in on any of the missed scenarios that you normally come across while developing applications for the Windows platform.</p>
+]]></content>
+  </entry>
+  
+</feed>

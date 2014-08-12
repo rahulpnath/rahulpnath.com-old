@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Azure Web Sites: Moving Wordpress to Cloud - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-05-26T21:16:09+05:30"  data-updated="true" itemprop="datePublished dateCreated">May 26<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Azure Web Sites: Moving Wordpress to Cloud
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>It’s been almost an year since I have moved to this custom hosted blog and is nearing its renewal with my current host, Godaddy. Now that Azure has full support for Web Sites which enables you to deploy web applications on a scalable and reliable cloud infrastructure and being a FTE(Full Time Employee), I have the privilege of a free <a href="http://azure.microsoft.com/en-us/pricing/member-offers/msdn-benefits-b/">msdn account that offers 150$ free credit on azure</a>, I have decided on to move to Azure for my blog. You could also try this with <a href="http://azure.microsoft.com/en-us/pricing/free-trial/">a free Azure trial that offers you 200$ credit for all the services</a></p>
+
+<p><strong>Setting up Wordpress</strong> on Azure is very easy and is just a matter of few clicks from the <a href="https://manage.windowsazure.com">Management Portal</a>. You can find the detailed steps to get this done <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-php-web-site-gallery/">here</a>. By default Azure Web Sites are installed in the root directory of IIS. To move this into a sub-folder of your choice, you can use any FTP client(FileZilla). The connection details can be obtained from the Management Portal as shown in the below screen shot.</p>
+
+<p><img src="/images/PortalQuickglance.jpg" alt="Portal Quick glance" /> <img src="/images/PortalQuickglance1.jpg" alt="Portal Quick glance 1" /></p>
+
+<p><strong>Mapping your custom domain </strong>to the new wordpress site is about adding a <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-custom-domain-name/">CName record for awverify or www</a> in your Domain dashboard provided by the domain registrar. Once you have the required CName entries you can map the custom domain in the portal using the ‘Manage Domains’ option.</p>
+
+<p><img src="/images/CustomDomain.jpg" alt="Custom Domain" /></p>
+
+<p><strong>Restoring your content </strong>from my current host was easy as I am using <a href="http://vaultpress.com">Vaultpress</a> for my site backup and it provides an option to <a href="http://help.vaultpress.com/restore-to-a-new-site/">backup to a different web site too</a>. If not you could also use <a href="http://www.davebost.com/2013/07/11/moving-a-wordpress-blog-to-windows-azure-transferring-your-content">FTP to move your current site content which is detailed out here</a>. Once the content is restored you would need to update the Wordpress Url and Site address url in the General Settings of your blog dashboard. You could also update this directly on the MySQL database in the <em>wp_options</em> table(<em>home</em> and <em>siteurl</em> property). To connect to the database you would get the connection string details from the portal and you can use <a href="http://www.mysql.com/products/workbench/">MySQL Workbench</a> to connect to it. You might have to recheck your permalink setting on the Wordpress dashboard to ensure that it is the same as you were using earlier.</p>
+
+<p><img src="/images/AzureGeneralSettings.jpg" alt="General Settings" /></p>
+
+<p>Now you are up an running your blog on Azure!!</p>
+
+<p><strong>Things to look out for:</strong></p>
+
+<p><strong>1</strong>. Make sure that all your blog links use your custom domain and not <yourdomain>.azurewebsite.net.</p>
+
+<p><strong>2</strong>. I had my Jetpack commenting system broken as I had moved the blog to a subdirectory. To correct this you would need to disconnect jetpack from the wordpress account and reconnect it. You can do this from the Wordpress dashboard. If reconnecting throws some error, then connect to your SQL database and delete of the entries that starts with jetpack in the <em>wp_options</em> table.(Make sure you have a db backup before you do this). Reconnecting after that should work fine</p>
+
+<p><strong>3. </strong>If you see any error indicating there is a Redirect loop error, this is mostly because you would be redirecting a no-www request to the www sub domain. In this case make sure that the siteurl and home property in wp_options table also has www in the urls. Otherwise it will keep redirecting itself between no-www and www creating a redirect loop.</p>
+
+<p><strong>Edit:
+4. </strong>If you face any error while trying to connect to the azure hosted web site from <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows Live Writer</a>(WLW), this most likely is because it uses <a href="http://codex.wordpress.org/XML-RPC_Support">xmlrpc.php</a> for publishing posts to the site and this is accessed over the https enpoint. Since https is not setup for the custom domain, accessing xmlrpc.php over https would present you with the below certificate error.</p>
+
+<p><img src="/images/wlw_https_error.jpg" alt="Https error" /></p>
+
+<p>You could either configure your ssl bindings in azure portal, under the <a href="http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/">Configure tab under your website</a>. SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.</p>
+
+<p><strong>Azure Plans &amp; Pricing</strong></p>
+
+<p>If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: <strong>Free</strong>, <strong>Shared (Preview)</strong>, <strong>Basic</strong> and <strong>Standard</strong>. The pricing details for each of these is available in detail <a href="http://azure.microsoft.com/en-us/pricing/details/web-sites/">here</a>. To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on <a href="http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx">Penny Pinching in the cloud.</a></p>
+
+<p>Do you plan to move to Azure Web Sites some time soon?</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">rahulpnath</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-05-26T21:16:09+05:30"  data-updated="true" itemprop="datePublished dateCreated">May 26<sup>th</sup>, 2014</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>
+  
+</span>
+
+
+        </p>
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/windows-phone-series-image-caching-library-jetimageloader/" title="Previous Post: Windows Phone Series: Image Caching Library - JetImageLoader">&laquo; Windows Phone Series: Image Caching Library - JetImageLoader</a></li>
+            
+            
+            <li class="next"><a href="/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/" title="Next Post: Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad">Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad &raquo;</a></li>
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2014 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud/';
+        var disqus_url = 'http://rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
