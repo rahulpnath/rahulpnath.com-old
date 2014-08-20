@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2014-08-13T20:45:23+05:30</updated>
+  <updated>2014-08-20T20:53:13+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,7 +14,83 @@
 
   
   <entry>
-    <title type="html"><![CDATA[KnockoutJS for XAML Developers]]></title>
+    <title type="html"><![CDATA[yo ko - A Yeoman Generator For KnockoutJS]]></title>
+    <link href="http://rahulpnath.com/blog/yo-ko-a-yeoman-generator-for-knockoutjs/"/>
+    <updated>2014-08-20T10:20:06+05:30</updated>
+    <id>http://rahulpnath.com/blog/yo-ko-a-yeoman-generator-for-knockoutjs</id>
+    <content type="html"><![CDATA[<p>Templates/Scaffolding is something that we are all used to nowadays, given that we use an IDE for development. Visual Studio is one popular IDE, that is very popular among people developing on the Microsoft platform. Visual studio comes with a lot of pre-installed templates and scaffolding templates and also has a rich extension support from the <a href="http://visualstudiogallery.msdn.microsoft.com/site/search?f%5B0%5D.Type=RootCategory&amp;f%5B0%5D.Value=templates&amp;f%5B0%5D.Text=Templates">community</a>. While developing on text editors(say like <a href="http://www.sublimetext.com/">Sublime Text</a> which is what I have been using), which are not for any specific technology you might not have all the templating and scaffolding supported right out of the box. You might find plugins for specific editors but not for all the frameworks that are available today.</p>
+
+<p><a href="http://yeoman.io/">Yeoman</a> is the Web&rsquo;s scaffolding tool for Modern Web Apps. Yeoman is a command line tool that runs over <a href="http://nodejs.org/">Node.js</a>. Setting it up is pretty easy with the instructions <a href="http://yeoman.io/learning/index.html">here</a>. To scaffold web applications, which is the same as creating a new project in Visual Studio from a template, we need to install framework specific generators for Yeoman. There are some `<a href="http://yeoman.io/generators/official.html">officially maintained generators</a> and also ones that are <a href="http://yeoman.io/generators/community.html">maintained by the community</a>.</p>
+
+<p>For KnockoutJs, there is an awesome generator that is written by <a href="https://twitter.com/stevensanderson">Steve Sanderson</a>, the creator of knockout itself and is available <a href="https://www.npmjs.org/package/generator-ko">here</a>. You can install this as below</p>
+
+<blockquote><p>$ npm install generator-ko</p></blockquote>
+
+<p>Once installed you can generate your web app from the command prompt and running the command &lsquo;<strong>yo ko</strong>&rsquo;. This is will ask for the name of the project, whether to use JavaScript or TypeScript and also if you need to include automated tests using Jasmine and Karma. On giving your options your web app would be  scaffolded out.</p>
+
+<p><img class="center" alt="hp_dv4" src="http://rahulpnath.com/images/yo_ko.png" /></p>
+
+<p><strong>Project Structure</strong></p>
+
+<p>The generated web app is a simple Single Page Application(SPA), using the components feature released with <a href="http://blog.stevensanderson.com/2014/08/18/knockout-3-2-0-released/">Knockout 3.2.0</a>, <a href="http://bower.io/">Bower</a> to manage packages and <a href="http://gulpjs.com/">Gulp</a> for the build</p>
+
+<p><img class="left" alt="hp_dv4" src="http://rahulpnath.com/images/yo_ko_structure.png" /> The generator creates the folder structure as shown here and by default has setup the required packages. It uses the following packages:</p>
+
+<ul>
+<li><a href="http://getbootstrap.com/">Bootstrap</a>: Responsive UI framework</li>
+<li><a href="http://millermedeiros.github.io/crossroads.js/">Crossroads</a>: Routing Library</li>
+<li><a href="https://github.com/millermedeiros/hasher/">Hahser</a>: Browsing History Manager</li>
+<li><a href="http://jquery.com/">Jquery</a>: Feature rich library</li>
+<li><a href="http://millermedeiros.github.io/js-signals/">Js-Signals</a>: Custom/Event Messaging System</li>
+<li><a href="http://www.rahulpnath.com/blog/knockoutjs-for-xaml-developers/">Knockout</a>: Simplifies dynamic Javascript UIs with <a href="http://www.rahulpnath.com/blog/tag/mvvm/">MVVM pattern</a></li>
+<li><a href="http://requirejs.org/">Requirejs</a>: File and Module Loader</li>
+<li><a href="https://github.com/requirejs/text">Requirejs-text</a>: AMD loader plugin for text resources</li>
+</ul>
+
+
+<p>There are three components: <em>about-page</em>, <em>home-page</em> and <em>nav-bar</em>. The main, <em>index.html</em> composes these components into the full blown view. The nav-bar component is referred as is and the home and about page are dynamically loaded based on the nav-bar menu interaction. As shown below the <em>div</em> binds to the component based on the selected route.We look further deep on how the view models bind and these components are tied together.<br style="clear:both;" /></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;nav-bar</span> <span class="na">params=</span><span class="s">&quot;route: route&quot;</span><span class="nt">&gt;&lt;/nav-bar&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;page&quot;</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span> <span class="na">data-bind=</span><span class="s">&quot;component: { name: route().page, params: route }&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'><span class="nt">&lt;/body&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The javascript modules are loaded using Requirejs and the startup class for this is <em>app/starup.js</em> as defined in the data-main attribute in index.html. The knockout components are registered here and view-bindings are setup.Registering a component can be in multiple ways and is well explained in the article <a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">here</a>. The <em>currentRoute</em> object is what gets binded to the page and is defined in the app/router.js where the crossroads is setup. To use any other routing library of your choice this is where you would need to update. Whenever a user clicks a menu item and navigates to a new route, the currentRoute is updated, which in turn triggers the corresponding component to get loaded. <a href="https://github.com/millermedeiros/hasher/">Hasher</a> library is used to listen to browser navigation events and update them to crossroads, where the input is parsed and dispatch matched signal for the first Route that matches the input.</p>
+
+<p>The knockout components are defined in the <em>components</em> folder and has both the html and js parts in the same component folder. Whenever the component is loaded the viewmodel defined in the corresponding js file gets bounded to it. This way of developments helps to keep different components of the app well separated as modules and compose them into the view as required.</p>
+
+<p>The build is managed is using <a href="http://gulpjs.com/">Gulp</a>, which can be installed using <a href="https://www.npmjs.org/package/gulp">npm</a>. To build the project, you need to run <em>gulp</em> at the root folder. The build packages all the javascript modules/files into a single file, replaces the required updates in the html file, minifies the html, js and css etc. If not for the build systems, the application would  have to make lots of file/scripts/css requests or would have to have it all in the same file while development which makes working as a team difficult. These build system are highly configurable and can be used to setup output as required. The build tasks are defined in the <em>gulpfile.js</em> and the &lsquo;<em>default</em>&rsquo; task runs when running the gulp command. This is will generate the optimized files in the <em>dist</em> folder, which can be hosted in the server of your choice. I use the <a href="https://www.npmjs.org/package/http-server">zero-configuration command-line http-server</a> available on nodejs.</p>
+
+<p><img src="http://rahulpnath.com/images/yo_ko_app.png" alt="yo ko application " /></p>
+
+<p><strong>Adding New Components</strong></p>
+
+<p>To add new components the knockout generator provides a command which generated the html/css components in the appropriate folder. You would still need to add the registration of the component in the startup file.</p>
+
+<blockquote><p>yo ko:component <component name></p></blockquote>
+
+<p>This is just a starting point on building Single Page Applications using knockoutjs. Start on from here to build great web applications.</p>
+
+<p><strong>Additional Resources</strong></p>
+
+<ul>
+<li><a href="http://blog.stevensanderson.com/2014/06/11/architecting-large-single-page-applications-with-knockout-js/">Architecting large Single Page Applications with Knockout.js</a></li>
+<li><a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">Knockout.js 3.2 Preview : Components</a></li>
+<li><a href="http://www.scottlogic.com/blog/2014/02/28/developing-large-scale-knockoutjs-applications.html">Developing Large Scale Knockoutjs Applications</a></li>
+<li><a href="http://www.scottlogic.com/blog/2014/07/30/spa-angular-knockout.html">Single Page Applications - Angular Vs Knockout</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[KnockoutJS For XAML Developers]]></title>
     <link href="http://rahulpnath.com/blog/knockoutjs-for-xaml-developers/"/>
     <updated>2014-07-08T05:05:39+05:30</updated>
     <id>http://rahulpnath.com/blog/knockoutjs-for-xaml-developers</id>
@@ -597,7 +673,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Getting Started With PhoneGap: Developing for Windows Phone and Android]]></title>
+    <title type="html"><![CDATA[Getting Started with PhoneGap: Developing for Windows Phone and Android]]></title>
     <link href="http://rahulpnath.com/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android/"/>
     <updated>2014-03-04T21:36:40+05:30</updated>
     <id>http://rahulpnath.com/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android</id>
@@ -669,7 +745,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Setting Up the Development Environment for PhoneGap on Android]]></title>
+    <title type="html"><![CDATA[Setting up the Development Environment for PhoneGap on Android]]></title>
     <link href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/"/>
     <updated>2014-03-04T11:19:22+05:30</updated>
     <id>http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android</id>
@@ -700,7 +776,7 @@ To check if this is successfully setup, open up command prompt and type in java.
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Staying Organized: Finding a System to Manage It All]]></title>
+    <title type="html"><![CDATA[Staying Organized: Finding a system to manage it all]]></title>
     <link href="http://rahulpnath.com/blog/staying-organized-finding-a-system-to-manage-it-all/"/>
     <updated>2014-02-22T21:53:04+05:30</updated>
     <id>http://rahulpnath.com/blog/staying-organized-finding-a-system-to-manage-it-all</id>
@@ -766,7 +842,7 @@ To check if this is successfully setup, open up command prompt and type in java.
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Thanks to Everyone Who Attended My First Public Talk at C#Corner Hyderabad UG]]></title>
+    <title type="html"><![CDATA[Thanks to Everyone Who Attended My First Public Talk At C#Corner Hyderabad UG]]></title>
     <link href="http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug/"/>
     <updated>2014-02-03T12:09:27+05:30</updated>
     <id>http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug</id>
@@ -790,7 +866,7 @@ To check if this is successfully setup, open up command prompt and type in java.
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Windows Phone Series – Incremental Loading Multiple Data Sources Inside a Pivot]]></title>
+    <title type="html"><![CDATA[Windows Phone Series – Incremental Loading multiple data sources inside a Pivot]]></title>
     <link href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/"/>
     <updated>2014-01-21T13:25:25+05:30</updated>
     <id>http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot</id>
@@ -1043,7 +1119,7 @@ To check if this is successfully setup, open up command prompt and type in java.
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Windows Phone Series – Using UCWA to Connect to Lync Server]]></title>
+    <title type="html"><![CDATA[Windows Phone Series – Using UCWA to connect to Lync Server]]></title>
     <link href="http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server/"/>
     <updated>2014-01-12T15:35:08+05:30</updated>
     <id>http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server</id>
@@ -1186,7 +1262,7 @@ To check if this is successfully setup, open up command prompt and type in java.
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[MVVM – a Windows Phone Scenario – Part 2]]></title>
+    <title type="html"><![CDATA[MVVM – A Windows Phone Scenario – Part 2]]></title>
     <link href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/"/>
     <updated>2014-01-07T21:35:28+05:30</updated>
     <id>http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2</id>
@@ -1415,7 +1491,7 @@ Navigation is basically a platform specific feature and we would not want to bri
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Get Started With Your Blog]]></title>
+    <title type="html"><![CDATA[Get started with your blog]]></title>
     <link href="http://rahulpnath.com/blog/get-started-with-your-blog/"/>
     <updated>2013-09-17T19:01:58+05:30</updated>
     <id>http://rahulpnath.com/blog/get-started-with-your-blog</id>
@@ -1481,7 +1557,7 @@ I was always overwhelmed whenever I opened camera-raw/lightroom/photoshop. There
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Converting a PDF for Your Kindle]]></title>
+    <title type="html"><![CDATA[Converting a PDF for your Kindle]]></title>
     <link href="http://rahulpnath.com/blog/converting-a-pdf-for-your-kindle/"/>
     <updated>2013-08-28T21:41:00+05:30</updated>
     <id>http://rahulpnath.com/blog/converting-a-pdf-for-your-kindle</id>
@@ -1523,7 +1599,7 @@ Here is a comparison of the all the 3 methods above in order(kindle email, direc
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Giveaway : Get a License of Your Choice From Syncfusion]]></title>
+    <title type="html"><![CDATA[Giveaway : Get a license of your choice from Syncfusion]]></title>
     <link href="http://rahulpnath.com/blog/giveaway-get-a-license-of-your-choice-from-syncfusion/"/>
     <updated>2013-08-25T22:03:08+05:30</updated>
     <id>http://rahulpnath.com/blog/giveaway-get-a-license-of-your-choice-from-syncfusion</id>
@@ -1729,7 +1805,7 @@ If you are already using a listbox then you should be changing it to a longlists
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[HTTP – a Short Dive]]></title>
+    <title type="html"><![CDATA[HTTP – A Short Dive]]></title>
     <link href="http://rahulpnath.com/blog/http-a-short-dive/"/>
     <updated>2013-08-18T21:34:48+05:30</updated>
     <id>http://rahulpnath.com/blog/http-a-short-dive</id>
@@ -1745,337 +1821,6 @@ If you are already using a listbox then you should be changing it to a longlists
 
 <p>The book details on the url format , encoding and various media types and how they are served when a request is made. It expands on the request , response  messages and and different response status codes.  Scott goes on to explain on how http uses the underlying tcp protocol, to transfer messages across the network and how browsers open parallel connections to speed up the way web sites are delivered to us.  If it was not for proxies and caching the web would not be as scalable as it is today. The protocol would not be complete without mentioning about these and so does this one.  Http being a stateless protocol, maintaining state is a very important thing for developers to provide a good experience to the users. The book touches on cookies, its uses, types and downsides. The book closes on discussing about security and different modes of authentication.
 The HTTP Succinctly discusses on all the important topics of the protocol required to us as developers, and I would strongly urge any web developer to read through this 55 pages of concise and precise information. Having such books takes away the need for searching through the web and figuring out all related articles and blog posts to get the required information.  Hope to see more books getting added into this series of books.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MVVM – a Windows Phone Scenario]]></title>
-    <link href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario/"/>
-    <updated>2013-07-26T10:51:51+05:30</updated>
-    <id>http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario</id>
-    <content type="html"><![CDATA[<p>With multiple platforms/devices, embracing the same technology, common architectural patterns become more popular as they provide us with what we want the most – <strong>Reusability. </strong>MVVM has turned out to be a must use architectural pattern while developing for Windows phone/Windows 8 store apps. I had blogged on this, <a href="http://rahulpnath.com/blog/mvvm-does-it-really-matter/">Why MVVM matters</a>.</p>
-
-<p>In this post will take a quick look into the scenarios that would come across while we develop a windows phone app and how that could possibly(as there could be many other ways/approaches too) be implemented using MVVM. I would be covering shorter scenarios in this same post, and those that would be better off in a different one would be linked here . <a href="http://mvvmlight.codeplex.com/">MVVM Light</a> is a very popular toolkit that assists in getting started with MVVM quickly and we would also be using the same. This can be easily added in as a <a href="http://nuget.org/packages/mvvmLight">nuget package</a>
-MVVM Light does come with a ViewModelBase class, that all your View Models are to inherit so that you do not have to worry about implementing the <a href="http://msdn.microsoft.com/en-in/library/system.componentmodel.inotifypropertychanged.aspx">INotifyPropertyChanged</a> interface. I would still think of having a intermediate view model base class specific to our app and have all the reusable piece of code that you want across your ViewModels.</p>
-
-<p>Common MVVM scenarios that we come across while developing and probable approaches are discussed below. There might be different ways of achieving the same, and at times we might go off the ‘purist’  MVVM implementation,  i.e.  of not having a code behind at all. As for me I am ok to have code behind at a minimum if it is really required and does not affect the original intent of MVVM(separations of concerns, testability and reusability)</p>
-
-<p><strong>Scenarios</strong></p>
-
-<ol>
-<li><p> Binding the View – ViewModel</p></li>
-<li><p> ViewModel and Model</p></li>
-<li><p> Basic Commanding</p></li>
-<li><p> Advanced Commanding</p></li>
-<li><p> Page Navigations and Parameters</p></li>
-<li><p> Page Events</p></li>
-<li><p> Application Bar<strong> </strong></p></li>
-</ol>
-
-
-<p>We will discuss each on in details and the sample that we would be using is that of a photo browser, for <a href="http://500px.com/">500px</a>. You can get the api access <a href="http://developers.500px.com/">here</a></p>
-
-<p><strong>1. Binding the View-ViewModel</strong></p>
-
-<p>MVVM Light comes default with a ViewModelLocator(<strong>VML</strong>) class that will help you with the binding of the ViewModels(<strong>VM’s</strong>) with the corresponding View. The VML will have public properties for the different view models that you have. You can either have different public properties for each of your view model here, or have a property for MainViewModel and then that would in turn have other ViewModel properties. The VML uses a SimpleIOC container to resolve type instances. In simple terms, with an IoC container all we are trying to solve is to minimize the dependency between different types/classes, so that we would never have to instantiate one class(complex type) in another. So whenever a instance of a class is required, the IoC container would generate it for us , and all we would be concerned would be of the interface that we require. For IoC to resolve types for us we need to register the interface and the original class that implements the interface.
-Below you see how we are registering for the interface IDataService and setting its implementation class to DataService. Similarly we can also register classes, which would be how we would be registering our VM’s.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">SimpleIoc</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IDataService</span><span class="p">,</span> <span class="n">DataService</span><span class="p">&gt;();</span>
-</span><span class='line'><span class="n">SimpleIoc</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">MainViewModel</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When installing the nuget package itself an instance of the VML is added into the app.xaml class, which can be used in all the View classes to data-bind to the VM.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Application.Resources&gt;</span>
-</span><span class='line'>       <span class="nt">&lt;ResourceDictionary&gt;</span>
-</span><span class='line'>           <span class="c">&lt;!--Global View Model Locator--&gt;</span>
-</span><span class='line'>           <span class="nt">&lt;vm:ViewModelLocator</span> <span class="na">x:Key=</span><span class="s">&quot;Locator&quot;</span>
-</span><span class='line'>               <span class="na">d:IsDataSource=</span><span class="s">&quot;True&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'> .....
-</span><span class='line'><span class="nt">&lt;Application.Resources&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This instance is used in all the view classes as below  in the xaml.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding Main, Source={StaticResource Locator}}&quot;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Main property returns the View model that should be bound with the view. The ‘ServiceLocator.Current’, returns the default instance of the SimpleIoc. The GetInstance always returns the same instance of the ViewModel as if it would have for a Singleton. If you need a new instance then you would need to pass a specific key(any identifier value) to get a different instance.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">MainViewModel</span> <span class="n">Main</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">get</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">ServiceLocator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">&lt;</span><span class="n">MainViewModel</span><span class="p">&gt;();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>What about the other Views and View Models?</strong></p>
-
-<p>Mostly the main VM would be the one that would be like a hub page, from which the user be able to navigate onto other pages and detailed views., say from a list of friends to a friend, a list of photos to a specific photo. One common thing that we do wrong is to think of View – ViewModel as a one-to-one relationship, meaning one view will have only one ViewModel bound to it.  In our sample app we have a list of photos that needs to be displayed on the main page and on selecting one of the photo, we should be taken to the photo’s detail page. So the mistake to do here would be to have an observable list of Photos in the MainViewModel. We should rather have a list of PhotoViewModel , that would be bound to the list control in the main page. So the MainViewModel would have a property SelectedPhoto, which would be of PhotoViewModel type, that would become the data context of the PhotoDetail page.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding Main.SelectedPhoto, Source={StaticResource Locator}}&quot;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For views that are not at all related to each other, we can have separate properties in the VML, like say for Settings, About page.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding About, Source={StaticResource Locator}}&quot;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">AboutViewModel</span> <span class="n">About</span>
-</span><span class='line'> <span class="p">{</span>
-</span><span class='line'>    <span class="k">get</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">ServiceLocator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">&lt;</span><span class="n">AboutViewModel</span><span class="p">&gt;();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>So whenever you have hierarchical pages, it would mostly be that your parent/callee will have the ViewModel property that you would bind to like SelectedPhoto in MainViewModel and for cases you have separate navigations you can have a property exposed in VML like About, Main.</p>
-
-<p><strong>2. ViewModel and Model</strong></p>
-
-<p>Like I mentioned above, one common mistake that we make is to think of View-ViewModel as a one-to-one relationship and normally end up binding the UI to models and not VM’s. We soon tend to hit into problems, such as adding custom properties into models, not finding ways to trigger property changed etc. So it is always best to wrap your models in the VMs. In cases where you are sure you would never want to change/format the data format then you can directly bind to a model. In  cases where you would want to format the data (like say you have a First Name &amp; Last Name property on the model and you want to display Full Name)  you would rather wrap the data into a VM and bind that. You could always use <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter.aspx">ValueConverters</a>, to format the data specific to the UI, but that always comes with a price, especially on a phone device. Phone’s come with lesser hardware resource and you would want to make the maximum use of it. So it is better to have properties exposed on VM itself rather than having converters all over the UI to format the data. But still you would be in positions where you would absolutely want to use a converter where you should. That is a wise decision that one should make for yourself. (a <a href="https://groups.google.com/forum/?fromgroups#!topic/wpf-disciples/P-JwzRB_GE8">thread</a> that discusses on this )</p>
-
-<p><strong>3. Basic Commanding</strong></p>
-
-<p>It’s not just the data that gets displayed needs to be separated out cleanly. User actions and actions taken should also be cleanly separated from the UI. Commands is what would help us here. Commanding support is currently only for elements that inherit from <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.buttonbase.aspx">ButtonBase</a>. As in any mvvm implementation, mvvmlight also has a wrapper that implements <a href="http://msdn.microsoft.com/en-us/library/system.windows.input.icommand.aspx">ICommand</a> interface for us, which is RelayCommand. An instance of this can be directly bound to the Command property, for those elements that inherits from ButtonBase. Below is how you would wire up the command to a button on a page</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Button</span> <span class="na">Content=</span><span class="s">&quot;My Command&quot;</span> <span class="na">Command=</span><span class="s">&quot;{Binding MyCommand}&quot;</span>
-</span><span class='line'>    <span class="na">VerticalAlignment=</span><span class="s">&quot;Center&quot;</span> <span class="na">HorizontalAlignment=</span><span class="s">&quot;Center&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">MyCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">(</span><span class="n">OnMyCommand</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span> <span class="n">MyCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnMyCommand</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="n">MessageBox</span><span class="p">.</span><span class="n">Show</span><span class="p">(</span><span class="s">&quot;You clicked me :)&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>4. Advanced Commanding</strong></p>
-
-<p>It’s not just UI elements that inherit from Buttonbase that we would be using, and hence we definitely need alternatives to bind events of such elements. ListBox SelectionChanged, Page loaded etc are very common events that one would be interested in while developing phone apps. There are a couple of approaches that one could follow here</p>
-
-<ul>
-<li><strong>Wire-up the command from code behind</strong></li>
-</ul>
-
-
-<p>We could  easily wire up all such events from the code-behind class, and have it invoked on the view model. Some might argue here that we are going off the MVVM pattern, which says ‘no code behind’. I don’t this it ever said that in the first place. It is just about decoupling the UI from the code and this is still done. Even binding/commanding is still going to generate code and do the wiring of commands. As long as there is a clear separation of logics and concerns we are good. So I think this this is very well acceptable and the easiest in fact of all the approaches.</p>
-
-<p>Code Behind:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'> <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">MainViewModel</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnNavigatedTo</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="n">Windows</span><span class="p">.</span><span class="n">Navigation</span><span class="p">.</span><span class="n">NavigationEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="k">base</span><span class="p">.</span><span class="n">OnNavigatedTo</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-</span><span class='line'><span class="n">viewModel</span><span class="p">.</span><span class="n">OnnavigatedToCommand</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">NavigationContext</span><span class="p">.</span><span class="n">QueryString</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>View Model</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">OnnavigatedToCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">&lt;</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;&gt;(</span><span class="n">OnNavigatedTo</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span><span class="p">&lt;</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;&gt;</span> <span class="n">OnnavigatedToCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnNavigatedTo</span><span class="p">(</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="c1">// do whatever you want to here</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li> <strong>EventToCommand Behavior</strong></li>
-</ul>
-
-
-<p>With the EventToCommand behavior introduced for Blend, can be used to bind an ICommand from the UI elements. Though it was introduced for Blend, it can be used independently. You would need to add a reference to System.Windows.Interactivity.dll, which is were all these behaviors are implemented. There is a detailed <a href="http://geekswithblogs.net/lbugnion/archive/2009/11/05/mvvm-light-toolkit-v3-alpha-2-eventtocommand-behavior.aspx">post</a> out here on to how to use EventToCommand to trigger commands directly from the UI.</p>
-
-<p>Just to keep a sample here, below would be how it would look like</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'>xmlns:i=&quot;clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity&quot;
-</span><span class='line'>xmlns:command=&quot;clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Extras.WP71&quot;
-</span><span class='line'>...
-</span><span class='line'><span class="nt">&lt;ListBox&gt;</span>
-</span><span class='line'><span class="nt">&lt;i:Interaction.Triggers&gt;</span>
-</span><span class='line'><span class="nt">&lt;i:EventTrigger</span> <span class="na">EventName=</span><span class="s">&quot;SelectionChanged&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'><span class="nt">&lt;command:EventToCommand</span> <span class="na">Command=</span><span class="s">&quot;{Binding SelectionChangedCommand}&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/i:EventTrigger&gt;</span>
-</span><span class='line'><span class="nt">&lt;/i:Interaction.Triggers&gt;</span>
-</span><span class='line'><span class="nt">&lt;ListBox.Items&gt;</span>
-</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item1<span class="nt">&lt;/ListBoxItem&gt;</span>
-</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item2<span class="nt">&lt;/ListBoxItem&gt;</span>
-</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item3<span class="nt">&lt;/ListBoxItem&gt;</span>
-</span><span class='line'><span class="nt">&lt;/ListBox.Items&gt;</span>
-</span><span class='line'><span class="nt">&lt;/ListBox&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">SelectionChangedCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">(</span><span class="n">OnSelectionChangedCommand</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span> <span class="n">SelectionChangedCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnSelectionChangedCommand</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="c1">// do whatever you want to here</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><strong>Messenger</strong></li>
-</ul>
-
-
-<p>We could also use a messenger service, to propogate UI events to VM’s. MVVMLight  has a built in messenger service that can be used for this. In simple terms a messenger is nothing but a decoupled eventing system, something of a publisher-subscriber model. In the messenger one entity  would send a message and there would be another entity that listens for this message and acts upon it.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Selector_OnSelectionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">SelectionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Messenger</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Send</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span>
-</span><span class='line'>        <span class="k">new</span> <span class="nf">NotificationMessage</span><span class="p">(</span><span class="s">&quot;You could have your own items here by using a generic NotificationMessage&lt;&gt;&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="err">…</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">MessengerInstance</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">,</span> <span class="n">OnSelectionChanged</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnSelectionChanged</span><span class="p">(</span><span class="n">NotificationMessage</span> <span class="n">message</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="c1">// do whatever you want to here</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As you see above, in the code behind we send a Notification message indicating a click has happened. In the VM we register for the notification message and act upon it. We could send generic objects via the notification message and also create our own messages by inheriting from MessageBase of mvvmlight. This <a href="http://msdn.microsoft.com/en-us/magazine/jj694937.aspx">article</a> gives more information and scenarios around this</p>
-
-<p>We are still left with a lot more scenarios to cover here and I would be covering them in a separate post to keep this one &lsquo;short&rsquo; :)</p>
-
-<p><strong>Edit</strong>: Check out <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/">MVVM – A Windows Phone Scenario – Part 2</a> for the rest of the scenarios</p>
-
-<p> </p>
 ]]></content>
   </entry>
   
