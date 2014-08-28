@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Tag: Blogging | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/tag/blogging/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2014-08-28T14:04:37+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Static Generator is All a Blog Needs - Moving to Octopress]]></title>
+    <link href="http://rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/"/>
+    <updated>2014-08-27T21:34:12+05:30</updated>
+    <id>http://rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress</id>
+    <content type="html"><![CDATA[<p>Wordpress is what that has been powering my blog for sometime and it definitely is a blogging engine to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">get started with</a> ease. But with time, I have been noticing that the load time is very high and there are a lot of plugins in the processing pipeline, even to do very small things. This definitely is not that great for a simple blog, where users(including me) expect fast page load times.</p>
+
+<blockquote><p>For blogging, Wordpress is just extra baggage that you keep along that never gets used. Except for discussions, a blog is just static content and that is all it requires.</p></blockquote>
+
+<p>There are a lot of <a href="https://www.staticgen.com/">static site generators</a> out there today and any of them should be just fine. I wanted to choose a platform that was not on Microsoft stack and Octorpess was just perfect, it being on Ruby.<a href="http://octopress.org/">Octopress</a>, which is <a href="http://jekyllrb.com/">Jekyll</a> based, provides almost all the features that a blog needs out of the box or via plugins. The <a href="http://octopress.org/docs/setup/">documentation</a> for Octopress is very good and takes you through setting it up with ease.</p>
+
+<p><strong>Migrating from Wordpress</strong></p>
+
+<p>The <a href="https://github.com/thomasf/exitwp">exitwp</a> tool is what I used to get all my posts from Wordpress into Markdown format, so that it can be imported into Octopress. The steps are direct and is detailed out in the readme. Code formatting was an issue after the migration. I had been mainly using <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a> for code formatting in Wordpress. Formatting this took a bit of time, as I had to go through each post and do the necessary modifications to use the <a href="http://octopress.org/docs/plugins/backtick-codeblock/">Backtick Code Blocks</a>.</p>
+
+<p><strong>Mapping the images</strong> from the wp_content folder to a new folder was one another task. I added a <a href="http://jekyllrb.com/docs/variables/">new variable in the config</a>, to track the images folder so that I can change this to something else too later(like a CDN) and used that to refer images. In cases where the images needs to be aligned to a specific side, I used the <a href="http://stackoverflow.com/questions/255170/markdown-and-image-alignment">image tag directly</a>.</p>
+
+<pre><code class="">![Microsoft Community Contributor Award Certificate for Rahul P Nath](/images/mcca_rahulpnath.png)
+
+&lt;img class="left" src="/images/Outlook_folders_productivity.png" alt="Outlook_folders_productivity" /&gt;
+</code></pre>
+
+<p>Also updated the <em>_config.yml</em> with the required details, permalink structure, google analytics, asides that are required and linked the social accounts. Linking social accounts is important for <a href="https://plus.google.com/authorship">Content Authorship</a>, and everybody should be doing that, irrespective of the blogging engine. Disqus commenting system is supported in Octopress, You can use <a href="https://wordpress.org/plugins/disqus-comment-system/">Disqus Wordpress plugin</a> to export the comments from the exiting blog to disqus.I have also added in some custom plugins that are listed out <a href="https://github.com/rahulpnath/rahulpnath.com/blob/master/MyPlugins.markdown">here</a>. Also setup a <a href="https://www.google.co.in/cse/">search</a> for your site that would help readers find what they want.</p>
+
+<p><strong>Deploy</strong></p>
+
+<p>The blog is deployed to github and pushed to azure from there using <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-publish-source-control/">coninuous integration</a>. This blogpost <a href="http://www.ewal.net/2012/08/28/octopress-plus-windows-azure-web-sites/">here</a> details out on how to set up rake_deploy to push the blog to azure. Basically, we have a folder named <em>_azure</em>, that is gitignored in the source branch of the blog and included in the one that gets deployed. This would contain only the generated static files required for the blog that gets generated with <em>rake generate</em></p>
+
+<p><strong>Tuning the blog for improving load time</strong></p>
+
+<p>Once everything is setup it is really good to run some tools to check how your site is performing. Here are a couple that I found really useful.</p>
+
+<ul>
+<li><a href="https://developer.yahoo.com/yslow/">YSlow</a></li>
+<li><a href="https://developers.google.com/speed/pagespeed/insights/">PageSpeed Insights</a></li>
+</ul>
+
+
+<p>Running one of these, would really set you back for sometime and provide you with some performance improvement suggestions.</p>
+
+<ul>
+<li>Caching: - To enable caching, I added the required configuration entries in the <a href="https://github.com/rahulpnath/rahulpnath.com/blob/blog/web.config">web.config</a>(as I am hosting in azure). Since the site is all static content you can safely set caching to all the items.</li>
+</ul>
+
+
+<pre><code>&lt;staticContent&gt;
+    &lt;mimeMap fileExtension="woff" mimeType="application/font-woff" /&gt;
+    &lt;clientCache httpExpires="Sun, 29 Mar 2020 00:00:00 GMT" cacheControlMode="UseExpires" /&gt;
+&lt;/staticContent&gt;
+</code></pre>
+
+<ul>
+<li><p>Images: <a href="https://developers.google.com/speed/docs/insights/OptimizeImages">Optimizing images</a> includes multiple steps of getting the image sizes correct as required, removing out any unnecessary metadata to reduce size, reducing the pixels. Couple of tools like <a href="http://www.imagemagick.org/">ImageMagick</a>, <a href="http://pnggauntlet.com/">PngGauntlet</a> would definitely help in reducing and optimizing the images. This is a must do exercise and will definitely improve the load time.</p></li>
+<li><p>Favicon: With lots of devices, browsers and clients out there, a single favicon no more serves the purpose. <a href="http://realfavicongenerator.net/">Real Favicon Generator</a> is there to the resue, where you can upload a single image and it will give you all the required formats and sizes.</p></li>
+</ul>
+
+
+<p><strong>Finding Broken Links:</strong>
+This is a good time to find out any broken links in your blog that has been lying around since some time.Make sure that you run <a href="http://home.snafu.de/tilman/xenulink.html">Xenu&rsquo;s Link Sleuth</a>, to find and fix them.</p>
+
+<p><strong>Writing New Posts:</strong>
+I have been a great fan of <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows Live Writer</a> for blogging on Wordpress. But now that I can use Markdown to write posts, I am currently using <a href="http://markdownpad.com/">MarkdownPad</a>. For editing the blog settings, layout, config I use <a href="http://www.sublimetext.com/">Sublime Text</a>, which is a great light weight text editor. I am yet to find a good Markdown plugin for it on Windows, so that I can stick to just using this one super cool editor. (Please do let know if you know of any good plugins for Markdown on Sublime in Windows, that provides live preview feature too). Also since this is integrated into git, it really fits into the workflow and keeping backups is more easy.</p>
+
+<p>The blog is so light weight and loads faster as compared to Wordpress. After all the blog is composed of just static pages and it does not demand a database and lots of other processing that comes with Wordpress. So moving out to a static generated site is something that you should think of if you have not already or have you already moved out. What are your thoughts on this!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Get started with your blog]]></title>
+    <link href="http://rahulpnath.com/blog/get-started-with-your-blog/"/>
+    <updated>2013-09-17T19:01:58+05:30</updated>
+    <id>http://rahulpnath.com/blog/get-started-with-your-blog</id>
+    <content type="html"><![CDATA[<p>If you are a programmer and don’t have a blog, then there is no better time than now to start one. <a href="http://channel9.msdn.com/Shows/HanselminutesOn9/Hanselminutes-on-9-Social-Networking-for-Developers-Part-1-Every-Developer-Needs-a-Blog">Every developer should have a blog</a>, for a very simple reason – <strong>Otherwise all your work is just going wasted!.</strong> I can bet that the best of your code or ideas would either be in some old email that you hardly have access to or archived or in some backup hard-disk waiting to be formatted or already formatted and all gone. All the thought, research and creativity that you would have spent would be lying just wasted and with little or no use. Having an online presence has really become a necessity in today&rsquo;s connected world, and a blog is the best place to show your presence. I started off answering <a href="http://rahulpnath.com/blog/stars-do-count/">mdsn forums</a> and then figured that most of the people had similar questions and I was giving the same answers many a times, which gave me the thought of blogging answers and posting links to them. So anytime someone asks you something or you do something awesome blog it, so that your work does not get wasted and more people would find it useful. As with the <a href="http://en.wikipedia.org/wiki/Rule_of_three_(computer_programming">rule of three</a>) for refactoring, with blogging it’s just rule of one – <em><strong>blog it always </strong>(</em>even this blog is because some one asked me after I recently moved on to a self hosted blog<em>).</em>
+I have had a taste of blogspot and WordPress blog web hosting service,  before moving on to a self-hosted blog here. I think you would have guessed which one I would suggest you to get if you are starting your blog – a self hosted one. Indeed there is some effort that goes in to maintain the blog, but its worth every effort that you put.</p>
+
+<p>I use WordPress as the blogging software and am running it on a Linux server (had to change over from windows, as there were a lot of compatibility issues that I faced). WordPress is a very popular blogging engine and so has an immense collection of themes, plug-in and add-on that are available to enhance yours and your readers experience. Once you get your wordpress installed on your self hosted domain, which should be as easy as clicking a button, install the below plugin’s.</p>
+
+<ol>
+<li><p> The first thing would be to <strong>connect with </strong><a href="http://jetpack.me/"><strong>jetpack</strong></a>. This would give you a lot of features including stats, social integration, publicize options and many more.</p></li>
+<li><p> Connect with <a href="http://akismet.com/"><strong>akismet</strong></a> using the <a href="http://wordpress.org/plugins/akismet/">plug-in</a> for preventing/moderating spam comments. Akismet provides a free subscription for personal users.</p></li>
+<li><p> <a href="http://feedburner.google.com/"><strong>Claim your feed</strong></a> and put it on your blog. You can again use a <a href="http://wordpress.org/plugins/feedburner-form/">feedburner-form</a> if you want.</p></li>
+<li><p> Integrate with<strong> </strong><a href="http://www.google.com/analytics/"><strong>Google analytics</strong></a>, if you want more detailed statistics than the one provided with jetpack. Once you get your code, you can use the <a href="http://wordpress.org/plugins/googleanalytics/">plug-in</a> to integrate with your site. This will add the necessary code in all your pages header.</p></li>
+<li><p> Make sure you have a <strong>backup plan</strong>, as you would not want all your data to vanish off if something happens with the hosting server. You could either use vaultpress or use freely available plug-in to back up to popular cloud storage like Dropbox, Skydrive or Google drive.</p></li>
+<li><p> Get a <strong>good theme</strong> for your blog, there a lot of free and paid ones out there.</p></li>
+</ol>
+
+
+<p>Now that you have most of the things setup, it’s time for you to put up your first page, <a href="http://rahulpnath.com/blog/about/">About me</a>. This is very important as it gives a sense of credibility to your readers, so make sure you have one. For creating content on to your blog, you can either use the online editor or use some offline editor. Personally I use <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows live writer</a>. I love using this and all my blogs are written using this. The one plug-in that you would want to get, if you are a developer is <a href="http://precode.codeplex.com/">PreCode</a>, which makes inserting code really easy.
+There are a lot more things that your blog would need, you would soon find that out and when you do, please leave a note of it in the comments section below. Happy Blogging!</p>
+
+<p><strong>Edit</strong>: Couple of people were asking about getting started with a free blog. <a href="http://wordpress.com/">Wordpress.com</a> or <a href="https://www.tumblr.com/">Tumblr</a> would be a very good option to start with. Personally I used Wordpress as I felt that better. The advantage with tumblr over wordpress is that you can <a href="http://www.tumblr.com/docs/en/custom_domains">link your custom domain name with tumblr for free</a> while <a href="http://en.support.wordpress.com/domains/map-existing-domain/">worpress charges for linking a custom domain</a>. (You would need to pay for the custom domain in either cases). But then I ended up hosting all myself after moving away from Wordpress.com.</p>
+]]></content>
+  </entry>
+  
+</feed>
