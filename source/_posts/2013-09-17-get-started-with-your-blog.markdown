@@ -8,8 +8,10 @@ title: Get started with your blog
 wordpress_id: 623
 categories:
 - Thoughts
+- Blogging
 tags:
 - blog
+- Blogging
 ---
 
 If you are a programmer and don’t have a blog, then there is no better time than now to start one. [Every developer should have a blog](http://channel9.msdn.com/Shows/HanselminutesOn9/Hanselminutes-on-9-Social-Networking-for-Developers-Part-1-Every-Developer-Needs-a-Blog), for a very simple reason – **Otherwise all your work is just going wasted!.** I can bet that the best of your code or ideas would either be in some old email that you hardly have access to or archived or in some backup hard-disk waiting to be formatted or already formatted and all gone. All the thought, research and creativity that you would have spent would be lying just wasted and with little or no use. Having an online presence has really become a necessity in today's connected world, and a blog is the best place to show your presence. I started off answering [mdsn forums](http://rahulpnath.com/blog/stars-do-count/) and then figured that most of the people had similar questions and I was giving the same answers many a times, which gave me the thought of blogging answers and posting links to them. So anytime someone asks you something or you do something awesome blog it, so that your work does not get wasted and more people would find it useful. As with the [rule of three](http://en.wikipedia.org/wiki/Rule_of_three_(computer_programming)) for refactoring, with blogging it’s just rule of one – _**blog it always **(_even this blog is because some one asked me after I recently moved on to a self hosted blog_)._
