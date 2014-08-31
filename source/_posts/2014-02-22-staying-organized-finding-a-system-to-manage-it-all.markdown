@@ -9,6 +9,8 @@ wordpress_id: 919
 categories:
 - Productivity
 - Tools
+tags:
+- Productivity
 ---
 
 In our busy lives, with multiple roles to play at home and work, everyone needs to have some kind of system to keep things organized and stay on top - **_to have control_. **I've been always amazed on how my father stays organized with all the things with his to-do list paper calendar and the energy with which he gets things done. Apart from his not-so-optimized short trips on the two-wheeler(which he does because he enjoys it) in getting things done across the town, that is what I have always wanted to attain.
