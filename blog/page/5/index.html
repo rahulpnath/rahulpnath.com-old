@@ -140,6 +140,99 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-01-29T17:26:43+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 29<sup>th</sup>, 2011</time>
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/datatemplate-vs-code-behind/" itemprop="url">DataTemplate Vs Code Behind</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Most of the people switching to WPF,got to understand the fact the WPF tries to target one major problem of the technologies that existed before, which was tight coupling of the design and the behaviour.WPF has a ‘<em>lookless control model</em>’,and that simply means that the look and feel of the control is completely separated from the behaviour of the  control.And that is where the whole concept of XAML comes in,which does its part of defining the visual representation.</p>
+
+<p>But still many people move on to WPF from older technologies fail to absorb this core approach.Mostly this happens when the look of something is to be dynamically generated.Say in the case of a Listbox bound to a itemssource.As far as the item is to be displayed in pure text everything goes fine.People figure out that the <em>DisplayMemberPath</em> has to be set to the property that they want to be displayed in the listbox.
+ &#8220;` csharp
+ private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+          listBox1.ItemsSource = PopulateEmployees();
+        }</p>
+
+<pre><code>    private static List&lt;Employee&gt; PopulateEmployees()
+    {
+        List&lt;Employee&gt; employees = new List&lt;Employee&gt;();
+        Employee emp;
+        for int i = 0; i &lt; 10; i++)
+        {
+            emp = new Employee()
+            {
+                FirstName = "Name",
+                LastName = i.ToString(),
+                Id = i
+            };
+            employees.Add(emp);
+        }
+        return employees;
+    }
+}
+
+class Employee
+{
+    public string FirstName { get; set; }
+
+   public string LastName { get; set; }
+
+    public int&lt;/span&gt; Id { get; set; }
+}
+```
+</code></pre>
+
+<p><img src="/images/binding_displaymemberpath.jpg" alt="binding displaymemberpath" /></p>
+
+<p>But the scenario changes when the item to be displayed has to be more informative.Say you need a image to come up with some text,or maybe a button/checkbox etc.Now people tend to shift to the older approaches of creating the listbox items display from code.As that’s how it had been done before and also that seems easier.</p>
+
+<p>The code changes to something similar to shown below.</p>
+
+<p><img src="/images/binding_code_behind.jpg" alt="binding code behind" /></p>
+
+<p>Or another approach might be slightly better than this one,by creating a user control to hold this data and then create the User control in the code behind and then add that to the listbox items.</p>
+
+<p>This is where people tend to loose focus of the real power of WPF ..<strong>Templating</strong>.</p>
+
+<p>All this code can be easily replaced and also clearly separate that UI details from the behaviour.The property that&rsquo;s the key here is <em>ItemTemplate,</em>and this would how the new code look like.</p>
+
+<p><img src="/images/binding_data_template.jpg" alt="binding data template" /></p>
+
+<p>And the code in the behind all vanishes,and is as simple in our first case,by just setting up the listbox1’s ItemsSource.</p>
+
+<p>That is the power of templating and clearly separates the UI aspect from code. Any ItemsControl will have the property ItemTemplate that is to be set to the way you want the data to be displayed.If the display is complex in itself then you can move those into a separate user control and create  that user control  as the ItemTemplate.Anytime you want to change the way your control looks you just need to change in the xaml,clearly bringing in the decoupling.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-01-26T13:20:00+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 26<sup>th</sup>, 2011</time>
         
       </p>
@@ -617,56 +710,6 @@ The same date example using the &lsquo;Extension Methods&rsquo; way of refactori
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-uppercase">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2010-08-23T16:12:00+05:30"  data-updated="true" itemprop="datePublished dateCreated">Aug 23<sup>rd</sup>, 2010</time>
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/tdd-and-refactoring/" itemprop="url">TDD and Refactoring</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Over the days I have been reading on Test Driven Development(TDD) and it seems really interesting methodology to go with as per development is concerned.<br/>
-Basic of TDD is that the development process relies on &lsquo;tests&rsquo;, that are written prior to code.<br/>
-Sounds astonishing!!!!<br/>
-It might to someone into the normal development mode,where tests are usually written after code, so as to match the code that is written.<br/>
-But TDD says just the opposite.<br/>
-Code to make the tests pass&hellip;Just pass..<em>Nothing more and Nothing less</em>.<br/>
-Thats where the catch is where most of we developers might find it difficult and needs getting used to.Not getting more into it as I would not be the best to comment on it :)<br/>
-So whats refactoring got to do here.<br/>
-Refactoring plays an integral part of TDD,so that the code is elegant and conveys just what it needs to,avoiding duplication.<br/>
-The TDD approach also assists in refactoring as you have tests readily available to assure that the functional behaviour is not affected while changing the code design.You are just click of a button away if you are having a automated test scripts (like nUnit) in veryfying refactoring. <br/>
-So both TDD and Refactoring goes hand in hand and helps in greatly improving the overall code quality.<br/>
-There are quite a lot resources out there on these.<br/>
-The best for refactoring would be of <a href="http://www.amazon.com/gp/product/0201485672/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0201485672&amp;linkCode=as2&amp;tag=rahulpnath-20">Refactoring: Improving the Design of Existing Code</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0201485672" alt="" />.<br/>
-For TDD <a href="http://www.amazon.com/gp/product/0735619484/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0735619484&amp;linkCode=as2&amp;tag=rahulpnath-20">Test-Driven Development in Microsoft  .NET (Microsoft Professional)</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0735619484" alt="" /> would be a good start and also the one by Kent Beck <a href="http://www.amazon.com/gp/product/0321146530/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0321146530&amp;linkCode=as2&amp;tag=rahulpnath-20">Test Driven Development: By Example</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0321146530" alt="" /></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -690,6 +733,8 @@ For TDD <a href="http://www.amazon.com/gp/product/0735619484/ref=as_li_qf_sp_asi
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/">ASP.NET Web API and External Login - Authenticating with Social Networks</a>
+    
     <a class="list-group-item " href="/blog/waking-up-early-is-all-about-waking-up-to-an-alarm/">Waking up Early is All About Waking up to an Alarm</a>
     
     <a class="list-group-item " href="/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">Static Generator is All a Blog Needs - Moving to Octopress</a>
@@ -697,8 +742,6 @@ For TDD <a href="http://www.amazon.com/gp/product/0735619484/ref=as_li_qf_sp_asi
     <a class="list-group-item " href="/blog/yo-ko-a-yeoman-generator-for-knockoutjs/">yo ko - A Yeoman Generator For KnockoutJS</a>
     
     <a class="list-group-item " href="/blog/knockoutjs-for-xaml-developers/">KnockoutJS For XAML Developers</a>
-    
-    <a class="list-group-item " href="/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/">Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad</a>
     
   </div>
 </section>

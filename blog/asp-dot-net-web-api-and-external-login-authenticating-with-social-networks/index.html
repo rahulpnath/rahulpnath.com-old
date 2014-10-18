@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ASP.NET Web API and External Login - Authenticating with Social Networks - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-uppercase">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-09-10T19:29:35+05:30"  data-updated="true" itemprop="datePublished dateCreated">Sep 10<sup>th</sup>, 2014</time>
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        ASP.NET Web API and External Login - Authenticating with Social Networks
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>The ASP.NET Web API project created from the default template in Visual Studio 2013 comes with an option to choose the Authentication method. The &lsquo;Individual User Accounts&rsquo; option of authorization will allow users of your API to authenticate using exisitng their exisitng social networks(Facebook, Twitter, Google or Microsoft). This is a very useful feature and also speeds up the signing process, as there is little or no input required from the user and also one less password less to remember. All these social logins uses <a href="http://oauth.net/">OAuth</a> to provide authorized access to their services, and there are exisitng Owin adapters for these social networks. You could very well write a custom owin adapter to plug new authorization providers.</p>
+
+<blockquote><p>In this post we will see how we can enable Facebook login for your API when <strong><em>the client and api are hosted on seperate domains</em></strong>.</p></blockquote>
+
+<p>We will start off with the default template for the Web API, created by Visual Studio 2013 for Web API(File->New Project->ASP.NET Web Application->Web API with Authentication set to Individual User Accounts)</p>
+
+<p><img src="/images/web_api_authentication_vs_template.png" alt="Visual Studio 2013 Web Api Template" /></p>
+
+<p>The Account Controller has all the methods that is required for a client to authenticate with the api and get the token to access protected resources. We will go through the calls that the client app would need to perform a successful authentication. I have updated the owin nuget packages to use the latest Owin 3.0.0 packages.</p>
+
+<p><strong>1. Getting the supported Authentication providers</strong></p>
+
+<p>The client in it login screen would be showing the allowed authorization providers along with the normal username/password login option. The <em>ExternalLogins</em> endpoint returns all the supported external authentication providers. The supported list of providers can be added in <em>Startup.Auth.cs</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">appId</span><span class="p">:</span> <span class="s">&quot;APPID&quot;</span><span class="p">,</span> <span class="n">appSecret</span><span class="p">:</span> <span class="s">&quot;APPSECRET&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> <br/>
+The application id and secret can be obtained by registering for an application with the corresponding provider. For facebook you can do that <a href="https://developers.facebook.com/">here</a>. You would also need to configure the web api endpoint as a website platform when obtaining the api keys. Now on querying the endoint the client will get back the endpoint that it needs to hit when an authentication with Facebook is required. A redirect url is to be passsed along with the request, to which the api will redirect to after succesfull authentication with the token. By default email is not received from facebook, but you can override this behaviour by providing some extra options when registering the provider as shown below. The OnAuthenticated method on the FacebookProvider gets called once the user is authenticated with facebook. At this point you can get the Email details explicitly and add it to the claims.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">facebookProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationProvider</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">OnAuthenticated</span> <span class="p">=</span> <span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Add the email id to the claim</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">AddClaim</span><span class="p">(</span><span class="k">new</span> <span class="n">Claim</span><span class="p">(</span><span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">,</span> <span class="n">context</span><span class="p">.</span><span class="n">Email</span><span class="p">));</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="m">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationOptions</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>                  <span class="n">AppId</span> <span class="p">=</span> <span class="s">&quot;AppId&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="n">AppSecret</span> <span class="p">=</span> <span class="s">&quot;AppSecret&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="n">Provider</span> <span class="p">=</span> <span class="n">facebookProvider</span>
+</span><span class='line'>              <span class="p">};</span>
+</span><span class='line'><span class="n">options</span><span class="p">.</span><span class="n">Scope</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">options</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>You can also get the facebook token if required from the context and which can be used in the database to update information to facebook on behalf of the user.</p>
+
+<p><strong>2. Making a request to an Authentication provider</strong></p>
+
+<p>Now that we have got the list of supported list of providers, we can make the request to the required provider from the client. This is simply done by navigating to the url obtained for the corresponding provider in the previous request, i.e to the <em>ExternalLogin</em> endpoint. If the user is already authenticated (detected via cookie), then the user is redirected to the redirect url provided in above step. If the user is not authenticated then the login page of the corresponding provider will be shown and after a successfull login the redirection will happen. The token that is received here is the custom token that gets generated by the web-api and should not be mistaken for the authorization server&rsquo;s(facebook) token itself.</p>
+
+<p>The owin middleware abstracts away the interaction with the authorization server, Facebook in our case here. On successfull login in facebook, it redirects to &lsquo;<em><a href="https://katanaproject.codeplex.com/SourceControl/latest#src/Microsoft.Owin.Security.Facebook/FacebookAuthenticationOptions.cs">/signin-facebook</a></em> along with the facebook token. We can get the username or email from the claims provided by the authentication server that can then be passed back to the client for registering the user in the next step. The <em>ExternalLoginData</em> class get the data from the claims. I have modified this to use the new Email property that we have added. To return this email address to the client, we need to override the method as shown below in ApplicationOAuthProvider</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="n">Task</span> <span class="nf">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">OAuthAuthorizationEndpointResponseContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">//  Add the claims to the return url</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">claim</span> <span class="k">in</span> <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">Claims</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimsIdentity</span><span class="p">.</span><span class="n">DefaultNameClaimType</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above method adds in the additional response parameters that gets embedded in the redirect url to the client.</p>
+
+<p><strong>3. Register user</strong></p>
+
+<p>Now that the user is successfully authenticated with  the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">registerUser</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">url</span><span class="o">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s1">&#39;api/Account/RegisterExternal&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;Email&#39;</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span> <span class="s1">&#39;Name&#39;</span> <span class="o">:</span> <span class="nx">email</span><span class="p">},</span>
+</span><span class='line'>        <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">xhrFields</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">withCredentials</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span><span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">token</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Navigate to the user page</span>
+</span><span class='line'>            <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#user&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">failure</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration failed&#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">userInfoUrl</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s2">&quot;api/Account/UserInfo&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">url</span><span class="o">:</span> <span class="nx">userInfoUrl</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span> <span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">config</span><span class="p">.</span><span class="nx">token</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.</p>
+</div>
+
+
+      <footer>
+        <p class="meta text-muted">
+          
+  
+
+<span class="glyphicon glyphicon-user"></span> <span class="byline author vcard" itemprop="author" itemscope itemtype="http://schema.org/Person">Posted by <span class="fn" itemprop="name">Rahul Nath</span></span>
+
+          
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-09-10T19:29:35+05:30"  data-updated="true" itemprop="datePublished dateCreated">Sep 10<sup>th</sup>, 2014</time>
+          
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp;
+<span class="categories">
+  
+    <a class='category' href='/blog/category/asp-dot-net/'>asp.net</a>, <a class='category' href='/blog/category/web-api/'>web api</a>
+  
+</span>
+
+
+          
+<br>
+<br>
+<br>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+  </ul>
+</div>
+<br>
+
+        </p>
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/waking-up-early-is-all-about-waking-up-to-an-alarm/" title="Previous Post: Waking up Early is All About Waking up to an Alarm">&laquo; Waking up Early is All About Waking up to an Alarm</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2014 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/';
+        var disqus_url = 'http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
