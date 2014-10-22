@@ -4,7 +4,7 @@
   <title><![CDATA[Category: .net | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/dot-net/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2014-10-18T18:25:42+05:30</updated>
+  <updated>2014-10-22T18:44:22+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,113 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Configuring Unity Container: Comparing Code and Xml Configuration Side by Side]]></title>
+    <link href="http://rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/"/>
+    <updated>2014-10-19T11:42:54+05:30</updated>
+    <id>http://rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side</id>
+    <content type="html"><![CDATA[<p>Setting up dependency containers from code is very easy, but not at all the same when done using a configuration file. The project that I am currently working on uses xml configuration for <a href="https://unity.codeplex.com/">Unity container</a> and I did struggle mapping certain dependencies, so thought of putting this up.</p>
+
+<p>To start with I have created a console application and added the Unity <a href="https://www.nuget.org/packages/Unity/">nuget package</a>. You could directly add the configurations in the app.config file, but I prefer to keep the configurations separately in a different file, <em>unity.config</em>, and have it referred in the app.config(or web.config). Also make sure that the unity.config file gets copied to the build directory(setting build properties as content and copy always should help) so that it is available to the application.</p>
+
+<pre><code class="xml app.config">&lt;configSections&gt;
+  &lt;section name="unity" type="Microsoft.Practices.Unity.Configuration.UnityConfigurationSection, Microsoft.Practices.Unity.Configuration"/&gt;
+&lt;/configSections&gt;
+&lt;unity configSource="unity.config" /&gt;
+</code></pre>
+
+<p>In the unity.config we need to specify the assemblies and namespaces that we will be injecting the dependencies from. Inside the container is where we register the dependencies.</p>
+
+<p>&#8220;` xml unity.config
+<unity xmlns="http://schemas.microsoft.com/practices/2010/unity"></p>
+
+<!-- Define Assemblies-->
+
+
+<p><assembly name="ConfiguringUnity" /></p>
+
+<!-- End Assemblies-->
+
+
+<!-- Define Namespaces-->
+
+
+<p><namespace name="ConfiguringUnity" /></p>
+
+<!-- End Namespaces-->
+
+
+<p><container></p>
+
+<p></container>
+</unity>
+&#8220;`</p>
+
+<p>Now that we have the basic infrastructure set up to start using the container, lets take a look at some common dependency injection scenarios that we come across. The <a href="http://msdn.microsoft.com/en-us/library/ff660914(v=pandp.20).aspx">Unity Configuration Schema</a> is worth  taking a look, to understand about the configuration elements and their attributes.</p>
+
+<p><strong>Simple Class and Interface</strong><br/>
+<code>csharp C#
+this.unityContainer.RegisterType&lt;NormalClass&gt;();
+this.unityContainer.RegisterType&lt;INormalInterface, NormalInterfaceImplementation&gt;();
+</code>
+<code>xml unity.config
+&lt;register type="NormalClass" /&gt;
+&lt;register type="INormalInterface" mapTo="NormalInterfaceImplementation" /&gt;
+</code>
+Since we have only given the interface name while registering the type, specifying the assembly and namespace names of the type is important.Unity will look through these elements to find the type specified, whenever the specified type is not a full type name. This mechanism is also referred to as <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Automatic_Type_Lookup">Automatic Type Lookup</a></p>
+
+<p><strong>Generic Interface</strong>
+<code>csharp C#
+this.unityContainer.RegisterType(typeof(IGenericInterface&lt;&gt;), typeof(GenericInterfaceImplementation&lt;&gt;));
+this.unityContainer.RegisterType(typeof(IGenericInterfaceWithTwoParameter&lt;,&gt;), typeof(GenericInterfaceWithTwoParametersImplementation&lt;,&gt;));
+</code>
+<code>xml unity.config
+&lt;register type="IGenericInterface`1" mapTo="GenericInterfaceImplementation`1" /&gt;
+&lt;register type="IGenericInterfaceWithTwoParameter`2" mapTo="GenericInterfaceWithTwoParametersImplementation`2" /&gt;
+// or
+&lt;register type="IGenericInterface[]" mapTo="GenericInterfaceImplementation[]" /&gt;
+&lt;register type="IGenericInterfaceWithTwoParameter[,]" mapTo="GenericInterfaceWithTwoParametersImplementation[,]" /&gt;
+</code>
+As shown above registering <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Generic_Types">generic types</a> in config can either use the CLR notation of <code>N, where N is the number of generic parameters or use square brackets with commas to indicate the number of parameters. Examples using one and two parameters are shown above.   
+For a generic interface, the parameters can have typed parameter associated with it, something like *IComplexGenericInterface&lt;ComplexGenericClass&lt;GenericClass&gt;&gt;*. In these cases we cannot directly register this using either of the notation above, as the configuration does not allow recursive formats of those notation. We can use [Aliases](http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20\).aspx#_Type_Aliases) for specifying the parameter type names and then refer the alias for registering the interface.
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">IComplexGenericInterface</span><span class="p">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">ComplexGenericClass</span><span class="p">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="n">GenericClass</span><span class="p">&amp;</span><span class="n">gt</span><span class="p">;&amp;</span><span class="n">gt</span><span class="p">;,</span> <span class="n">ComplexGenericInterfaceImplementation</span><span class="p">&amp;</span><span class="n">gt</span><span class="p">;();</span>
+</span></code></pre></td></tr></table></div></figure>
+&#8220;`xml unity.config
+ &lt;alias alias=&#8221;ComplexGenericInterfaceType&#8221;
+         type=&#8221;ConfiguringUnity.ComplexGenericClass</code>1[[ConfiguringUnity.GenericClass, ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&#8221; />
+<container>
+  <register type="IComplexGenericInterface[ComplexGenericInterfaceType]" mapTo="ComplexGenericInterfaceImplementation" />
+</container>
+&#8220;`
+As shown above alias is nothing but a shorthand name that will be replaced with the full type name when the configuration is loaded. This is only available at configuration time and not at runtime.</p>
+
+<p><strong>Conflicting Interfaces</strong> <br/>
+When you have conflicting interface names , probably from two different assemblies then you can create aliases or use full names to register the types. For the example I have created a class library project, ExternalLibrary and added it as a reference to the Console Application.
+<code>csharp C#
+this.unityContainer.RegisterType&lt;IConflictingInterface, ConflictingInterfaceImplementation&gt;();
+            this.unityContainer.RegisterType&lt;ExternalLibrary.IConflictingInterface, ExternalLibrary.ConflictingInterfaceImplementation&gt;();
+</code>
+<code>xml unity.config
+&lt;register type="IConflictingInterface" mapTo="ConflictingInterfaceImplementation" /&gt;
+&lt;register type="ExternalLibrary.IConflictingInterface, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" mapTo="ExternalLibrary.ConflictingInterfaceImplementation, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" /&gt;
+</code></p>
+
+<h4><strong><em>Code and Config</em></strong> instead of <strong><em>Code Vs Config</em></strong></h4>
+
+<p>Now that we have seen some of the common usage scenarios in registering types with containers, one main thought would be &lsquo;<a href="http://stackoverflow.com/questions/5418392/should-unity-be-configured-in-code-or-configuration-file">Should Unity be configured in code or configuration file?</a>&rsquo;. Xml configurations are anytime a pain for the developer as it more prone to errors and configuration complexities. But then there are scenarios where dependencies would have to be plugged in at runtime, for which xml configuration is really helpful. Unity does allow to specify both together, making the best use of both worlds. You can choose to have only your dependencies that are Late Bound in the config and have all others in the code. You could also override an already registered dependency.
+<code>csharp C#
+this.unityContainer.RegisterType&lt;IOverridableDependency, OverridableCodeImplementation&gt;();
+</code>
+<code>xml unity.config
+&lt;register type="IOverridableDependency" mapTo="OverridableConfigImplementation" /&gt;
+</code>
+As shown above we have a different mapping in code and config for the same interface and I am loading the configuration into the container after all the  code registrations are done. In this case the dependency that is registered last will take precedence. So you could use this feature to override any dependencies specified in the code.</p>
+
+<p>There surely are a lot more cases that you would have come across while registering dependencies, do drop in a comment on the missing ones. The sample for this can be found <a href="https://github.com/rahulpnath/Blog/tree/master/ConfiguringUnity">here</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Windows Phone Series – MVVM and ApplicationBar]]></title>
@@ -148,7 +255,7 @@
 
 <p>Hope this helps you to decouple your application bar icons from the ViewModel.You can find a <a href="https://github.com/rahulpnath/Blog/tree/master/PhoneAppBarMvvm">sample</a> implementation for this. In the sample both these approaches are shown for adding icons. You could figure out the Remove pretty easily.</p>
 
-<p><img src="{{%20site.images_root}}/wp_applicationbar_icon_mvvm.png" alt="windows phone applicationbar mvvm" /></p>
+<p><img src="/wp_applicationbar_icon_mvvm.png" alt="windows phone applicationbar mvvm" /></p>
 
 <p>Hope it helps!!</p>
 ]]></content>
@@ -167,7 +274,7 @@
 
 <p>Assuming that we have a folder “MyPreloadedContent” as indicated in the image below, which would be where all our preloaded content is going to be . Most of the time with preloaded content, we would not know what exact data would be in there. It might contain files, images, folders etc. We would want an easy way to set Build Action to Content for all the files/folders that gets placed under the folder( even if it is done outside of Visual Studio).</p>
 
-<p><img src="{{%20site.images_root}}/preloaded_content_Visual_studio.png" alt="preloaded content Visual studio" /></p>
+<p><img src="/preloaded_content_Visual_studio.png" alt="preloaded content Visual studio" /></p>
 
 <p>For this we would need to tweek the project file, to tell it that whatever is under MyPreloadedContent should be treated as ‘Content’. Edit the csproj file from notepad or any other text editor that you use(<a href="http://notepad-plus-plus.org/">Notepad++</a> is my personal favorite). Scroll down to wherever the other Content files are specified, like “<Content Include="ApplicationIcon.png">” for example. Add in the below line to make all the content put into that folder to be treated as Content, and save the csproj file.</p>
 
@@ -176,11 +283,11 @@
 
 <p>Now you could open that folder and put in some content into that. For now I put in some image files and also a sub folder  as below</p>
 
-<p><img src="{{%20site.images_root}}/preloaded_content_explorer.png" alt="preloaded content explorer" /></p>
+<p><img src="/preloaded_content_explorer.png" alt="preloaded content explorer" /></p>
 
 <p>You would need to reload the projects/solution in visual studio to see that those files are automatically included into the solution. If not in a Visual studio,  msbuild would automatically include all the files as Content.</p>
 
-<p><img src="{{%20site.images_root}}/preloaded_content_vs_refresh.png" alt="preloaded content visual studio refresh" /></p>
+<p><img src="/preloaded_content_vs_refresh.png" alt="preloaded content visual studio refresh" /></p>
 
 <p>Now that we have all the files copied into that folder to be automatically included into the solution you need to now need to copy out all these files onto the IsolatedStorage when the app starts for the first time. You would want to do this, so that if there are any updates onto the files that you copied(which would be delivered to you via a web service in a real scenario), you can overwrite the files in the IsolatedStorage so that the new content would be taken then on.</p>
 
@@ -190,7 +297,7 @@
 
 <p>To create a T4 template, add a new item to the project <strong>MyFiles.tt. </strong>Select Ok if you get any warning message</p>
 
-<p><img src="{{%20site.images_root}}/preloaded_content_t4_template.jpg" alt="preloaded content t4 template" /></p>
+<p><img src="/preloaded_content_t4_template.jpg" alt="preloaded content t4 template" /></p>
 
 <p>In a T4 template it would be a mix of text and code, that would be used to generate a new file that would be a class in our case which would expose a function to get all the file names under the folder . Below is the entire text/code that would go into the new file that we just created(<strong>MyFiles.tt</strong>)</p>
 
@@ -393,50 +500,11 @@ private void vgroup_CurrentStateChanging(object sender, VisualStateChangedEventA
 
 <p>You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble <a href="https://github.com/rahulpnath/IncrementalLoadingPhone">here</a>. The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates</p>
 
-<p><img src="{{%20site.images_root}}/wp_incremental_loading_longlistselector.jpg" alt="windows phone incremental loading using longlistselector" /><img src="{{%20site.images_root}}/wp_incremental_loading_scrollstates.jpg" alt="windows phone incremental loading using scrollstates" /></p>
+<p><img src="/wp_incremental_loading_longlistselector.jpg" alt="windows phone incremental loading using longlistselector" /><img src="/wp_incremental_loading_scrollstates.jpg" alt="windows phone incremental loading using scrollstates" /></p>
 
 <p>Hope this helps you to incrementally load data on your windows phone application</p>
 
 <p><a href="https://github.com/rahulpnath/IncrementalLoadingPhone">Download Code</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Windows 8 Series – Drop Down Button]]></title>
-    <link href="http://rahulpnath.com/blog/windows-8-series-drop-down-button/"/>
-    <updated>2013-01-04T15:06:48+05:30</updated>
-    <id>http://rahulpnath.com/blog/windows-8-series-drop-down-button</id>
-    <content type="html"><![CDATA[<p>While working on my Windows 8 Store application, <a href="http://apps.microsoft.com/windows/en-us/app/picfinity/33ba9249-a9f4-44df-973c-21962376c3ea">Picfinity</a> I came across a need for a drop-down button(which I thought was the correct term for this). A similar control is there on the start screen of Windows 8 that gives us options on clicking the logged in user’s image to Change Account picture, Lock, Sign Out etc.</p>
-
-<p><img src="{{%20site.images_root}}/windows8_dropdown_button.png" alt="windows8 dropdown button" /></p>
-
-<p>I wanted this same behaviour in my application, to provide similar options for the logged in user. The easiest way to achieve this is to use a <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.aspx">Popup</a>. The xaml snippet below shows how to get a similar look on your application</p>
-
-<pre><code class="xml">    &lt;Grid Background="{StaticResource ApplicationPageBackgroundThemeBrush}"&gt;
-        &lt;Grid.ColumnDefinitions&gt;
-            &lt;ColumnDefinition /&gt;
-            &lt;ColumnDefinition Width="Auto" /&gt;
-        &lt;/Grid.ColumnDefinitions&gt;
-        &lt;TextBlock Text="MY Content" FontSize="30" HorizontalAlignment="Center" 
-             VerticalAlignment="Center" /&gt;
-       &lt;span style="color:#000000;"&gt; &lt;StackPanel Grid.Column="1" Margin="0,10,30,0" &gt;
-            &lt;Button Content="User Name" VerticalAlignment="Top" Click="Button_Click_1" /&gt;
-            &lt;Popup IsLightDismissEnabled="True" Name="buttonDropDown"&gt;
-                &lt;StackPanel Background="DarkGray"  Width="105"&gt;
-                  &lt;Button BorderThickness="0" Content="Option1" HorizontalAlignment="Stretch" /&gt;
-                  &lt;Button BorderThickness="0" Content="Option2" HorizontalAlignment="Stretch" /&gt;
-                  &lt;Button BorderThickness="0" Content="Option3" HorizontalAlignment="Stretch" /&gt;
-                &lt;/StackPanel&gt;
-            &lt;/Popup&gt; 
-        &lt;/StackPanel&gt;&lt;/span&gt;
-    &lt;/Grid&gt;
-</code></pre>
-
-<p>On click of the button we need to set the popup’s <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.popup.isopen.aspx">IsOpen</a> to true. Setting the <a href="http://msdn.microsoft.com/en-us/library/windows/apps/windows.ui.xaml.controls.primitives.popup.islightdismissenabled">IsLightDismissEnabled</a> to true the popup closes whenever the user taps outside of the popup.</p>
-
-<p><img src="{{%20site.images_root}}/windows8_dropdown_button_plain.png" alt="windows8 dropdown button" /></p>
-
-<p>Style and color it the way you want it to look and there you have an easy drop-down button for Windows 8.</p>
 ]]></content>
   </entry>
   

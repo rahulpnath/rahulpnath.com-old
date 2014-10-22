@@ -4,7 +4,7 @@
   <title><![CDATA[Category: asp.net | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/asp-dot-net/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2014-10-18T18:25:42+05:30</updated>
+  <updated>2014-10-22T18:44:22+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,119 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ASP.NET Web API and External Login - Authenticating with Social Networks]]></title>
+    <link href="http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/"/>
+    <updated>2014-09-10T19:29:35+05:30</updated>
+    <id>http://rahulpnath.com/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks</id>
+    <content type="html"><![CDATA[<p>The ASP.NET Web API project created from the default template in Visual Studio 2013 comes with an option to choose the Authentication method. The &lsquo;Individual User Accounts&rsquo; option of authorization will allow users of your API to authenticate using exisitng their exisitng social networks(Facebook, Twitter, Google or Microsoft). This is a very useful feature and also speeds up the signing process, as there is little or no input required from the user and also one less password less to remember. All these social logins uses <a href="http://oauth.net/">OAuth</a> to provide authorized access to their services, and there are exisitng Owin adapters for these social networks. You could very well write a custom owin adapter to plug new authorization providers.</p>
+
+<blockquote><p>In this post we will see how we can enable Facebook login for your API when <strong><em>the client and api are hosted on seperate domains</em></strong>.</p></blockquote>
+
+<p>We will start off with the default template for the Web API, created by Visual Studio 2013 for Web API(File->New Project->ASP.NET Web Application->Web API with Authentication set to Individual User Accounts)</p>
+
+<p><img src="/web_api_authentication_vs_template.png" alt="Visual Studio 2013 Web Api Template" /></p>
+
+<p>The Account Controller has all the methods that is required for a client to authenticate with the api and get the token to access protected resources. We will go through the calls that the client app would need to perform a successful authentication. I have updated the owin nuget packages to use the latest Owin 3.0.0 packages.</p>
+
+<p><strong>1. Getting the supported Authentication providers</strong></p>
+
+<p>The client in it login screen would be showing the allowed authorization providers along with the normal username/password login option. The <em>ExternalLogins</em> endpoint returns all the supported external authentication providers. The supported list of providers can be added in <em>Startup.Auth.cs</em></p>
+
+<pre><code class="csharp">app.UseFacebookAuthentication(appId: "APPID", appSecret: "APPSECRET");
+</code></pre>
+
+<p>The application id and secret can be obtained by registering for an application with the corresponding provider. For facebook you can do that <a href="https://developers.facebook.com/">here</a>. You would also need to configure the web api endpoint as a website platform when obtaining the api keys. Now on querying the endoint the client will get back the endpoint that it needs to hit when an authentication with Facebook is required. A redirect url is to be passsed along with the request, to which the api will redirect to after succesfull authentication with the token. By default email is not received from facebook, but you can override this behaviour by providing some extra options when registering the provider as shown below. The OnAuthenticated method on the FacebookProvider gets called once the user is authenticated with facebook. At this point you can get the Email details explicitly and add it to the claims.</p>
+
+<pre><code class="csharp">var facebookProvider = new FacebookAuthenticationProvider()
+{
+    OnAuthenticated = (context) =&gt;
+        {
+            // Add the email id to the claim
+            context.Identity.AddClaim(new Claim(ClaimTypes.Email, context.Email));
+            return Task.FromResult(0);
+        }
+};
+var options = new FacebookAuthenticationOptions()
+              {
+                  AppId = "AppId",
+                  AppSecret = "AppSecret",
+                  Provider = facebookProvider
+              };
+options.Scope.Add("email");
+app.UseFacebookAuthentication(options);
+</code></pre>
+
+<p>You can also get the facebook token if required from the context and which can be used in the database to update information to facebook on behalf of the user.</p>
+
+<p><strong>2. Making a request to an Authentication provider</strong></p>
+
+<p>Now that we have got the list of supported list of providers, we can make the request to the required provider from the client. This is simply done by navigating to the url obtained for the corresponding provider in the previous request, i.e to the <em>ExternalLogin</em> endpoint. If the user is already authenticated (detected via cookie), then the user is redirected to the redirect url provided in above step. If the user is not authenticated then the login page of the corresponding provider will be shown and after a successfull login the redirection will happen. The token that is received here is the custom token that gets generated by the web-api and should not be mistaken for the authorization server&rsquo;s(facebook) token itself.</p>
+
+<p>The owin middleware abstracts away the interaction with the authorization server, Facebook in our case here. On successfull login in facebook, it redirects to &lsquo;<em><a href="https://katanaproject.codeplex.com/SourceControl/latest#src/Microsoft.Owin.Security.Facebook/FacebookAuthenticationOptions.cs">/signin-facebook</a></em> along with the facebook token. We can get the username or email from the claims provided by the authentication server that can then be passed back to the client for registering the user in the next step. The <em>ExternalLoginData</em> class get the data from the claims. I have modified this to use the new Email property that we have added. To return this email address to the client, we need to override the method as shown below in ApplicationOAuthProvider</p>
+
+<pre><code class="csharp">public override Task AuthorizationEndpointResponse(OAuthAuthorizationEndpointResponseContext context)
+{
+    //  Add the claims to the return url
+    foreach (var claim in context.Identity.Claims)
+    {
+        if (claim.Type == ClaimsIdentity.DefaultNameClaimType)
+        {
+            context.AdditionalResponseParameters.Add("username", claim.Value);
+        }
+        else if (claim.Type == ClaimTypes.Email)
+        {
+            context.AdditionalResponseParameters.Add("email", claim.Value);
+        }
+    }
+    return base.AuthorizationEndpointResponse(context);
+}
+</code></pre>
+
+<p>The above method adds in the additional response parameters that gets embedded in the redirect url to the client.</p>
+
+<p><strong>3. Register user</strong></p>
+
+<p>Now that the user is successfully authenticated with  the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
+
+<pre><code class="javascript">var registerUser = function () {
+    $.ajax({
+        url: config.apiBaseUrl + 'api/Account/RegisterExternal',
+        data: { 'Email': email, 'Name' : email},
+        method: 'POST',
+        xhrFields: {
+            withCredentials: true
+        },
+        beforeSend: function(xhr) {
+            xhr.setRequestHeader('Authorization','Bearer ' + token);
+        },
+        success: function(data) {
+            // Navigate to the user page
+            window.location = "#user";
+        },
+        failure: function(data) {
+            alert('Registration failed' + data.toString());
+        }
+    });
+</code></pre>
+
+<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.
+<code>javascript
+var userInfoUrl = config.apiBaseUrl + "api/Account/UserInfo";
+$.ajax({
+    url: userInfoUrl,
+    success: function (data) {
+        window.location = "#";
+    },
+    beforeSend: function (xhr) {
+        xhr.setRequestHeader('Authorization', 'Bearer ' + config.token);
+    }
+});
+</code>
+We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Getting Started with ASP.NET Web Api]]></title>
@@ -29,11 +142,11 @@ Let’s get started building our Web API.!!</p>
 
 <p>Create a New Project: File –> New Project –> ASP.NET MVC4 Web Application.Enter your path and solution name and pressing Ok will give you another screen where you can select what kind of template you want to use.For this we would be using Web Api template.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_visual_studio_template.png" alt="wep_api_visual_studio_template" /></p>
+<p><img src="/web_api_visual_studio_template.png" alt="wep_api_visual_studio_template" /></p>
 
 <p>On pressing Ok Visual Studio will create you a set of default controllers and views to start with.Build and run to verify that we have all set up correctly.You should be seeing a nice welcome screen if everything is fine.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_default_template_welcome_screen.png" alt="web_api_default_template_welcome_screen" /></p>
+<p><img src="/web_api_default_template_welcome_screen.png" alt="web_api_default_template_welcome_screen" /></p>
 
 <p>If you see in the solution explorer in Visual Studio,you notice that you already have 2 Controllers that are  created by the default template.A ‘<em>HomeController’</em> that derives from <em>Controller</em> which is your default MVC controller that just rendered out the beautiful page that you just saw above and a ‘<em>ValuesController’</em> that derives from <em>ApiController </em>which is actually our web api controller.</p>
 
@@ -50,7 +163,7 @@ defaults: new { id = RouteParameter.Optional }
 Now that you have seen the API route,lets try invoking the </em>ValuesController <em>that got created automatically.Following the route that is specified above we need to prefix the controller with an </em>api/.<em>This is just to keep a distinction between the normal MVC controllers and the API controllers.So for the </em>ValuesController<em> we would need to invoke it with ‘</em>api/values<em>’.
 To issue a GET on the controller,issue the request using the web browser as shown below.It should return you the values(‘value1’ &amp; ‘value2’ as returned in the GET of the </em>ValuesController_) in json format,as that is the default formatter that is used.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_request_response_fiddler.png" alt="web_api_request_response_fiddler" /></p>
+<p><img src="/web_api_request_response_fiddler.png" alt="web_api_request_response_fiddler" /></p>
 
 <p>To check the remaining of HTTP actions we would need to write the implementations for those functions as the <em>ValuesController </em>does not have that implemented.</p>
 
@@ -71,21 +184,21 @@ Visual Studio will do most of  the job in creating out the controllers and the 
 
 <p>Give the controller name as ‘FoodDishesController’.From the template drop down select the ‘API Controller with read/write actions,using Entity Framework’ option.This is what is automatically going to put out the all the code that we would required.Select the ModelClass that we created,<em>FoodDish.</em>(If you don&rsquo;t see the class in the models, build the solution before adding new controller).For the DataContext select ‘<em><New Data Context…></em>’ and enter <em>FoodDishesContext.</em>Refer the image below.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_controller_scaffolding_dialog.png" alt="web_api_controller_scaffolding_dialog" /></p>
+<p><img src="/web_api_controller_scaffolding_dialog.png" alt="web_api_controller_scaffolding_dialog" /></p>
 
 <p>On clicking Add,the controller gets created successfully and also the database connections are setup automatically using <a href="http://weblogs.asp.net/scottgu/archive/2010/07/16/code-first-development-with-entity-framework-4.aspx">EF Code First approach</a>.Let’s take a deeper look into the Controller that has got created.
 You notice that all the methods in the controller has one of the HTTP verb prefixed.ASP.NET WEB API is intelligent enough to understand this naming convention too.So if you don’t like just the http verbs as function name you can use this approach too.Below image shows the possible combinations of function naming.You can use anyone that suites you.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_method_definitions.png" alt="web_api_method_definitions" /></p>
+<p><img src="/web_api_method_definitions.png" alt="web_api_method_definitions" /></p>
 
 <p>The WEB API is all set to be tested.To issues a GET,same as we did before,from the browser hit the ‘<em>/api/FoodDishes</em>’.The first request might take up some time to return as Entity Framework needs to set up the database.But in sometime you should get back the json result.But this time it would be a blank one as are yet to add any food dishes to the database.For that we need to do a POST to the <em>FoodDishes </em>controller.For this we will be using <a href="http://www.fiddler2.com/fiddler2/"><em>Fiddler</em></a><em>,</em>which is an excellent tool for web debugging.You should be getting to download it for free from <a href="http://www.fiddler2.com/fiddler2/version.asp">here</a>.
 In Fiddler select the Composer tab and enter in the details that is required.Make the HTTP action as POST,enter the ValuesController URI,specify the <em>Content-Type</em> as ‘<em>application/json</em>’<em>  </em>and also provide the sample data as shown in the image below.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_request_headers_fiddler.png" alt="web_api_request_headers_fiddler" /></p>
+<p><img src="/web_api_request_headers_fiddler.png" alt="web_api_request_headers_fiddler" /></p>
 
 <p>On clicking execute you should be seeing an entry in fiddler with HTTP status code 201,indicating that the entry has been successfully created.In the response you can see the location of this newly created food dish and how to reach that.For me it is at ‘_<a href="http://localhost:61150/api/FoodDishes/1_">http://localhost:61150/api/FoodDishes/1_</a>&lsquo;.So we have successfully created a new fooddish.</p>
 
-<p><img src="{{%20site.images_root}}/web_api_response_fiddler.png" alt="web_api_response_fiddler" /></p>
+<p><img src="/web_api_response_fiddler.png" alt="web_api_response_fiddler" /></p>
 
 <p>Now to see the newly created dish you can either use a GET on ‘/api/FoodDishes’ to get all the food dishes or GET on /api/FoodDishes/1’ to get the specific Food dish.
 Now this can be accessed from any device that supports issuing HTTP calls and you have your first WEB API ready,which just does a <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> over your FoodDishes.</p>
