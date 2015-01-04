@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-01-01T21:38:06+05:30</updated>
+  <updated>2015-01-04T21:14:06+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,131 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[IoC Registration by Convention]]></title>
+    <link href="http://rahulpnath.com/blog/ioc-registration-by-convention/"/>
+    <updated>2015-01-03T18:03:17+05:30</updated>
+    <id>http://rahulpnath.com/blog/ioc-registration-by-convention</id>
+    <content type="html"><![CDATA[<p>Sometime back we had seen, how to <a href="http://www.rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/">configure the unity container using code/config file</a> and I was using a mix of this in one of my projects. This approach soon became an overhead, as the manual wiring up of registrations is really cumbersome and also error prone. Mostly there were missing registrations only to be found out, when doing test runs or deployments. We soon were forced to move out of the manual registration and find a new way to register dependencies.</p>
+
+<p>The below image by <a href="https://twitter.com/ploeh">Mark Seemann</a> sums it all up on when and how to use a Dependency Injection(DI) container and we were right at the bottom, where the whole purpose of a DI becomes pointless.</p>
+
+<p><a href="http://bit.ly/1zLiq6p" class="center" title="Image By Mark Seemann, from http://bit.ly/1zLiq6p"><img src="http://rahulpnath.com/images/ioc_usefulness.png" class="center" alt="Image By Mark Seemann, from http://bit.ly/1zLiq6p"></a></p>
+
+<h4>Convention Over Configuration</h4>
+
+<p><a href="http://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a>, is very popular today and there are already many frameworks that have adopted it e.g. MVC, Web Api. Following the same approach would make life much simpler and registration less painful as dependencies would get auto registered, if the convention is followed. Conventions could vary across projects/teams, so it is up to the team to decide on the conventions that are to be followed and have all the developers follow them religiously.</p>
+
+<p>Currently our registration process picks up all the assemblies from the base path and iterates through all the classes that are under the project/application namespace and gets the interfaces out of them and registers them. For interfaces that have multiple definitions we perform named registration based on the class name or name from an attribute on the class or both.</p>
+
+<p>We are using Unity as the IoC container and it does support <a href="http://msdn.microsoft.com/en-us/library/dn507479(v=pandp.30).aspx">convention based registrations</a> out of the box. You can either use the RegisterTypes method or the RegistrationConvention class to specify the conventions. The parameters in both of these approaches enable you to specify the types to register, the mappings to create, the name to use and lifetime. Since in our registration we wanted to use the named convention only in cases where there where multiple registrations for the same interface and the other interfaces were to be registered without any name this default convention had to be modified. Also we did not want to get tightly bound to the IoC container (just in case we want to swap out the container provider) and hence thought of having the convention logics in a separate class and have them registered to the container of choice.</p>
+
+<p>The <em>GetClassesFromAssemblies</em> function iterates over the assemblies from the base application path(bin folder) to get all the dll&rsquo;s used and gets the classes that belong to the namespaces that we want to register. Alternatively you could also pass a list of assemblies if required to be used for the convention. If you want other namespaces too you can filter those in here.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetClassesFromAssemblies</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Assembly</span><span class="p">&gt;</span> <span class="n">assemblies</span> <span class="p">=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">allClasses</span> <span class="p">=</span> <span class="n">assemblies</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssemblies</span><span class="p">(</span><span class="n">assemblies</span><span class="p">)</span> <span class="p">:</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssembliesInBasePath</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">return</span>
+</span><span class='line'>        <span class="n">allClasses</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">n</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span> <span class="p">!=</span> <span class="k">null</span>
+</span><span class='line'>                <span class="p">&amp;&amp;</span> <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span><span class="p">.</span><span class="n">StartsWith</span><span class="p">(</span><span class="n">ApplicationNamespace</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For each of the type that is returned from the above method we get the list of interfaces that are defined on the type and needs to be registered against the type. In the sample code, I have added a couple of variations of registrations.</p>
+
+<ul>
+<li><em>IFooBar</em>        : Has only one implementation</li>
+<li><em>IFoo</em>           : Has multiple implementations and should be resolved using <em>IFooFactory</em></li>
+<li><em>IFooCustom</em>     : Has multiple implementations and needs to have a custom name (maybe for some reason you do not want the context information to be part of the class name). This is to be resolved using IFooCustomFactory.</li>
+<li><em>IFooGeneric<T></em> : This is a generic implementation and the type can be decided at runtime.</li>
+</ul>
+
+
+<p>The <em>GetInterfacesToBeRegistered</em> function gets the interfaces that are to be registered for a given type. For this convention I want to <a href="http://stackoverflow.com/questions/5318685/get-only-direct-interface-instead-of-all">get only the direct interfaces</a> that are on the given type and not all the interfaces. The check below for <em>isGenericType</em> on an interface is for <em>IFooGeneric</em> as for generic interfaces the <a href="http://stackoverflow.com/questions/3117090/getinterfaces-returns-generic-interface-type-with-fullname-null">GetInterfaces does not return the full information required</a> and we need to use the <em>GetGenericTypeDefinition</em> method instead.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetInterfacesToBeRegistered</span><span class="p">(</span><span class="n">Type</span> <span class="n">type</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">allInterfacesOnType</span> <span class="p">=</span> <span class="n">type</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">IsGenericType</span> <span class="p">?</span> <span class="n">i</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span> <span class="p">:</span> <span class="n">i</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">Except</span><span class="p">(</span><span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">())).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we have the interfaces for the type, we add them to an internal mapping list to register it all into the unity container. The internal mapping is against the interface type definition and has the list of classes that implements the interface.Now that we have all the types and interfaces to be registered, we need to register them into the container. For any interface that has only one type implementing it, we register it with default name else we get the name from the class name or the attribute that decorates the class if any.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">RegisterConventions</span><span class="p">(</span><span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">typeMapping</span> <span class="k">in</span> <span class="n">internalTypeMapping</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">type</span> <span class="p">=</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">First</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">type</span> <span class="k">in</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">GetNameForRegsitration</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The dependency with UnityContainer with the IoCConveniton class, can be easily removed by having an adapter interface into any container. To keep things simple I am having the direct dependency on the container in the sample. From the console application we can create a new container and use the convention class to register the dependencies. The factory implementations have the expected class conventions inside them that would be used to resolve the dependencies. Since the factory is part of the composition root I am using a <a href="http://blog.ploeh.dk/2012/03/15/ImplementinganAbstractFactory/">container based factory</a>, to resolve the dependencies.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
+</span><span class='line'><span class="n">IoCConvention</span><span class="p">.</span><span class="n">RegisterByConvention</span><span class="p">(</span><span class="n">unityContainer</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation <a href="https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration">here</a>. Are you using convention registrations in your applications? If not you should start using them.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Language Agnostic Books For Every Developer]]></title>
@@ -2211,149 +2336,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 <p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
 
 <p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Windows Phone Series – Using UCWA to connect to Lync Server]]></title>
-    <link href="http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server/"/>
-    <updated>2014-01-12T15:35:08+05:30</updated>
-    <id>http://rahulpnath.com/blog/windows-phone-series-using-ucwa-to-connect-to-lync-server</id>
-    <content type="html"><![CDATA[<p>One of the main things that makes enterprise or intranet applications more lively and connected with your business contacts, is to integrate with <a href="http://office.microsoft.com/en-in/lync/">Lync</a> (formerly Microsoft Office Communicator) and provide options to interact with them. UCWA(Unified Communications Web Api) is a REST API that exposes Lync Server and its presence capabilities, which can be used to enhance your application capabilities. This can also be used to integrate with Windows phone applications as well and will see how to get started with it here.</p>
-
-<p>To connect to a lync server the only details that we would want is the full email address and the password – thanks to <a href="http://msdn.microsoft.com/en-us/library/office/jj900169(v=exchg.150">AutoDiscover</a>.aspx) for exchange, which makes this possible. AutoDiscover is the way to find the users home server so that we can connect to it. The url for auto discover, otherwise called the <a href="https://ucwa.lync.com/documentation/GettingStarted-RootURL">Root Url</a> can take different forms. In this sample I have assumed that it would take the below form, primarily because it works with the test domain that I was using (microsoft.com).</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">autoDiscoverUrl</span> <span class="p">=</span> <span class="s">&quot;https://lyncdiscover.{0}&quot;</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Creating a UCWA application is the starting point for every app that needs to work with UCWA.  The following steps indicated in the below diagram are to be followed to create an application.
-<a href="https://ucwa.lync.com/documentation/KeyTasks-CreateApplication"><img src="http://rahulpnath.com/images/ucwa_createapp.png" alt="HTTP call flow prior to creating an application in UCWA" /></a></p>
-
-<p>Issuing a get request to ‘<a href="https://lyncdiscover.microsoft.com/">https://lyncdiscover.microsoft.com/</a>’, will give the details of the home server that we need to connect to.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;resource</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/rtc/2012/03/ucwa&quot;</span> <span class="na">rel=</span><span class="s">&quot;root&quot;</span> <span class="na">href=</span><span class="s">&quot;https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root?originalDomain=microsoft.com&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;user&quot;</span> <span class="na">href=</span><span class="s">&quot;https://lync32.lyncweb.microsoft.com/Autodiscover/AutodiscoverService.svc/root/oauth/user?originalDomain=microsoft.com&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;xframe&quot;</span> <span class="na">href=</span><span class="s">&quot;https://lync32.lyncweb.microsoft.com/Autodiscover/XFrame/XFrame.html&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/resource&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We now need to authenticate the user with the home server.for which we need the oauth url. This can be obtained by issuing a dummy get request to the <em>user </em>url obtained above. This request will fail with an unauthorized access but also returns the url (<a href="https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken">https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken</a>) from which the token needs to be obtained</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'>HTTP/1.1 401 Unauthorized
-</span><span class='line'>Cache-Control: no-cache
-</span><span class='line'>Content-Type: text/html
-</span><span class='line'>Server: Microsoft-IIS/7.5
-</span><span class='line'>WWW-Authenticate: Bearer trusted_issuers=&quot;00000002-0000-0ff1-ce00-000000000000@3bdbdd27-2373-4baf-9469-4b10e76564c6,00000001-0001-0000-c000-000000000000@f686d426-8d16-42db-81b7-ab578e110ccd,00000001-0000-0000-c000-000000000000@72f988bf-86f1-41af-91ab-2d7cd011db47&quot;, client_id=&quot;00000004-0000-0ff1-ce00-000000000000&quot;
-</span><span class='line'>WWW-Authenticate: MsRtcOAuth href=&quot;https://lync32.lyncweb.microsoft.com/WebTicket/oauthtoken&quot;,grant_type=&quot;urn:microsoft.rtc:windows,urn:microsoft.rtc:passive,urn:microsoft.rtc:anonmeeting,password&quot;
-</span><span class='line'>X-MS-Server-Fqdn: 000DCO2L50FE1G.redmond.corp.microsoft.com
-</span><span class='line'>X-Powered-By: ASP.NET
-</span><span class='line'>X-Content-Type-Options: nosniff
-</span><span class='line'>Date: Sun, 12 Jan 2014 10:47:50 GMT
-</span><span class='line'>Content-Length: 1293
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>UCWA supports Windows Authentication, Anonymous meeting and Password Authentication mechanisms to authorize the user. i am using the Password Authentication here. On successful authentication a token is returned which can be used to issue the get request on the <em>user </em>url with the token in the header.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Authenticate</span><span class="p">(</span><span class="kt">string</span> <span class="n">authenticateUrl</span><span class="p">,</span> <span class="kt">string</span> <span class="n">authenticateToken</span><span class="p">,</span> <span class="kt">string</span> <span class="n">authenticateTokenType</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Make a GET request to get the ouath url</span>
-</span><span class='line'>    <span class="n">request</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RestRequest</span><span class="p">(</span><span class="n">authenticateUrl</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">request</span><span class="p">.</span><span class="n">AddHeader</span><span class="p">(</span><span class="s">&quot;Accept&quot;</span><span class="p">,</span> <span class="s">&quot;application/json&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">userToken</span><span class="p">))</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">request</span><span class="p">.</span><span class="n">AddHeader</span><span class="p">(</span><span class="s">&quot;Authorization&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;{0} {1}&quot;</span><span class="p">,</span> <span class="n">authenticateTokenType</span><span class="p">,</span> <span class="n">authenticateToken</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">ucwaClient</span><span class="p">.</span><span class="n">ExecuteAsync</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="n">ParseAuthenticateResponse</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>A successful request for the above returns the applications url. The applications url might be hosted on a different server in which case we would need to get a separate token for creating a new application. The host of applications url and the oauth url we got above should be same , or else we need to get a new token. When creating a new application, we add the token only if the host’s are same. Not adding this will again fail with Unauthorized exception giving us the new oauth url.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">CreateNewApplications</span><span class="p">(</span><span class="kt">string</span> <span class="n">applications</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">request</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RestRequest</span><span class="p">(</span><span class="n">applications</span><span class="p">,</span> <span class="n">Method</span><span class="p">.</span><span class="n">POST</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">CheckIfSameDomain</span><span class="p">(</span><span class="n">applications</span><span class="p">,</span> <span class="n">oauthUrl</span><span class="p">))</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">request</span><span class="p">.</span><span class="n">AddHeader</span><span class="p">(</span><span class="s">&quot;Authorization&quot;</span><span class="p">,</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;{0} {1}&quot;</span><span class="p">,</span> <span class="n">applicationTokenType</span><span class="p">,</span> <span class="n">applicationToken</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">applicationBody</span> <span class="p">=</span> <span class="s">@&quot;&quot;&quot;UserAgent&quot;&quot;:&quot;&quot;{0}&quot;&quot;,&quot;&quot;EndpointId&quot;&quot;:&quot;&quot;{1}&quot;&quot;,&quot;&quot;Culture&quot;&quot;:&quot;&quot;en-US&quot;&quot;&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">request</span><span class="p">.</span><span class="n">RequestFormat</span> <span class="p">=</span> <span class="n">DataFormat</span><span class="p">.</span><span class="n">Xml</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">request</span><span class="p">.</span><span class="n">AddParameter</span><span class="p">(</span>
-</span><span class='line'>        <span class="s">&quot;application/json&quot;</span><span class="p">,</span>
-</span><span class='line'>       <span class="s">&quot;{&quot;</span> <span class="p">+</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">applicationBody</span><span class="p">,</span> <span class="s">&quot;UCWAWindowsPhoneSample&quot;</span><span class="p">,</span> <span class="n">Guid</span><span class="p">.</span><span class="n">NewGuid</span><span class="p">().</span><span class="n">ToString</span><span class="p">())</span> <span class="p">+</span> <span class="s">&quot;}&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="n">ParameterType</span><span class="p">.</span><span class="n">RequestBody</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">request</span><span class="p">.</span><span class="n">AddHeader</span><span class="p">(</span><span class="s">&quot;Accept&quot;</span><span class="p">,</span> <span class="s">&quot;application/json&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">ucwaClient</span><span class="p">.</span><span class="n">ExecuteAsync</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="n">CreateNewApplicationsResponse</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="kt">bool</span> <span class="nf">CheckIfSameDomain</span><span class="p">(</span><span class="kt">string</span> <span class="n">url1</span><span class="p">,</span> <span class="kt">string</span> <span class="n">url2</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Check if the token is for the correct domain</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">Uri</span><span class="p">(</span><span class="n">url1</span><span class="p">).</span><span class="n">Host</span> <span class="p">==</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">url2</span><span class="p">).</span><span class="n">Host</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Once this is done we have successfully created an application, that can be used to do a lot more things. As for the sample I have just retrieved the user’s full name, department and title that comes as part of successfully creating an application. You can do a lot more like getting the users presence, image, contacts, join meetings and a <a href="https://ucwa.lync.com/documentation/core-features">lot more</a>.</p>
-
-<p><img src="http://rahulpnath.com/images/ucwa_wp_login.png" alt="image" /><img src="http://rahulpnath.com/images/ucwa_wp_loggedIn_details.png" alt="image" /></p>
-
-<p>You can find the sample <a href="https://github.com/rahulpnath/Blog/tree/master/UCWA.WindowsPhone">here</a>.Hope this helps you to build connected enterprise applications.</p>
-
-<p><strong>PS</strong>: I have tested this only against <strong>microsoft.com</strong> domain. In case you find any issues with the domain that you are using please do put it in the comments.</p>
 ]]></content>
   </entry>
   
