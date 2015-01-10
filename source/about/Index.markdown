@@ -1,5 +1,4 @@
 ---
-author: rahulpnath
 comments: true
 layout: page
 slug: about
@@ -13,7 +12,7 @@ alias: /blog/about/
 
 
 
-My name is Rahul Nath. I am a programmer and work out of Hyderabad,India for [Mediaroom](http://www.microsoft.com/mediaroom/) team at Microsoft.Before this I was working with L&T Infotech for 3 years and was onto developing a product for the airport domain. I was awarded the MCCA award for the year 2011 by Microsoft for contributing to the msdn forums. I am passionate about technology and blog occasionally and also do development consulting in my free time.
+My name is Rahul Nath. I am a programmer and work out of Hyderabad,India at Microsoft.Before this I was working with L&T Infotech for 3 years and was onto developing a product for the airport domain. I was awarded the MCCA award for the year 2011 by Microsoft for contributing to the msdn forums. I am passionate about technology and blog occasionally and also do development consulting in my free time.
 
 **This blog and its contents are all opinions of my own.**
 
