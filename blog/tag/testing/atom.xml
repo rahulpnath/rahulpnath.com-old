@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Tag: testing | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/tag/testing/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2015-01-10T13:29:36+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Testing Multiple Implementations of same Interface]]></title>
+    <link href="http://rahulpnath.com/blog/testing-multiple-implementations-of-same-interface/"/>
+    <updated>2015-01-10T10:24:15+05:30</updated>
+    <id>http://rahulpnath.com/blog/testing-multiple-implementations-of-same-interface</id>
+    <content type="html"><![CDATA[<p>Often there are times when we need to test multiple implementations of the same interface. We would want to use the same test case against all the implementations so that we <a href="http://en.wikipedia.org/wiki/Don%27t_repeat_yourself">don&rsquo;t repeat ourselves</a>. In this post we will see how we can reuse the same test cases to test both the implementation, by running them against both the implementations.</p>
+
+<blockquote><p>If you are just interested in the approach - The same test project dll is run twice using vstest.console, by setting an environment variable. Inside the test, (either in the assembly initialize or test initialize) register the appropriate implementations into a IoC container, based on the environment variable value.</p></blockquote>
+
+<p>Interested in the full implementation read on!</p>
+
+<p>Since we are not much bothered about the actual interface and its implementation, I have a very simple interface as below, which calculates the length of the given string.There are two implementations for this that might have two different ways of calculating the length of the string given an input.</p>
+
+<pre><code class="csharp">public interface IFoo
+{
+    int GetLength(string input);
+}
+</code></pre>
+
+<pre><code class="csharp Implementation 1">public class Foo : IFoo
+{
+    public int GetLength(string input)
+    {
+        return input.Count();
+    }
+}
+</code></pre>
+
+<pre><code class="csharp Implementation 2">public class Foo : IFoo
+{
+    public int GetLength(string input)
+    {
+        return input.Length;
+    }
+}
+</code></pre>
+
+<p>Though the sample has a simple interface, this might not be the case in a real life project. So the sample mimics a real time implementation structure - we have one interface project and two other projects that have the corresponding implementation. The implementations could also be in the same assembly and this would be applicable for those scenarios too, and can be made to work with some few tweaks in one of the steps (which I will mention when we are there). The test case project that will have the appropriate test cases.</p>
+
+<pre><code class="csharp">[TestMethod]
+public void TestThreeLetterLength()
+{
+    var foo = this.container.Resolve&lt;IFoo&gt;();
+    var returnValue = foo.GetLength("Foo");
+    Assert.IsTrue(returnValue == 3);
+}
+</code></pre>
+
+<p>The test case uses the IoC container to get the corresponding implementation of the interface, so it is not all about switching the registered implementation in the container. If this is only for the tests in this particular class then we could do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.testinitializeattribute.aspx">TestInitialize</a> method. But most likely you would have multiple tests and also multiple interfaces that we are using. So we can do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.assemblyinitializeattribute.aspx">AssemblyInitialze</a> for the assembly.</p>
+
+<pre><code class="csharp Interface">var test = Environment.GetEnvironmentVariable(TestEnviromentVariable);
+
+if (test == "1")
+{
+    container.RegisterType&lt;IFoo, FooImplementation1.Foo&gt;();
+}
+else if (test == "2")
+{
+    container.RegisterType&lt;IFoo, FooImplementation2.Foo&gt;();
+}
+</code></pre>
+
+<p>The above implementation might work in cases where the number of interfaces are less and also in cases where we have fewer possibilities of implementations, but as soon as the number goes up we will again have to keep repeating  the registrations and the if/else code. This is an IoC registration issue and is best handled using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">IoC Registration by Convention</a>. We can have a configuration file matching the environment variable and have the assemblies that are to be loaded mentioned in that and pass only those assemblies to be explicitly registered into the convention registration logic. Even in cases where you have the implementations in the same assembly you can write your convention registration logics accordingly and decide what to register.</p>
+
+<p>We can now run these test dll&rsquo;s using batch files by setting different environment variables as below. The bat files can be integrated into your build</p>
+
+<pre><code class="bat FooTest.Implementation2.bat">set Foo.tests=2
+echo "Testing for configuration 2"
+msbuild TestingMultipleImplementations.sln
+vstest.console FooTestImpl1\bin\Debug\FooTestImpl1.dll /logger:trx
+</code></pre>
+
+<p>Hope this helps some one trying to reuse test cases for multiple implementations of the same interface. One another way to solve this issue would be to create multiple csproj files and have the same test case classes referred to both the project files, but have the reference assemblies specific to implementations. So in this case we would have multiple test dll&rsquo;s created, which can be run individually. The advantage of going via this approach is that we could have test cases specific to implementations too and also reuse test cases that are same across implementations by referring them as linked files. But currently we did not want this flexibility and did not want to add multiple project files and make it difficult for the team. You can find the sample implementation <a href="https://github.com/rahulpnath/Blog/tree/master/TestingMultipleImplementations">here</a>. Do you reuse test cases like this? Do drop in with a comment on your thoughts.</p>
+]]></content>
+  </entry>
+  
+</feed>

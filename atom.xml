@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-01-08T05:11:19+05:30</updated>
+  <updated>2015-01-10T13:29:36+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,131 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Testing Multiple Implementations of same Interface]]></title>
+    <link href="http://rahulpnath.com/blog/testing-multiple-implementations-of-same-interface/"/>
+    <updated>2015-01-10T10:24:15+05:30</updated>
+    <id>http://rahulpnath.com/blog/testing-multiple-implementations-of-same-interface</id>
+    <content type="html"><![CDATA[<p>Often there are times when we need to test multiple implementations of the same interface. We would want to use the same test case against all the implementations so that we <a href="http://en.wikipedia.org/wiki/Don%27t_repeat_yourself">don&rsquo;t repeat ourselves</a>. In this post we will see how we can reuse the same test cases to test both the implementation, by running them against both the implementations.</p>
+
+<blockquote><p>If you are just interested in the approach - The same test project dll is run twice using vstest.console, by setting an environment variable. Inside the test, (either in the assembly initialize or test initialize) register the appropriate implementations into a IoC container, based on the environment variable value.</p></blockquote>
+
+<p>Interested in the full implementation read on!</p>
+
+<p>Since we are not much bothered about the actual interface and its implementation, I have a very simple interface as below, which calculates the length of the given string.There are two implementations for this that might have two different ways of calculating the length of the string given an input.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Implementation 1</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Count</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Implementation 2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Though the sample has a simple interface, this might not be the case in a real life project. So the sample mimics a real time implementation structure - we have one interface project and two other projects that have the corresponding implementation. The implementations could also be in the same assembly and this would be applicable for those scenarios too, and can be made to work with some few tweaks in one of the steps (which I will mention when we are there). The test case project that will have the appropriate test cases.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[TestMethod]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">TestThreeLetterLength</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">foo</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">returnValue</span> <span class="p">=</span> <span class="n">foo</span><span class="p">.</span><span class="n">GetLength</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">IsTrue</span><span class="p">(</span><span class="n">returnValue</span> <span class="p">==</span> <span class="m">3</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The test case uses the IoC container to get the corresponding implementation of the interface, so it is not all about switching the registered implementation in the container. If this is only for the tests in this particular class then we could do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.testinitializeattribute.aspx">TestInitialize</a> method. But most likely you would have multiple tests and also multiple interfaces that we are using. So we can do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.assemblyinitializeattribute.aspx">AssemblyInitialze</a> for the assembly.</p>
+
+<figure class='code'><figcaption><span>Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">test</span> <span class="p">=</span> <span class="n">Environment</span><span class="p">.</span><span class="n">GetEnvironmentVariable</span><span class="p">(</span><span class="n">TestEnviromentVariable</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;1&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation1</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;2&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation2</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above implementation might work in cases where the number of interfaces are less and also in cases where we have fewer possibilities of implementations, but as soon as the number goes up we will again have to keep repeating  the registrations and the if/else code. This is an IoC registration issue and is best handled using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">IoC Registration by Convention</a>. We can have a configuration file matching the environment variable and have the assemblies that are to be loaded mentioned in that and pass only those assemblies to be explicitly registered into the convention registration logic. Even in cases where you have the implementations in the same assembly you can write your convention registration logics accordingly and decide what to register.</p>
+
+<p>We can now run these test dll&rsquo;s using batch files by setting different environment variables as below. The bat files can be integrated into your build</p>
+
+<figure class='code'><figcaption><span>FooTest.Implementation2.bat</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bat'><span class='line'><span class="k">set</span> <span class="nv">Foo</span>.tests<span class="o">=</span><span class="m">2</span>
+</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Testing for configuration 2&quot;</span>
+</span><span class='line'>msbuild TestingMultipleImplementations.sln
+</span><span class='line'>vstest.console FooTestImpl<span class="m">1</span>\bin\Debug\FooTestImpl<span class="m">1</span>.dll <span class="n">/logger:trx</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps some one trying to reuse test cases for multiple implementations of the same interface. One another way to solve this issue would be to create multiple csproj files and have the same test case classes referred to both the project files, but have the reference assemblies specific to implementations. So in this case we would have multiple test dll&rsquo;s created, which can be run individually. The advantage of going via this approach is that we could have test cases specific to implementations too and also reuse test cases that are same across implementations by referring them as linked files. But currently we did not want this flexibility and did not want to add multiple project files and make it difficult for the team. You can find the sample implementation <a href="https://github.com/rahulpnath/Blog/tree/master/TestingMultipleImplementations">here</a>. Do you reuse test cases like this? Do drop in with a comment on your thoughts.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[IoC Registration by Convention]]></title>
@@ -2083,259 +2208,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 <p>Feel free to get in touch in case you need any help while on your Windows phone journey.</p>
 
 <p>The samples and presentation slides is available in the event summary above or <a href="https://github.com/rahulpnath/Speaking/tree/master/Getting%20Started%20with%20Windows%20Phone%208%20App%20Development">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Windows Phone Series – Incremental Loading multiple data sources inside a Pivot]]></title>
-    <link href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/"/>
-    <updated>2014-01-21T13:25:25+05:30</updated>
-    <id>http://rahulpnath.com/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot</id>
-    <content type="html"><![CDATA[<p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
-
-<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
-
-<p><img src="http://rahulpnath.com/images/WP_IncrementalLoading.png" alt="image" /></p>
-
-<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
-
-<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">string</span><span class="p">[]</span> <span class="n">photoCollections</span> <span class="p">=</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="s">&quot;popular&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;upcoming&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;editors&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;fresh_today&quot;</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="n">List</span> <span class="n">PhotoCollectionViewModels</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">PhotoCollectionViewModels</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photoCollection</span> <span class="k">in</span> <span class="n">photoCollections</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">PhotoCollectionViewModels</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">PhotoCollectionViewModel</span><span class="p">(</span><span class="n">photoCollection</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
-
-<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IncrementalLoader</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
-</span><span class='line'><span class="err">{</span>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">BaseUrl</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">CurrentPageNumber</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">CurrentUrl</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">get</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span><span class="p">,</span> <span class="p">++</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentPageNumber</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">IncrementalLoader</span><span class="p">(</span><span class="kt">string</span> <span class="n">baseUrl</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span> <span class="p">=</span> <span class="n">baseUrl</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">LoadNextPage</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="c1">// call in progress</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">HttpClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpClient</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// Add Microsoft.Bcl.Async nuget for await to work on PCL.</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">GetStringAsync</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentUrl</span><span class="p">);</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">serializer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">returnObject</span> <span class="p">=</span> <span class="n">serializer</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">response</span><span class="p">)))</span> <span class="k">as</span> <span class="n">T</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="n">returnObject</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Grid</span> <span class="na">x:Name=</span><span class="s">&quot;ContentPanel&quot;</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot</span> <span class="na">Name=</span><span class="s">&quot;photoCollection&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding PhotoCollectionViewModels}&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:LongListSelector</span> <span class="na">ItemRealized=</span><span class="s">&quot;Photo_Loaded&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding Photos}&quot;</span> <span class="na">IsGroupingEnabled=</span><span class="s">&quot;False&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:LongListSelector.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding image_url}&quot;</span> <span class="na">Margin=</span><span class="s">&quot;10&quot;</span> <span class="na">Width=</span><span class="s">&quot;500&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot.HeaderTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;TextBlock</span> <span class="na">Text=</span><span class="s">&quot;{Binding Title}&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot.HeaderTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot&gt;</span>
-</span><span class='line'><span class="nt">&lt;/Grid&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Photo_Loaded</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">LongListSelector</span> <span class="n">longList</span> <span class="p">=</span> <span class="n">sender</span> <span class="k">as</span> <span class="n">LongListSelector</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">PhotoCollectionViewModel</span> <span class="n">vm</span> <span class="p">=</span> <span class="n">longList</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">PhotoCollectionViewModel</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">vm</span><span class="p">.</span><span class="n">LoadMorePhotos</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">LoadMorePhotos</span><span class="p">(</span><span class="n">Photo</span> <span class="n">currentPhoto</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">currentPhoto</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">index</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">currentPhoto</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="m">3</span> <span class="p">&gt;</span> <span class="n">index</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">incrementalLoader</span><span class="p">.</span><span class="n">LoadNextPage</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
-
-<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
 ]]></content>
   </entry>
   
