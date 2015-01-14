@@ -5,7 +5,7 @@ date: 2015-01-03 18:03:17 +0530
 comments: true
 categories:
 - .net
-- programming
+- Dependency Injection
 tags:
 - IoC 
 ---
