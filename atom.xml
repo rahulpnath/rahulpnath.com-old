@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-01-11T16:01:11+05:30</updated>
+  <updated>2015-01-14T23:39:51+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[IsRegistered on Unity Container for Generic Type]]></title>
+    <link href="http://rahulpnath.com/blog/isregistered-on-unity-container-for-generic-type/"/>
+    <updated>2015-01-14T22:31:51+05:30</updated>
+    <id>http://rahulpnath.com/blog/isregistered-on-unity-container-for-generic-type</id>
+    <content type="html"><![CDATA[<p><em>This post just describes a bug that is there in the Unity (3.5.1404) IoC container, when using the IsRegistered extension method, to check for generic types and a possible fix for it.</em></p>
+
+<p><a href="http://msdn.microsoft.com/en-us/library/ff647202.aspx">Unity</a> IoC container provides <a href="http://msdn.microsoft.com/en-us/library/microsoft.practices.unity.unitycontainerextensions.isregistered(v=pandp.51).aspx">IsRegistered</a> extension method, that can be used to check whether a registration exists for a given type and name (can be null too) combination. When a generic type is registered in the container and trying to check IsRegistered using a concrete typed version of the generic interface it returns false.</p>
+
+<p>As shown in the below code snippet, calling IsRegistered on a non-generic interface(<em>IFooBar</em>) returns true, indicating that a registration exists. But for the generic interface(<em>IFooGeneric&lt;></em>), trying to check if a registration exists for a concrete type (<em>IFooGeneric<string></em> - as only concrete types can be resolved from the container and an open generic type cannot be resolved) it returns false.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
+</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooBar</span><span class="p">),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooBarImplementation</span><span class="p">));</span>
+</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooGeneric</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooGenericImplementation</span><span class="p">&lt;&gt;));</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasFooBarRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooBar</span><span class="p">&gt;();</span> <span class="c1">// Returns true</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasFooGenericStringRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Returns False</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">fooGenericString</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Resolution Succeeds</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <a href="https://unity.codeplex.com/SourceControl/latest#source/Unity/Src/UnityContainerExtensions.cs">IsRegistered method </a> as shown below, loops through the list of available registrations looking for a match on the registered type and name. The &lsquo;<em>typeToCheck</em>&rsquo; is the type of the object that we are trying to resolve in IsRegistered - <em>typeof(IFooGeneric<string>)</em>, but the registered type is <em>typeof(IFooGeneric&lt;>)</em>. Because of this the comparison fails and the registration does not pass the where clause of the query, causing the function to return <em>false</em>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
+</span><span class='line'>                   <span class="k">where</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span> <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
+</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To fix this, we would need to modify the where condition so that in cases where the RegisteredType is a generic type definition, it would compare with the generic type definition of &lsquo;<em>typeToCheck</em>&rsquo;, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
+</span><span class='line'>                   <span class="k">where</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span> <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span><span class='line'>                   <span class="k">where</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericTypeDefinition</span>
+</span><span class='line'>                   <span class="p">?</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span>
+</span><span class='line'>                   <span class="p">:</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">)</span>
+</span><span class='line'>                   <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A similar <a href="https://unity.codeplex.com/discussions/568979">issue</a> was already raised in the unity discussions, which I feel was closed inappropriately.</p>
+
+<blockquote><p>If a container can Resolve a particular type then it should also be able to return that it IsRegistered.</p></blockquote>
+
+<p>Please do be aware that using IsRegistered extensively has a <a href="http://unity.codeplex.com/discussions/268223">negative impact on performance</a> as looping through the Registration looking for the name and type has <a href="http://en.wikipedia.org/wiki/Big_O_notation">O(n) complexity</a>. But that still does not justify the bug!.</p>
+
+<p><em>I have submitted a <a href="https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isregisteredforgenerictype/contribution/7901">pull request</a> for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!</em></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Testing Multiple Implementations of same Interface]]></title>
@@ -2184,30 +2254,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 
 
 <p>What system do you use to manage your life?. Do drop in the comments. I am still looking to refine more if it helps me to stay on top.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Thanks to Everyone Who Attended My First Public Talk At C#Corner Hyderabad UG]]></title>
-    <link href="http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug/"/>
-    <updated>2014-02-03T12:09:27+05:30</updated>
-    <id>http://rahulpnath.com/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug</id>
-    <content type="html"><![CDATA[<p>Thanks to everyone who attended <a href="http://www.c-sharpcorner.com/Events/64/">my very first public talk</a>, at the <a href="http://www.c-sharpcorner.com/">C#Corner</a> <a href="http://www.c-sharpcorner.com/Chapters/6/hyderabad-chapter.aspx">Hyderabad Chapter User Group(UG)</a> on February 1, Saturday on Windows Phone Development. Summary of the event is available <a href="http://www.c-sharpcorner.com/UploadFile/subhendude/C-Sharp-corner-hyderabad-user-group-meet-1-february-2014-offici/">here</a>. It was a very good experience speaking for the first time in front of a large audience, and from my side felt it went well. Here&rsquo;s some follow up information on the talk and also the code samples and presentations used.</p>
-
-<ul>
-<li><p>There might be a lot of you who would be planning to get started with phone development or yet in the dilema of whether or not to - <em><strong>&lsquo;Don&rsquo;t think much and just start <a href="http://developer.windowsphone.com/en-us">getting your hands dirty</a></strong></em>&rsquo;.</p></li>
-<li><p>If your current project/work does not demand you to use whatever we have got started with it, develop a simple application on your free time/weekends. You would get lot of app ideas at <a href="http://www.dvlup.com/SignIn">DVLUP</a> and may even get rewarded if you crack some of their challenges - <em><strong>Stay motivated.</strong></em></p></li>
-<li><p>Make sure whatever you develop is always properly backed up and stored - <em><strong>Use a source control</strong></em>.
-<a href="http://www.visualstudio.com/en-us/products/visual-studio-online-overview-vs#SKUDetailList_1">Visual Studio Online</a> or <a href="https://github.com/">Github</a> are great free services that could get you started with.</p></li>
-<li><p>Learn more about <a href="http://rahulpnath.com/blog/tag/mvvm/">MVVM</a>.The mvvm toolkit that we were using at the demo is <a href="http://mvvmlight.codeplex.com/">MVVM Light</a>. There are a couple of videos in <a href="http://mvvmlight.codeplex.com/">there</a> that will help you get started with it. <a href="http://compositewpf.codeplex.com/">Prism</a> is also another alternative that we had talked about. - <em><strong>Reuse across platforms</strong></em></p></li>
-<li><p>As we had discussed, Getting Started in Windows Phone Development means you have acquired the same skills to Get Started on Windows 8 application too - <em><strong>Get started <a href="http://msdn.microsoft.com/en-in/windows/apps/br211386.aspx">here</a></strong></em>.</p></li>
-<li><p>There are a lot of applications that are waiting to be developed for Windows phone and Windows 8 for which people are even ready to pay you. So if you want to earn out of your side projects, then try looking for projects in freelancing communities - <a href="https://www.odesk.com/">ODesk</a>, <a href="http://www.freelancer.in/">Freelancer</a>, <a href="https://www.elance.com/">Elance</a> are some to get you started - <em><strong>Earn while you Learn</strong></em></p></li>
-</ul>
-
-
-<p>Feel free to get in touch in case you need any help while on your Windows phone journey.</p>
-
-<p>The samples and presentation slides is available in the event summary above or <a href="https://github.com/rahulpnath/Speaking/tree/master/Getting%20Started%20with%20Windows%20Phone%208%20App%20Development">here</a>.</p>
 ]]></content>
   </entry>
   
