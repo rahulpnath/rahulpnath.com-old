@@ -7,6 +7,8 @@ categories:
 - Dependency Injection
 tags:
 - IoC
+keywords: "ioc, unity, dependency injection, microsoft ioc"
+description: "This post just describes a bug that is there in the Unity (3.5.1404) IoC container, when using the IsRegistered extension method, to check for generic types and a possible fix for it."
 ---
 
 *This post just describes a bug that is there in the Unity (3.5.1404) IoC container, when using the IsRegistered extension method, to check for generic types and a possible fix for it.* 
