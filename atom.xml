@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-01-15T10:13:17+05:30</updated>
+  <updated>2015-01-15T12:58:59+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -64,12 +64,22 @@
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
-</span><span class='line'>                   <span class="k">where</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span> <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">genericTypeToCheck</span> <span class="p">=</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericType</span>
+</span><span class='line'>                         <span class="p">?</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span>
+</span><span class='line'>                         <span class="p">:</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
 </span><span class='line'>                   <span class="k">where</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericTypeDefinition</span>
-</span><span class='line'>                   <span class="p">?</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span>
+</span><span class='line'>                   <span class="p">?</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">genericTypeToCheck</span>
 </span><span class='line'>                   <span class="p">:</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">)</span>
 </span><span class='line'>                   <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
+</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -79,7 +89,8 @@
 
 <p>Please do be aware that using IsRegistered extensively has a <a href="http://unity.codeplex.com/discussions/268223">negative impact on performance</a> as looping through the Registration looking for the name and type has <a href="http://en.wikipedia.org/wiki/Big_O_notation">O(n) complexity</a>. But that still does not justify the bug!.</p>
 
-<p><em>I have submitted a <a href="https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isregisteredforgenerictype/contribution/7901">pull request</a> for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!</em></p>
+<p><em>I have submitted a <a href="https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isregisteredforgenerictype/contribution/7901">pull request</a> for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!</em>
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   
