@@ -53,3 +53,4 @@ You could either configure your ssl bindings in azure portal, under the [Configu
 If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: **Free**, **Shared (Preview)**, **Basic** and **Standard**. The pricing details for each of these is available in detail [here](http://azure.microsoft.com/en-us/pricing/details/web-sites/). To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on [Penny Pinching in the cloud.](http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx)
 
 Do you plan to move to Azure Web Sites some time soon?
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

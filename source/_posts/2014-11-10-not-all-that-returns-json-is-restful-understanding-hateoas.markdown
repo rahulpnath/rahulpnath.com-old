@@ -115,3 +115,4 @@ Additional Resources:
 
 
 - [Blogs and other links](https://delicious.com/rahulpnath/hypermedia)
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

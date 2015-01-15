@@ -126,3 +126,4 @@ There are a lot of useful resources on the web that are freely available to get 
 
 
 Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

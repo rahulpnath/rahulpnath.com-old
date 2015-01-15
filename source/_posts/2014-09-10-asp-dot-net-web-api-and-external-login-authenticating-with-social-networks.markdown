@@ -121,3 +121,4 @@ $.ajax({
 });
 ```
 We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe [here](https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication).
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

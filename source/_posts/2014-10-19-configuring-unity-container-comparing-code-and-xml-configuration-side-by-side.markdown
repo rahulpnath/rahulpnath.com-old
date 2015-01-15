@@ -97,3 +97,4 @@ this.unityContainer.RegisterType<IOverridableDependency, OverridableCodeImplemen
 As shown above we have a different mapping in code and config for the same interface and I am loading the configuration into the container after all the  code registrations are done. In this case the dependency that is registered last will take precedence. So you could use this feature to override any dependencies specified in the code.
 
 There surely are a lot more cases that you would have come across while registering dependencies, do drop in a comment on the missing ones. The sample for this can be found [here](https://github.com/rahulpnath/Blog/tree/master/ConfiguringUnity)
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

@@ -118,3 +118,4 @@ Using the [additional tools along with the phone emulator](http://msdn.microsoft
 ![Bing_wp_simulator_geolocation]({{ site.images_root}}/Bing_wp_simulator_geolocation.jpg)
 
 You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code [here](https://github.com/rahulpnath/Blog/tree/master/SimpleGPS) and feel free to use it.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

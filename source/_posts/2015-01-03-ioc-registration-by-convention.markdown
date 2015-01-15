@@ -88,3 +88,4 @@ IoCConvention.RegisterByConvention(unityContainer);
 ```
 
 This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation [here](https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration). Are you using convention registrations in your applications? If not you should start using them.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>

@@ -95,3 +95,4 @@ With PhoneGap/Cordova, you can see how easy it is to have an app in various plat
 ![Cordova_Android]({{ site.images_root}}/Cordova_Android.jpg)
 
 The source code for the sample is available [here](https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap). Don’t forget to update the [api key for 500px](http://developers.500px.com/) before you run the application.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>
