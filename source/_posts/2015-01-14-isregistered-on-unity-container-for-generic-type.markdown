@@ -39,12 +39,17 @@ return registration.FirstOrDefault() != null;
 To fix this, we would need to modify the where condition so that in cases where the RegisteredType is a generic type definition, it would compare with the generic type definition of '*typeToCheck*', as shown below.
 
 ``` csharp
+var genericTypeToCheck = typeToCheck.GetTypeInfo().IsGenericType
+                         ? typeToCheck.GetGenericTypeDefinition()
+                         : null;
+
 var registration = from r in container.Registrations
-                   where r.RegisteredType == typeToCheck && r.Name == nameToCheck
                    where (r.RegisteredType.GetTypeInfo().IsGenericTypeDefinition
-                   ? r.RegisteredType == typeToCheck.GetGenericTypeDefinition()
+                   ? r.RegisteredType == genericTypeToCheck
                    : r.RegisteredType == typeToCheck)
                    && r.Name == nameToCheck
+                   select r;
+return registration.FirstOrDefault() != null;
 ```
 
 A similar [issue](https://unity.codeplex.com/discussions/568979) was already raised in the unity discussions, which I feel was closed inappropriately. 
@@ -53,3 +58,4 @@ A similar [issue](https://unity.codeplex.com/discussions/568979) was already rai
 Please do be aware that using IsRegistered extensively has a [negative impact on performance](http://unity.codeplex.com/discussions/268223) as looping through the Registration looking for the name and type has [O(n) complexity](http://en.wikipedia.org/wiki/Big_O_notation). But that still does not justify the bug!. 
 
 *I have submitted a [pull request](https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isregisteredforgenerictype/contribution/7901) for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!*
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a>
