@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2015-01-17T20:42:47+05:30</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault and Powershell Module Version]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/"/>
+    <updated>2015-01-17T18:05:53+05:30</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-and-powershell-module-version</id>
+    <content type="html"><![CDATA[<p>I was trying out the public preview of the  Azure Key Vault service that has been released recently. While following the steps as mentioned in their <a href="http://blogs.technet.com/b/kv/archive/2015/01/08/azure-key-vault-making-the-cloud-safer.aspx">blog</a>, came across the below error when trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command.</p>
+
+<blockquote><p>Please install Azure Powershell module version 0.8.13 or newer.</p></blockquote>
+
+<p>I did have the <a href="http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Install">latest powershell for azure</a> installed, but still this error is thrown.</p>
+
+<p><img class="center" alt="hp_dv4" src="/images/azure_powershell_installed.png" /></p>
+
+<p>Exploring the <a href="http://msdn.microsoft.com/library/dn868052.aspx">powershell scripts for key vault</a>, below is where the error is thrown from &lsquo;<em>Common.ps1</em>&rsquo;. The script looks for the <a href="http://msdn.microsoft.com/en-us/library/dn654592.aspx">AzureResourceManager</a>, which got introduced in poweshell version 0.8.0 and lets you manage resources in a completely different way.
+&#8220;` powershell
+Function Azure-Version-Check{
+    $expectedMinVersion = New-Object -TypeName System.Version -ArgumentList &ldquo;0.8.13&rdquo;</p>
+
+<pre><code>$azureModule = Get-Module AzureResourceManager
+
+if ((-not $azureModule) -or ($azureModule.Version -lt $expectedMinVersion))
+{
+    Throw 'Please install Azure Powershell module version 0.8.13 or newer.'
+}    
+</code></pre>
+
+<p>}
+&#8220;`</p>
+
+<blockquote><p>When you use the Azure PowerShell cmdlets, the Azure module is imported into the session by default. To remove the Azure module from the session and import the AzureResourceManager and AzureProfile modules, use the Switch-AzureMode cmdlet.</p></blockquote>
+
+<p>This is what is exactly causing the issue, we need to switch to use the azure resource manager. Running the below command and trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command works like a charm</p>
+
+<pre><code class="powershell">Switch-AzureMode -Name AzureResourceManager
+</code></pre>
+
+<p><em>You would face this issue only if you started trying out the steps as mentioned in the <a href="http://blogs.technet.com/b/kv/archive/2015/01/09/azure-key-vault-step-by-step.aspx">azure key vault blog</a>(as I did), since the steps in the <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/">documentation site</a></em> is updated with the above step.*</p>
+]]></content>
+  </entry>
+  
+</feed>
