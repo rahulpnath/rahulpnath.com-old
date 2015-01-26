@@ -18,7 +18,7 @@ I was trying out the public preview of the  Azure Key Vault service that has bee
 
 I did have the [latest powershell for azure](http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Install) installed, but still this error is thrown. 
 
-<img class="center" alt="hp_dv4" src="{{ site.images_root}}/azure_powershell_installed.png" />
+<img class="center" alt="azure powershell installed version" src="{{ site.images_root}}/azure_powershell_installed.png" />
 
 Exploring the [powershell scripts for key vault](http://msdn.microsoft.com/library/dn868052.aspx), below is where the error is thrown from '*Common.ps1*'. The script looks for the [AzureResourceManager](http://msdn.microsoft.com/en-us/library/dn654592.aspx), which got introduced in poweshell version 0.8.0 and lets you manage resources in a completely different way. 
 ``` powershell
