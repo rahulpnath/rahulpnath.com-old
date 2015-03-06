@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Authenticating a Client Application with Azure Key Vault - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="This post describes the different methods by which a client application can access Azure Key Vault and use the keys for performing cryptographic &hellip;" />
+
+
+<meta name="keywords" content="azure key vault, certificate based authentication, accessing keyvault" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-03-06T11:40:25+05:30"  data-updated="true" itemprop="datePublished dateCreated">Mar 6<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Authenticating a Client Application with Azure Key Vault
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Azure Key Vault provides an easy way for managing cryptographic keys and secrets (like connection strings or passwords) in a secure and distributed manner as opposed to having them in the configuration file or a database. If you are new to Azure Key Vault check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> on how to setup the vault and add keys and use that from a console application.</p>
+
+<p>In this post we will explore into the ways of authenticating a client application with a key vault. For an application to use the key vault it must authenticate using a token from the Azure Active Directory (AD). For this an application needs to be registered in the Azure AD and this application needs to be authorized to access key or secret in the vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> that comes as part of the <a href="https://gallery.technet.microsoft.com/scriptcenter/Azure-Key-Vault-Powershell-1349b091">key vault powershell scripts</a>.</p>
+
+<blockquote><p>As of today, the keyvault will be created in the Default AD associated to the azure subscription and there is no way that it can be created in a different directory. But maybe this will be <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/21d0dcaa-791c-4f96-8f9d-738b6b0076b2/create-a-new-key-vault-in-a-different-directory?forum=AzureKeyVault">supported in future</a>.</p></blockquote>
+
+<p>So for a client to access the key vault, it needs to obtain the token from the Azure AD application, which can be done using 2 ways:</p>
+
+<ul>
+<li>Using ClientId and secret</li>
+<li>Using ClientId and certificate</li>
+</ul>
+
+
+<h4><strong>Using ClientId and Secret</strong></h4>
+
+<p>Creating an application that can be authenticated using clientid and secret can be done using the management portal. In the azure management portal, we need to create to the application under the default AD. To find the default AD you can check under the settings in the portal</p>
+
+<p><img class="center" alt="Default Active Directory under Settings" src="/images/default_ad_settings.PNG" /></p>
+
+<p>To add an application in the default, under Active Directory select the default AD and the applications tab and select &lsquo;<em>Add an application</em>&rsquo;.</p>
+
+<p><img class="center" alt="Create an Application under default" src="/images/default_ad.PNG" /></p>
+
+<p>From the pop-up select &lsquo;<em>Add an application my organization is developing</em>&rsquo; and give a name of your choice and of type &lsquo;<em>Web Application AND/OR WEB API</em>&rsquo;. In the App properties window it asks for the &lsquo;<em>Sign-On Url</em>&rsquo; and &lsquo;<em>App ID Uri</em>&rsquo;, for which you can give two unique values and is not mandatory that it should exists. On confirming these values the AD application would be created and you would be presented with the application properties. Under the &lsquo;<em>Configure</em>&rsquo; tab, you can see the Client ID and below that there is an option to create the &lsquo;<em>keys</em>&rsquo; which will be the secret.</p>
+
+<p><img class="center" alt="AD Application Configure" src="/images/ad_application_configure.PNG" /></p>
+
+<p>In the drop-down under the keys select the duration and choose a duration of your choice and save. On saving the secret will be generated. Copy this secret and keep for reference to use in the client application.</p>
+
+<p><img class="center" alt="AD Application Secret Generation" src="/images/ad_application_keys.PNG" /></p>
+
+<p>Now that we have created the application and have the clientid and the secret we need to authorize the application to access the key vault. For this we use the <em>Set-AzureKeyVaultAccessPolicy</em> from the powershell and provide the client id of the application that we have just created. The <em>PermissionToKeys</em> parameter determines the permission that the application would have on the keys in the vault which can take multiple comma separated values (all, backup, create, decrypt, delete, encrypt, import, get, list, restore, sign, wrapkey, unwrapkey, update and verify). Similarly for access to secrets in the keyvault you need to set <em>PermissionToSecrets</em> which can all take multiple values (all, delete, get, list and set).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;01c74fc1-4fb3-455e-8612-d5ad05a7fe2a&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now using the clientid and the secret we can authenticate from the client application using it as below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">clientid</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Using ClientId and Certificate</strong></h4>
+
+<p>Creating an application that can be authenticated using the clientid and the certificate is only possible using powershell scripts, and these are again available with the key vault powershell scripts. For this we first need to create a certificate or if your organization already has provided one use that. Since this is for demo I would be creating a test certificate as <a href="https://msdn.microsoft.com/en-in/library/ff699202.aspx">explained here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">makecert</span> <span class="p">-</span><span class="n">sv</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">n</span> <span class="s">&quot;cn=AD Test Vault Application&quot;</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">b</span> <span class="m">03</span><span class="p">/</span><span class="m">03</span><span class="p">/</span><span class="m">2014</span> <span class="p">-</span><span class="n">e</span> <span class="m">06</span><span class="p">/</span><span class="m">05</span><span class="p">/</span><span class="m">2016</span> <span class="p">-</span><span class="n">r</span>
+</span><span class='line'><span class="n">pvk2pfx</span> <span class="p">-</span><span class="n">pvk</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">spc</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">pfx</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">pfx</span> <span class="p">-</span><span class="n">po</span> <span class="n">test</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we have the certificate, we can create a new AD application and specify certificate authentication for the application as shown below. Make sure that you give the full path to the certificate as below (mine was located under C:\cert)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Connect-AzureAD</span> <span class="n">-DomainName</span> <span class="s1">&#39;&lt;domainname&gt;&#39;</span>
+</span><span class='line'><span class="nv">$newADApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s1">&#39;TestVaultApplication&#39;</span>
+</span><span class='line'><span class="nb">Add-AzureADApplicationCredential</span> <span class="n">-ObjectId</span> <span class="nv">$newADApplication</span><span class="p">.</span><span class="n">objectId</span> <span class="n">-FilePath</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">cert</span><span class="p">\</span><span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span>
+</span><span class='line'><span class="nv">$newADApplication</span><span class="p">.</span><span class="n">appId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the application is created, we need to perform the same authorization steps as above to give the application access to the key vault, after which we can use the clientid (that would be output to the powershell console) and the certificate to authenticate the application. Make sure that the certificate is installed into the store so that it can be used by the application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="s">&quot;E2F3EAE0A131EE0CF1FF1995A6ABA9F9462A0C03&quot;</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">finally</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You could use either ways to authenticate an application to Azure Key Vault. Using the certificate way would be more secure as you can also password protect your certificate so that it cannot be installed without having that. If using the client secret anybody having access to the configuration would be able to access the vault. Also make sure that you give the application&rsquo;s only necessary permissions for accessing keys and secrets while registering the application. You could use the sample used in the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a>. The code in there uses clientId and secret, you could change it with the above code to use certificate authentication.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a consultant, father, speaker and Microsoft employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/getting-started-with-azure-key-vault/" title="Previous Post: Getting Started with Azure Key Vault">&laquo; Getting Started with Azure Key Vault</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2015 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/';
+        var disqus_url = 'http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

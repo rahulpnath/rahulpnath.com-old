@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-01-26T13:51:36+05:30</updated>
+  <updated>2015-03-06T20:26:14+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,150 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Authenticating a Client Application with Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/"/>
+    <updated>2015-03-06T11:40:25+05:30</updated>
+    <id>http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault</id>
+    <content type="html"><![CDATA[<p>Azure Key Vault provides an easy way for managing cryptographic keys and secrets (like connection strings or passwords) in a secure and distributed manner as opposed to having them in the configuration file or a database. If you are new to Azure Key Vault check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> on how to setup the vault and add keys and use that from a console application.</p>
+
+<p>In this post we will explore into the ways of authenticating a client application with a key vault. For an application to use the key vault it must authenticate using a token from the Azure Active Directory (AD). For this an application needs to be registered in the Azure AD and this application needs to be authorized to access key or secret in the vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> that comes as part of the <a href="https://gallery.technet.microsoft.com/scriptcenter/Azure-Key-Vault-Powershell-1349b091">key vault powershell scripts</a>.</p>
+
+<blockquote><p>As of today, the keyvault will be created in the Default AD associated to the azure subscription and there is no way that it can be created in a different directory. But maybe this will be <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/21d0dcaa-791c-4f96-8f9d-738b6b0076b2/create-a-new-key-vault-in-a-different-directory?forum=AzureKeyVault">supported in future</a>.</p></blockquote>
+
+<p>So for a client to access the key vault, it needs to obtain the token from the Azure AD application, which can be done using 2 ways:</p>
+
+<ul>
+<li>Using ClientId and secret</li>
+<li>Using ClientId and certificate</li>
+</ul>
+
+
+<h4><strong>Using ClientId and Secret</strong></h4>
+
+<p>Creating an application that can be authenticated using clientid and secret can be done using the management portal. In the azure management portal, we need to create to the application under the default AD. To find the default AD you can check under the settings in the portal</p>
+
+<p><img class="center" alt="Default Active Directory under Settings" src="http://rahulpnath.com/images/default_ad_settings.PNG" /></p>
+
+<p>To add an application in the default, under Active Directory select the default AD and the applications tab and select &lsquo;<em>Add an application</em>&rsquo;.</p>
+
+<p><img class="center" alt="Create an Application under default" src="http://rahulpnath.com/images/default_ad.PNG" /></p>
+
+<p>From the pop-up select &lsquo;<em>Add an application my organization is developing</em>&rsquo; and give a name of your choice and of type &lsquo;<em>Web Application AND/OR WEB API</em>&rsquo;. In the App properties window it asks for the &lsquo;<em>Sign-On Url</em>&rsquo; and &lsquo;<em>App ID Uri</em>&rsquo;, for which you can give two unique values and is not mandatory that it should exists. On confirming these values the AD application would be created and you would be presented with the application properties. Under the &lsquo;<em>Configure</em>&rsquo; tab, you can see the Client ID and below that there is an option to create the &lsquo;<em>keys</em>&rsquo; which will be the secret.</p>
+
+<p><img class="center" alt="AD Application Configure" src="http://rahulpnath.com/images/ad_application_configure.PNG" /></p>
+
+<p>In the drop-down under the keys select the duration and choose a duration of your choice and save. On saving the secret will be generated. Copy this secret and keep for reference to use in the client application.</p>
+
+<p><img class="center" alt="AD Application Secret Generation" src="http://rahulpnath.com/images/ad_application_keys.PNG" /></p>
+
+<p>Now that we have created the application and have the clientid and the secret we need to authorize the application to access the key vault. For this we use the <em>Set-AzureKeyVaultAccessPolicy</em> from the powershell and provide the client id of the application that we have just created. The <em>PermissionToKeys</em> parameter determines the permission that the application would have on the keys in the vault which can take multiple comma separated values (all, backup, create, decrypt, delete, encrypt, import, get, list, restore, sign, wrapkey, unwrapkey, update and verify). Similarly for access to secrets in the keyvault you need to set <em>PermissionToSecrets</em> which can all take multiple values (all, delete, get, list and set).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;01c74fc1-4fb3-455e-8612-d5ad05a7fe2a&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now using the clientid and the secret we can authenticate from the client application using it as below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">clientid</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Using ClientId and Certificate</strong></h4>
+
+<p>Creating an application that can be authenticated using the clientid and the certificate is only possible using powershell scripts, and these are again available with the key vault powershell scripts. For this we first need to create a certificate or if your organization already has provided one use that. Since this is for demo I would be creating a test certificate as <a href="https://msdn.microsoft.com/en-in/library/ff699202.aspx">explained here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">makecert</span> <span class="p">-</span><span class="n">sv</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">n</span> <span class="s">&quot;cn=AD Test Vault Application&quot;</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">b</span> <span class="m">03</span><span class="p">/</span><span class="m">03</span><span class="p">/</span><span class="m">2014</span> <span class="p">-</span><span class="n">e</span> <span class="m">06</span><span class="p">/</span><span class="m">05</span><span class="p">/</span><span class="m">2016</span> <span class="p">-</span><span class="n">r</span>
+</span><span class='line'><span class="n">pvk2pfx</span> <span class="p">-</span><span class="n">pvk</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">spc</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">pfx</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">pfx</span> <span class="p">-</span><span class="n">po</span> <span class="n">test</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we have the certificate, we can create a new AD application and specify certificate authentication for the application as shown below. Make sure that you give the full path to the certificate as below (mine was located under C:\cert)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Connect-AzureAD</span> <span class="n">-DomainName</span> <span class="s1">&#39;&lt;domainname&gt;&#39;</span>
+</span><span class='line'><span class="nv">$newADApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s1">&#39;TestVaultApplication&#39;</span>
+</span><span class='line'><span class="nb">Add-AzureADApplicationCredential</span> <span class="n">-ObjectId</span> <span class="nv">$newADApplication</span><span class="p">.</span><span class="n">objectId</span> <span class="n">-FilePath</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">cert</span><span class="p">\</span><span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span>
+</span><span class='line'><span class="nv">$newADApplication</span><span class="p">.</span><span class="n">appId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the application is created, we need to perform the same authorization steps as above to give the application access to the key vault, after which we can use the clientid (that would be output to the powershell console) and the certificate to authenticate the application. Make sure that the certificate is installed into the store so that it can be used by the application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="s">&quot;E2F3EAE0A131EE0CF1FF1995A6ABA9F9462A0C03&quot;</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">finally</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You could use either ways to authenticate an application to Azure Key Vault. Using the certificate way would be more secure as you can also password protect your certificate so that it cannot be installed without having that. If using the client secret anybody having access to the configuration would be able to access the vault. Also make sure that you give the application&rsquo;s only necessary permissions for accessing keys and secrets while registering the application. You could use the sample used in the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a>. The code in there uses clientId and secret, you could change it with the above code to use certificate authentication.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Getting Started with Azure Key Vault]]></title>
@@ -2280,79 +2424,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 <img src="http://rahulpnath.com/images/Bing_wp_simulator_geolocation.jpg" alt="Bing_wp_simulator_geolocation" /></p>
 
 <p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Getting Started with PhoneGap: Developing for Windows Phone and Android]]></title>
-    <link href="http://rahulpnath.com/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android/"/>
-    <updated>2014-03-04T21:36:40+05:30</updated>
-    <id>http://rahulpnath.com/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android</id>
-    <content type="html"><![CDATA[<p>With lots of devices and operating systems out there, developing a native application for each of these platforms might not always be an option for many businesses, because of the time, effort and money that would be required to be on all platforms. <a href="http://phonegap.com/">PhoneGap</a> is one option that could be explored in this case, which helps to develop hybrid applications that can exists on a <a href="http://phonegap.com/about/feature/">variety of platforms</a> integrating with platform specific features. <a href="http://cordova.apache.org/">Apache Cordova</a> is what powers PhoneGap and is free and open source under the <a href="http://phonegap.com/about/license/">Apache License, Version 2.0</a>.</p>
-
-<p>Setting up PhoneGap is pretty easy and direct with its integration with <a href="http://nodejs.org/">node.js</a>. Lets take a look on how to setup our project from scratch.</p>
-
-<ol>
-<li><p>Install <a href="http://nodejs.org/">node.js</a></p></li>
-<li><p>Install PhoneGap using node.js</p>
-
-<p> <strong><em>npm install –g phonegap</em></strong></p>
-
-<p> npm is the official node package manager</p>
-
-<p> -g installs the package in global scope.If you face any error while installing the package(since I happened to, I guess because I closed the console while it was installing the first time) you can try following the below steps, which helped me solve it.</p>
-
-<p> <strong>            npm list –g</strong></p>
-
-<p> If the above step shows that there is a <em>unmet dependency phonegap</em>, then you could follow the below steps</p>
-
-<p> <strong>            npm rm phonegap</strong></p>
-
-<p> <strong>            npm cache clear</strong></p>
-
-<p> Try installing PhoneGap again using <em>npm install –g phonegap</em></p></li>
-<li><p>Install Cordova
-<strong>npm install –g cordova</strong></p></li>
-<li><p>Now we have everything setup for PhoneGap project. Lets create the project. Navigate to your project root folder and create a project.</p>
-
-<p> <strong>phonegap create <appname></strong></p>
-
-<p> This will create the basic folder structure for your PhoneGap project which looks like below.</p>
-
-<p> <img class="left" src="http://rahulpnath.com/images/cordova_folder_structure.png" alt="cordova_folder_structure" /></p>
-
-<p> <strong>.cordova: </strong>This directory contains files related to cordova.</p>
-
-<p> <strong>merges: </strong>This directory contains platform specific assets. A sub-directory for each platform is created inside here, whenever  a new platform is created. This sub-directory mirrors the structure of the <em>www </em>directory, which allows to add platform specific files to appropriate folders.</p>
-
-<p> <strong>platforms: </strong>This directory contains native code for each of the <a href="http://docs.phonegap.com/en/edge/guide_platforms_index.md.html">supported platforms</a>. By default this is empty and we need to add the required platforms, which we will see later.</p>
-
-<p> <strong>plugins: </strong>This directory contains the <a href="https://build.phonegap.com/plugins">plugins</a> that provide extra support to interface with each of the native platforms.</p>
-
-<p> <strong>www: </strong>This directory contains the primary files that is required for your project/application. This gets copied into each of the platform specific projects in <em>platforms </em>folder whenever a build is performed. So this is where your core development would happen and all your cross-platform code would live in.</p></li>
-<li><p>Lets now create a native project, for windows phone.</p>
-
-<p> <strong>cordova platform add wp8</strong></p>
-
-<p> This will add a wp8 folder inside <em>platforms </em>and also <em>merges. </em>The one in platforms will have the native project setup with all the files in <em>www</em> folder copied into it. You can open up the sln file in Visual Studio and build and run. We have the application up and running on our first platform!
- Lets add in some code so that it makes sense as an application. We will stick on with our usual 500px api and show off some beautiful pictures. I have added jquery from nuget in Visual studio and also updated the files to show pictures from 500px, which I would not be explaining here as it is just some html/js/css..(Updated files in www folder can later be copied into the root <em>www </em>folder later. Need to figure out the correct way on how to go about this. In case you know how, please do leave a comment. Would be more than happy to learn.)</p></li>
-<li><p>Once we copy out the updated files in platform specific <em>www </em>folder into root www folder we can go ahead and add android platform.</p>
-
-<p> <strong>cordova platform add android</strong></p>
-
-<p> This creates an android folder inside <em>platforms</em> and <em>merges</em> folder. You can open up the project in your IDE(<a href="https://www.eclipse.org/downloads/">Eclipse</a>, <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or <a href="http://developer.android.com/sdk/installing/studio.html">Android Studio</a> etc) for android, build and run. We have the application up and running also on the second platform!
- For android you would need to make sure the config files are updated with the required permissions for accessing internet and also to enable <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>. By default internet permissions are enabled, you would only have to update the config for cors(<em>origin header</em>) as it defaults to ‘<em>127.0.0.1*</em>’. I have updated this to just ‘*’, inside <strong><em>res/xml/config.xml </em></strong>(since there is one config.xml inside assets/www folder too).If you are new to android platform, which I was then you can check out here on <a href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/">Setting up the development environment for phonegap on android</a>.
- At times I did have the Android emulator not moving past the &lsquo;<em>Connecting to Device</em>&rsquo; screen while running the application. I just killed all the emulators and started a fresh one from AVD (Android Virtual Device) Manager, unchecking &lsquo;launch from snapshot&rsquo; and &lsquo;save to snapshot&rsquo; options.</p></li>
-</ol>
-
-
-<p>With PhoneGap/Cordova, you can see how easy it is to have an app in various platforms of your choice. We have not seen on how to utilize any of the platform specific features of devices using PhoneGap, but I am sure that you should be able to figure out from here, now that you have all that you need up and running.</p>
-
-<p><img src="http://rahulpnath.com/images/Cordova_WP.jpg" alt="Cordova_WP" />
-<img src="http://rahulpnath.com/images/Cordova_Android.jpg" alt="Cordova_Android" /></p>
-
-<p>The source code for the sample is available <a href="https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap">here</a>. Don’t forget to update the <a href="http://developers.500px.com/">api key for 500px</a> before you run the application.
 <a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
