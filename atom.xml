@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-03-06T20:30:29+05:30</updated>
+  <updated>2015-03-14T21:35:24+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,72 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
+    <updated>2015-03-14T17:34:23+05:30</updated>
+    <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
+    <content type="html"><![CDATA[<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
+
+<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
+
+<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;d4f09821-ab30-44f3-8d57-69925489b932&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">TestVaultRahul</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SecretValue</span>     <span class="err">:</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">SecureString</span>
+</span><span class='line'><span class="n">SecretValueText</span> <span class="err">:</span> <span class="n">ApiKey</span>
+</span><span class='line'><span class="n">VaultName</span>       <span class="err">:</span> <span class="n">testvaultrahul</span>
+</span><span class='line'><span class="n">Name</span>            <span class="err">:</span> <span class="n">ApiKey</span>
+</span><span class='line'><span class="n">Version</span>         <span class="err">:</span> <span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
+</span><span class='line'><span class="n">Id</span>              <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">secrets</span><span class="p">/</span><span class="n">ApiKey</span><span class="p">/</span><span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span>
+</span><span class='line'>    <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="s">&quot;https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Authenticating a Client Application with Azure Key Vault]]></title>
@@ -2236,195 +2302,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 <p>The <strong>battery</strong> backup on the device is pretty good and is lasting for me through a day. I have not yet been on any trips with the phone, so can’t comment on the battery in such situations where generally it lasts lesser. But <a href="http://www.ibtimes.com/google-working-nexus-5-battery-drain-fix-affects-all-android-devices-kitkat-qualcomm-chips-1559771">Google has also announced</a> on a battery leak issue for which a fix would be out soon. Hope that would improve it further. I have never been a fan of phone <strong>camera, </strong>since <a href="http://rahulpnath.com/blog/photography-learning-to-click/">I prefer my DSLR</a> for that, but even then for a camera it is pretty decent with lots of options and filters. At times it does come handy and works perfect.</p>
 
 <p>If you are planning to get a new phone and then this is worth considering. If you are already using one then do let know on what you feel about the phone?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Windows Phone Series: Bing Maps and Turn-by-Turn Navigation]]></title>
-    <link href="http://rahulpnath.com/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation/"/>
-    <updated>2014-03-08T05:10:39+05:30</updated>
-    <id>http://rahulpnath.com/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation</id>
-    <content type="html"><![CDATA[<p>Many applications today provide features that integrate with users location and provide information on a map based on that. In this blog will see how we can use the Bing maps to show a users current location, search for destination and show route to that location. For this will use Bing maps, and you would have to create an account here and create a key that we would be using. Make sure that you read on the <a href="http://www.microsoft.com/maps/product/terms.html">licensing terms</a> on the api if you are planning to use this in a published application.</p>
-
-<p>To use Maps in windows phone application, you would need to add a reference to ‘<em>Microsoft.Phone.Controls.Maps</em>’ once you create a new Windows phone project. Add the maps control to the application as below to display current location or other map related features.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;maps:Map</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="na">Name=</span><span class="s">&quot;mapBing&quot;</span>  <span class="na">AnimationLevel=</span><span class="s">&quot;None&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Stretch&quot;</span> <span class="na">VerticalContentAlignment=</span><span class="s">&quot;Stretch&quot;</span>
-</span><span class='line'>          <span class="na">CopyrightVisibility=</span><span class="s">&quot;Collapsed&quot;</span>  <span class="na">LogoVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomBarVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomLevel=</span><span class="s">&quot;12&quot;</span> <span class="na">CredentialsProvider=</span><span class="s">&quot;BING MAPS API KEY&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;RouteLayer&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;StartPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;DestinationPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;CurrentPosition&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;MyPathLayer&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/maps:MapLayer&gt;</span>
-</span><span class='line'><span class="nt">&lt;/maps:Map&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This adds a map user control to the application and also different layers to the application, on which we would be displaying the pins, routes etc. Anything that gets shown on the map is shown on different layers. Each of these can be cleared, deleted or toggled for visibility making it easy to work on maps.</p>
-
-<p><strong>Track Me</strong></p>
-
-<p>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">GeoPosition</span> <span class="n">myPosition</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">TrackMe</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">startingPoint</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">CurrentPosition</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Clear</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">myWatcher</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">-=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GeoCoordinateWatcher</span><span class="p">();</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">TryStart</span><span class="p">(</span><span class="k">false</span><span class="p">,</span> <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">+=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">void</span> <span class="nf">myWatcher_PositionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">GeoPositionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>     <span class="n">myPosition</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">;</span>
-</span><span class='line'>     <span class="n">currentLocation</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
-</span><span class='line'>     <span class="k">if</span> <span class="p">(</span><span class="n">isInDriveMode</span><span class="p">)</span>
-</span><span class='line'>     <span class="p">{</span>
-</span><span class='line'>         <span class="n">DrawMyCurrentRoute</span><span class="p">(</span><span class="n">currentLocation</span><span class="p">);</span>
-</span><span class='line'>     <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>     <span class="n">LocationManager</span><span class="p">.</span><span class="n">GetLocationName</span><span class="p">(</span><span class="n">UpdateLocation</span><span class="p">,</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Latitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">(),</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Longitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">());</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Destination and Routes</strong></p>
-
-<p>Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">RouteServiceClient</span> <span class="n">routeService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteServiceClient</span><span class="p">(</span><span class="s">&quot;BasicHttpBinding_IRouteService&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteCompleted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">DrawRoute</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">mapBing</span><span class="p">.</span><span class="n">SetView</span><span class="p">(</span><span class="n">LocationRect</span><span class="p">.</span><span class="n">CreateLocationRect</span><span class="p">(</span><span class="n">locations</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">RouteRequest</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Credentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Credentials</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ApplicationId</span> <span class="p">=</span> <span class="n">LocationManager</span><span class="p">.</span><span class="n">bingApiKey</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteOptions</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">RoutePathType</span> <span class="p">=</span> <span class="n">RoutePathType</span><span class="p">.</span><span class="n">Points</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Waypoints</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">locations</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="k">new</span> <span class="n">Waypoint</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">Location</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Phone</span><span class="p">.</span><span class="n">Controls</span><span class="p">.</span><span class="n">Maps</span><span class="p">.</span><span class="n">Platform</span><span class="p">.</span><span class="n">Location</span><span class="p">()</span> <span class="p">{</span> <span class="n">Latitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">Longitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Longitude</span> <span class="p">}</span>
-</span><span class='line'>        <span class="p">}))</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="n">speechUrl</span> <span class="p">=</span> <span class="s">&quot;http://translate.google.com/translate_tts?tl=en&amp;amp;q=&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SpeakText</span><span class="p">(</span><span class="kt">string</span> <span class="n">message</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Play the audio</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Source</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">speechUrl</span> <span class="p">+</span> <span class="n">message</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Play</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
-
-<p><img src="http://rahulpnath.com/images/Bing_wp_route.jpg" alt="Bing_wp_route" /><img src="http://rahulpnath.com/images/Bing_wp_place_search.jpg" alt="Bing_wp_place_search" /><img src="http://rahulpnath.com/images/Bing_wp_directions_text.jpg" alt="Bing_wp_directions_text" /></p>
-
-<p><strong>Testing</strong></p>
-
-<p>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
-<img src="http://rahulpnath.com/images/Bing_wp_simulator_geolocation.jpg" alt="Bing_wp_simulator_geolocation" /></p>
-
-<p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   

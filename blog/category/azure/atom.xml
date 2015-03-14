@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-03-06T20:30:29+05:30</updated>
+  <updated>2015-03-14T21:35:24+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,50 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
+    <updated>2015-03-14T17:34:23+05:30</updated>
+    <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
+    <content type="html"><![CDATA[<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
+
+<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
+
+<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
+
+<pre><code class="powershell">Set-AzureKeyVaultAccessPolicy -VaultName 'TestVaultRahul' -ServicePrincipalName 'd4f09821-ab30-44f3-8d57-69925489b932' -PermissionsToKeys all -PermissionsToSecrets all
+</code></pre>
+
+<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
+
+<pre><code class="powershell">PS C:\&gt; $apiKey = ConvertTo-SecureString -String "ApiKey" -AsPlainText -Force
+Set-AzureKeyVaultSecret -VaultName TestVaultRahul -Name "ApiKey" -SecretValue $apiKey
+
+SecretValue     : System.Security.SecureString
+SecretValueText : ApiKey
+VaultName       : testvaultrahul
+Name            : ApiKey
+Version         : cfedea84815e4ca8bc19cf8eb943ee13
+Id              : https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13
+</code></pre>
+
+<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.
+&#8220;` csharp
+var keyClient = new KeyVaultClient((authority, resource, scope) =>
+{
+    var authenticationContext = new AuthenticationContext(authority, null);
+    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
+    var result = authenticationContext.AcquireToken(resource, clientAssertionCertificate);
+});</p>
+
+<p>var secret =
+    await keyClient.GetSecretAsync(&ldquo;<a href="https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13">https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13</a>&rdquo;);
+&#8220;`</p>
+
+<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Authenticating a Client Application with Azure Key Vault]]></title>
