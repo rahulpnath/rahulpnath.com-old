@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-04-18T09:18:45+05:30</updated>
+  <updated>2015-04-25T23:15:52+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,79 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault in a Real World Application]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/"/>
+    <updated>2015-04-25T11:46:09+05:30</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application</id>
+    <content type="html"><![CDATA[<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
+
+<h3>Configuring Client-Applications to use the Key vault</h3>
+
+<p>Objects are uniquely identified within Azure Key Vault using a URL such that no two objects in the system, regardless of geo-location, have the same URL. The complete URL to an object is called the Object Identifier and consists of a prefix portion that identifies the Key Vault, the object type, a user provided Object Name, and an Object Version. The <em>object-name</em> is case-insensitive and immutable. When an object is first created it is given a unique version identifier and is marked as the current version of the object. Creation of a new instance with the same object name gives the new object a unique version identifier and causes it to become the current version. When querying for an object <em>object-version</em> is optional and if not provided will point to the current version of the given object-name.</p>
+
+<blockquote>https://{keyvault-name}.vault.azure.net/{object-type}/{object-name}/{object-version}</blockquote>
+
+
+<p>From a client application all we need to have is to the configuration for the key vault url, and configurations to identify key/secret name which can include the version if required. This could be saved in the application&rsquo;s configuration file as shown below.
+<code>xml
+&lt;appSettings&gt;
+  &lt;add key="KeyVaultUrl" value="https://testvaultrahul.vault.azure.net"/&gt;
+  &lt;add key="SqlConnectionString" value="SqlConnectionString"/&gt;
+  &lt;add key ="SecretWithVersion" value="SecretWithVersion/cfedea84815e4ca8bc19cf8eb943ee13"/&gt;
+  &lt;add key="CryptoKey" value="CryptoKey"/&gt;
+&lt;/appSettings&gt;
+</code></p>
+
+<p>In the above configuration I assume that when these configurations are used from the code, we know that if a value is a key or secret. We could have an extended configuration or string prefix&rsquo;s (key<em> or secret</em>) to indicate this and then have the code automatically detect it too if required to decouple that, but I don&rsquo;t see it really necessary. So the application at any time would only depend on these configured values, and we can easily switch it use any vault configured with the required key/secret values.</p>
+
+<pre><code class="csharp">var keyVaultIdentifierHelper = new KeyVaultIdentifierHelper(ConfigurationManager.AppSettings["KeyVaultUrl"]);
+var connectionStringIdentifier =
+    keyVaultIdentifierHelper.GetSecretIdentifier(ConfigurationManager.AppSettings["SqlConnectionString"]);
+var connectionStringSecret = await keyClient.GetSecretAsync(connectionStringIdentifier);
+</code></pre>
+
+<pre><code class="csharp KeyVaultIdentifierHelper">public class KeyVaultIdentifierHelper
+{
+    private const string KeyFormat = "{0}/keys/{1}";
+    private const string SecretFormat = "{0}/secrets/{1}";
+    private readonly string keyVaultUrl;
+
+    public KeyVaultIdentifierHelper(string keyVaultUrl)
+    {
+        this.keyVaultUrl = keyVaultUrl;
+    }
+
+    public string GetKeyIdentifier(string keyName)
+    {
+        return string.Format(KeyFormat, this.keyVaultUrl, keyName);
+    }
+
+    public string GetSecretIdentifier(string secretName)
+    {
+        return string.Format(SecretFormat, this.keyVaultUrl, secretName);
+    }
+}
+</code></pre>
+
+<h3>Managing the Key Vault for Multiple Deployments</h3>
+
+<p>Now that we have decoupled the application from the Key Vault, we need to see how to configure key vaults to cater for multiple deployments. In any application development life-cycle, there would be multiple deployments at a given time for the application to cater for different roles - developers, testers and maybe a production one too. It is very likely that the connection strings and other sensitive information would be deployment specific and we would want to keep them separate. Best way to achieve this would be to create Key vault per deployment so that this separation is clearly maintained. You could check on the <a href="http://azure.microsoft.com/en-in/pricing/details/key-vault/">Key Vault Pricing</a> on how this would affect your overall cost. For each of these deployments you would need to make sure that all the required keys/secrets are added with valid values. Since this can soon end up as a repeated activity, it is best to automate this (using powershell scripts or your own application)</p>
+
+<h3>Restricting Permissions to Key Vault</h3>
+
+<p>We had seen how to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate a client application with a Key Vault</a> using an Active Directory (AD) application, and how to set various access policies for these application&rsquo;s. Applications should be given only the minimum set of permissions that it requires to operate on, most probably this would be only the read permissions. For <a href="https://github.com/rahulpnath/AzureKeyVaultExplorer">administrative application&rsquo;s</a> we would want to give all permissions so that it can modify the vault keys/secrets as required. For such a scenario it is best to have, two (or more) separate AD application&rsquo;s created and have separate permissions provided.</p>
+
+<p><img class="center" alt="Multiple AD applications to access key vault with different permissions" src="/images/multiple_ad_application.PNG" /></p>
+
+<h3>What all should be there in my configuration file?</h3>
+
+<p>All your <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">sensitive information should be moved out of your application configuration file</a>, and Key Vault is the one place to have them all. The application&rsquo;s configuration file should only have the azure key vault url and the AD application id and certificate identifier (thumb print) that can be used to authenticate with the AD. Yes it is advisable to use the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate authentication mechanism</a> as opposed to the secret mechanism, if not you would have to put the secret in your configuration file, which would be like &lsquo;giving a thief the key to your safe&rsquo;.Additionally you could also have the key identifier mappings in the configuration file that the application can use to map to key/secret in the vault as we had seen above.</p>
+
+<p>By doing this we have fully decoupled the application and its dependency with the vault store and have also protected all our sensitive information. This also helps in having the application to be tested with configurations appropriate to the type of deployment. Hope this helps you in developing your application against the key vault.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>

@@ -143,6 +143,266 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-03-03T14:23:45+05:30"  data-updated="true" itemprop="datePublished dateCreated">Mar 3<sup>rd</sup>, 2013</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>, <a class='category' href='/blog/category/wp7/'>wp7</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-incremental-loading/" itemprop="url">Windows Phone Series – Incremental Loading</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Some time back we had a look on doing <a href="http://rahulpnath.wordpress.com/2012/10/28/windows-8-series-incremental-loading/">Incremental Loading with a Windows 8 store app</a>. This same scenario is something that one would come across quite frequently while developing a Windows Phone application too. We have a couple of options in dealing with this while on a Windows phone application. In an ideal case while binding to a large data on a windows phone application, we might be using a <a href="http://msdn.microsoft.com/en-US/library/windowsphone/develop/microsoft.phone.controls.longlistselector(v=vs.105">LongListSelector</a>.aspx) or a Listbox control.</p>
+
+<p>While using a LongListSelector, we can use the Link event(if you are using <a href="http://phone.codeplex.com/">Windows Phone 7.1 toolkit</a>) Or the <a href="http://msdn.microsoft.com/en-US/library/windowsphone/develop/microsoft.phone.controls.longlistselector.itemrealized(v=vs.105">ItemRealized</a>.aspx) event(if you are on Windows phone 8.0). Basically we would be doing the same thing in either of these cases, checking the current item that is getting realized and see what is the index of the item in the whole list of data that you have currently and check if its time for you to fetch the next set of data from your data source(possibly a web service). As usual for the sample we will be using the <a href="http://500px.com/popular">500px</a> api.</p>
+
+<p>Below is the piece of code that will fetch us the photo from the <a href="http://developers.500px.com/">500px api</a> to populate the listbox data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="n">requestPerPage</span> <span class="p">=</span> <span class="m">20</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">int</span> <span class="n">currentPage</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;</span> <span class="n">Photos</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="kt">string</span> <span class="n">datasourceUrl</span><span class="p">=</span><span class="s">&quot;https://api.500px.com/v1/photos?feature=popular&amp;consumer_key=&quot;</span>
+</span><span class='line'>          <span class="p">+</span> <span class="n">consumerKey</span> <span class="p">+</span> <span class="s">&quot;&amp;rpp=&quot;</span> <span class="p">+</span> <span class="n">requestPerPage</span><span class="p">.</span><span class="n">ToString</span><span class="p">()</span> <span class="p">+</span> <span class="s">&quot;&amp;page={0}&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">LoadDataFromSource</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">query</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">datasourceUrl</span><span class="p">,</span> <span class="n">currentPage</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">WebClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WebClient</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringCompleted</span> <span class="p">+=</span> <span class="n">client_DownloadStringCompleted</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">client</span><span class="p">.</span><span class="n">DownloadStringAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">query</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">void</span> <span class="nf">client_DownloadStringCompleted</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">DownloadStringCompletedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">reader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Result</span><span class="p">)))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ser</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">RootObject</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">RootObject</span> <span class="n">obj</span> <span class="p">=</span> <span class="p">(</span><span class="n">RootObject</span><span class="p">)</span><span class="n">ser</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">currentPage</span> <span class="p">=</span> <span class="n">obj</span><span class="p">.</span><span class="n">current_page</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">obj</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Dispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="n">obj</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>                    <span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>                <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the ItemRealized/Link event based on whether you are developing for Windows Phone 7 or 8, below would be the code that goes into that. We need to check the current item that is realized i.e rendered on the UI and see if it is</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">photosList_ItemRealized_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Photo</span> <span class="n">photo</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">photo</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">offset</span> <span class="p">=</span> <span class="m">2</span><span class="p">;</span>
+</span><span class='line'>        <span class="c1">// Only if there is no data that is currently getting loaded</span>
+</span><span class='line'>        <span class="c1">// would be initiate the loading again</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">&amp;&amp;</span> <span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">photo</span><span class="p">)</span> <span class="p">&lt;=</span> <span class="n">offset</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In case you want to use a normal listbox, you can do that also. We would need to hook up with VisualStateGroups. This <a href="http://blogs.msdn.com/b/slmperf/archive/2011/06/30/windows-phone-mango-change-listbox-how-to-detect-compression-end-of-scroll-states.aspx">link</a> explains this in details, and I have just reused parts of it as is. We need to override the scrollviewer style to hook into this new StateGroups. We need to look for CompressionBottom state, for the currentstatechanged event of the scrollviewer.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">myScrollViewer_Loaded_1</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">RoutedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SetScrollViewer</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SetScrollViewer</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Visual States are always on the first child of the control template </span>
+</span><span class='line'>    <span class="n">FrameworkElement</span> <span class="n">element</span> <span class="p">=</span> <span class="n">VisualTreeHelper</span><span class="p">.</span><span class="n">GetChild</span><span class="p">(</span><span class="n">myScrollViewer</span><span class="p">,</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">as</span> <span class="n">FrameworkElement</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">element</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">VisualStateGroup</span> <span class="n">vgroup</span> <span class="p">=</span> <span class="n">FindVisualState</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="s">&quot;VerticalCompression&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">vgroup</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">vgroup</span><span class="p">.</span><span class="n">CurrentStateChanging</span> <span class="p">+=</span>
+</span><span class='line'>                 <span class="k">new</span> <span class="n">EventHandler</span><span class="p">&lt;</span><span class="n">VisualStateChangedEventArgs</span><span class="p">&gt;(</span><span class="n">vgroup_CurrentStateChanging</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">vgroup_CurrentStateChanging</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">VisualStateChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionTop&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;CompressionBottom&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">isCurrentlyLoading</span> <span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">LoadDataFromSource</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">NewState</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="s">&quot;NoVerticalCompression&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can use either of these two ways to incrementally load data on a windows phone app. The entire code that is used in this blog is avaialble <a href="https://github.com/rahulpnath/IncrementalLoadingPhone">here</a>. The sample app shows both these methods. The pivot header specifies the method that is used, LongListSelector and Scrollstates</p>
+
+<p><img src="/images/wp_incremental_loading_longlistselector.jpg" alt="windows phone incremental loading using longlistselector" /><img src="/images/wp_incremental_loading_scrollstates.jpg" alt="windows phone incremental loading using scrollstates" /></p>
+
+<p>Hope this helps you to incrementally load data on your windows phone application</p>
+
+<p><a href="https://github.com/rahulpnath/IncrementalLoadingPhone">Download Code</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-01-05T22:07:00+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 5<sup>th</sup>, 2013</time>
         
 
@@ -1515,68 +1775,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-03-22T21:28:28+05:30"  data-updated="true" itemprop="datePublished dateCreated">Mar 22<sup>nd</sup>, 2011</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/wp7/'>wp7</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/finally/" itemprop="url">Finally!!!!!!</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>It’s been a long time since i have posted here,and indeed a lot did happen during this time,things that were really exciting too.Lots of things also coincides with my mobile journey too.</p>
-
-<p>Events in chronological order :)</p>
-
-<ol>
-<li><p> Microsoft decides to  give a WP7 phone to all its employees,for free <img src="http://rahulpnath.files.wordpress.com/2011/03/wlemoticon-surprisedsmile.png" alt="Surprised smile" /></p></li>
-<li><p> I happened to attend an interview at Microsoft and guess what …<img src="http://rahulpnath.files.wordpress.com/2011/03/wlemoticon-surprisedsmile.png" alt="Surprised smile" /><img src="http://rahulpnath.files.wordpress.com/2011/03/wlemoticon-surprisedsmile.png" alt="Surprised smile" /></p></li>
-<li><p> My joining date was luckily enough,so that I could get the <a href="http://www.htc.com/www/product/7mozart/overview.html">HTC Mozart 7</a> for free.</p></li>
-</ol>
-
-
-<p><img src="/images/htc_mozart7_wp.jpg" alt="htc_mozart7_wp" /></p>
-
-<p>Over the last week I did register for the developer licence and its pretty simple too,apart from the fee that you would have to pay(luckily enough for me,that’s also free).Even otherwise the amount is nominal,if you are serious enough to develop apps for the phone.In a short span of time you should be able to earn back whatever you have spent for the licence.To register for the licence all you need to do is follow the instructions found <a href="http://create.msdn.com/en-US/">here</a>.Once you get your registration done,it takes a couple of days to get you account activated,after the verification process.Then you can add devices to your account using phoneReg.exe(Windows Phone Developer Registration from start menu),which gets installed when you install the phone developer tools,which is also available in the above link provided.Here is a <a href="http://msdn.microsoft.com/en-us/library/ff769508(v=vs.92).aspx">link</a> that describes on how to go with the registration.I did face some issues here while registering the device from my personal laptop,but got it done from office laptop.Not sure on what exactly caused the problem.There are a list of troubleshooting options mentioned in the above link and <a href="http://forums.create.msdn.com/forums/p/73498/451621.aspx">this</a> too might help.You would not be stuck up too long but and hopefully that would be resolved soon too I guess.</p>
-
-<p>With all the steps done,I now have to hit Visual Studio.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1600,6 +1798,8 @@ Web API is nothing but services exposed over http,providing reach to various dev
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in a Real World Application</a>
+    
     <a class="list-group-item " href="/blog/is-code-coverage-a-lie/">Is Code Coverage a Lie?</a>
     
     <a class="list-group-item " href="/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">Moving Sensitive Information from Configuration File to Azure Key Vault</a>
@@ -1607,8 +1807,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
     <a class="list-group-item " href="/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>
     
     <a class="list-group-item " href="/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>
-    
-    <a class="list-group-item " href="/blog/azure-key-vault-and-powershell-module-version/">Azure Key Vault and Powershell Module Version</a>
     
   </div>
 </section>
