@@ -42,6 +42,6 @@ Now that we have seen it is all about having trustworthy tests and not about rea
  
 1. If you are less than 100% it clearly indicates that there are areas of your application that is not tested. You would really want to cross check if that is an intended miss or if there is something that is actually missing and add in some more tests to be covered better.
 2. When refactoring code, you can always make sure that you don't go back on the coverage number that you started with, so as to ensure that you have not introduced untested code into the system.
-3. When cleaning up tests you can a drop in the coverage number clearly indicates that you have actually removed some valid and non-redundant tests.
+3. When cleaning up tests a drop in the coverage number clearly indicates that you have actually removed some valid and non-redundant tests.
 
 So the next time you add in a test, think why you are doing it. Is it for the report or for the application that is getting developed. Lets all [strive to be really professional](https://vimeo.com/43536488) in what we are doing and not just hide behind some numbers. Let the number be seen for what it is - nothing less and nothing more!
