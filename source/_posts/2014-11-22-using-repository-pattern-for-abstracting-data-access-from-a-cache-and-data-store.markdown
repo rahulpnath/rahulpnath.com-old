@@ -4,7 +4,7 @@ title: "Using Repository Pattern for Abstracting Data Access from a Cache and Da
 date: 2014-11-22 20:56:26 +0530
 comments: true
 categories:
-- design pattern
+- Design
 - Programming
 tags:
 - Entity Framework
