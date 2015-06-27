@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-05-03T23:50:36+05:30</updated>
+  <updated>2015-06-27T17:54:13+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,84 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Azure AD Application for Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
+    <updated>2015-06-27T19:13:48+05:30</updated>
+    <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
+    <content type="html"><![CDATA[<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
+
+<h4><strong>Creating AD application</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/dn986794.aspx">New-AzureADApplication</a></em> cmdlet is used to create a new Azure AD application. It also provides an option to specify the certificate details used to authenticate with the AD application at the time of creation itself. This can be done as a separate step if required, which is shown later in the post.</p>
+
+<p>First we need a certificate that is to be used for authenticating against the AD application, for which I use the below commands to generate a test certificate</p>
+
+<pre><code class="text">makecert -sv mykey.pvk -n "cn=AD Test Vault Application" ADTestVaultApplication.cer -b 03/03/2014 -e 06/05/2017 -r -len 2048
+pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po test
+</code></pre>
+
+<p>This certificate is then used to create the AD application using the below script.</p>
+
+<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+$certificate.Import($certificateFilePath)
+$rawCertificateData = $certificate.GetRawCertData()
+$credential = [System.Convert]::ToBase64String($rawCertificateData)
+$startDate= [System.DateTime]::Now
+$endDate = $startDate.AddYears(1)
+$adApplication = New-AzureADApplication -DisplayName "KeyVaultADApplication" 
+  -HomePage  "http://www.rahulpnath.com" -IdentifierUris "http://www.rahulpnath.com"  
+  -KeyValue  $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify" 
+  -StartDate $startDate -EndDate $endDate 
+</code></pre>
+
+<p>To associate the application created with the Key Vault, we need to create a service principal using <a href="https://msdn.microsoft.com/en-us/library/dn986799.aspx">New-AzureADServicePrincipal</a> and then associate that with the Vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a></p>
+
+<pre><code class="powershell">$servicePrincipal = New-AzureADServicePrincipal -ApplicationId $adApplication.ApplicationId
+Set-AzureKeyVaultAccessPolicy -VaultName 'KeyVaultRahul' -ObjectId  $servicePrincipal.Id -PermissionsToKeys all -PermissionsToSecrets all
+$ServicePrincipal.ApplicationId #Outputs the ServicePrincipalName/AppPrincipalId
+</code></pre>
+
+<h4><strong>Adding a Certificate</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/azure/dn194106.aspx">New-MsolServicePrincipalCredential</a></em> cmdlet is used to add a new credential to a service principal or to an application. The service principal is identified by supplying one of the following: object ID, appPrincipalID, service principal name (SPN).</p>
+
+<pre><code class="powershell">$msolCredentials = get-credential
+connect-msolservice -credential $msolCredentials
+$certificateFilePath = "C:\certificates\ADTestVaultApplicationNew.cer"
+$x509Certificate2 = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+$x509Certificate2.Import($certificateFilePath)
+$rawCertData = $x509Certificate2.GetRawCertData()
+$credentialValue = [System.Convert]::ToBase64String($rawCertData)
+$startDate= [System.DateTime]::Now
+$endDate = $startDate.AddYears(1)
+New-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -Type Asymmetric -Value $credentialValue -StartDate $startDate -EndDate   $endDate 
+</code></pre>
+
+<h4><strong>Removing a Certificate</strong></h4>
+
+<p>Whenever a credential gets compromised or as part of regular credential refresh, administrators would want to remove an old certificate and replace with a new one. The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194125.aspx">Remove-MsolServicePrincipalCredential</a> cmdlet is used to remove a credential key from a service principal by specifying the key ID for the credential and the objectID/applicationID/ServicePrincipalName to identify the service principal. To get the key ID of an existing credential, <a href="https://msdn.microsoft.com/en-us/library/azure/dn194091.aspx">Get-MsolServicePrincipalCredential</a> cmdlet can be used, which returns the list of credentials associated with a service principal. The below script just removes the first credential, you could loop through and remove all.</p>
+
+<pre><code class="powershell">$servicePrincipalCredential = Get-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -ReturnKeyValues 0
+Remove-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -KeyIds $servicePrincipalCredential[0].KeyId
+</code></pre>
+
+<h4><strong>Delete an application</strong></h4>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194113.aspx">Remove-MsolServicePrincipal</a> cmdlet removes a service principal from Microsoft Azure Active Directory, by specifying objectID/applicationID/ServicePrincipalName to identify the service principal.</p>
+
+<pre><code class="powershell">Remove-MsolServicePrincipal -ObjectId &lt;Guid&gt;
+Or
+Remove-MsolServicePrincipal -AppPrincipalId &lt;Guid&gt;
+Or
+Remove-MsolServicePrincipal -ServicePrincipalName &lt;string&gt;
+</code></pre>
+
+<p>Managing the AD application is a very important and necessary process in the life cycle of a Key Vault, as the access to the Vault is controlled using that. Certificates securing the AD applciation should be rolled/updated frequently and application permissions should be reviewed often to make sure that all applications have only the required permissions.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault in a Real World Application]]></title>
@@ -312,46 +390,6 @@ var publicKey = Convert.ToBase64String(key.Key.N);
 <p>As above, we use the public key available to create the <a href="https://msdn.microsoft.com/en-us/library/System.Security.Cryptography.RSACryptoServiceProvider(v=vs.110).aspx">RSACryptoServiceProvider</a> to encrypt the data and also to verify the signature locally. So in an application we can encrypt the data locally and use the vault to decrypt it when required. Decryption can happen only from the vault, as the private key is only available in the vault, and does not cross the vault boundary.</p>
 
 <p>With Azure Key Vault, managing keys and restricting application permission for keys can be easily managed and no information needs to be passed on to the developer or to any specific individual. Also the keys are secure behind the vault service and can also be protected using a HSM. You would need to update the application id and secret in the <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a> for it to work. Hope this helps in getting you started with Azure Key Vault.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault and Powershell Module Version]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/"/>
-    <updated>2015-01-17T18:05:53+05:30</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-and-powershell-module-version</id>
-    <content type="html"><![CDATA[<p>I was trying out the public preview of the  Azure Key Vault service that has been released recently. While following the steps as mentioned in their <a href="http://blogs.technet.com/b/kv/archive/2015/01/08/azure-key-vault-making-the-cloud-safer.aspx">blog</a>, came across the below error when trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command.</p>
-
-<blockquote><p>Please install Azure Powershell module version 0.8.13 or newer.</p></blockquote>
-
-<p>I did have the <a href="http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Install">latest powershell for azure</a> installed, but still this error is thrown.</p>
-
-<p><img class="center" alt="azure powershell installed version" src="/images/azure_powershell_installed.png" /></p>
-
-<p>Exploring the <a href="http://msdn.microsoft.com/library/dn868052.aspx">powershell scripts for key vault</a>, below is where the error is thrown from &lsquo;<em>Common.ps1</em>&rsquo;. The script looks for the <a href="http://msdn.microsoft.com/en-us/library/dn654592.aspx">AzureResourceManager</a>, which got introduced in poweshell version 0.8.0 and lets you manage resources in a completely different way.
-&#8220;` powershell
-Function Azure-Version-Check{
-    $expectedMinVersion = New-Object -TypeName System.Version -ArgumentList &ldquo;0.8.13&rdquo;</p>
-
-<pre><code>$azureModule = Get-Module AzureResourceManager
-
-if ((-not $azureModule) -or ($azureModule.Version -lt $expectedMinVersion))
-{
-    Throw 'Please install Azure Powershell module version 0.8.13 or newer.'
-}    
-</code></pre>
-
-<p>}
-&#8220;`</p>
-
-<blockquote><p>When you use the Azure PowerShell cmdlets, the Azure module is imported into the session by default. To remove the Azure module from the session and import the AzureResourceManager and AzureProfile modules, use the Switch-AzureMode cmdlet.</p></blockquote>
-
-<p>This is what is exactly causing the issue, we need to switch to use the azure resource manager. Running the below command and trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command works like a charm</p>
-
-<pre><code class="powershell">Switch-AzureMode -Name AzureResourceManager
-</code></pre>
-
-<p><em>You would face this issue only if you started trying out the steps as mentioned in the <a href="http://blogs.technet.com/b/kv/archive/2015/01/09/azure-key-vault-step-by-step.aspx">azure key vault blog</a>(as I did), since the steps in the <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/">documentation site</a></em> is updated with the above step.*</p>
 ]]></content>
   </entry>
   

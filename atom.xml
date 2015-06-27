@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2015-05-03T23:50:36+05:30</updated>
+  <updated>2015-06-27T17:54:13+05:30</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,125 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Azure AD Application for Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
+    <updated>2015-06-27T19:13:48+05:30</updated>
+    <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
+    <content type="html"><![CDATA[<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
+
+<h4><strong>Creating AD application</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/dn986794.aspx">New-AzureADApplication</a></em> cmdlet is used to create a new Azure AD application. It also provides an option to specify the certificate details used to authenticate with the AD application at the time of creation itself. This can be done as a separate step if required, which is shown later in the post.</p>
+
+<p>First we need a certificate that is to be used for authenticating against the AD application, for which I use the below commands to generate a test certificate</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=AD Test Vault Application&quot; ADTestVaultApplication.cer -b 03/03/2014 -e 06/05/2017 -r -len 2048
+</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po test
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This certificate is then used to create the AD application using the below script.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
+</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;KeyVaultADApplication&quot;</span>
+</span><span class='line'>  <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.rahulpnath.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.rahulpnath.com&quot;</span>
+</span><span class='line'>  <span class="n">-KeyValue</span>  <span class="nv">$credential</span> <span class="n">-KeyType</span> <span class="s2">&quot;AsymmetricX509Cert&quot;</span> <span class="n">-KeyUsage</span> <span class="s2">&quot;Verify&quot;</span>
+</span><span class='line'>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To associate the application created with the Key Vault, we need to create a service principal using <a href="https://msdn.microsoft.com/en-us/library/dn986799.aspx">New-AzureADServicePrincipal</a> and then associate that with the Vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;KeyVaultRahul&#39;</span> <span class="n">-ObjectId</span>  <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">Id</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span><span class='line'><span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="c">#Outputs the ServicePrincipalName/AppPrincipalId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Adding a Certificate</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/azure/dn194106.aspx">New-MsolServicePrincipalCredential</a></em> cmdlet is used to add a new credential to a service principal or to an application. The service principal is identified by supplying one of the following: object ID, appPrincipalID, service principal name (SPN).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$msolCredentials</span> <span class="p">=</span> <span class="nb">get-credential</span>
+</span><span class='line'><span class="nb">connect-msolservice</span> <span class="n">-credential</span> <span class="nv">$msolCredentials</span>
+</span><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplicationNew.cer&quot;</span>
+</span><span class='line'><span class="nv">$x509Certificate2</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertData</span> <span class="p">=</span> <span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credentialValue</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nb">New-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-Type</span> <span class="n">Asymmetric</span> <span class="n">-Value</span> <span class="nv">$credentialValue</span> <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span>   <span class="nv">$endDate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Removing a Certificate</strong></h4>
+
+<p>Whenever a credential gets compromised or as part of regular credential refresh, administrators would want to remove an old certificate and replace with a new one. The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194125.aspx">Remove-MsolServicePrincipalCredential</a> cmdlet is used to remove a credential key from a service principal by specifying the key ID for the credential and the objectID/applicationID/ServicePrincipalName to identify the service principal. To get the key ID of an existing credential, <a href="https://msdn.microsoft.com/en-us/library/azure/dn194091.aspx">Get-MsolServicePrincipalCredential</a> cmdlet can be used, which returns the list of credentials associated with a service principal. The below script just removes the first credential, you could loop through and remove all.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipalCredential</span> <span class="p">=</span> <span class="nb">Get-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-ReturnKeyValues</span> <span class="n">0</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-KeyIds</span> <span class="nv">$servicePrincipalCredential</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">KeyId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Delete an application</strong></h4>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194113.aspx">Remove-MsolServicePrincipal</a> cmdlet removes a service principal from Microsoft Azure Active Directory, by specifying objectID/applicationID/ServicePrincipalName to identify the service principal.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ObjectId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
+</span><span class='line'><span class="n">Or</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-AppPrincipalId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
+</span><span class='line'><span class="n">Or</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ServicePrincipalName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Managing the AD application is a very important and necessary process in the life cycle of a Key Vault, as the access to the Vault is controlled using that. Certificates securing the AD applciation should be rolled/updated frequently and application permissions should be reviewed often to make sure that all applications have only the required permissions.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[When your Architecture Screams Technology!]]></title>
@@ -2256,66 +2375,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
 <p>Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!
 <a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad]]></title>
-    <link href="http://rahulpnath.com/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/"/>
-    <updated>2014-06-18T05:52:37+05:30</updated>
-    <id>http://rahulpnath.com/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad</id>
-    <content type="html"><![CDATA[<p>Thanks to everyone who attended our(<a href="https://twitter.com/techgd">Gautam</a> and mine) talk on Getting Started with Windows Phone and Store application on June 18, Tuesday as part of the Readiness training at Microsoft. Special thanks to <a href="https://twitter.com/vamsitp">Vamsi</a> for assisting us throughout. I hope you all enjoyed the session as much as we did. Here are some follow up information that might help you on the way forward. Since the intended audience are from testing and UX the follow up material is more aligned towards that.</p>
-
-<ul>
-<li><p>In case you would like to have a deeper understanding on the MVVM pattern, and how it helps us, the below links should be useful</p>
-
-<ul>
-<li><p><a href="http://msdn.microsoft.com/en-us/magazine/dn463790.aspx">Writing a Testable Presentation Layer with MVVM</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/TechDays/Techdays-2014-the-Netherlands/Using-MVVM-So-You-Can-Write-Better-Code-and-Less-Code">Using MVVM So You Can Write Better Code and Less Code</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/MIX/MIX11/OPN03">Deep Dive MVVM</a></p></li>
-</ul>
-</li>
-<li><p>MVVM is also helpful in Unit Testing improving the overall maintainability of the code too.</p>
-
-<ul>
-<li><a href="http://channel9.msdn.com/Events/Build/2012/3-017">Unit Testing Windows Store Apps</a></li>
-</ul>
-</li>
-<li><p>Check out how you can create automated tests and also on the Coded UI support</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/events/TechEd/NorthAmerica/2014/DEV-B347#fbid=">Automated Testing of XAML-Based Windows Phone Applications</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/Build/2013/3-323">Automated Testing of XAML-Based Windows Store Apps</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/visualstudioalm/archive/2014/04/05/using-coded-ui-to-test-xaml-based-windows-phone-apps.aspx">Using Coded UI to test XAML-based Windows Phone apps</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/cdndevs/archive/2014/05/05/save-time-money-and-your-sanity-coded-ui-testing-for-the-windows-phone-part-1.aspx">Save Time, Money, and Your Sanity: Coded UI Testing for the Windows Phone</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/visualstudioalm/archive/2013/06/26/using-coded-ui-to-test-xaml-based-windows-store-apps.aspx">Using Coded UI to test XAML-based Windows Store apps</a></p></li>
-</ul>
-</li>
-<li><p>Look into the tools and ways to analyze and improve performance</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/Events/MIX/MIX11/DVC01">Analyzing and Improving Windows Phone Application Performance</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/3-578">Diagnosing Issues in Windows Phone XAML Apps Using Visual Studio</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/4-557">How to Analyze Performance Issues in Your Windows and Windows Phone Apps</a></p></li>
-</ul>
-</li>
-<li><p>See how app crashes information can be tracked from a deployed app and how it can used and inferred upon to fix  issues. This is very important so that you can improve on the app reliability and performance for further updates.</p>
-
-<ul>
-<li><a href="http://channel9.msdn.com/Events/Build/2014/3-657">Avoiding Windows Store App Failures</a></li>
-</ul>
-</li>
-<li><p>Learn about the security features and how it is important</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/2-531">New Security Features for Windows Phone</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/TechEd/NorthAmerica/2014/WIN-B357#fbid=">Windows Phone 8.1 Security and Management: The Right Choice for the Enterprise!</a></p></li>
-</ul>
-</li>
-</ul>
-
-
-<p>Stay in touch. You can find the presentation slides <a href="https://github.com/rahulpnath/Speaking/tree/master/Windows%20Phone%20And%20Store%20Apps">here</a></p>
 ]]></content>
   </entry>
   

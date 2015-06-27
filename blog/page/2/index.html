@@ -143,6 +143,170 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-03T18:03:17+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/dependency-injection/'>dependency injection</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/ioc-registration-by-convention/" itemprop="url">IoC Registration by Convention</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Sometime back we had seen, how to <a href="http://www.rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/">configure the unity container using code/config file</a> and I was using a mix of this in one of my projects. This approach soon became an overhead, as the manual wiring up of registrations is really cumbersome and also error prone. Mostly there were missing registrations only to be found out, when doing test runs or deployments. We soon were forced to move out of the manual registration and find a new way to register dependencies.</p>
+
+<p>The below image by <a href="https://twitter.com/ploeh">Mark Seemann</a> sums it all up on when and how to use a Dependency Injection(DI) container and we were right at the bottom, where the whole purpose of a DI becomes pointless.</p>
+
+<p><a href="http://bit.ly/1zLiq6p" class="center" title="Image By Mark Seemann, from http://bit.ly/1zLiq6p"><img src="/images/ioc_usefulness.png" class="center" alt="Image By Mark Seemann, from http://bit.ly/1zLiq6p"></a></p>
+
+<h4>Convention Over Configuration</h4>
+
+<p><a href="http://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a>, is very popular today and there are already many frameworks that have adopted it e.g. MVC, Web Api. Following the same approach would make life much simpler and registration less painful as dependencies would get auto registered, if the convention is followed. Conventions could vary across projects/teams, so it is up to the team to decide on the conventions that are to be followed and have all the developers follow them religiously.</p>
+
+<p>Currently our registration process picks up all the assemblies from the base path and iterates through all the classes that are under the project/application namespace and gets the interfaces out of them and registers them. For interfaces that have multiple definitions we perform named registration based on the class name or name from an attribute on the class or both.</p>
+
+<p>We are using Unity as the IoC container and it does support <a href="http://msdn.microsoft.com/en-us/library/dn507479(v=pandp.30).aspx">convention based registrations</a> out of the box. You can either use the RegisterTypes method or the RegistrationConvention class to specify the conventions. The parameters in both of these approaches enable you to specify the types to register, the mappings to create, the name to use and lifetime. Since in our registration we wanted to use the named convention only in cases where there where multiple registrations for the same interface and the other interfaces were to be registered without any name this default convention had to be modified. Also we did not want to get tightly bound to the IoC container (just in case we want to swap out the container provider) and hence thought of having the convention logics in a separate class and have them registered to the container of choice.</p>
+
+<p>The <em>GetClassesFromAssemblies</em> function iterates over the assemblies from the base application path(bin folder) to get all the dll&rsquo;s used and gets the classes that belong to the namespaces that we want to register. Alternatively you could also pass a list of assemblies if required to be used for the convention. If you want other namespaces too you can filter those in here.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetClassesFromAssemblies</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Assembly</span><span class="p">&gt;</span> <span class="n">assemblies</span> <span class="p">=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">allClasses</span> <span class="p">=</span> <span class="n">assemblies</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssemblies</span><span class="p">(</span><span class="n">assemblies</span><span class="p">)</span> <span class="p">:</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssembliesInBasePath</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">return</span>
+</span><span class='line'>        <span class="n">allClasses</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">n</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span> <span class="p">!=</span> <span class="k">null</span>
+</span><span class='line'>                <span class="p">&amp;&amp;</span> <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span><span class="p">.</span><span class="n">StartsWith</span><span class="p">(</span><span class="n">ApplicationNamespace</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For each of the type that is returned from the above method we get the list of interfaces that are defined on the type and needs to be registered against the type. In the sample code, I have added a couple of variations of registrations.</p>
+
+<ul>
+<li><em>IFooBar</em>        : Has only one implementation</li>
+<li><em>IFoo</em>           : Has multiple implementations and should be resolved using <em>IFooFactory</em></li>
+<li><em>IFooCustom</em>     : Has multiple implementations and needs to have a custom name (maybe for some reason you do not want the context information to be part of the class name). This is to be resolved using IFooCustomFactory.</li>
+<li><em>IFooGeneric<T></em> : This is a generic implementation and the type can be decided at runtime.</li>
+</ul>
+
+
+<p>The <em>GetInterfacesToBeRegistered</em> function gets the interfaces that are to be registered for a given type. For this convention I want to <a href="http://stackoverflow.com/questions/5318685/get-only-direct-interface-instead-of-all">get only the direct interfaces</a> that are on the given type and not all the interfaces. The check below for <em>isGenericType</em> on an interface is for <em>IFooGeneric</em> as for generic interfaces the <a href="http://stackoverflow.com/questions/3117090/getinterfaces-returns-generic-interface-type-with-fullname-null">GetInterfaces does not return the full information required</a> and we need to use the <em>GetGenericTypeDefinition</em> method instead.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetInterfacesToBeRegistered</span><span class="p">(</span><span class="n">Type</span> <span class="n">type</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">allInterfacesOnType</span> <span class="p">=</span> <span class="n">type</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">IsGenericType</span> <span class="p">?</span> <span class="n">i</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span> <span class="p">:</span> <span class="n">i</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">Except</span><span class="p">(</span><span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">())).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we have the interfaces for the type, we add them to an internal mapping list to register it all into the unity container. The internal mapping is against the interface type definition and has the list of classes that implements the interface.Now that we have all the types and interfaces to be registered, we need to register them into the container. For any interface that has only one type implementing it, we register it with default name else we get the name from the class name or the attribute that decorates the class if any.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">RegisterConventions</span><span class="p">(</span><span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">typeMapping</span> <span class="k">in</span> <span class="n">internalTypeMapping</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">type</span> <span class="p">=</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">First</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">type</span> <span class="k">in</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">GetNameForRegsitration</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The dependency with UnityContainer with the IoCConveniton class, can be easily removed by having an adapter interface into any container. To keep things simple I am having the direct dependency on the container in the sample. From the console application we can create a new container and use the convention class to register the dependencies. The factory implementations have the expected class conventions inside them that would be used to resolve the dependencies. Since the factory is part of the composition root I am using a <a href="http://blog.ploeh.dk/2012/03/15/ImplementinganAbstractFactory/">container based factory</a>, to resolve the dependencies.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
+</span><span class='line'><span class="n">IoCConvention</span><span class="p">.</span><span class="n">RegisterByConvention</span><span class="p">(</span><span class="n">unityContainer</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation <a href="https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration">here</a>. Are you using convention registrations in your applications? If not you should start using them.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-01T18:33:14+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jan 1<sup>st</sup>, 2015</time>
         
 
@@ -1786,104 +1950,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-06-18T05:52:37+05:30"  data-updated="true" itemprop="datePublished dateCreated">Jun 18<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/speaking/'>speaking</a>, <a class='category' href='/blog/category/windows-8/'>windows 8</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/thanks-to-everyone-who-attended-our-talk-at-microsoft-india-hyderabad/" itemprop="url">Thanks to Everyone Who Attended Our Talk at Microsoft India, Hyderabad</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Thanks to everyone who attended our(<a href="https://twitter.com/techgd">Gautam</a> and mine) talk on Getting Started with Windows Phone and Store application on June 18, Tuesday as part of the Readiness training at Microsoft. Special thanks to <a href="https://twitter.com/vamsitp">Vamsi</a> for assisting us throughout. I hope you all enjoyed the session as much as we did. Here are some follow up information that might help you on the way forward. Since the intended audience are from testing and UX the follow up material is more aligned towards that.</p>
-
-<ul>
-<li><p>In case you would like to have a deeper understanding on the MVVM pattern, and how it helps us, the below links should be useful</p>
-
-<ul>
-<li><p><a href="http://msdn.microsoft.com/en-us/magazine/dn463790.aspx">Writing a Testable Presentation Layer with MVVM</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/TechDays/Techdays-2014-the-Netherlands/Using-MVVM-So-You-Can-Write-Better-Code-and-Less-Code">Using MVVM So You Can Write Better Code and Less Code</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/MIX/MIX11/OPN03">Deep Dive MVVM</a></p></li>
-</ul>
-</li>
-<li><p>MVVM is also helpful in Unit Testing improving the overall maintainability of the code too.</p>
-
-<ul>
-<li><a href="http://channel9.msdn.com/Events/Build/2012/3-017">Unit Testing Windows Store Apps</a></li>
-</ul>
-</li>
-<li><p>Check out how you can create automated tests and also on the Coded UI support</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/events/TechEd/NorthAmerica/2014/DEV-B347#fbid=">Automated Testing of XAML-Based Windows Phone Applications</a></p></li>
-<li><p><a href="http://channel9.msdn.com/events/Build/2013/3-323">Automated Testing of XAML-Based Windows Store Apps</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/visualstudioalm/archive/2014/04/05/using-coded-ui-to-test-xaml-based-windows-phone-apps.aspx">Using Coded UI to test XAML-based Windows Phone apps</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/cdndevs/archive/2014/05/05/save-time-money-and-your-sanity-coded-ui-testing-for-the-windows-phone-part-1.aspx">Save Time, Money, and Your Sanity: Coded UI Testing for the Windows Phone</a></p></li>
-<li><p><a href="http://blogs.msdn.com/b/visualstudioalm/archive/2013/06/26/using-coded-ui-to-test-xaml-based-windows-store-apps.aspx">Using Coded UI to test XAML-based Windows Store apps</a></p></li>
-</ul>
-</li>
-<li><p>Look into the tools and ways to analyze and improve performance</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/Events/MIX/MIX11/DVC01">Analyzing and Improving Windows Phone Application Performance</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/3-578">Diagnosing Issues in Windows Phone XAML Apps Using Visual Studio</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/4-557">How to Analyze Performance Issues in Your Windows and Windows Phone Apps</a></p></li>
-</ul>
-</li>
-<li><p>See how app crashes information can be tracked from a deployed app and how it can used and inferred upon to fix  issues. This is very important so that you can improve on the app reliability and performance for further updates.</p>
-
-<ul>
-<li><a href="http://channel9.msdn.com/Events/Build/2014/3-657">Avoiding Windows Store App Failures</a></li>
-</ul>
-</li>
-<li><p>Learn about the security features and how it is important</p>
-
-<ul>
-<li><p><a href="http://channel9.msdn.com/Events/Build/2014/2-531">New Security Features for Windows Phone</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Events/TechEd/NorthAmerica/2014/WIN-B357#fbid=">Windows Phone 8.1 Security and Management: The Right Choice for the Enterprise!</a></p></li>
-</ul>
-</li>
-</ul>
-
-
-<p>Stay in touch. You can find the presentation slides <a href="https://github.com/rahulpnath/Speaking/tree/master/Windows%20Phone%20And%20Store%20Apps">here</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1907,6 +1973,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/managing-azure-ad-application-for-key-vault/">Managing Azure AD Application for Key Vault</a>
+    
     <a class="list-group-item " href="/blog/when-your-architecture-screams-technology/">When your Architecture Screams Technology!</a>
     
     <a class="list-group-item " href="/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in a Real World Application</a>
@@ -1914,8 +1982,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/is-code-coverage-a-lie/">Is Code Coverage a Lie?</a>
     
     <a class="list-group-item " href="/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">Moving Sensitive Information from Configuration File to Azure Key Vault</a>
-    
-    <a class="list-group-item " href="/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>
     
   </div>
 </section>
