@@ -12,7 +12,7 @@ alias: /blog/about/
 
 
 
-My name is Rahul Nath. I am a programmer and work out of Hyderabad,India at Microsoft.Before this I was working with L&T Infotech for 3 years and was onto developing a product for the airport domain. I was awarded the [MCCA award](http://www.rahulpnath.com/blog/stars-do-count/) for the year 2011 by Microsoft for contributing to the msdn forums. I am passionate about technology and blog occasionally and also do development consulting in my free time.
+My name is Rahul Nath. I am a programmer and work out of Sydney,Australia at Readify.Before this I was working with Microsoft, India working mostly on [Mediaroom](http://www.ericsson.com/ourportfolio/mediaroom-landingpage) (an IPTV solution, which is now part of Ericsson). I had also spend some time working on Windows Phone and Modern applications for Windows and on building a [service delivery network for Ford](https://blogs.microsoft.com/business-matters/2015/03/17/ford-develops-new-service-delivery-network-for-its-vehicles-powered-by-microsoft-azure/), which is an IoT solution providing connected car experience. Prior to Microsoft I was at L&T Infotech for 3 years and was onto developing a product for the airport domain. I was awarded the [MCCA award](http://www.rahulpnath.com/blog/stars-do-count/) for the year 2011 by Microsoft for contributing to the msdn forums. I am passionate about technology and blog occasionally and also do development consulting in my free time.
 
 **This blog and its contents are all opinions of my own.**
 
