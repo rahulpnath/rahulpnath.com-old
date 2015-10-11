@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Managing User Permissions for Key Vault - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="This post describes on how user permissions can be managed for a key vault. It details on adding user access to modify keys or secrets in a vault." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-11T01:08:17+11:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 11<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Managing User Permissions for Key Vault
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
+
+<p>In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.</p>
+
+<h4><strong>Creating the user</strong></h4>
+
+<p><a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-create-users/">Creating a new user to the azure subscription</a> can easily be done from the <a href="https://manage.windowsazure.com">management portal</a>. We need to create the user in the azure subscription, as any resource in the subscription can be accessed only after authenticating against the Active Directory (AD) associated with it.</p>
+
+<blockquote><p>Every Azure subscription is associated with an Azure Active Directory (AD) and needs to be authenticated with, before any of its resources can be used.</p></blockquote>
+
+<p>Azure Key Vault gets created in the default AD associated with the subscription, so we need to add the new user to that. (If you are not sure on how to find the default AD <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">this post</a> describes it in the beginning). In the portal under the <em>Azure Directory</em> option, select the default directory and on the <em>Users</em> tab, we can add a new user.</p>
+
+<p><img src="/images/ad_add_user.png" class="center"></img></p>
+
+<p>When creating the user, you can <a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-assign-admin-roles/">assign the role required</a> based on the requirement. In this case I have added the user to a &lsquo;<em>User</em>&rsquo; role, as I do not want this user to have any administrative access to the my azure subscriptions or resources.</p>
+
+<h4><strong>Creating the key vault</strong></h4>
+
+<p>To create a key vault that we want to give permissions for the user, the below powershell scripts can be used. If you are new to key vault, then check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure  Key Vault</a> or <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other related articles</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Switch</span><span class="n">-AzureMode</span> <span class="n">AzureResourceManager</span>
+</span><span class='line'><span class="nb">New-AzureResourceGroup</span> <span class="err">–</span><span class="n">Name</span> <span class="s1">&#39;SharedGroup&#39;</span> <span class="err">–</span><span class="n">Location</span> <span class="s1">&#39;East Asia&#39;</span>
+</span><span class='line'><span class="nb">New-AzureKeyVault</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestKeyVault&#39;</span> <span class="n">-ResourceGroupName</span>
+</span><span class='line'>  <span class="s1">&#39;SharedGroup&#39;</span> <span class="n">-Location</span> <span class="s1">&#39;East Asia&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above scripts creates the key vault under the &lsquo;<em>SharedGroup</em>&rsquo;. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/#resource-groups">Resource Groups</a> are logical containers, used to group resources together as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/">Access to azure resources</a> can be assigned at any of the three levels (subscription, resource group or resource) and it inherits down the hierarchy as shown below. Roles can be assigned specifically to a resource, or to resource group (which would mean all to all resources in that group) or at the subscription level (which would apply to all resources/resource groups in that subscription.).</p>
+
+<p><a href="https://acomdpsstorage.blob.core.windows.net/dpsmedia-prod/azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/20151006095042/rbacassignmentscopes.png"><img src="/images/rbac_assignment_scopes.png" class="center"></img></a></p>
+
+<h4><strong>Setting Permission on the resource group</strong></h4>
+
+<p>As an administrator I want the newly created user to have permission to interact with the key vault, but not create new or delete existing vaults. I would also want to give the user ability to modify keys and secrets within the vault. Currently since the new user does not have any rights, we should first give him rights to see the vaults in the <em>SharedGroup</em>. For this a <em>Reader</em> role from the set of <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/#built-in-roles">built in roles</a> can be assinged, through the new azure portal or powershell.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRoleAssignment</span> <span class="n">-Mail</span> <span class="n">keyvaultuser</span><span class="nv">@domain</span><span class="p">.</span><span class="n">onmicrosoft</span><span class="p">.</span><span class="n">com</span>
+</span><span class='line'>  <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/resource_group_permission.png" class="center"></img></p>
+
+<p>To modify objects (keys/secrets) in the key vault we need to run <a href="https://msdn.microsoft.com/en-us/library/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> cmdlet with the required permissions, to grant access for the user. In the below script the user is given all Permissions to both keys and secrets, and this again depends on your requirement.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s2">&quot;TestKeyVault&quot;</span> <span class="n">-UserPrincipalName</span> <span class="s2">&quot;keyvaultuser@domain.onmicrosoft.com&quot;</span>
+</span><span class='line'>  <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Creating the key (new user)</strong></h4>
+
+<p>The new user can login with the email id and password, shared to him by the administrator (received when creating the user in the AD), in the powershell prompt and create keys/secrets in the key vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$userName</span> <span class="p">=</span> <span class="s1">&#39;keyvaultuser@domain.onmicrosoft.com&#39;</span>
+</span><span class='line'><span class="nv">$subscriptionPassword</span> <span class="p">=</span> <span class="s1">&#39;mypassword&#39;</span>
+</span><span class='line'><span class="nv">$securePassword</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="nv">$subscriptionPassword</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
+</span><span class='line'><span class="nv">$cred</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Management</span><span class="p">.</span><span class="n">Automation</span><span class="p">.</span><span class="n">PSCredential</span><span class="p">(</span><span class="nv">$userName</span><span class="p">,</span> <span class="nv">$securePassword</span><span class="p">)</span>
+</span><span class='line'><span class="nb">Add-AzureAccount</span> <span class="n">-Credential</span> <span class="nv">$cred</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestKeyVault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;MyKey&#39;</span> <span class="n">-Destination</span> <span class="s1">&#39;Software&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The newly created user now has full access on the key vault and only that. He can only add/remove objects within the key vault and see resources within the SharedGroup. This way the administrator can be rest assured that no other sensitive information or accesses is being shared accidentally. Periodically revisiting these permissions and revoking unnecessary accesses is recommended!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/tools-that-I-use/" title="Previous Post: Tools that I use">&laquo; Tools that I use</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2015 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/';
+        var disqus_url = 'http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
