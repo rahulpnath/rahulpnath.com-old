@@ -143,233 +143,6 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-08T10:40:39+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 8<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation/" itemprop="url">Windows Phone Series: Bing Maps and Turn-by-Turn Navigation</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Many applications today provide features that integrate with users location and provide information on a map based on that. In this blog will see how we can use the Bing maps to show a users current location, search for destination and show route to that location. For this will use Bing maps, and you would have to create an account here and create a key that we would be using. Make sure that you read on the <a href="http://www.microsoft.com/maps/product/terms.html">licensing terms</a> on the api if you are planning to use this in a published application.</p>
-
-<p>To use Maps in windows phone application, you would need to add a reference to ‘<em>Microsoft.Phone.Controls.Maps</em>’ once you create a new Windows phone project. Add the maps control to the application as below to display current location or other map related features.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;maps:Map</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="na">Name=</span><span class="s">&quot;mapBing&quot;</span>  <span class="na">AnimationLevel=</span><span class="s">&quot;None&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Stretch&quot;</span> <span class="na">VerticalContentAlignment=</span><span class="s">&quot;Stretch&quot;</span>
-</span><span class='line'>          <span class="na">CopyrightVisibility=</span><span class="s">&quot;Collapsed&quot;</span>  <span class="na">LogoVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomBarVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomLevel=</span><span class="s">&quot;12&quot;</span> <span class="na">CredentialsProvider=</span><span class="s">&quot;BING MAPS API KEY&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;RouteLayer&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;StartPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;DestinationPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;CurrentPosition&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;MyPathLayer&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/maps:MapLayer&gt;</span>
-</span><span class='line'><span class="nt">&lt;/maps:Map&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This adds a map user control to the application and also different layers to the application, on which we would be displaying the pins, routes etc. Anything that gets shown on the map is shown on different layers. Each of these can be cleared, deleted or toggled for visibility making it easy to work on maps.</p>
-
-<p><strong>Track Me</strong></p>
-
-<p>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">GeoPosition</span> <span class="n">myPosition</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">TrackMe</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">startingPoint</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">CurrentPosition</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Clear</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">myWatcher</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">-=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GeoCoordinateWatcher</span><span class="p">();</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">TryStart</span><span class="p">(</span><span class="k">false</span><span class="p">,</span> <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">+=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">void</span> <span class="nf">myWatcher_PositionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">GeoPositionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>     <span class="n">myPosition</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">;</span>
-</span><span class='line'>     <span class="n">currentLocation</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
-</span><span class='line'>     <span class="k">if</span> <span class="p">(</span><span class="n">isInDriveMode</span><span class="p">)</span>
-</span><span class='line'>     <span class="p">{</span>
-</span><span class='line'>         <span class="n">DrawMyCurrentRoute</span><span class="p">(</span><span class="n">currentLocation</span><span class="p">);</span>
-</span><span class='line'>     <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>     <span class="n">LocationManager</span><span class="p">.</span><span class="n">GetLocationName</span><span class="p">(</span><span class="n">UpdateLocation</span><span class="p">,</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Latitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">(),</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Longitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">());</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Destination and Routes</strong></p>
-
-<p>Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">RouteServiceClient</span> <span class="n">routeService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteServiceClient</span><span class="p">(</span><span class="s">&quot;BasicHttpBinding_IRouteService&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteCompleted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">DrawRoute</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">mapBing</span><span class="p">.</span><span class="n">SetView</span><span class="p">(</span><span class="n">LocationRect</span><span class="p">.</span><span class="n">CreateLocationRect</span><span class="p">(</span><span class="n">locations</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">RouteRequest</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Credentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Credentials</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ApplicationId</span> <span class="p">=</span> <span class="n">LocationManager</span><span class="p">.</span><span class="n">bingApiKey</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteOptions</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">RoutePathType</span> <span class="p">=</span> <span class="n">RoutePathType</span><span class="p">.</span><span class="n">Points</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Waypoints</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">locations</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="k">new</span> <span class="n">Waypoint</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">Location</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Phone</span><span class="p">.</span><span class="n">Controls</span><span class="p">.</span><span class="n">Maps</span><span class="p">.</span><span class="n">Platform</span><span class="p">.</span><span class="n">Location</span><span class="p">()</span> <span class="p">{</span> <span class="n">Latitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">Longitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Longitude</span> <span class="p">}</span>
-</span><span class='line'>        <span class="p">}))</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="n">speechUrl</span> <span class="p">=</span> <span class="s">&quot;http://translate.google.com/translate_tts?tl=en&amp;amp;q=&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SpeakText</span><span class="p">(</span><span class="kt">string</span> <span class="n">message</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Play the audio</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Source</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">speechUrl</span> <span class="p">+</span> <span class="n">message</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Play</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
-
-<p><img src="/images/Bing_wp_route.jpg" alt="Bing_wp_route" /><img src="/images/Bing_wp_place_search.jpg" alt="Bing_wp_place_search" /><img src="/images/Bing_wp_directions_text.jpg" alt="Bing_wp_directions_text" /></p>
-
-<p><strong>Testing</strong></p>
-
-<p>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
-<img src="/images/Bing_wp_simulator_geolocation.jpg" alt="Bing_wp_simulator_geolocation" /></p>
-
-<p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-05T03:06:40+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 5<sup>th</sup>, 2014</time>
         
 
@@ -1578,6 +1351,86 @@ I was always overwhelmed whenever I opened camera-raw/lightroom/photoshop. There
 
         </article>
       
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-29T02:11:00+10:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 29<sup>th</sup>, 2013</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/tools/'>tools</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/converting-a-pdf-for-your-kindle/" itemprop="url">Converting a PDF for your Kindle</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Earlier I had blogged about reading an <a href="http://rahulpnath.com/blog/2009/09/14/ebook-or-hard-copy/">eBook vs reading a hard copy</a> and I was preferring the hard copy one back then. But after getting a <a href="http://www.amazon.in/gp/product/B007HCFU90/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B007HCFU90&amp;linkCode=as2&amp;tag=rahulpnath-21">Kindle</a> things have changed. I prefer MOBI now, as that is the one that is supported by Kindle. I think a Kindle needs no introduction and the only thing I can say about it is “<em>If you don’t own one, get one.</em>  The e-ink display is a real comfort for the eye and it just feels like reading from paper.“ I got the most basic version of Kindle and I am happy with that(at least for now).</p>
+
+<p>The easiest way to get books on your Kindle is to buy them from Amazon, right from your Kindle itself. The experience is so seamless that you just cannot resist from. But often you have pdf’s with you that you would want to read in your Kindle. There are a couple of ways(in fact a lot more), that you can get your pdf to the Kindle.</p>
+
+<ol>
+<li><p><strong> </strong>The most direct and easy way is to <a href="http://www.amazon.com/gp/sendtokindle/email">send it to your kindle mail address</a>.  The problem with this is it that it makes the font very small that it is difficult to read.</p></li>
+<li><p>There are also a lot of tools that help you manage your eBooks that have kindle support too. <a href="http://calibre-ebook.com/">Calibre</a> is one such popular tool. Calibre has options to send to Kindle, which would convert pdf to the required mobi format. The problem with this is that it keeps inserting line breaks after every other line.</p></li>
+</ol>
+
+
+<p>So with the both the methods I have found that the formatting gets all messed up for the Kindle, making it difficult to have a smooth reading. After a lot of investigating , I have come up with a good method to get my pdf onto the Kindle.</p>
+
+<p>It is a simple <strong><em>3 step</em></strong> process:</p>
+
+<p><strong>Step 1:</strong></p>
+
+<p>Convert the pdf into html with <a href="http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp">mobipocket creator</a>.  Highlighted in yellow below.</p>
+
+<p><img src="/images/mobicreator.png" alt="mobi creator" /></p>
+
+<p><strong>Step 2:</strong></p>
+
+<p>From the above step you would get a html output file. Import this converted html format into <a href="http://calibre-ebook.com/">Calibre</a></p>
+
+<p><strong>Step 3:</strong></p>
+
+<p>Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
+Here is a comparison of the all the 3 methods above in order(kindle email, direct calibre and mobicreator + calibre )</p>
+
+<p><img src="/images/kindle_email.jpg" alt="kindle email" /><img src="/images/Kindle_Caliber.png" alt="Kindle Caliber" /><img src="/images/kindle_mobicreator_caliber.png" alt="Kindle mobicreator caliber" /></p>
+
+<p>You can clearly see that last image above is well formatted and matches almost to our original pdf.</p>
+
+<p>This might not be the best way always but most of the time it has got me well formatted books on my Kindle. Please chip in with any better ways in the comments section.</p>
+</div>
+  
+  
+
+
+        </article>
+      
     </div>
 
     <ul class="pager">
@@ -1601,8 +1454,6 @@ I was always overwhelmed whenever I opened camera-raw/lightroom/photoshop. There
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/test-draft/">Test draft</a>
-    
     <a class="list-group-item " href="/blog/language-agnostic-books-for-every-developer-2/">Language Agnostic Books For Every Developer 2</a>
     
     <a class="list-group-item " href="/blog/learning-typescript-setting-up-the-environment/">Learning TypeScript: Setting up the Environment</a>
@@ -1610,6 +1461,8 @@ I was always overwhelmed whenever I opened camera-raw/lightroom/photoshop. There
     <a class="list-group-item " href="/blog/managing-user-permissions-for-key-vault/">Managing User Permissions for Key Vault</a>
     
     <a class="list-group-item " href="/blog/tools-that-I-use/">Tools that I use</a>
+    
+    <a class="list-group-item " href="/blog/msdn-magazine-article-on-azure-key-vault/">MSDN Magazine Article on Azure Key Vault</a>
     
   </div>
 </section>

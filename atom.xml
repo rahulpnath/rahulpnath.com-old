@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-01-15T14:26:47+11:00</updated>
+  <updated>2016-01-15T14:34:50+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,15 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Test draft]]></title>
-    <link href="http://rahulpnath.com/blog/test-draft/"/>
-    <updated>2016-01-15T14:26:00+11:00</updated>
-    <id>http://rahulpnath.com/blog/test-draft</id>
-    <content type="html"><![CDATA[
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Language Agnostic Books For Every Developer 2]]></title>
@@ -2020,6 +2011,159 @@ Level 3 - Hypermedia Controls</p>
 <a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p></li>
 </ul>
 
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Configuring Unity Container: Comparing Code and Xml Configuration Side by Side]]></title>
+    <link href="http://rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/"/>
+    <updated>2014-10-19T17:12:54+11:00</updated>
+    <id>http://rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side</id>
+    <content type="html"><![CDATA[<p>Setting up dependency containers from code is very easy, but not at all the same when done using a configuration file. The project that I am currently working on uses xml configuration for <a href="https://unity.codeplex.com/">Unity container</a> and I did struggle mapping certain dependencies, so thought of putting this up.</p>
+
+<p>To start with I have created a console application and added the Unity <a href="https://www.nuget.org/packages/Unity/">nuget package</a>. You could directly add the configurations in the app.config file, but I prefer to keep the configurations separately in a different file, <em>unity.config</em>, and have it referred in the app.config(or web.config). Also make sure that the unity.config file gets copied to the build directory(setting build properties as content and copy always should help) so that it is available to the application.</p>
+
+<figure class='code'><figcaption><span>app.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configSections&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;section</span> <span class="na">name=</span><span class="s">&quot;unity&quot;</span> <span class="na">type=</span><span class="s">&quot;Microsoft.Practices.Unity.Configuration.UnityConfigurationSection, Microsoft.Practices.Unity.Configuration&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;unity</span> <span class="na">configSource=</span><span class="s">&quot;unity.config&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the unity.config we need to specify the assemblies and namespaces that we will be injecting the dependencies from. Inside the container is where we register the dependencies.</p>
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;unity</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/practices/2010/unity&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Define Assemblies--&gt;</span>
+</span><span class='line'><span class="nt">&lt;assembly</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- End Assemblies--&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Define Namespaces--&gt;</span>
+</span><span class='line'><span class="nt">&lt;namespace</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- End Namespaces--&gt;</span>
+</span><span class='line'><span class="nt">&lt;container&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/container&gt;</span>
+</span><span class='line'><span class="nt">&lt;/unity&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have the basic infrastructure set up to start using the container, lets take a look at some common dependency injection scenarios that we come across. The <a href="http://msdn.microsoft.com/en-us/library/ff660914(v=pandp.20).aspx">Unity Configuration Schema</a> is worth  taking a look, to understand about the configuration elements and their attributes.</p>
+
+<p><strong>Simple Class and Interface</strong></p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">NormalClass</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">INormalInterface</span><span class="p">,</span> <span class="n">NormalInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;NormalClass&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;INormalInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;NormalInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+Since we have only given the interface name while registering the type, specifying the assembly and namespace names of the type is important.Unity will look through these elements to find the type specified, whenever the specified type is not a full type name. This mechanism is also referred to as <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Automatic_Type_Lookup">Automatic Type Lookup</a></p>
+
+<p><strong>Generic Interface</strong></p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterface</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceImplementation</span><span class="p">&lt;&gt;));</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterfaceWithTwoParameter</span><span class="p">&lt;,&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceWithTwoParametersImplementation</span><span class="p">&lt;,&gt;));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface`1&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation`1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter`2&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation`2&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>// or
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface[]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation[]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter[,]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation[,]&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above registering <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Generic_Types">generic types</a> in config can either use the CLR notation of `N, where N is the number of generic parameters or use square brackets with commas to indicate the number of parameters. Examples using one and two parameters are shown above. <br/>
+For a generic interface, the parameters can have typed parameter associated with it, something like <em>IComplexGenericInterface&lt;ComplexGenericClass<GenericClass>></em>. In these cases we cannot directly register this using either of the notation above, as the configuration does not allow recursive formats of those notation. We can use <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Type_Aliases">Aliases</a> for specifying the parameter type names and then refer the alias for registering the interface.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IComplexGenericInterface</span><span class="p">&lt;</span><span class="n">ComplexGenericClass</span><span class="p">&lt;</span><span class="n">GenericClass</span><span class="p">&gt;&gt;,</span> <span class="n">ComplexGenericInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;alias</span> <span class="na">alias=</span><span class="s">&quot;ComplexGenericInterfaceType&quot;</span>
+</span><span class='line'>         <span class="na">type=</span><span class="s">&quot;ConfiguringUnity.ComplexGenericClass`1[[ConfiguringUnity.GenericClass, ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;container&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IComplexGenericInterface[ComplexGenericInterfaceType]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ComplexGenericInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/container&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above alias is nothing but a shorthand name that will be replaced with the full type name when the configuration is loaded. This is only available at configuration time and not at runtime.</p>
+
+<p><strong>Conflicting Interfaces</strong> <br/>
+When you have conflicting interface names , probably from two different assemblies then you can create aliases or use full names to register the types. For the example I have created a class library project, ExternalLibrary and added it as a reference to the Console Application.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IConflictingInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ConflictingInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;ExternalLibrary.IConflictingInterface, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ExternalLibrary.ConflictingInterfaceImplementation, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong><em>Code and Config</em></strong> instead of <strong><em>Code Vs Config</em></strong></h4>
+
+<p>Now that we have seen some of the common usage scenarios in registering types with containers, one main thought would be &lsquo;<a href="http://stackoverflow.com/questions/5418392/should-unity-be-configured-in-code-or-configuration-file">Should Unity be configured in code or configuration file?</a>&rsquo;. Xml configurations are anytime a pain for the developer as it more prone to errors and configuration complexities. But then there are scenarios where dependencies would have to be plugged in at runtime, for which xml configuration is really helpful. Unity does allow to specify both together, making the best use of both worlds. You can choose to have only your dependencies that are Late Bound in the config and have all others in the code. You could also override an already registered dependency.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IOverridableDependency</span><span class="p">,</span> <span class="n">OverridableCodeImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IOverridableDependency&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;OverridableConfigImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above we have a different mapping in code and config for the same interface and I am loading the configuration into the container after all the  code registrations are done. In this case the dependency that is registered last will take precedence. So you could use this feature to override any dependencies specified in the code.</p>
+
+<p>There surely are a lot more cases that you would have come across while registering dependencies, do drop in a comment on the missing ones. The sample for this can be found <a href="https://github.com/rahulpnath/Blog/tree/master/ConfiguringUnity">here</a>
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   
