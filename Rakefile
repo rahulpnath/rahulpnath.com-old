@@ -24,6 +24,7 @@ stash_dir       = "_stash"    # directory to stash posts for speedy generation
 posts_dir       = "_posts"    # directory for blog files
 themes_dir      = ".themes"   # directory for blog files
 new_post_ext    = "markdown"  # default new post file extension when using the new_post task
+drafts_dir      = "_drafts"    # draft posts 
 new_page_ext    = "markdown"  # default new page file extension when using the new_page task
 server_port     = "4000"      # port for preview server eg. localhost:4000
 
@@ -76,6 +77,23 @@ task :watch do
   [jekyllPid, compassPid].each { |pid| Process.wait(pid) }
 end
 
+desc "preview the site in a web browser with all the draft posts"
+task :previewdrafts do
+  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+  puts "Starting to watch source with Jekyll and Compass. Starting Rack on port #{server_port}"
+  system "compass compile --css-dir #{source_dir}/stylesheets" unless File.exist?("#{source_dir}/stylesheets/screen.css")
+  jekyllPid = Process.spawn({"OCTOPRESS_ENV"=>"preview"}, "jekyll build --watch --drafts")
+  compassPid = Process.spawn("compass watch")
+  rackupPid = Process.spawn("rackup --port #{server_port}")
+
+  trap("INT") {
+    [jekyllPid, compassPid, rackupPid].each { |pid| Process.kill(9, pid) rescue Errno::ESRCH }
+    exit 0
+  }
+
+  [jekyllPid, compassPid, rackupPid].each { |pid| Process.wait(pid) }
+end
+
 desc "preview the site in a web browser"
 task :preview do
   raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
@@ -91,6 +109,74 @@ task :preview do
   }
 
   [jekyllPid, compassPid, rackupPid].each { |pid| Process.wait(pid) }
+end
+
+# usage rake new_draft[my-new-draft] or rake new_draft['my new draft']
+desc "Begin a new draft in #{source_dir}/#{drafts_dir}"
+task :new_draft, :title do |t, args|
+  if args.title
+    title = args.title
+  else
+    title = get_stdin("Enter a title for your post: ")
+  end
+  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+  mkdir_p "#{source_dir}/#{drafts_dir}"
+  filename = "#{source_dir}/#{drafts_dir}/#{title.to_url}.#{new_post_ext}"
+  if File.exist?(filename)
+    abort("rake aborted!") if ask("#{filename} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
+  end
+  puts "Creating new draft: #{filename}"
+  open(filename, 'w') do |post|
+    post.puts "---"
+    post.puts "layout: post"
+    post.puts "title: \"#{title.gsub(/&/,'&amp;')}\""
+    post.puts "comments: true"
+    post.puts "categories: "
+    post.puts "tags: "
+    post.puts "thisIsStillADraft:"
+    post.puts "keywords: "
+    post.puts "description: "
+    post.puts "---"
+  end
+  system "open #{filename}"
+end
+
+
+# usage rake publish_draft
+desc "Select a draft to publish from #{source_dir}/#{drafts_dir} on the current date."
+task :publish_draft do
+  drafts_path = "#{source_dir}/#{drafts_dir}"
+  drafts = Dir.glob("#{drafts_path}/*.#{new_post_ext}")
+  drafts.each_with_index do |draft, index|
+    begin
+      content = File.read(draft)
+      if content =~ /\A(---\s*\n.*?\n?)^(---\s*$\n?)/m
+        data = YAML.load($1)
+      end
+    rescue => e
+      puts "Error reading file #{draft}: #{e.message}"
+    rescue SyntaxError => e
+      puts "YAML Exception reading #{draft}: #{e.message}"
+    end
+    puts "  [#{index}]  #{data['title']}"
+  end
+  puts "Publish which draft? "
+  answer = STDIN.gets.chomp
+  if /\d+/.match(answer) and not drafts[answer.to_i].nil?
+    mkdir_p "#{source_dir}/#{posts_dir}"
+    source = drafts[answer.to_i]
+    filename = source.gsub(/#{drafts_path}\//, '')
+    dest = "#{source_dir}/#{posts_dir}/#{Time.now.strftime('%Y-%m-%d')}-#{filename}"
+    puts "Publishing post to: #{dest}"
+    File.open(source) { |source_file|
+      contents = source_file.read
+      contents.gsub!(/^thisIsStillADraft:$/, "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}")
+      File.open(dest, "w+") { |f| f.write(contents) }
+    }
+    FileUtils.rm(source)
+  else
+    puts "Index not found!"
+  end
 end
 
 # usage rake new_post[my-new-post] or rake new_post['my new post'] or rake new_post (defaults to "new-post")
