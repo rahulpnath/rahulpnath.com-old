@@ -138,7 +138,7 @@ task :new_draft, :title do |t, args|
     post.puts "description: "
     post.puts "---"
   end
-  system "open #{filename}"
+  system %{cmd /c "start #{filename}"}
 end
 
 
