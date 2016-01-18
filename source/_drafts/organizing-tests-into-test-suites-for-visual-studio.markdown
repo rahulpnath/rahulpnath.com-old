@@ -58,4 +58,4 @@ Creating Test Playlist is an easy way to group tests into a playlist and executi
 
 This works well for short-lived groupings, when we are actively working on a part of the code and need to execute tests for that area. Every time a new test is added, we need to add it explicitly to the playlist if required. 
 
-We have seen multiple ways of grouping tests into test suites, and each of them comes handy in different situations. For project wide convention tests, I tend to use build tasks that integrate with TRE as it is more flexible and extendable way. Do you use any other ways to group your tests, drop in with a comment!
+We have seen multiple ways of grouping tests into test suites, and each of them comes handy in different situations. For project wide convention tests, I tend to use build tasks that integrate with TRE as it is more flexible and extendable. Do you use any other ways to group your tests, drop in with a comment!
