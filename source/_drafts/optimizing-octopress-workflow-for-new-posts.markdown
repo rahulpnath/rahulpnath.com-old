@@ -155,4 +155,4 @@ rpd
 rps   
 rd  
 
-It's much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on [github](http://github.com/rahulpnath/rahulpnath.com/rakefile). 
+It's much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on [github](https://github.com/rahulpnath/rahulpnath.com/blob/master/Rakefile). 
