@@ -133,20 +133,26 @@ mklink /D "C:\blog\_drafts" "C:\dropbox\_drafts"
 
 #### **Cmder integration** ####
 
-Cmder is a conemu console for windows and provides some good features. Creating alias for commands is one of the popular features, that allows to create a short key combination to perform a otherwise long comment. You can use this to create commands for the task in octopress.
+Cmder is a conemu console for windows and provides some good features. Creating alias for commands is one of the popular features, that allows to create a short key combination to perform a otherwise long comment. You can use this to create commands for the task in Octopress like below
 
+``` text
+alias rp=rake previewdrafts
+
+// Below are the list of alias that I have for the rake tasks
 rp=rake previewdrafts
-rps=rake preview
+rps=rake preview // Preview the whole site
 rd=rake deploy
-rnd=rake new_draft
+rnd=rake new_draft["$"] // Takes in the post name as parameter
 rpd=rake publish_draft
 rd=rake deploy
+```
 
-So my new workflow is
-rnd Optimizing Octopress Workflow for New Posts
-rp
-rpd
-rps
-rd
+**So my new workflow is**
+
+rnd Optimizing Octopress Workflow for New Posts   
+rp   
+rpd   
+rps   
+rd  
 
 It's much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on [github](http://github.com/rahulpnath/rahulpnath.com/rakefile). 
