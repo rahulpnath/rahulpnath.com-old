@@ -10,10 +10,10 @@ thisIsStillADraft:
 keywords: 
 description: 
 ---
-Over the past month I had thought of migrating this blog to a static site generator that is faster than the current one, Octopress. Lack of a good workflow for creating new posts and slower build times were the main reasons. Though the build is not very slow, I am the kind of person when writing post want to see often, how it looks like on the real site. With the current number of posts it takes around 40-50 seconds to build the entire site and it makes me to wander off to something else while the build is happening - at times it takes a long time to get back to writing!. But migrating to a new platform has a lot of challenges and time-consuming and I did not want to invest my time in that, so though of looking out for ways to optimize the current process. A bit of googling and playing around with Ruby, solved both of the major issues and I have an improved workflow!
+Over the past month I had thought of migrating this blog to Hugo, a static site generator that is faster than the current one, Octopress. Lack of workflow for creating new posts and slower build times were the main reasons. I am the kind of person when writing post want to see often, how it looks like on the real site. With the current number of posts it takes around 40-50 seconds to build the entire site and it makes me to wander off to something else while the build is happening - at times it takes a long time to get back to writing!. But migrating to a new platform has a lot of challenges and time-consuming and I did not want to invest my time in that, so though of looking out for ways to optimize the current process. A bit of googling and playing around with Ruby, solved both of the major issues and I have an improved workflow!
 
 #### **Draft workflow** ####
-I was lucky to find this [post](http://neverstopbuilding.com/how-to-enhance-your-octopress-draft-and-heroku-deploy-process) which handled most of the draft workflow process. Most of the code below is used from there with a very few minor additions. Newer versions of Jekyll support [working with drafts](http://jekyllrb.com/docs/drafts/) and uses the '*--drafts*' switch to build the drafts (instead of using published flag), that are in '*_drafts*' folder. Drafts are posts which does not have date's, so I add in a placeholder text, '*thisIsStillADraft*', in the yaml front matter of the post which will later be replaced with the post publish date. 
+I was lucky to find this [post](http://neverstopbuilding.com/how-to-enhance-your-octopress-draft-and-heroku-deploy-process) which handled most of the draft workflow process. Most of the code below is used from there with a very few minor additions. Newer versions of Jekyll support [working with drafts](http://jekyllrb.com/docs/drafts/) and uses the '*--drafts*' switch to build the drafts (instead of using published flag as in thr above linked post), that are in '*_drafts*' folder. Drafts are posts which does not have date's, so I added in a placeholder text, '*thisIsStillADraft*', in the yaml front matter of the post which will later be replaced with the post publish date. Also added in the code to open the default writer with the newly created post
 
 
 ``` ruby Rake new_draft
@@ -48,7 +48,7 @@ task :new_draft, :title do |t, args|
 end
 ```
 
-The publish draft task just asks for the post to publish and replaces the placeholder text with the current date time. Also it moves the post from the '*_drafts*' folder to the '*_posts*' folder with the file name appended with the date time. Since I run this just before deploying a post, the date on the post will be the correct date, and not the date I started writing the post (usually  post spans over multiple days).  
+The publish draft task just asks for the post to publish and replaces the placeholder text with the current date time. Also it moves the post from the '*_drafts*' folder to the '*_posts*' folder with the file name appended with the date time. Since I run this just before deploying a post, the date on the post will be the actual publish date, and not the date I started writing the post (usually writing a  post spans over multiple days).  
 
 
 ``` ruby Rake publish_draft
@@ -94,7 +94,7 @@ With these two new rake tasks, I can now create as many draft posts at a time an
 
 #### **Improving the build time** ####
 
-Jekyll build command options provides a switch, '*configuration*', that allows to pass a configuration file instead of using '*_config.yml*'. In the configuration file we can specify a 'exclude' option to exclude the directories and/or files from the build. I created a new task for building only the current drafts, by specifying the '*--drafts*' switch and a dynamically generated configuration file, *_previewconfig.yml*, which excludes the '*_posts*' folder. This dramatically increases the build time to near real time!. While writing new posts I do not want to see any already published posts. I did not want to use the the '*rake isolate*' task that is already present in the  rakefile, as that does not integrate with the draft workflow and unnecessarily moves all the posts to a temporary place. You can also add the dynamically generated configuration file name to the *.gitignore* as I do not delete it. 
+Jekyll build command options provides a switch, '*configuration*', that allows to pass a configuration file instead of using '*_config.yml*'. In the configuration file we can specify a 'exclude' option to exclude the directories and/or files from the build. I created a new task for building only the current drafts, by specifying the '*--drafts*' switch and a dynamically generated configuration file, *_previewconfig.yml*, which excludes the '*_posts*' folder. This dramatically increases the build time, and completes almost immediately after a making a change to a post. This fits perfectly into my workflow, as while writing new posts I do not want to see any already published posts. You can also add the dynamically generated configuration file name to the *.gitignore* as I do not delete it in the rake tasks. I did not want to use the the '*rake isolate*' task that is already present in the  rakefile, as that does not integrate with the draft workflow and unnecessarily moves all the posts to a temporary place.
 
 ``` ruby
 desc "preview the site in a web browser with all the draft posts"
@@ -133,4 +133,20 @@ mklink /D "C:\blog\_drafts" "C:\dropbox\_drafts"
 
 #### **Cmder integration** ####
 
-Alias shortcuts
+Cmder is a conemu console for windows and provides some good features. Creating alias for commands is one of the popular features, that allows to create a short key combination to perform a otherwise long comment. You can use this to create commands for the task in octopress.
+
+rp=rake previewdrafts
+rps=rake preview
+rd=rake deploy
+rnd=rake new_draft
+rpd=rake publish_draft
+rd=rake deploy
+
+So my new workflow is
+rnd Optimizing Octopress Workflow for New Posts
+rp
+rpd
+rps
+rd
+
+It's much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on [github](http://github.com/rahulpnath/rahulpnath.com/rakefile). 
