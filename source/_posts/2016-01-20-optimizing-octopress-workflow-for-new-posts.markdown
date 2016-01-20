@@ -133,7 +133,7 @@ mklink /D "C:\blog\_drafts" "C:\dropbox\_drafts"
 
 #### **Cmder integration** ####
 
-[Cmder](http://cmder.net/) is a portable console emulator for Windows and provides a good nice looking feature rich console experience on Windows. Creating alias for commands is one of the features, that allows to create a short key combination for an otherwise long command. You can use this to create commands for the task in Octopress like below
+[Cmder](http://cmder.net/) is a portable console emulator for Windows and provides a good nice looking feature rich console experience on Windows and is one of my [favourite tools](http://www.rahulpnath.com/blog/tools-that-I-use/). Creating alias for commands is one of the features, that allows to create a short key combination for an otherwise long command. You can use this to create commands for the task in Octopress like below
 
 ``` text
 alias rp=rake previewdrafts
