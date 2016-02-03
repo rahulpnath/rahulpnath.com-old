@@ -22,7 +22,7 @@ Being Generous at the boundaries (Postels law)
 
 Reusing the existing validation frameworks
 
-ASP Net Web Api supports attribute based validations from DataAnnotations namespace. If you do not prefer to pollute the domain entity with all the validation logic, then you can have the attributes specified on the DTO and have the validation applied at the boundary itself. This would also ensure that an invalid instance of domain entity cannot be created, as that is always created after the validation. Going with explicit DTO's for each endpoint might also be required as the validations differ for them e.g. A Create action, for example, shouldn't have an ID property.
+ASP Net Web Api supports attribute based validations from DataAnnotations namespace. If you do not prefer to pollute the domain entity with all the validation logic, then you can have the attributes specified on the DTO and have the validation applied at the boundary itself. This would also ensure that an invalid instance of domain entity cannot be created, as that is always created after the validation. Going with explicit DTO's for each endpoint might also be required as the validations differ for them e.g. A Create action, for example, shouldn't have an ID property So to use the DataAnnotations we need to have different DTO classes per endppont.
 
 -DTO or Domain object
 http://martinfowler.com/bliki/LocalDTO.html
