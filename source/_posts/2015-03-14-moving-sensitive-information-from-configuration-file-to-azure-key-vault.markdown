@@ -11,6 +11,8 @@ keywords: azure key vault, key vault secret, key vault configuration
 description: This post describes on how sensitive information can be moved out of application's configuration's file to azure key vault.
 ---
 
+> Please check [here](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/) for scripts using the latest PowerShell cmdlets.
+
 Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application's configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With [Azure Key Vault](http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/), we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, **Secrets**, into the vault and access them over a secure endpoint.  
 
 > Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.

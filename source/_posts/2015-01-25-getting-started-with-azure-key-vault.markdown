@@ -11,6 +11,8 @@ keywords:
 description: 
 ---
 
+> Please check [here](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/) for scripts using the latest PowerShell cmdlets.
+
 Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. Also these sensitive information no longer needs to be exposed in the application's configuration file or in database. Keys can be created in the vault and accessed via url's by the required application. Operations against the Key Vault are authenticated and authorized using Azure Active Directory. So in short all that a developer would need to know are the URI's for the keys, the [sdk/api](https://msdn.microsoft.com/en-us/library/azure/dn903625.aspx) to access the vault features and also on the mechanism to authenticate against the AD application (an appId/client secret or appId/certificate).
 
 <img class="center" alt="Azure Key Vault Overview" src="{{ site.images_root}}/azurekeyvault_overview.png" />

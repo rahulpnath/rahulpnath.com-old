@@ -11,6 +11,8 @@ keywords:
 description: This post looks in how to handle key vault for a real world application and how to organize the keys/secrets usage.
 ---
 
+> Please check [here](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/) for scripts using the latest PowerShell cmdlets.
+
 Over the last couple of posts we have seen how to [Get Started with Azure Key Vault](http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/), [Authenticate a Client Application with the Vault](http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/) and also on how the vault can be used as an [alternate to the configuration file to keep sensitive information secure](http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/). In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it. 
   
 ### Configuring Client-Applications to use the Key vault ###

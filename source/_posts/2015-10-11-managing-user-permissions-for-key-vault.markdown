@@ -10,6 +10,8 @@ keywords:
 description: This post describes on how user permissions can be managed for a key vault. It details on adding user access to modify keys or secrets in a vault. 
 ---
 
+> Please check [here](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/) for scripts using the latest PowerShell cmdlets.
+
 Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an [AD application and use that to manage the vault](http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/). Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).
 
 In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.
