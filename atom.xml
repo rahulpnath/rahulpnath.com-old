@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-02-09T04:31:30+11:00</updated>
+  <updated>2016-02-25T15:03:59+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,93 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[How the Deprecation of Switch AzureMode Affects Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/"/>
+    <updated>2016-02-25T14:51:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault</id>
+    <content type="html"><![CDATA[<p>It&rsquo;s been a while that the &lsquo;Switch AzureMode&rsquo; is <a href="https://github.com/Azure/azure-powershell/wiki/Deprecation-of-Switch-AzureMode-in-Azure-PowerShell">deprecated in the Azure PowerShell</a> and has left breaking changes in all the scripts that were using it. <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">I had come across this mode switch first</a>, when starting off with Azure Key Vault, as the then existing cmdlets depended on it. Now that it is deprecated we have updated versions of the PowerShell cmdlets to manage <a href="https://azure.microsoft.com/en-us/services/key-vault/">Azure Key Vault</a>. This post revisits all the scripts used in the <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">previous Key Vault posts</a> and provides the updated scripts.</p>
+
+<p>Most of the scripts have the only change of having an extra &lsquo;Rm&rsquo; indicating that those were off the Resource Manager.</p>
+
+<figure class='code'><figcaption><span>Creating a New Azure Key Vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRmResourceGroup</span> <span class="n">-Name</span> <span class="n">KeyVaultGroup</span> <span class="n">-Location</span> <span class="s2">&quot;East Asia&quot;</span>
+</span><span class='line'><span class="nb">New-AzureRmKeyVault</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-ResourceGroupName</span> <span class="n">KeyVaultGroup</span> <span class="n">-Location</span> <span class="s2">&quot;East Asia&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Creating a new key/secret remains the same</p>
+
+<figure class='code'><figcaption><span>Creating a Key/Secret in Vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="c"># Key</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-Name</span> <span class="n">NewKey</span> <span class="n">-Destination</span> <span class="n">Software</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Secret</span>
+</span><span class='line'><span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Getting existing Vault details</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureRmKeyVault</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>Creating AD application with certificate authentication</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
+</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;RahulTestADApplication&quot;</span>
+</span><span class='line'><span class="n">-HomePage</span>  <span class="s2">&quot;http://www.rahulpnath.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.rahulpnath.com&quot;</span>
+</span><span class='line'><span class="n">-KeyValue</span>  <span class="nv">$credential</span> <span class="n">-KeyType</span> <span class="s2">&quot;AsymmetricX509Cert&quot;</span> <span class="n">-KeyUsage</span> <span class="s2">&quot;Verify&quot;</span> <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Associating the AD application with the key vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
+</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ObjectId</span>  <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">Id</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span><span class='line'><span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="c">#Outputs the ServicePrincipalName/AppPrincipalId </span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>User Role assignment</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRmRoleAssignment</span> <span class="n">-Mail</span> <span class="n">keyvaultuser</span><span class="nv">@domain</span><span class="p">.</span><span class="n">onmicrosoft</span><span class="p">.</span><span class="n">com</span>
+</span><span class='line'>  <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Please drop a comment if I have missed any!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting up AutoHotkey to Speed up Trivial Tasks]]></title>
@@ -572,7 +659,9 @@ rd</p>
     <link href="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/"/>
     <updated>2015-10-11T01:08:17+11:00</updated>
     <id>http://rahulpnath.com/blog/managing-user-permissions-for-key-vault</id>
-    <content type="html"><![CDATA[<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
 
 <p>In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.</p>
 
@@ -701,7 +790,9 @@ rd</p>
     <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
     <updated>2015-06-27T23:43:48+10:00</updated>
     <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
-    <content type="html"><![CDATA[<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
 
 <h4><strong>Creating AD application</strong></h4>
 
@@ -868,7 +959,9 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <link href="http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/"/>
     <updated>2015-04-25T16:16:09+10:00</updated>
     <id>http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application</id>
-    <content type="html"><![CDATA[<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
 
 <h3>Configuring Client-Applications to use the Key vault</h3>
 
@@ -1027,7 +1120,9 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
     <updated>2015-03-14T23:04:23+11:00</updated>
     <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
 
 <blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
 
@@ -1093,7 +1188,9 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <link href="http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/"/>
     <updated>2015-03-06T17:10:25+11:00</updated>
     <id>http://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>Azure Key Vault provides an easy way for managing cryptographic keys and secrets (like connection strings or passwords) in a secure and distributed manner as opposed to having them in the configuration file or a database. If you are new to Azure Key Vault check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> on how to setup the vault and add keys and use that from a console application.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Azure Key Vault provides an easy way for managing cryptographic keys and secrets (like connection strings or passwords) in a secure and distributed manner as opposed to having them in the configuration file or a database. If you are new to Azure Key Vault check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> on how to setup the vault and add keys and use that from a console application.</p>
 
 <p>In this post we will explore into the ways of authenticating a client application with a key vault. For an application to use the key vault it must authenticate using a token from the Azure Active Directory (AD). For this an application needs to be registered in the Azure AD and this application needs to be authorized to access key or secret in the vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> that comes as part of the <a href="https://gallery.technet.microsoft.com/scriptcenter/Azure-Key-Vault-Powershell-1349b091">key vault powershell scripts</a>.</p>
 
@@ -1237,7 +1334,9 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <link href="http://rahulpnath.com/blog/getting-started-with-azure-key-vault/"/>
     <updated>2015-01-25T23:52:06+11:00</updated>
     <id>http://rahulpnath.com/blog/getting-started-with-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. Also these sensitive information no longer needs to be exposed in the application&rsquo;s configuration file or in database. Keys can be created in the vault and accessed via url&rsquo;s by the required application. Operations against the Key Vault are authenticated and authorized using Azure Active Directory. So in short all that a developer would need to know are the URI&rsquo;s for the keys, the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903625.aspx">sdk/api</a> to access the vault features and also on the mechanism to authenticate against the AD application (an appId/client secret or appId/certificate).</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. Also these sensitive information no longer needs to be exposed in the application&rsquo;s configuration file or in database. Keys can be created in the vault and accessed via url&rsquo;s by the required application. Operations against the Key Vault are authenticated and authorized using Azure Active Directory. So in short all that a developer would need to know are the URI&rsquo;s for the keys, the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903625.aspx">sdk/api</a> to access the vault features and also on the mechanism to authenticate against the AD application (an appId/client secret or appId/certificate).</p>
 
 <p><img class="center" alt="Azure Key Vault Overview" src="http://rahulpnath.com/images/azurekeyvault_overview.png" /></p>
 
@@ -1738,147 +1837,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
 <p>This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation <a href="https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration">here</a>. Are you using convention registrations in your applications? If not you should start using them.
 <a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Language Agnostic Books For Every Developer]]></title>
-    <link href="http://rahulpnath.com/blog/language-agnostic-books-for-every-developer/"/>
-    <updated>2015-01-02T00:03:14+11:00</updated>
-    <id>http://rahulpnath.com/blog/language-agnostic-books-for-every-developer</id>
-    <content type="html"><![CDATA[<p>Reading is inevitable to keep up to date with the latest technologies and rapid changes happening in the programming world. But technology is nothing but a tool for getting things done. What one has to understand are the concepts and principles underlying these technology and the core principles of development. These are to be gained through <a href="http://www.rahulpnath.com/blog/an-enterprise-it-project-experience/">our own experiences</a> and also from the learnings and the experiences of others. Books are a great source of such experiences, and this post is a list of those that I have found interesting and helpful. I have not read all these nor was I able to fully understand whatever I have. These books are to be read/referred to multiple times, practiced and adopted into our work. It&rsquo;s also worth referring other books from the same author&rsquo;s or other writings as they are among the pioneers in our industry.</p>
-
-<p>The books would speak for themselves and I don&rsquo;t think I can do justice writing a summary to any of these. So I have decided to just list them down here(in no specific order). It&rsquo;s worth having a personal copy of each one of these in your bookshelves. (mine is still short of some of them).</p>
-
-<p><div>
-      <div class="row">
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/0735619670/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0735619670&linkCode=as2&tag=rahulpnath-20&linkId=6EBVFQ44LVCQC3VW">
-            <img src="http://rahulpnath.com/images/books_codecomplete.jpg" data-holder-rendered="true" style="display: block;" >
-             </a>
-            <div class="caption">
-              <h5><strong>Code Complete</strong></h5>
-            </div>
-          </div>
-        </div>
-       <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-          <a href="http://www.amazon.com/gp/product/0321146530/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321146530&linkCode=as2&tag=rahulpnath-20&linkId=UFKBUSTB43PNRS76" >
-            <img src="http://rahulpnath.com/images/books_tdd.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Test Driven Development</strong></h5>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0131489062/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131489062&linkCode=as2&tag=rahulpnath-20&linkId=2IKSKNFHUIXAC3V4" >
-            <img src="http://rahulpnath.com/images/books_applyinguml.jpeg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Applying UML and Patterns</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-     <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0321125215/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321125215&linkCode=as2&tag=rahulpnath-20&linkId=LGNNMURUNPIQJ22Q" >
-            <img src="http://rahulpnath.com/images/books_ddd.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>Domain Driven Design</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-       </div>
-      <div class="row">
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0596805829/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0596805829&linkCode=as2&tag=rahulpnath-20&linkId=BAC6OAIRWSGB4ZBB" >
-            <img src="http://rahulpnath.com/images/books_restinpractice.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>Rest in Practice</strong></h5>
-            </div>
-          </div>
-        </div>
-      <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/020161622X/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=020161622X&linkCode=as2&tag=rahulpnath-20&linkId=I6W7QKVDPXSBR37P" >
-            <img src="http://rahulpnath.com/images/books_pragmaticprogrammer.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>The Pragmatic Programmer</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0201485672/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0201485672&linkCode=as2&tag=rahulpnath-20&linkId=VPJIMQDT3AENNVY6" >
-            <img src="http://rahulpnath.com/images/books_refactoring.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Refactoring</strong></h5>
-            </div>
-          </div>
-        </div>
-    <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0321193687/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321193687&linkCode=as2&tag=rahulpnath-20&linkId=HXUV2APJ7YOHRIZY" >
-            <img src="http://rahulpnath.com/images/books_umldistilled.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>UML Distilled</strong></h5>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row">   <br/>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0201835959/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0201835959&linkCode=as2&tag=rahulpnath-20&linkId=HKH5I6Q3Y6IYSCI5" >
-            <img src="http://rahulpnath.com/images/books_mythicalmanmonth.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>The Mythical Man-Month</strong></h5>         <br/>
-            </div>
-          </div>
-        </div>
-      <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/0262510871/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0262510871&linkCode=as2&tag=rahulpnath-20&linkId=7YASXOZAUG7JDUDI" >
-            <img src="http://rahulpnath.com/images/books_sicp.jpg" data-holder-rendered="true" style="display: block;">
-             </a>
-            <div class="caption">
-              <h5><strong>Structure and Interpretaion of Computer Programs</strong></h5>
-            </div>
-          </div>
-        </div>
-       <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0131857258/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131857258&linkCode=as2&tag=rahulpnath-20&linkId=SQ27A44S24WSXQK4" >
-            <img src="http://rahulpnath.com/images/books_agilepatterns.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-           <div class="caption">
-              <h5><strong>Agile Principles, Patterns and Practices</strong></h5>      <br/>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-         <a href="http://www.amazon.com/gp/product/0321127420/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321127420&linkCode=as2&tag=rahulpnath-20&linkId=UR5IBEFV64BK5FYG" >
-            <img src="http://rahulpnath.com/images/books_poeaa.jpg" data-holder-rendered="true" style="display: block;">
-          </a>
-            <div class="caption">
-              <h5><strong>Patterns of Enterprise Application and Architecture</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>    <br/>
-      </div></p>
-
-<p>Hope you start of this year off with some nice readings and gift yourself with some these master pieces. I am sure that I have not covered all of them and there are still more to be &lsquo;chewed and digested&rsquo;. Do drop in with a comment on Which books have helped you be better in programming.</p>
 ]]></content>
   </entry>
   

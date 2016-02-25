@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-02-09T04:31:30+11:00</updated>
+  <updated>2016-02-25T15:03:59+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,11 +14,67 @@
 
   
   <entry>
+    <title type="html"><![CDATA[How the Deprecation of Switch AzureMode Affects Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/"/>
+    <updated>2016-02-25T14:51:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault</id>
+    <content type="html"><![CDATA[<p>It&rsquo;s been a while that the &lsquo;Switch AzureMode&rsquo; is <a href="https://github.com/Azure/azure-powershell/wiki/Deprecation-of-Switch-AzureMode-in-Azure-PowerShell">deprecated in the Azure PowerShell</a> and has left breaking changes in all the scripts that were using it. <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">I had come across this mode switch first</a>, when starting off with Azure Key Vault, as the then existing cmdlets depended on it. Now that it is deprecated we have updated versions of the PowerShell cmdlets to manage <a href="https://azure.microsoft.com/en-us/services/key-vault/">Azure Key Vault</a>. This post revisits all the scripts used in the <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">previous Key Vault posts</a> and provides the updated scripts.</p>
+
+<p>Most of the scripts have the only change of having an extra &lsquo;Rm&rsquo; indicating that those were off the Resource Manager.</p>
+
+<pre><code class="powershell Creating a New Azure Key Vault">New-AzureRmResourceGroup -Name KeyVaultGroup -Location "East Asia"
+New-AzureRmKeyVault -VaultName RahulKeyVault -ResourceGroupName KeyVaultGroup -Location "East Asia"
+</code></pre>
+
+<p>Creating a new key/secret remains the same
+&#8220;` powershell Creating a Key/Secret in Vault</p>
+
+<h1>Key</h1>
+
+<p>Add-AzureKeyVaultKey -VaultName RahulKeyVault -Name NewKey -Destination Software</p>
+
+<h1>Secret</h1>
+
+<p>$apiKey = ConvertTo-SecureString -String &ldquo;ApiKey&rdquo; -AsPlainText -Force
+Set-AzureKeyVaultSecret -VaultName RahulKeyVault -Name &ldquo;ApiKey&rdquo; -SecretValue $apiKey
+&#8220;`</p>
+
+<pre><code class="powershell Getting existing Vault details">Get-AzureRmKeyVault -VaultName RahulKeyVault
+</code></pre>
+
+<pre><code class="powershell Creating AD application with certificate authentication">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+$certificate.Import($certificateFilePath)
+$rawCertificateData = $certificate.GetRawCertData()
+$credential = [System.Convert]::ToBase64String($rawCertificateData)
+$startDate= [System.DateTime]::Now
+$endDate = $startDate.AddYears(1)
+$adApplication = New-AzureRmADApplication -DisplayName "RahulTestADApplication" 
+-HomePage  "http://www.rahulpnath.com" -IdentifierUris "http://www.rahulpnath.com" 
+-KeyValue  $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify" -StartDate $startDate -EndDate $endDate
+</code></pre>
+
+<pre><code class="powershell Associating the AD application with the key vault">$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
+Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ObjectId  $servicePrincipal.Id -PermissionsToKeys all -PermissionsToSecrets all
+$ServicePrincipal.ApplicationId #Outputs the ServicePrincipalName/AppPrincipalId 
+</code></pre>
+
+<pre><code class="powershell User Role assignment">New-AzureRmRoleAssignment -Mail keyvaultuser@domain.onmicrosoft.com
+  -RoleDefinitionName Reader -ResourceGroupName SharedGroup
+</code></pre>
+
+<p>Please drop a comment if I have missed any!</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Managing User Permissions for Key Vault]]></title>
     <link href="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/"/>
     <updated>2015-10-11T01:08:17+11:00</updated>
     <id>http://rahulpnath.com/blog/managing-user-permissions-for-key-vault</id>
-    <content type="html"><![CDATA[<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
 
 <p>In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.</p>
 
@@ -100,7 +156,9 @@ Add-AzureKeyVaultKey -VaultName 'TestKeyVault' -Name 'MyKey' -Destination 'Softw
     <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
     <updated>2015-06-27T23:43:48+10:00</updated>
     <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
-    <content type="html"><![CDATA[<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
 
 <h4><strong>Creating AD application</strong></h4>
 
@@ -178,7 +236,9 @@ Remove-MsolServicePrincipal -ServicePrincipalName &lt;string&gt;
     <link href="http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/"/>
     <updated>2015-04-25T16:16:09+10:00</updated>
     <id>http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application</id>
-    <content type="html"><![CDATA[<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
+    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
 
 <h3>Configuring Client-Applications to use the Key vault</h3>
 
@@ -243,50 +303,6 @@ var connectionStringSecret = await keyClient.GetSecretAsync(connectionStringIden
 <p>All your <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">sensitive information should be moved out of your application configuration file</a>, and Key Vault is the one place to have them all. The application&rsquo;s configuration file should only have the azure key vault url and the AD application id and certificate identifier (thumb print) that can be used to authenticate with the AD. Yes it is advisable to use the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate authentication mechanism</a> as opposed to the secret mechanism, if not you would have to put the secret in your configuration file, which would be like &lsquo;giving a thief the key to your safe&rsquo;.Additionally you could also have the key identifier mappings in the configuration file that the application can use to map to key/secret in the vault as we had seen above.</p>
 
 <p>By doing this we have fully decoupled the application and its dependency with the vault store and have also protected all our sensitive information. This also helps in having the application to be tested with configurations appropriate to the type of deployment. Hope this helps you in developing your application against the key vault.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
-    <updated>2015-03-14T23:04:23+11:00</updated>
-    <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
-
-<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
-
-<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
-
-<pre><code class="powershell">Set-AzureKeyVaultAccessPolicy -VaultName 'TestVaultRahul' -ServicePrincipalName 'd4f09821-ab30-44f3-8d57-69925489b932' -PermissionsToKeys all -PermissionsToSecrets all
-</code></pre>
-
-<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
-
-<pre><code class="powershell">PS C:\&gt; $apiKey = ConvertTo-SecureString -String "ApiKey" -AsPlainText -Force
-Set-AzureKeyVaultSecret -VaultName TestVaultRahul -Name "ApiKey" -SecretValue $apiKey
-
-SecretValue     : System.Security.SecureString
-SecretValueText : ApiKey
-VaultName       : testvaultrahul
-Name            : ApiKey
-Version         : cfedea84815e4ca8bc19cf8eb943ee13
-Id              : https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13
-</code></pre>
-
-<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.
-&#8220;` csharp
-var keyClient = new KeyVaultClient((authority, resource, scope) =>
-{
-    var authenticationContext = new AuthenticationContext(authority, null);
-    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
-    var result = authenticationContext.AcquireToken(resource, clientAssertionCertificate);
-});</p>
-
-<p>var secret =
-    await keyClient.GetSecretAsync(&ldquo;<a href="https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13">https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13</a>&rdquo;);
-&#8220;`</p>
-
-<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
 ]]></content>
   </entry>
   
