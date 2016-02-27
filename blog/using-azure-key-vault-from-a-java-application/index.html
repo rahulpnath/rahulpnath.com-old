@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Using Azure Key Vault from a Java Application - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-02-27T14:56:00+11:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 27<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Using Azure Key Vault from a Java Application
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. If you are new to Key Vault, read the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>. Access to Key Vault is primarily using <a href="https://msdn.microsoft.com/en-us/library/dn868052.aspx">PowerShell</a> or the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903609.aspx">REST API</a>. There are client API libraries available for <a href="https://github.com/Azure">various platforms</a> that wraps around the REST API, including one for <a href="https://github.com/Azure/azure-sdk-for-java/tree/master/services/keyvault">Java</a>. There have been some asks from my blog readers on how to use the Java SDK as there are no samples available, and this post is a result of that!</p>
+
+<p>The Java Key Vault SDK provides a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultClientService.java">KeyVaultClientService</a> to create a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultInternalClientImpl.java">KeyVaultClient</a>, to interact  with the Key Vault. The SDK is available as a Maven package and is available for download <a href="http://search.maven.org/#search%7Cga%7C1%7Ckeyvault">here</a>. Setting up a project to try this will be a quickie for someone who is already working on Java, but I struggled a bit with the IDE and getting the packages into the project. (Likely the sample solution attached at the end is not the best way to get things working, but it works!. Do drop by a comment if there are better/easier ways.)</p>
+
+<p><a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a client application with Azure Key Vault</a> is using an Azure AD application. You can create an AD application either from the portal or use <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell cmdlets</a>. In this example I am using the client/Secret authentication mechanism, but it is recommended to use certificate-based authentication, so you do not have to put the secret in your source files. The KeyVaultClientService needs a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultConfiguration.java">KeyVaultConfiguration</a> object, which in turn needs the Credentials to connect to the KeyVault. There is an abstract implementation available for <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/authentication/KeyVaultCredentials.java">KeyVaultCredentials</a> available which implements CloudCredentials and supports automatic bearer token refresh. Inheriting this we can create support for the clientid/secret authentication as shown below. I use the <a href="https://github.com/AzureAD/azure-activedirectory-library-for-java">Microsoft Azure Active Directory Authentication Library (ADAL) for Java</a> to authenticate against the AD application, which is again available as a <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.microsoft.aad%22">Maven package</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">class</span> <span class="nc">ClientSecretKeyVaultCredential</span> <span class="kd">extends</span> <span class="n">KeyVaultCredentials</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">applicationId</span> <span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">applicationSecret</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">ClientSecretKeyVaultCredential</span><span class="o">(</span><span class="n">String</span> <span class="n">applicationId</span><span class="o">,</span> <span class="n">String</span> <span class="n">applicationSecret</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">setApplicationId</span><span class="o">(</span><span class="n">applicationId</span><span class="o">);</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">setApplicationSecret</span><span class="o">(</span><span class="n">applicationSecret</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">Header</span> <span class="nf">doAuthenticate</span><span class="o">(</span><span class="n">ServiceRequestContext</span> <span class="n">request</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">challenge</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">AuthenticationResult</span> <span class="n">res</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">authorization</span> <span class="o">=</span> <span class="n">challenge</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;authorization&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">resource</span> <span class="o">=</span> <span class="n">challenge</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;resource&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">res</span> <span class="o">=</span> <span class="n">GetAccessToken</span><span class="o">(</span><span class="n">authorization</span><span class="o">,</span> <span class="n">resource</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="k">new</span> <span class="nf">BasicHeader</span><span class="o">(</span><span class="s">&quot;Authorization&quot;</span><span class="o">,</span> <span class="n">res</span><span class="o">.</span><span class="na">getAccessTokenType</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="na">getAccessToken</span><span class="o">());</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="n">AuthenticationResult</span> <span class="nf">GetAccessToken</span><span class="o">(</span><span class="n">String</span> <span class="n">authorization</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">)</span>
+</span><span class='line'>          <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">AuthenticationContext</span> <span class="n">ctx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">ExecutorService</span> <span class="n">service</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AuthenticationContext</span><span class="o">(</span><span class="n">authorization</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">service</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">MalformedURLException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="n">Future</span><span class="o">&lt;</span><span class="n">AuthenticationResult</span><span class="o">&gt;</span> <span class="n">resp</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">acquireToken</span><span class="o">(</span><span class="n">resource</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ClientCredential</span><span class="o">(</span>
+</span><span class='line'>              <span class="k">this</span><span class="o">.</span><span class="na">getApplicationId</span><span class="o">(),</span> <span class="k">this</span><span class="o">.</span><span class="na">getApplicationSecret</span><span class="o">()),</span> <span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">AuthenticationResult</span> <span class="n">res</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">res</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Using the above we can create a KeyVaultClient instance to connect to Key Vault. The KeyVaultClient supports all operations with the vault. The below sample uses a Key Vault key to encrypt a data and then to decrypt it back.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span><span class="o">,</span> <span class="n">URISyntaxException</span><span class="o">,</span> <span class="n">UnsupportedEncodingException</span> <span class="o">{</span>
+</span><span class='line'>     <span class="n">KeyVaultCredentials</span> <span class="n">kvCred</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ClientSecretKeyVaultCredential</span><span class="o">(</span><span class="s">&quot;AD Application ID&quot;</span><span class="o">,</span> <span class="s">&quot;AD Application Secret&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">Configuration</span> <span class="n">config</span> <span class="o">=</span> <span class="n">KeyVaultConfiguration</span><span class="o">.</span><span class="na">configure</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">kvCred</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">KeyVaultClient</span> <span class="n">vc</span> <span class="o">=</span> <span class="n">KeyVaultClientService</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">vc</span><span class="o">.</span><span class="na">getBaseUri</span><span class="o">());</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">keyIdentifier</span> <span class="o">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net:443/keys/NewKey&quot;</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">textToEncrypt</span> <span class="o">=</span> <span class="s">&quot;This is a test&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="kt">byte</span><span class="o">[]</span> <span class="n">byteText</span> <span class="o">=</span> <span class="n">textToEncrypt</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">&quot;UTF-16&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">Future</span><span class="o">&lt;</span><span class="n">KeyOperationResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">vc</span><span class="o">.</span><span class="na">encryptAsync</span><span class="o">(</span><span class="n">keyIdentifier</span><span class="o">,</span> <span class="n">JsonWebKeyEncryptionAlgorithm</span><span class="o">.</span><span class="na">RSAOAEP</span><span class="o">,</span> <span class="n">byteText</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">KeyOperationResult</span> <span class="n">keyoperationResult</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">keyoperationResult</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">result</span> <span class="o">=</span> <span class="n">vc</span><span class="o">.</span><span class="na">decryptAsync</span><span class="o">(</span><span class="n">keyIdentifier</span><span class="o">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="o">,</span> <span class="n">keyoperationResult</span><span class="o">.</span><span class="na">getResult</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">String</span> <span class="n">decryptedResult</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">getResult</span><span class="o">(),</span> <span class="s">&quot;UTF-16&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decryptedResult</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you to get started with Azure Key Vault on Java. The sample solution is available <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVaultUsingJavaClient">here</a>!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/" title="Previous Post: How the Deprecation of Switch AzureMode Affects Azure Key Vault">&laquo; How the Deprecation of Switch AzureMode Affects Azure Key Vault</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/';
+        var disqus_url = 'http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

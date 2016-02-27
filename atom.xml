@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-02-25T15:03:59+11:00</updated>
+  <updated>2016-02-27T15:10:23+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,161 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Using Azure Key Vault from a Java Application]]></title>
+    <link href="http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/"/>
+    <updated>2016-02-27T14:56:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application</id>
+    <content type="html"><![CDATA[<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. If you are new to Key Vault, read the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>. Access to Key Vault is primarily using <a href="https://msdn.microsoft.com/en-us/library/dn868052.aspx">PowerShell</a> or the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903609.aspx">REST API</a>. There are client API libraries available for <a href="https://github.com/Azure">various platforms</a> that wraps around the REST API, including one for <a href="https://github.com/Azure/azure-sdk-for-java/tree/master/services/keyvault">Java</a>. There have been some asks from my blog readers on how to use the Java SDK as there are no samples available, and this post is a result of that!</p>
+
+<p>The Java Key Vault SDK provides a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultClientService.java">KeyVaultClientService</a> to create a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultInternalClientImpl.java">KeyVaultClient</a>, to interact  with the Key Vault. The SDK is available as a Maven package and is available for download <a href="http://search.maven.org/#search%7Cga%7C1%7Ckeyvault">here</a>. Setting up a project to try this will be a quickie for someone who is already working on Java, but I struggled a bit with the IDE and getting the packages into the project. (Likely the sample solution attached at the end is not the best way to get things working, but it works!. Do drop by a comment if there are better/easier ways.)</p>
+
+<p><a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a client application with Azure Key Vault</a> is using an Azure AD application. You can create an AD application either from the portal or use <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell cmdlets</a>. In this example I am using the client/Secret authentication mechanism, but it is recommended to use certificate-based authentication, so you do not have to put the secret in your source files. The KeyVaultClientService needs a <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/KeyVaultConfiguration.java">KeyVaultConfiguration</a> object, which in turn needs the Credentials to connect to the KeyVault. There is an abstract implementation available for <a href="https://github.com/Azure/azure-sdk-for-java/blob/8bd59520544cf7471f8b3c2e3f9e577e68ff2852/services/keyvault/azure-keyvault/src/main/java/com/microsoft/azure/keyvault/authentication/KeyVaultCredentials.java">KeyVaultCredentials</a> available which implements CloudCredentials and supports automatic bearer token refresh. Inheriting this we can create support for the clientid/secret authentication as shown below. I use the <a href="https://github.com/AzureAD/azure-activedirectory-library-for-java">Microsoft Azure Active Directory Authentication Library (ADAL) for Java</a> to authenticate against the AD application, which is again available as a <a href="http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.microsoft.aad%22">Maven package</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="kd">public</span> <span class="kd">class</span> <span class="nc">ClientSecretKeyVaultCredential</span> <span class="kd">extends</span> <span class="n">KeyVaultCredentials</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">applicationId</span> <span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">String</span> <span class="n">applicationSecret</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">ClientSecretKeyVaultCredential</span><span class="o">(</span><span class="n">String</span> <span class="n">applicationId</span><span class="o">,</span> <span class="n">String</span> <span class="n">applicationSecret</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">{</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">setApplicationId</span><span class="o">(</span><span class="n">applicationId</span><span class="o">);</span>
+</span><span class='line'>      <span class="k">this</span><span class="o">.</span><span class="na">setApplicationSecret</span><span class="o">(</span><span class="n">applicationSecret</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">Header</span> <span class="nf">doAuthenticate</span><span class="o">(</span><span class="n">ServiceRequestContext</span> <span class="n">request</span><span class="o">,</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">challenge</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">AuthenticationResult</span> <span class="n">res</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">authorization</span> <span class="o">=</span> <span class="n">challenge</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;authorization&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">String</span> <span class="n">resource</span> <span class="o">=</span> <span class="n">challenge</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="s">&quot;resource&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">res</span> <span class="o">=</span> <span class="n">GetAccessToken</span><span class="o">(</span><span class="n">authorization</span><span class="o">,</span> <span class="n">resource</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ExecutionException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="k">new</span> <span class="nf">BasicHeader</span><span class="o">(</span><span class="s">&quot;Authorization&quot;</span><span class="o">,</span> <span class="n">res</span><span class="o">.</span><span class="na">getAccessTokenType</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot; &quot;</span> <span class="o">+</span> <span class="n">res</span><span class="o">.</span><span class="na">getAccessToken</span><span class="o">());</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="n">AuthenticationResult</span> <span class="nf">GetAccessToken</span><span class="o">(</span><span class="n">String</span> <span class="n">authorization</span><span class="o">,</span> <span class="n">String</span> <span class="n">resource</span><span class="o">)</span>
+</span><span class='line'>          <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">AuthenticationContext</span> <span class="n">ctx</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">ExecutorService</span> <span class="n">service</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newFixedThreadPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">ctx</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">AuthenticationContext</span><span class="o">(</span><span class="n">authorization</span><span class="o">,</span> <span class="kc">false</span><span class="o">,</span> <span class="n">service</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">MalformedURLException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>          <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      <span class="n">Future</span><span class="o">&lt;</span><span class="n">AuthenticationResult</span><span class="o">&gt;</span> <span class="n">resp</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="na">acquireToken</span><span class="o">(</span><span class="n">resource</span><span class="o">,</span> <span class="k">new</span> <span class="nf">ClientCredential</span><span class="o">(</span>
+</span><span class='line'>              <span class="k">this</span><span class="o">.</span><span class="na">getApplicationId</span><span class="o">(),</span> <span class="k">this</span><span class="o">.</span><span class="na">getApplicationSecret</span><span class="o">()),</span> <span class="kc">null</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">AuthenticationResult</span> <span class="n">res</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">res</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Using the above we can create a KeyVaultClient instance to connect to Key Vault. The KeyVaultClient supports all operations with the vault. The below sample uses a Key Vault key to encrypt a data and then to decrypt it back.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span><span class="o">,</span> <span class="n">ExecutionException</span><span class="o">,</span> <span class="n">URISyntaxException</span><span class="o">,</span> <span class="n">UnsupportedEncodingException</span> <span class="o">{</span>
+</span><span class='line'>     <span class="n">KeyVaultCredentials</span> <span class="n">kvCred</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ClientSecretKeyVaultCredential</span><span class="o">(</span><span class="s">&quot;AD Application ID&quot;</span><span class="o">,</span> <span class="s">&quot;AD Application Secret&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">Configuration</span> <span class="n">config</span> <span class="o">=</span> <span class="n">KeyVaultConfiguration</span><span class="o">.</span><span class="na">configure</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">kvCred</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">KeyVaultClient</span> <span class="n">vc</span> <span class="o">=</span> <span class="n">KeyVaultClientService</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">vc</span><span class="o">.</span><span class="na">getBaseUri</span><span class="o">());</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">keyIdentifier</span> <span class="o">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net:443/keys/NewKey&quot;</span><span class="o">;</span>
+</span><span class='line'>     <span class="n">String</span> <span class="n">textToEncrypt</span> <span class="o">=</span> <span class="s">&quot;This is a test&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="kt">byte</span><span class="o">[]</span> <span class="n">byteText</span> <span class="o">=</span> <span class="n">textToEncrypt</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="s">&quot;UTF-16&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">Future</span><span class="o">&lt;</span><span class="n">KeyOperationResult</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="n">vc</span><span class="o">.</span><span class="na">encryptAsync</span><span class="o">(</span><span class="n">keyIdentifier</span><span class="o">,</span> <span class="n">JsonWebKeyEncryptionAlgorithm</span><span class="o">.</span><span class="na">RSAOAEP</span><span class="o">,</span> <span class="n">byteText</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">KeyOperationResult</span> <span class="n">keyoperationResult</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">keyoperationResult</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">result</span> <span class="o">=</span> <span class="n">vc</span><span class="o">.</span><span class="na">decryptAsync</span><span class="o">(</span><span class="n">keyIdentifier</span><span class="o">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="o">,</span> <span class="n">keyoperationResult</span><span class="o">.</span><span class="na">getResult</span><span class="o">());</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">String</span> <span class="n">decryptedResult</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">().</span><span class="na">getResult</span><span class="o">(),</span> <span class="s">&quot;UTF-16&quot;</span><span class="o">);</span>
+</span><span class='line'>     <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">decryptedResult</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you to get started with Azure Key Vault on Java. The sample solution is available <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVaultUsingJavaClient">here</a>!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How the Deprecation of Switch AzureMode Affects Azure Key Vault]]></title>
@@ -1711,132 +1866,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
 
 <p>Hope this helps some one trying to reuse test cases for multiple implementations of the same interface. One another way to solve this issue would be to create multiple csproj files and have the same test case classes referred to both the project files, but have the reference assemblies specific to implementations. So in this case we would have multiple test dll&rsquo;s created, which can be run individually. The advantage of going via this approach is that we could have test cases specific to implementations too and also reuse test cases that are same across implementations by referring them as linked files. But currently we did not want this flexibility and did not want to add multiple project files and make it difficult for the team. You can find the sample implementation <a href="https://github.com/rahulpnath/Blog/tree/master/TestingMultipleImplementations">here</a>. Do you reuse test cases like this? Do drop in with a comment on your thoughts.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[IoC Registration by Convention]]></title>
-    <link href="http://rahulpnath.com/blog/ioc-registration-by-convention/"/>
-    <updated>2015-01-03T23:33:17+11:00</updated>
-    <id>http://rahulpnath.com/blog/ioc-registration-by-convention</id>
-    <content type="html"><![CDATA[<p>Sometime back we had seen, how to <a href="http://www.rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/">configure the unity container using code/config file</a> and I was using a mix of this in one of my projects. This approach soon became an overhead, as the manual wiring up of registrations is really cumbersome and also error prone. Mostly there were missing registrations only to be found out, when doing test runs or deployments. We soon were forced to move out of the manual registration and find a new way to register dependencies.</p>
-
-<p>The below image by <a href="https://twitter.com/ploeh">Mark Seemann</a> sums it all up on when and how to use a Dependency Injection(DI) container and we were right at the bottom, where the whole purpose of a DI becomes pointless.</p>
-
-<p><a href="http://bit.ly/1zLiq6p" class="center" title="Image By Mark Seemann, from http://bit.ly/1zLiq6p"><img src="http://rahulpnath.com/images/ioc_usefulness.png" class="center" alt="Image By Mark Seemann, from http://bit.ly/1zLiq6p"></a></p>
-
-<h4>Convention Over Configuration</h4>
-
-<p><a href="http://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a>, is very popular today and there are already many frameworks that have adopted it e.g. MVC, Web Api. Following the same approach would make life much simpler and registration less painful as dependencies would get auto registered, if the convention is followed. Conventions could vary across projects/teams, so it is up to the team to decide on the conventions that are to be followed and have all the developers follow them religiously.</p>
-
-<p>Currently our registration process picks up all the assemblies from the base path and iterates through all the classes that are under the project/application namespace and gets the interfaces out of them and registers them. For interfaces that have multiple definitions we perform named registration based on the class name or name from an attribute on the class or both.</p>
-
-<p>We are using Unity as the IoC container and it does support <a href="http://msdn.microsoft.com/en-us/library/dn507479(v=pandp.30).aspx">convention based registrations</a> out of the box. You can either use the RegisterTypes method or the RegistrationConvention class to specify the conventions. The parameters in both of these approaches enable you to specify the types to register, the mappings to create, the name to use and lifetime. Since in our registration we wanted to use the named convention only in cases where there where multiple registrations for the same interface and the other interfaces were to be registered without any name this default convention had to be modified. Also we did not want to get tightly bound to the IoC container (just in case we want to swap out the container provider) and hence thought of having the convention logics in a separate class and have them registered to the container of choice.</p>
-
-<p>The <em>GetClassesFromAssemblies</em> function iterates over the assemblies from the base application path(bin folder) to get all the dll&rsquo;s used and gets the classes that belong to the namespaces that we want to register. Alternatively you could also pass a list of assemblies if required to be used for the convention. If you want other namespaces too you can filter those in here.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetClassesFromAssemblies</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Assembly</span><span class="p">&gt;</span> <span class="n">assemblies</span> <span class="p">=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">allClasses</span> <span class="p">=</span> <span class="n">assemblies</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssemblies</span><span class="p">(</span><span class="n">assemblies</span><span class="p">)</span> <span class="p">:</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssembliesInBasePath</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">return</span>
-</span><span class='line'>        <span class="n">allClasses</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">n</span> <span class="p">=&gt;</span>
-</span><span class='line'>                <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span> <span class="p">!=</span> <span class="k">null</span>
-</span><span class='line'>                <span class="p">&amp;&amp;</span> <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span><span class="p">.</span><span class="n">StartsWith</span><span class="p">(</span><span class="n">ApplicationNamespace</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For each of the type that is returned from the above method we get the list of interfaces that are defined on the type and needs to be registered against the type. In the sample code, I have added a couple of variations of registrations.</p>
-
-<ul>
-<li><em>IFooBar</em>        : Has only one implementation</li>
-<li><em>IFoo</em>           : Has multiple implementations and should be resolved using <em>IFooFactory</em></li>
-<li><em>IFooCustom</em>     : Has multiple implementations and needs to have a custom name (maybe for some reason you do not want the context information to be part of the class name). This is to be resolved using IFooCustomFactory.</li>
-<li><em>IFooGeneric<T></em> : This is a generic implementation and the type can be decided at runtime.</li>
-</ul>
-
-
-<p>The <em>GetInterfacesToBeRegistered</em> function gets the interfaces that are to be registered for a given type. For this convention I want to <a href="http://stackoverflow.com/questions/5318685/get-only-direct-interface-instead-of-all">get only the direct interfaces</a> that are on the given type and not all the interfaces. The check below for <em>isGenericType</em> on an interface is for <em>IFooGeneric</em> as for generic interfaces the <a href="http://stackoverflow.com/questions/3117090/getinterfaces-returns-generic-interface-type-with-fullname-null">GetInterfaces does not return the full information required</a> and we need to use the <em>GetGenericTypeDefinition</em> method instead.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetInterfacesToBeRegistered</span><span class="p">(</span><span class="n">Type</span> <span class="n">type</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">allInterfacesOnType</span> <span class="p">=</span> <span class="n">type</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">IsGenericType</span> <span class="p">?</span> <span class="n">i</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span> <span class="p">:</span> <span class="n">i</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">Except</span><span class="p">(</span><span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">())).</span><span class="n">ToList</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Once we have the interfaces for the type, we add them to an internal mapping list to register it all into the unity container. The internal mapping is against the interface type definition and has the list of classes that implements the interface.Now that we have all the types and interfaces to be registered, we need to register them into the container. For any interface that has only one type implementing it, we register it with default name else we get the name from the class name or the attribute that decorates the class if any.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">RegisterConventions</span><span class="p">(</span><span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">typeMapping</span> <span class="k">in</span> <span class="n">internalTypeMapping</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">1</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">type</span> <span class="p">=</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">First</span><span class="p">();</span>
-</span><span class='line'>            <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="k">else</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">type</span> <span class="k">in</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">GetNameForRegsitration</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The dependency with UnityContainer with the IoCConveniton class, can be easily removed by having an adapter interface into any container. To keep things simple I am having the direct dependency on the container in the sample. From the console application we can create a new container and use the convention class to register the dependencies. The factory implementations have the expected class conventions inside them that would be used to resolve the dependencies. Since the factory is part of the composition root I am using a <a href="http://blog.ploeh.dk/2012/03/15/ImplementinganAbstractFactory/">container based factory</a>, to resolve the dependencies.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
-</span><span class='line'><span class="n">IoCConvention</span><span class="p">.</span><span class="n">RegisterByConvention</span><span class="p">(</span><span class="n">unityContainer</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation <a href="https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration">here</a>. Are you using convention registrations in your applications? If not you should start using them.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   
