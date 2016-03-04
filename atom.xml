@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-01T15:21:31+11:00</updated>
+  <updated>2016-03-04T12:03:37+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,154 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated ClickOnce Deployment of a WPF Application using Appveyor]]></title>
+    <link href="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/"/>
+    <updated>2016-03-04T12:00:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor</id>
+    <content type="html"><![CDATA[<p>This post covers the current deployment setup of <a href="https://github.com/rahulpnath/clal">CLAL</a>(Command Line Application Launcher), a desktop application, that I am building. Since it is a WPF application, it supports <a href="https://msdn.microsoft.com/en-us/library/t71a733d.aspx">ClickOnce Deployment</a> that enables to create self-updating applications which can install with minimum interaction from the user. ClickOnce supports different <a href="https://msdn.microsoft.com/en-us/library/71baz9ah.aspx">deployment strategy</a> of which distributing it through the web is quite popular as it makes software distribution easier. It works well when the software size is not large so that application installation is faster. For CLAL, there are two deployments served from Azure: <a href="http://www.rahulpnath.com/clal/Releases/commandlineapplicationlauncherui.application">Latest stable build</a> and the <a href="http://www.rahulpnath.com/clal/Latest/commandlineapplicationlauncherui.application">Current build</a>.</p>
+
+<p>I did not want to do manually, the entire deployment process of building the solution, running all the tests, creating the ClickOnce package and pushing it up to Azure, I decided to automate this. Since <a href="https://www.appveyor.com/">Appveyor</a>, a hosted distributed continuous integration service used to build and test projects, is free for open-source projects and integrates very well with application developed on the Windows platform.</p>
+
+<h3>Setting up Appveyor project</h3>
+
+<p>Setting up Appveyor to read from Github is very easy. Once you authorize access to Github, Appveyor lists all the projects that you have in your Github account. After selecting a project, it creates a <a href="https://ci.appveyor.com/project/rahulpnath/clal">&lsquo;build project&rsquo;</a> for that in Appveyor, where you can control all build related activities. Appveyor automatically pulls in your latest source code from the repository, when a build triggers. Build configurations can be specified using a <a href="https://www.appveyor.com/docs/appveyor-yml">configuration file</a> (appveyor.yml) living at the repository root or using the user interface. For CLAL I exclusively use the configuration from the file and the latest version is available <a href="https://github.com/rahulpnath/clal/blob/master/appveyor.yml">here</a>.
+Primarily there are two branches (<em>master</em> and <em>development</em>) on the git repository which builds as the latest stable and current build. Since these two deployments have few attributes different (like the version numbers, deployment URL, update URL), I use <a href="https://www.appveyor.com/docs/branches#conditional-build-configuration">conditional build configuration</a> to have separate configuration properties for the branches.</p>
+
+<p>The primary things that vary for the different deployments are a few ClickOnce publishing properties, the version number, the build configurations - release/debug and the deployment locations. We will see in detail below how we handle this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.0</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Release</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span><span class='line'>  <span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debug</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>ClickOnce Publish Profile</h3>
+
+<p>To create the publish profile, I used the Visual Studio Publish option on the project, which generates all the <a href="https://msdn.microsoft.com/en-us/library/ms165431.aspx#Anchor_2">Publishing Properties</a>. Most of these values remain the same across all deployment version (release and development). For the ones that are unique to the deployment version like the PublishUrl, UpdateUrl, and ApplicationVersion I removed them from <em>csproj</em> file. The deployment version specific properties is set in the Appveyor configuration file and used by the build script to set the right values.</p>
+
+<p><img class="center" alt="ClickOnce publish settings" src="http://rahulpnath.com/images/clickonce_publishsetting.png" /></p>
+
+<p>In the Appveyor configuration, the <a href="https://www.appveyor.com/docs/build-configuration#script-blocks-in-build-configuration">before_build</a> step these values are set as environment variables, which gets <a href="http://help.appveyor.com/discussions/questions/980-custom-msbuild-property">automatically passed into the MSBuild as Properties</a>. The certificate required for signing ClickOnce manifest gets installed during this step.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">before_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">nuget restore src\CommandLineApplicationLauncher.sln</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="s">&quot;$env:ApplicationVersion=$env:APPVEYOR_BUILD_VERSION;$env:UpdateUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;</span>
+</span><span class='line'>    <span class="s">$env:PublishUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;$mypwd</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">ConvertTo-SecureString</span><span class="nv"> </span><span class="s">-String</span><span class="nv"> </span><span class="s">\&quot;/(Z&amp;rbrFG){p/6W@8xZvg\&quot;</span><span class="nv"> </span><span class="s">-Force</span>
+</span><span class='line'>    <span class="s">–AsPlainText\nImport-PfxCertificate</span><span class="nv"> </span><span class="s">–FilePath</span>
+</span><span class='line'>    <span class="s">C:\\projects\\clal\\src\\CommandLineApplicationLauncherUI\\CommandLineApplicationLauncherUI_TemporaryKey.pfx</span><span class="nv"> </span><span class="s">cert:\\currentuser\\my</span><span class="nv"> </span><span class="s">-Password</span><span class="nv"> </span><span class="s">$mypwd&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Versioning</h3>
+
+<p>I am using <a href="http://semver.org/">semantic versioning</a> and wanted to control the version numbers for the releases explicitly. Since ClickOnce supports only four digit version numbers, the last one always defaults to zero in the release version. For Current build (development) deployments, the fourth place is used to maintain the build number, so that I can support different build version in development. I use a <a href="https://www.appveyor.com/docs/build-configuration#build-versioning">sequential number generated by appveyor</a> and set in the configuration file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a  release I run the below script on the master branch, which updates the version number across the source code files and then push the changes to Github, which triggers a build to the updated version. Then I merge back the master into development so that the next build on development branch would be a build number off the latest released version. The script uses <a href="https://github.com/ploeh/ZeroToNine">ZeroToNine</a> for updating AssemblyInfo files and updates the version numbers in the Appveyor configuration files.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$version</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update All AssemblyInfo file versions</span>
+</span><span class='line'><span class="nv">$z29</span> <span class="p">=</span> <span class="s2">&quot;./ExternalTools/ZeroToNine/Zero29.exe&quot;</span>
+</span><span class='line'><span class="p">&amp;</span><span class="nv">$z29</span> <span class="n">-a</span> <span class="nv">$version</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update Appveyor.yml</span>
+</span><span class='line'><span class="p">((</span><span class="nb">Get-Content</span> <span class="p">./</span><span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span> <span class="p">|</span> <span class="nb">Out-String</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.0&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.0&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.{build}&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.{build}&quot;</span><span class="p">)).</span><span class="n">Trim</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">`r`n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">|</span> <span class="nb">Set-Content</span> <span class="n">-NoNewline</span> <span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Artifacts and Deployment</h3>
+
+<p>The csproj file of the WPF application has <em>Publish</em> also as a default target, which results in a publish everytime the project is build. By default, the publish directory is in the bin folder under a subdirectory <em>app.publish</em>. Appveyor allows specifying folders as <a href="https://www.appveyor.com/docs/packaging-artifacts">artifacts</a>, which marks all the files under them as artifacts. The below script is for the latest stable build and marks it with a name &lsquo;releaseBuild&rsquo;.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">$root = Resolve-Path .\src\CommandLineApplicationLauncherUI\bin\Release\app.publish;</span>
+</span><span class='line'>    <span class="-Error"> </span><span class="p-Indicator">[</span><span class="nv">IO.Directory</span><span class="p-Indicator">]</span><span class="l-Scalar-Plain">::GetFiles($root.Path, &#39;*.*&#39;, &#39;AllDirectories&#39;) | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName releaseBuild }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Appveyor allows to <a href="https://www.appveyor.com/docs/deployment">deploy using multiple providers</a> and <a href="https://www.appveyor.com/docs/deployment/ftp">FTP</a> is one of them. I use this to deploy the artifcats generated to an Azure FTP from which I serve the installer. This is currently hosted on my blog domain. The password for the FTP location is <a href="https://ci.appveyor.com/tools/encrypt">encrypted using the Appveyor tool</a>. The below configuration pushes all the artifacts with the name &lsquo;releaseBuild&rsquo; to the FTP folder.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FTP</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">protocol</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ftps</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">waws-prod-sg1-003.ftp.azurewebsites.windows.net</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">rahulpnath\rahulpnath</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="l-Scalar-Plain">secure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">YOmcTqGUyjYpJOKAnOAfO30hb59cCBTy+Otlj+qrcAo=</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">folder</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/site/wwwroot/clal/Releases</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">artifact</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">releaseBuild</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With each push into the Github repository now we have Appveyor listening to it, pulling the latest source code, installing the code signing certificate for ClickOnce, building and running all tests in the project, publish the ClickOnce application, packaging and deploying this to the Azure FTP. There is a completely automated deployment pipeline and makes it easy to publish updates to <a href="https://github.com/rahulpnath/clal">CLAL</a>!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Getting Started With Freelancing Jobs Online]]></title>
@@ -1721,87 +1869,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
 
 <p><em>You would face this issue only if you started trying out the steps as mentioned in the <a href="http://blogs.technet.com/b/kv/archive/2015/01/09/azure-key-vault-step-by-step.aspx">azure key vault blog</a>(as I did), since the steps in the <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/">documentation site</a></em> is updated with the above step.*</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[IsRegistered on Unity Container for Generic Type]]></title>
-    <link href="http://rahulpnath.com/blog/isregistered-on-unity-container-for-generic-type/"/>
-    <updated>2015-01-15T04:01:51+11:00</updated>
-    <id>http://rahulpnath.com/blog/isregistered-on-unity-container-for-generic-type</id>
-    <content type="html"><![CDATA[<p><em>This post just describes a bug that is there in the Unity (3.5.1404) IoC container, when using the IsRegistered extension method, to check for generic types and a possible fix for it.</em></p>
-
-<p><a href="http://msdn.microsoft.com/en-us/library/ff647202.aspx">Unity</a> IoC container provides <a href="http://msdn.microsoft.com/en-us/library/microsoft.practices.unity.unitycontainerextensions.isregistered(v=pandp.51).aspx">IsRegistered</a> extension method, that can be used to check whether a registration exists for a given type and name (can be null too) combination. When a generic type is registered in the container and trying to check IsRegistered using a concrete typed version of the generic interface it returns false.</p>
-
-<p>As shown in the below code snippet, calling IsRegistered on a non-generic interface(<em>IFooBar</em>) returns true, indicating that a registration exists. But for the generic interface(<em>IFooGeneric&lt;></em>), trying to check if a registration exists for a concrete type (<em>IFooGeneric<string></em> - as only concrete types can be resolved from the container and an open generic type cannot be resolved) it returns false.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
-</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooBar</span><span class="p">),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooBarImplementation</span><span class="p">));</span>
-</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooGeneric</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooGenericImplementation</span><span class="p">&lt;&gt;));</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">hasFooBarRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooBar</span><span class="p">&gt;();</span> <span class="c1">// Returns true</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">hasFooGenericStringRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Returns False</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">fooGenericString</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Resolution Succeeds</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The <a href="https://unity.codeplex.com/SourceControl/latest#source/Unity/Src/UnityContainerExtensions.cs">IsRegistered method </a> as shown below, loops through the list of available registrations looking for a match on the registered type and name. The &lsquo;<em>typeToCheck</em>&rsquo; is the type of the object that we are trying to resolve in IsRegistered - <em>typeof(IFooGeneric<string>)</em>, but the registered type is <em>typeof(IFooGeneric&lt;>)</em>. Because of this the comparison fails and the registration does not pass the where clause of the query, causing the function to return <em>false</em>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
-</span><span class='line'>                   <span class="k">where</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span> <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
-</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
-</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To fix this, we would need to modify the where condition so that in cases where the RegisteredType is a generic type definition, it would compare with the generic type definition of &lsquo;<em>typeToCheck</em>&rsquo;, as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">genericTypeToCheck</span> <span class="p">=</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericType</span>
-</span><span class='line'>                         <span class="p">?</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span>
-</span><span class='line'>                         <span class="p">:</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
-</span><span class='line'>                   <span class="k">where</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericTypeDefinition</span>
-</span><span class='line'>                   <span class="p">?</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">genericTypeToCheck</span>
-</span><span class='line'>                   <span class="p">:</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">)</span>
-</span><span class='line'>                   <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
-</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
-</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>A similar <a href="https://unity.codeplex.com/discussions/568979">issue</a> was already raised in the unity discussions, which I feel was closed inappropriately.</p>
-
-<blockquote><p>If a container can Resolve a particular type then it should also be able to return that it IsRegistered.</p></blockquote>
-
-<p>Please do be aware that using IsRegistered extensively has a <a href="http://unity.codeplex.com/discussions/268223">negative impact on performance</a> as looping through the Registration looking for the name and type has <a href="http://en.wikipedia.org/wiki/Big_O_notation">O(n) complexity</a>. But that still does not justify the bug!.</p>
-
-<p><em>I have submitted a <a href="https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isRegisteredForGenericTypes/contribution/7903">pull request</a> for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!</em>
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   

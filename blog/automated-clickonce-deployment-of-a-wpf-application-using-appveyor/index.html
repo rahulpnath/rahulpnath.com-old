@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Automated ClickOnce Deployment of a WPF Application using Appveyor - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T12:00:00+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 4<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/clal/'>clal</a>, <a class='category' href='/blog/category/tools/'>tools</a>, <a class='category' href='/blog/category/wpf/'>wpf</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Automated ClickOnce Deployment of a WPF Application using Appveyor
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>This post covers the current deployment setup of <a href="https://github.com/rahulpnath/clal">CLAL</a>(Command Line Application Launcher), a desktop application, that I am building. Since it is a WPF application, it supports <a href="https://msdn.microsoft.com/en-us/library/t71a733d.aspx">ClickOnce Deployment</a> that enables to create self-updating applications which can install with minimum interaction from the user. ClickOnce supports different <a href="https://msdn.microsoft.com/en-us/library/71baz9ah.aspx">deployment strategy</a> of which distributing it through the web is quite popular as it makes software distribution easier. It works well when the software size is not large so that application installation is faster. For CLAL, there are two deployments served from Azure: <a href="http://www.rahulpnath.com/clal/Releases/commandlineapplicationlauncherui.application">Latest stable build</a> and the <a href="http://www.rahulpnath.com/clal/Latest/commandlineapplicationlauncherui.application">Current build</a>.</p>
+
+<p>I did not want to do manually, the entire deployment process of building the solution, running all the tests, creating the ClickOnce package and pushing it up to Azure, I decided to automate this. Since <a href="https://www.appveyor.com/">Appveyor</a>, a hosted distributed continuous integration service used to build and test projects, is free for open-source projects and integrates very well with application developed on the Windows platform.</p>
+
+<h3>Setting up Appveyor project</h3>
+
+<p>Setting up Appveyor to read from Github is very easy. Once you authorize access to Github, Appveyor lists all the projects that you have in your Github account. After selecting a project, it creates a <a href="https://ci.appveyor.com/project/rahulpnath/clal">&lsquo;build project&rsquo;</a> for that in Appveyor, where you can control all build related activities. Appveyor automatically pulls in your latest source code from the repository, when a build triggers. Build configurations can be specified using a <a href="https://www.appveyor.com/docs/appveyor-yml">configuration file</a> (appveyor.yml) living at the repository root or using the user interface. For CLAL I exclusively use the configuration from the file and the latest version is available <a href="https://github.com/rahulpnath/clal/blob/master/appveyor.yml">here</a>.
+Primarily there are two branches (<em>master</em> and <em>development</em>) on the git repository which builds as the latest stable and current build. Since these two deployments have few attributes different (like the version numbers, deployment URL, update URL), I use <a href="https://www.appveyor.com/docs/branches#conditional-build-configuration">conditional build configuration</a> to have separate configuration properties for the branches.</p>
+
+<p>The primary things that vary for the different deployments are a few ClickOnce publishing properties, the version number, the build configurations - release/debug and the deployment locations. We will see in detail below how we handle this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.0</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Release</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span><span class='line'>  <span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debug</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>ClickOnce Publish Profile</h3>
+
+<p>To create the publish profile, I used the Visual Studio Publish option on the project, which generates all the <a href="https://msdn.microsoft.com/en-us/library/ms165431.aspx#Anchor_2">Publishing Properties</a>. Most of these values remain the same across all deployment version (release and development). For the ones that are unique to the deployment version like the PublishUrl, UpdateUrl, and ApplicationVersion I removed them from <em>csproj</em> file. The deployment version specific properties is set in the Appveyor configuration file and used by the build script to set the right values.</p>
+
+<p><img class="center" alt="ClickOnce publish settings" src="/images/clickonce_publishsetting.png" /></p>
+
+<p>In the Appveyor configuration, the <a href="https://www.appveyor.com/docs/build-configuration#script-blocks-in-build-configuration">before_build</a> step these values are set as environment variables, which gets <a href="http://help.appveyor.com/discussions/questions/980-custom-msbuild-property">automatically passed into the MSBuild as Properties</a>. The certificate required for signing ClickOnce manifest gets installed during this step.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">before_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">nuget restore src\CommandLineApplicationLauncher.sln</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="s">&quot;$env:ApplicationVersion=$env:APPVEYOR_BUILD_VERSION;$env:UpdateUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;</span>
+</span><span class='line'>    <span class="s">$env:PublishUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;$mypwd</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">ConvertTo-SecureString</span><span class="nv"> </span><span class="s">-String</span><span class="nv"> </span><span class="s">\&quot;/(Z&amp;rbrFG){p/6W@8xZvg\&quot;</span><span class="nv"> </span><span class="s">-Force</span>
+</span><span class='line'>    <span class="s">–AsPlainText\nImport-PfxCertificate</span><span class="nv"> </span><span class="s">–FilePath</span>
+</span><span class='line'>    <span class="s">C:\\projects\\clal\\src\\CommandLineApplicationLauncherUI\\CommandLineApplicationLauncherUI_TemporaryKey.pfx</span><span class="nv"> </span><span class="s">cert:\\currentuser\\my</span><span class="nv"> </span><span class="s">-Password</span><span class="nv"> </span><span class="s">$mypwd&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Versioning</h3>
+
+<p>I am using <a href="http://semver.org/">semantic versioning</a> and wanted to control the version numbers for the releases explicitly. Since ClickOnce supports only four digit version numbers, the last one always defaults to zero in the release version. For Current build (development) deployments, the fourth place is used to maintain the build number, so that I can support different build version in development. I use a <a href="https://www.appveyor.com/docs/build-configuration#build-versioning">sequential number generated by appveyor</a> and set in the configuration file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a  release I run the below script on the master branch, which updates the version number across the source code files and then push the changes to Github, which triggers a build to the updated version. Then I merge back the master into development so that the next build on development branch would be a build number off the latest released version. The script uses <a href="https://github.com/ploeh/ZeroToNine">ZeroToNine</a> for updating AssemblyInfo files and updates the version numbers in the Appveyor configuration files.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$version</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update All AssemblyInfo file versions</span>
+</span><span class='line'><span class="nv">$z29</span> <span class="p">=</span> <span class="s2">&quot;./ExternalTools/ZeroToNine/Zero29.exe&quot;</span>
+</span><span class='line'><span class="p">&amp;</span><span class="nv">$z29</span> <span class="n">-a</span> <span class="nv">$version</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update Appveyor.yml</span>
+</span><span class='line'><span class="p">((</span><span class="nb">Get-Content</span> <span class="p">./</span><span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span> <span class="p">|</span> <span class="nb">Out-String</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.0&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.0&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.{build}&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.{build}&quot;</span><span class="p">)).</span><span class="n">Trim</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">`r`n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">|</span> <span class="nb">Set-Content</span> <span class="n">-NoNewline</span> <span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Artifacts and Deployment</h3>
+
+<p>The csproj file of the WPF application has <em>Publish</em> also as a default target, which results in a publish everytime the project is build. By default, the publish directory is in the bin folder under a subdirectory <em>app.publish</em>. Appveyor allows specifying folders as <a href="https://www.appveyor.com/docs/packaging-artifacts">artifacts</a>, which marks all the files under them as artifacts. The below script is for the latest stable build and marks it with a name &lsquo;releaseBuild&rsquo;.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">$root = Resolve-Path .\src\CommandLineApplicationLauncherUI\bin\Release\app.publish;</span>
+</span><span class='line'>    <span class="-Error"> </span><span class="p-Indicator">[</span><span class="nv">IO.Directory</span><span class="p-Indicator">]</span><span class="l-Scalar-Plain">::GetFiles($root.Path, &#39;*.*&#39;, &#39;AllDirectories&#39;) | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName releaseBuild }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Appveyor allows to <a href="https://www.appveyor.com/docs/deployment">deploy using multiple providers</a> and <a href="https://www.appveyor.com/docs/deployment/ftp">FTP</a> is one of them. I use this to deploy the artifcats generated to an Azure FTP from which I serve the installer. This is currently hosted on my blog domain. The password for the FTP location is <a href="https://ci.appveyor.com/tools/encrypt">encrypted using the Appveyor tool</a>. The below configuration pushes all the artifacts with the name &lsquo;releaseBuild&rsquo; to the FTP folder.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FTP</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">protocol</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ftps</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">waws-prod-sg1-003.ftp.azurewebsites.windows.net</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">rahulpnath\rahulpnath</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="l-Scalar-Plain">secure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">YOmcTqGUyjYpJOKAnOAfO30hb59cCBTy+Otlj+qrcAo=</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">folder</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/site/wwwroot/clal/Releases</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">artifact</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">releaseBuild</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With each push into the Github repository now we have Appveyor listening to it, pulling the latest source code, installing the code signing certificate for ClickOnce, building and running all tests in the project, publish the ClickOnce application, packaging and deploying this to the Azure FTP. There is a completely automated deployment pipeline and makes it easy to publish updates to <a href="https://github.com/rahulpnath/clal">CLAL</a>!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/getting-started-with-freelancing-jobs-online/" title="Previous Post: Getting Started With Freelancing Jobs Online">&laquo; Getting Started With Freelancing Jobs Online</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/';
+        var disqus_url = 'http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
