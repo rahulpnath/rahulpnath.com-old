@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tools | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tools/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-04T12:03:37+11:00</updated>
+  <updated>2016-03-07T20:36:04+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,49 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Using Fiddler to help in Manual Testing]]></title>
+    <link href="http://rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/"/>
+    <updated>2016-03-07T17:33:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing</id>
+    <content type="html"><![CDATA[<p>Fiddler is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It also enables modifying HTTP traffic when sent or received. Fiddler is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of the tools that I use daily</a> and is an indispensable one for any web developer.</p>
+
+<p>This post gives an introduction on how you can use fiddler to help with &lsquo;manual testing&rsquo;. We will see how to use Fiddler to create requests to Web API,  modify and replay an existing request. We will also see how to test error scenarios to see how the application functions in those cases. The sample solution is the default Web API project in Visual Studio with a few changes.</p>
+
+<h3>Composing a Request</h3>
+
+<p>When testing API&rsquo;s to see how it behaves with various inputs, one often needs to send in different parameters. Fiddler allows composing new requests and  modifying existing ones.</p>
+
+<p>Using the Fiddler composer window (shown in the image below), we can create new requests from scratch and execute them. It provides two modes to create requests:</p>
+
+<ul>
+<li>Parsed : This is an assisted form to create requests</li>
+<li>Raw : This allows to create raw http requests and issue them.</li>
+</ul>
+
+
+<p>Fiddler also allows saving raw requests in the Scratchpad tab to execute as and when required. On clicking Execute Fiddler creates an HTTP request from the entered data and sends to the server. To modify requests you can either drag and drop the request from the displayed URL&rsquo;s list into the composer tab or right-click on an entry and <em>Unlock for Editing</em> (keyboard shortcut - F2). After making the changes to the request in the Inspector window, right-click on the request again to Replay -> Reissue ( R).</p>
+
+<p><img class="center" alt="Fiddler Composer tab" src="/images/fiddler_composer.png" /></p>
+
+<h3>Testing Error Cases</h3>
+
+<p>Testing error cases is tricky, especially from a UI level. Things usually don&rsquo;t go wrong in the development/testing environment and <a href="http://blog.codinghorror.com/the-works-on-my-machine-certification-program/">almost never on a developers machine</a> which makes it very hard to test for cases where something does not work. Fiddler makes it easy to test error scenarios with <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder">AutoResponder</a>, which allows returning handcrafted responses for requests, without actually hitting the server.</p>
+
+<p>To create an auto response for a URL, select the URL from the URL&rsquo;s list and drag it into the AutoResponder tab or select the URL and click on Add Rule button on AutoResponder tab, which will create a new rule. By default Fiddler creates a rule with an exact match (Exact:) with the selected URL. Fiddler supports different <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matching rules</a> which include regular expression matches. A list of default response text are available to choose from to respond to requests that match the URL matching rule. We can also create a custom response and save it for reuse. The next time a request with matching URL is found the custom response gets returned to the caller.</p>
+
+<blockquote><p><em>Make sure that the &lsquo;Unmatched requests passthrough&rsquo; option is true in the AutoResponder tab to make sure that all other requests pass through to the server.</em></p></blockquote>
+
+<p><img class="center" alt="Fiddler AutoResponder tab" src="/images/fiddler_autoresponder.png" /></p>
+
+<p>To create a custom response, choose &lsquo;Create a New Response&rsquo; or &lsquo;Find a file&rsquo; (if you already have the response saved in a text file). You can save custom responses in the <em>ResponseTemplates</em> folder in the root folder of Fiddler installation, to have them populated in the AutoResponder tab. When editing existing response data, make sure properties like Content-Length reflects the correct values. You can also set a <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">Latency</a> for the response, to simulate response coming from a server. RIght click on the rules for the Set Latency option and enter the value in milliseconds.</p>
+
+<p>With the AutoResponder set to matching URL, we can easily have it return error codes or simulated error messages to test how the UI handles them. You don&rsquo;t have to depend on &lsquo;actual server errors&rsquo; to test if the UI handles error correctly. You can use this to test how application behaves with different return values by mocking with valid custom responses.  Fiddler provides richer capabilities of using scripts to <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">modify a request or response</a>.</p>
+
+<p>Hope this helps you get started with using Fiddler for testing and manipulating requests/responses.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Automated ClickOnce Deployment of a WPF Application using Appveyor]]></title>
@@ -247,48 +290,6 @@ return
 
 
 <p>What system do you use to manage your life?. Do drop in the comments. I am still looking to refine more if it helps me to stay on top.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Converting a PDF for your Kindle]]></title>
-    <link href="http://rahulpnath.com/blog/converting-a-pdf-for-your-kindle/"/>
-    <updated>2013-08-29T02:11:00+10:00</updated>
-    <id>http://rahulpnath.com/blog/converting-a-pdf-for-your-kindle</id>
-    <content type="html"><![CDATA[<p>Earlier I had blogged about reading an <a href="http://rahulpnath.com/blog/2009/09/14/ebook-or-hard-copy/">eBook vs reading a hard copy</a> and I was preferring the hard copy one back then. But after getting a <a href="http://www.amazon.in/gp/product/B007HCFU90/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=3626&amp;creative=24790&amp;creativeASIN=B007HCFU90&amp;linkCode=as2&amp;tag=rahulpnath-21">Kindle</a> things have changed. I prefer MOBI now, as that is the one that is supported by Kindle. I think a Kindle needs no introduction and the only thing I can say about it is “<em>If you don’t own one, get one.</em>  The e-ink display is a real comfort for the eye and it just feels like reading from paper.“ I got the most basic version of Kindle and I am happy with that(at least for now).</p>
-
-<p>The easiest way to get books on your Kindle is to buy them from Amazon, right from your Kindle itself. The experience is so seamless that you just cannot resist from. But often you have pdf’s with you that you would want to read in your Kindle. There are a couple of ways(in fact a lot more), that you can get your pdf to the Kindle.</p>
-
-<ol>
-<li><p><strong> </strong>The most direct and easy way is to <a href="http://www.amazon.com/gp/sendtokindle/email">send it to your kindle mail address</a>.  The problem with this is it that it makes the font very small that it is difficult to read.</p></li>
-<li><p>There are also a lot of tools that help you manage your eBooks that have kindle support too. <a href="http://calibre-ebook.com/">Calibre</a> is one such popular tool. Calibre has options to send to Kindle, which would convert pdf to the required mobi format. The problem with this is that it keeps inserting line breaks after every other line.</p></li>
-</ol>
-
-
-<p>So with the both the methods I have found that the formatting gets all messed up for the Kindle, making it difficult to have a smooth reading. After a lot of investigating , I have come up with a good method to get my pdf onto the Kindle.</p>
-
-<p>It is a simple <strong><em>3 step</em></strong> process:</p>
-
-<p><strong>Step 1:</strong></p>
-
-<p>Convert the pdf into html with <a href="http://www.mobipocket.com/en/downloadsoft/productdetailscreator.asp">mobipocket creator</a>.  Highlighted in yellow below.</p>
-
-<p><img src="/mobicreator.png" alt="mobi creator" /></p>
-
-<p><strong>Step 2:</strong></p>
-
-<p>From the above step you would get a html output file. Import this converted html format into <a href="http://calibre-ebook.com/">Calibre</a></p>
-
-<p><strong>Step 3:</strong></p>
-
-<p>Right click on the imported html file in Calibre. Select the option to Convert into mobi and transfer it to your Kindle.
-Here is a comparison of the all the 3 methods above in order(kindle email, direct calibre and mobicreator + calibre )</p>
-
-<p><img src="/kindle_email.jpg" alt="kindle email" /><img src="/Kindle_Caliber.png" alt="Kindle Caliber" /><img src="/kindle_mobicreator_caliber.png" alt="Kindle mobicreator caliber" /></p>
-
-<p>You can clearly see that last image above is well formatted and matches almost to our original pdf.</p>
-
-<p>This might not be the best way always but most of the time it has got me well formatted books on my Kindle. Please chip in with any better ways in the comments section.</p>
 ]]></content>
   </entry>
   
