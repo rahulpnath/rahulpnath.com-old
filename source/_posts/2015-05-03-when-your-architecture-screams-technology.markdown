@@ -4,6 +4,8 @@ title: "When your Architecture Screams Technology!"
 date: 2015-05-03 22:43:55 +0530
 comments: true
 categories: 
+- Design
+- Programming
 tags: 
 keywords: 
 description: 
