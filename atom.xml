@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-07T20:33:39+11:00</updated>
+  <updated>2016-03-11T14:27:52+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,258 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Thinking Beyond Primitive Values: Value Objects]]></title>
+    <link href="http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/"/>
+    <updated>2016-03-11T05:49:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects</id>
+    <content type="html"><![CDATA[<p>When modelling objects for our application, we use primitive values to represent their attributes or properties. By primitive values, I refer to all the primitive types (like Byte, Boolean, Int, Date) and the in-built types (String etc.) that the language supports. These are the most basic types of the programming language and are the building blocks to create custom types.</p>
+
+<h3>Primitive Types and Associated Problems</h3>
+
+<p>When modelling classes for the domain, one of the most common things we do is to fit domain concepts into primitive types. For example</p>
+
+<ul>
+<li><strong>String</strong> to represent Names (Employee name, Company Name, Product Name, Car Name etc.)</li>
+<li><strong>Int/Decimal/Double/Float</strong> to represent Numbers (Age, Quantity, Money, Temperature, Distance, Upload/Download sizes etc.)</li>
+</ul>
+
+
+<p>Those are just a few examples on how we &lsquo;usually&rsquo; fit domain concepts into primitive types. This kind of design tends to take us more towards procedural programming, as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">phoneNumber</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">isExtensionPhoneNumber</span> <span class="p">=</span> <span class="n">phoneNumber</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">phoneNumber</span><span class="p">.</span><span class="n">Length</span> <span class="p">&lt;=</span><span class="m">5</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The problem with this is that these constraints/logics tends to leak across the code-base and we run into problems either not handling this at certain places, handling them wrongly or any changes to these constraints ripples across the code.</p>
+
+<h3>Value Object</h3>
+
+<p>A common factor in all the above examples is that those domain concepts follow value equality and not reference equality. Just like two strings or integers compares with each other based on their value, two names, temperature, color all compare against each other based on their value. This is where a Value Object fits in well.</p>
+
+<blockquote><p><em><a href="http://martinfowler.com/bliki/ValueObject.html">Value Object</a> is an object whose equality is determined by the value it holds and are immutable.</em></p></blockquote>
+
+<p>Below is a Value Object implementation of &lsquo;UserName&rsquo; where we have the domain constraint that name should not be empty and at least be three characters (not a real world scenario, but just for an example). The Equals and GetHashCode methods below ensures that the equality comparison is based on the value that it holds. One could also <a href="https://msdn.microsoft.com/en-au/library/ms173147(v=vs.80">override the &lsquo;==&rsquo; and &lsquo;!=&rsquo; operator</a>.aspx) if you want to support those.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">UserName</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="kt">string</span> <span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="nf">UserName</span><span class="p">(</span><span class="kt">string</span> <span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">Length</span> <span class="p">&lt;</span> <span class="m">3</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;Name should be atleast 3 characters long&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">internalName</span> <span class="p">=</span> <span class="n">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">objAsName</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="n">UserName</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="n">Object</span><span class="p">)</span><span class="n">objAsName</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="n">internalName</span> <span class="p">==</span> <span class="n">objAsName</span><span class="p">.</span><span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">internalName</span><span class="p">.</span><span class="n">GetHashCode</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is no restriction on the number of parameters that a value object should be composed of. Equality and Hashcode should use all the values that it composes of. For immutability, we have made the <em>internalName</em> (in above case ) a private variable. You could also have it as public read-only property if you scenario demands, like in case of DateRange Value Object. Making the setters private and checking end date is not greater than the start date while construction, helps  protect the <a href="http://people.cs.aau.dk/~normark/oop-csharp/html/notes/contracts_themes-class-inv-sect.html">class invariants</a>. In addition to that, any update to start or end date should create a new DateRange object as WithEndDate does below.</p>
+
+<blockquote><p><em>A class invariant is an assertion that captures the properties and relationships, which remain stable throughout the life-time of instances of the class.</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">public</span> <span class="n">DateTime</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// Ignoring null checks</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End Date cannot be less than Start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">this</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">this</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateRange</span> <span class="nf">WithEndDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>    <span class="p">...</span> <span class="c1">// Rest of Value Object Code to override Equals and GetHashCode</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Thinking as Value Objects</h3>
+
+<p>In the beginning, it is hard to see Value Objects in your domain, but then there is an easy trick that you can follow.</p>
+
+<blockquote><p><em>Any time you use a primitive type (unless within a Value Object) think more about the choice.</em></p></blockquote>
+
+<p>Once you start using more and more Value Objects you will naturally get good at it and be able to start to see more of it in your domain.</p>
+
+<ul>
+<li>Look for co-existing properties, that always go together (like start date and end date, first name and last Name), and try to model them as Value Objects.</li>
+<li>Any property that has a unit of measurement associated needs the value and the measurement unit together (Money, Temperature, Distance, Upload/Download size etc.), and is likely a Value Object.</li>
+<li>Properties that have structural restrictions like Phone Number, Zip Code, email etc.</li>
+</ul>
+
+
+<p>Extracting these into Value Objects helps pull in a lot of &lsquo;<em>procedural code</em>&rsquo; into the Value Object, as shown below. Even if the extension numbers  format changes, we have a single place to contain this change and can avoid a rippling change. We can also have static factory methods to assist in creating these Value Object and helps make the code readable like the <em>CreateFromBytes</em> method below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">PhoneNumber</span> <span class="n">phoneNumber</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">phoneNumber</span><span class="p">.</span><span class="n">IsAnExtension</span><span class="p">())</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">//Rest of code</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">downloadBytes</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">downloadedData</span> <span class="p">=</span> <span class="n">UnitOfData</span><span class="p">.</span><span class="n">CreateFromBytes</span><span class="p">(</span><span class="n">downloadBytes</span><span class="p">);</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'><span class="n">downloadedData</span><span class="p">.</span><span class="n">GetSizeInMegabytes</span><span class="p">();</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">//Rest of code</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h3>Implicit and Explicit Conversions</h3>
+
+<p>Introducing a Value Object to an existing code base might seem challenging, as it might be all over the code and a hard task to replace all at once. In cases where the Value Object replaces a single property existing in a class like a string name, phoneNumber, location etc., we can take advantage of the <a href="https://msdn.microsoft.com/en-us/library/z5z9kes2.aspx">implicit conversion operators</a>, to introduce new Value Objects gradually. Let&rsquo;s say you have a Name field that is a string and you want to move this over to a Value Object &lsquo;UserName&rsquo;. We can declare an implicit operator to convert between string and UserName, which helps us gradually change over to the new ValueObject</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">implicit</span> <span class="k">operator</span> <span class="nf">UserName</span><span class="p">(</span><span class="kt">string</span> <span class="n">userName</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">UserName</span><span class="p">(</span><span class="n">userName</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">implicit</span> <span class="k">operator</span> <span class="nf">string</span><span class="p">(</span><span class="n">UserName</span> <span class="n">userName</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">userName</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;userName&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">userName</span><span class="p">.</span><span class="k">value</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="kt">string</span> <span class="nf">ToString</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The implicit operator enables us to use UserName and string side-by-side and it will automatically convert between them without any explicit casts. This enables us to start anywhere in the application and start replacing the Primitive Value types into Value Objects without breaking the application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">lastName</span> <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="n">UserName</span> <span class="n">firstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kt">string</span> <span class="n">fullNameString</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;{0} {1}&quot;</span><span class="p">,</span> <span class="n">firstName</span> <span class="p">,</span> <span class="n">lastName</span><span class="p">);</span>
+</span><span class='line'><span class="n">UserName</span> <span class="n">fullName</span> <span class="p">=</span> <span class="n">fullNameString</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At the application boundaries, if the data is serialized into different formats (JSON/XML) or persisted into ORM&rsquo;s (Entity Framework/NHibernate) you need to add <a href="http://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonConverter.htm">custom serialization formatters</a> or <a href="https://msdn.microsoft.com/en-au/data/jj591617.aspx">mapping configurations</a> to make sure that the Value Object gets serialized/persisted as expected.</p>
+
+<p>Value Objects helps model the domain better and keeps code more readable. It also helps you change domain constraints or rules more easily and keeps them contained. Consider introducing a value object the next time you see one!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using Fiddler to help in Manual Testing]]></title>
@@ -42,13 +294,13 @@
 
 <p>Testing error cases is tricky, especially from a UI level. Things usually don&rsquo;t go wrong in the development/testing environment and <a href="http://blog.codinghorror.com/the-works-on-my-machine-certification-program/">almost never on a developers machine</a> which makes it very hard to test for cases where something does not work. Fiddler makes it easy to test error scenarios with <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder">AutoResponder</a>, which allows returning handcrafted responses for requests, without actually hitting the server.</p>
 
-<p>To create an auto response for a URL, select the URL from the URL&rsquo;s list and drag it into the AutoResponder tab or select the URL and click on Add Rule button on AutoResponder tab, which will create a new rule. By default Fiddler creates a rule with an exact match (Exact:) with the selected URL. FIddler supports different <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matching rules</a> which includes regular expression matches. A list of default response text are available to choose from to respond to requests that match the URL matching rule. We can also create a custom response and save it for reuse. The next time a request with matching URL is found the custom response gets returned to the caller.</p>
+<p>To create an auto response for a URL, select the URL from the URL&rsquo;s list and drag it into the AutoResponder tab or select the URL and click on Add Rule button on AutoResponder tab, which will create a new rule. By default Fiddler creates a rule with an exact match (Exact:) with the selected URL. Fiddler supports different <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matching rules</a> which include regular expression matches. A list of default response text are available to choose from to respond to requests that match the URL matching rule. We can also create a custom response and save it for reuse. The next time a request with matching URL is found the custom response gets returned to the caller.</p>
 
 <blockquote><p><em>Make sure that the &lsquo;Unmatched requests passthrough&rsquo; option is true in the AutoResponder tab to make sure that all other requests pass through to the server.</em></p></blockquote>
 
 <p><img class="center" alt="Fiddler AutoResponder tab" src="http://rahulpnath.com/images/fiddler_autoresponder.png" /></p>
 
-<p>To create a custom response, choose &lsquo;Create a New Response&rsquo; or &lsquo;Find a file&rsquo; (if you already have the response saved in a text file). You can save custom responses in the <em>ResponseTemplates</em> folder in root folder of Fiddler installation, to have them populated in the AutoResponder tab. When editing existing response data, make sure properties like Content-Length reflects the correct values. You can also set a <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">Latency</a> for the response, to simulate response coming from a server. RIght click on the rules for the Set Latency option and enter the value in milliseconds.</p>
+<p>To create a custom response, choose &lsquo;Create a New Response&rsquo; or &lsquo;Find a file&rsquo; (if you already have the response saved in a text file). You can save custom responses in the <em>ResponseTemplates</em> folder in the root folder of Fiddler installation, to have them populated in the AutoResponder tab. When editing existing response data, make sure properties like Content-Length reflects the correct values. You can also set a <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">Latency</a> for the response, to simulate response coming from a server. RIght click on the rules for the Set Latency option and enter the value in milliseconds.</p>
 
 <p>With the AutoResponder set to matching URL, we can easily have it return error codes or simulated error messages to test how the UI handles them. You don&rsquo;t have to depend on &lsquo;actual server errors&rsquo; to test if the UI handles error correctly. You can use this to test how application behaves with different return values by mocking with valid custom responses.  Fiddler provides richer capabilities of using scripts to <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">modify a request or response</a>.</p>
 
@@ -1733,134 +1985,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
 
 <p>You could use either ways to authenticate an application to Azure Key Vault. Using the certificate way would be more secure as you can also password protect your certificate so that it cannot be installed without having that. If using the client secret anybody having access to the configuration would be able to access the vault. Also make sure that you give the application&rsquo;s only necessary permissions for accessing keys and secrets while registering the application. You could use the sample used in the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a>. The code in there uses clientId and secret, you could change it with the above code to use certificate authentication.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Getting Started with Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/getting-started-with-azure-key-vault/"/>
-    <updated>2015-01-25T23:52:06+11:00</updated>
-    <id>http://rahulpnath.com/blog/getting-started-with-azure-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. Also these sensitive information no longer needs to be exposed in the application&rsquo;s configuration file or in database. Keys can be created in the vault and accessed via url&rsquo;s by the required application. Operations against the Key Vault are authenticated and authorized using Azure Active Directory. So in short all that a developer would need to know are the URI&rsquo;s for the keys, the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903625.aspx">sdk/api</a> to access the vault features and also on the mechanism to authenticate against the AD application (an appId/client secret or appId/certificate).</p>
-
-<p><img class="center" alt="Azure Key Vault Overview" src="http://rahulpnath.com/images/azurekeyvault_overview.png" /></p>
-
-<h3>Key Types</h3>
-
-<p>The initial release of Azure Key Vault only supports RSA keys (asymmetric cryptography) - it supports both software and HSM processed keys, and are represented as JSON Web Key objects. In future there might be more support for the different key types that are there in cryptography. For those who are new to cryptography or needs a quick recap on cryptography algorithms:</p>
-
-<h5><strong>Symmetric Cryptography</strong></h5>
-
-<p>Symmetric cryptography, uses the same key to encrypt and decrypt the data. The keys are shared between the identities that require to transfer the encrypted data.</p>
-
-<p><img class="center" alt="Symmetric Encryption" src="http://rahulpnath.com/images/symmetric_encryption.png" /></p>
-
-<h5><strong>Asymmetric Cryptography</strong></h5>
-
-<p>Asymmetric cryptography, also known as public key cryptography uses two separate keys - a public key and private key. The public key can be used to encrypt the data or to verify a digital signature whereas the private key is used to decrypt the text or to digital sign.</p>
-
-<p><img class="center" alt="Asymmetric Encryption" src="http://rahulpnath.com/images/asymmetric_encryption.png" /></p>
-
-<p>To create a new key in the Azure Key Vault, first we need to create the vault, using powershell scripts. You would need to install <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">azure module version 0.8.13 version or higher</a> for the key vault scripts to execute. Detailed steps on creating the vault and keys is documented <a href="http://azure.microsoft.com/en-in/documentation/articles/key-vault-get-started/">here</a>. Once we have the key created we can get the attributes of the key, using <em>Get-AzureKeyVaultKey</em>. This is as per the <a href="https://tools.ietf.org/html/draft-ietf-jose-json-web-key-41#page-25">JSON Web Key(JWK) format</a>. The &lsquo;<em>n/e</em>&rsquo; values in the below key are for the RSA key type(<em>kty</em>), showing the public key information.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-Name</span> <span class="n">rahulkey</span> <span class="n">-VaultName</span> <span class="n">testvaultrahul</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="n">Attributes</span> <span class="err">:</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Azure</span><span class="p">.</span><span class="n">Commands</span><span class="p">.</span><span class="n">KeyVault</span><span class="p">.</span><span class="n">Models</span><span class="p">.</span><span class="n">KeyAttributes</span>
-</span><span class='line'><span class="n">Key</span>        <span class="err">:</span> <span class="p">{</span><span class="s2">&quot;kid&quot;</span><span class="err">:</span><span class="s2">&quot;https://testvaultrahul.vault.azure.net/keys/rahulkey/0f653b06c1d94159bc7090596bbf7784&quot;</span><span class="p">,</span><span class="s2">&quot;kty&quot;</span><span class="err">:</span><span class="s2">&quot;RSA&quot;</span><span class="p">,</span><span class="s2">&quot;key_ops&quot;</span><span class="err">:</span><span class="p">[</span><span class="s2">&quot;encrypt&quot;</span><span class="p">,</span><span class="s2">&quot;decrypt&quot;</span><span class="p">,</span><span class="s2">&quot;sign&quot;</span><span class="p">,</span><span class="s2">&quot;verify&quot;</span><span class="p">,</span><span class="s2">&quot;w </span>
-</span><span class='line'><span class="s2">             rapKey&quot;</span><span class="p">,</span><span class="s2">&quot;unwrapKey&quot;</span><span class="p">],</span><span class="s2">&quot;n&quot;</span><span class="err">:</span><span class="s2">&quot;xAXdHg5IAiU44GLM41hrCgfbEf8vg414lwIXBRHwPH-GTdQo3x5hMyvEtT26udcWLeRDDYGQxquuQ03ChXmXaE1Z8rdDpuaciJVoTB8wA_icr4Ww4ld0zuk9Nf31sVP-T_ </span>
-</span><span class='line'><span class="s2">             UiYBpg_3MdwbDvO53udtknLWnXEa-Y-NXlCwUus6LOtfoG1_oVg5B5OFfcW993Zb44C3ZMoOESa-fW0eT6OefBJOgXwGG5gB-zAB2D7uzhStu3Cp4OiFELQSAS4gpt2GCUI76YkTfq8jnIJ7bi5cYzUb-Sv2 </span>
-</span><span class='line'><span class="s2">             9nkiwJV9I7hN6wuoz1gNRoJJVisBtidiFd8EYYuCGB3AH8OWbWS_sXEw&quot;</span><span class="p">,</span><span class="s2">&quot;e&quot;</span><span class="err">:</span><span class="s2">&quot;AQAB&quot;</span><span class="p">}</span>
-</span><span class='line'><span class="n">VaultName</span>  <span class="err">:</span> <span class="n">testvaultrahul</span>
-</span><span class='line'><span class="n">Name</span>       <span class="err">:</span> <span class="n">rahulkey</span>
-</span><span class='line'><span class="n">Version</span>    <span class="err">:</span> <span class="n">0f653b06c1d94159bc7090596bbf7784</span>
-</span><span class='line'><span class="n">Id</span>         <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">keys</span><span class="p">/</span><span class="n">rahulkey</span><span class="p">/</span><span class="n">0f653b06c1d94159bc7090596bbf7784</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Key Operations</h3>
-
-<p>Now that we have a key in the vault, we can use this to perform different operations allowed on the key, as provided in the <em>key_ops</em> field in the key details above. Typical operations that can be performed using the key are Encrypt, Decrypt, Sign, Verify, WrapKey and UnWrapKey. For an application to use the key vault keys, it needs to authenticate using a token from the Azure Active Directory. For this we first need to <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/#register">register an application with azure active directory</a> and then use the Application id and Authentication key(client secret) to authenticate against the AD application. Instead of using the  key/secret, this could also be through a certificate authentication, which might be a more preferred approach(For the simplicity of this demo will use the application id and the secret directly). To connect to the AD application we can use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory/2.14.201151115">Active Directory Authentication Library</a> nuget package, the KeyVault libraries are availalble as part of the <a href="http://www.microsoft.com/en-us/download/details.aspx?id=45343">samples</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">).</span><span class="n">AccessToken</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// Get the key details</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://testvaultrahul.vault.azure.net/keys/rahulkey/0f653b06c1d94159bc7090596bbf7784&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">key</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetKeyAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">publicKey</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">ToBase64String</span><span class="p">(</span><span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">N</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The application first uses the AD application credentials to authenticate and obtain the token for further interacting with the key vault. Using the key identifier that is available we get the details of the key.For performing the get operation the &lsquo;<em>PermissionToKeys</em>&rsquo;, should be set appropriately when registering the AD application, using Set-AzureKeyVaultAccessPolicy, against the key vault. Since this is RSA asymmetric algorithm, we have the public key available to us, and we can use this to encrypt the data or to verify the signature, locally in the application itself, though the vault client provides this for convenience.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">rsa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSACryptoServiceProvider</span><span class="p">())</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">p</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSAParameters</span><span class="p">()</span> <span class="p">{</span> <span class="n">Modulus</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">N</span><span class="p">,</span> <span class="n">Exponent</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">E</span> <span class="p">};</span>
-</span><span class='line'>    <span class="n">rsa</span><span class="p">.</span><span class="n">ImportParameters</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// Encrypt and Decrypt</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">encryptedText</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">Encrypt</span><span class="p">(</span><span class="n">byteData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">DecryptDataAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA_OAEP&quot;</span><span class="p">,</span> <span class="n">encryptedText</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// Sign and Verify</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">hasher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SHA256CryptoServiceProvider</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">digest</span> <span class="p">=</span> <span class="n">hasher</span><span class="p">.</span><span class="n">ComputeHash</span><span class="p">(</span><span class="n">byteData</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">signature</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">SignAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RS256&quot;</span><span class="p">,</span> <span class="n">digest</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">isVerified</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">VerifyHash</span><span class="p">(</span><span class="n">digest</span><span class="p">,</span> <span class="s">&quot;Sha256&quot;</span><span class="p">,</span> <span class="n">signature</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As above, we use the public key available to create the <a href="https://msdn.microsoft.com/en-us/library/System.Security.Cryptography.RSACryptoServiceProvider(v=vs.110).aspx">RSACryptoServiceProvider</a> to encrypt the data and also to verify the signature locally. So in an application we can encrypt the data locally and use the vault to decrypt it when required. Decryption can happen only from the vault, as the private key is only available in the vault, and does not cross the vault boundary.</p>
-
-<p>With Azure Key Vault, managing keys and restricting application permission for keys can be easily managed and no information needs to be passed on to the developer or to any specific individual. Also the keys are secure behind the vault service and can also be protected using a HSM. You would need to update the application id and secret in the <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a> for it to work. Hope this helps in getting you started with Azure Key Vault.</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: design | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/design/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-07T20:36:04+11:00</updated>
+  <updated>2016-03-11T14:27:52+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,213 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Thinking Beyond Primitive Values: Value Objects]]></title>
+    <link href="http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/"/>
+    <updated>2016-03-11T05:49:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects</id>
+    <content type="html"><![CDATA[<p>When modelling objects for our application, we use primitive values to represent their attributes or properties. By primitive values, I refer to all the primitive types (like Byte, Boolean, Int, Date) and the in-built types (String etc.) that the language supports. These are the most basic types of the programming language and are the building blocks to create custom types.</p>
+
+<h3>Primitive Types and Associated Problems</h3>
+
+<p>When modelling classes for the domain, one of the most common things we do is to fit domain concepts into primitive types. For example</p>
+
+<ul>
+<li><strong>String</strong> to represent Names (Employee name, Company Name, Product Name, Car Name etc.)</li>
+<li><strong>Int/Decimal/Double/Float</strong> to represent Numbers (Age, Quantity, Money, Temperature, Distance, Upload/Download sizes etc.)</li>
+</ul>
+
+
+<p>Those are just a few examples on how we &lsquo;usually&rsquo; fit domain concepts into primitive types. This kind of design tends to take us more towards procedural programming, as shown below</p>
+
+<pre><code class="csharp">string phoneNumber;
+... // Lot of other code
+
+var isExtensionPhoneNumber = phoneNumber != null &amp;&amp; phoneNumber.Length &lt;=5;
+</code></pre>
+
+<p>The problem with this is that these constraints/logics tends to leak across the code-base and we run into problems either not handling this at certain places, handling them wrongly or any changes to these constraints ripples across the code.</p>
+
+<h3>Value Object</h3>
+
+<p>A common factor in all the above examples is that those domain concepts follow value equality and not reference equality. Just like two strings or integers compares with each other based on their value, two names, temperature, color all compare against each other based on their value. This is where a Value Object fits in well.</p>
+
+<blockquote><p><em><a href="http://martinfowler.com/bliki/ValueObject.html">Value Object</a> is an object whose equality is determined by the value it holds and are immutable.</em></p></blockquote>
+
+<p>Below is a Value Object implementation of &lsquo;UserName&rsquo; where we have the domain constraint that name should not be empty and at least be three characters (not a real world scenario, but just for an example). The Equals and GetHashCode methods below ensures that the equality comparison is based on the value that it holds. One could also <a href="https://msdn.microsoft.com/en-au/library/ms173147(v=vs.80">override the &lsquo;==&rsquo; and &lsquo;!=&rsquo; operator</a>.aspx) if you want to support those.</p>
+
+<pre><code class="csharp">public class UserName
+{
+    private string internalName;
+
+    public UserName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentNullException("name");
+
+        if (name.Length &lt; 3)
+            throw new ArgumentException("Name should be atleast 3 characters long", "name");
+
+        internalName = name;
+    }
+
+    public override bool Equals(object obj)
+    {
+        var objAsName = obj as UserName;
+        if ((System.Object)objAsName == null)
+            return false;
+
+        return internalName == objAsName.internalName;
+    }
+
+    public override int GetHashCode()
+    {
+        return internalName.GetHashCode();
+    }
+}
+</code></pre>
+
+<p>There is no restriction on the number of parameters that a value object should be composed of. Equality and Hashcode should use all the values that it composes of. For immutability, we have made the <em>internalName</em> (in above case ) a private variable. You could also have it as public read-only property if you scenario demands, like in case of DateRange Value Object. Making the setters private and checking end date is not greater than the start date while construction, helps  protect the <a href="http://people.cs.aau.dk/~normark/oop-csharp/html/notes/contracts_themes-class-inv-sect.html">class invariants</a>. In addition to that, any update to start or end date should create a new DateRange object as WithEndDate does below.</p>
+
+<blockquote><p><em>A class invariant is an assertion that captures the properties and relationships, which remain stable throughout the life-time of instances of the class.</em></p></blockquote>
+
+<pre><code class="csharp">public class DateRange
+{
+    public DateTime StartDate { get; private set; }
+    public DateTime EndDate { get; private set; }
+
+    public DateRange(DateTime startDate, DateTime endDate)
+    {
+        // Ignoring null checks
+        if (endDate &lt; startDate)
+            throw new ArgumentException("End Date cannot be less than Start Date");
+
+        this.StartDate = startDate;
+        this.EndDate = endDate;
+    }
+
+    public DateRange WithEndDate(DateTime endDate)
+    {
+        return new DateRange(this.StartDate, endDate);
+    }
+    ... // Rest of Value Object Code to override Equals and GetHashCode
+}
+</code></pre>
+
+<h3>Thinking as Value Objects</h3>
+
+<p>In the beginning, it is hard to see Value Objects in your domain, but then there is an easy trick that you can follow.</p>
+
+<blockquote><p><em>Any time you use a primitive type (unless within a Value Object) think more about the choice.</em></p></blockquote>
+
+<p>Once you start using more and more Value Objects you will naturally get good at it and be able to start to see more of it in your domain.</p>
+
+<ul>
+<li>Look for co-existing properties, that always go together (like start date and end date, first name and last Name), and try to model them as Value Objects.</li>
+<li>Any property that has a unit of measurement associated needs the value and the measurement unit together (Money, Temperature, Distance, Upload/Download size etc.), and is likely a Value Object.</li>
+<li>Properties that have structural restrictions like Phone Number, Zip Code, email etc.</li>
+</ul>
+
+
+<p>Extracting these into Value Objects helps pull in a lot of &lsquo;<em>procedural code</em>&rsquo; into the Value Object, as shown below. Even if the extension numbers  format changes, we have a single place to contain this change and can avoid a rippling change. We can also have static factory methods to assist in creating these Value Object and helps make the code readable like the <em>CreateFromBytes</em> method below.</p>
+
+<pre><code class="csharp">PhoneNumber phoneNumber;
+... // Lot of other code
+if(phoneNumber.IsAnExtension())
+... //Rest of code
+
+decimal downloadBytes;
+var downloadedData = UnitOfData.CreateFromBytes(downloadBytes);
+... // Lot of other code
+downloadedData.GetSizeInMegabytes();
+... //Rest of code
+</code></pre>
+
+<h3>Implicit and Explicit Conversions</h3>
+
+<p>Introducing a Value Object to an existing code base might seem challenging, as it might be all over the code and a hard task to replace all at once. In cases where the Value Object replaces a single property existing in a class like a string name, phoneNumber, location etc., we can take advantage of the <a href="https://msdn.microsoft.com/en-us/library/z5z9kes2.aspx">implicit conversion operators</a>, to introduce new Value Objects gradually. Let&rsquo;s say you have a Name field that is a string and you want to move this over to a Value Object &lsquo;UserName&rsquo;. We can declare an implicit operator to convert between string and UserName, which helps us gradually change over to the new ValueObject</p>
+
+<pre><code class="csharp">public static implicit operator UserName(string userName)
+{
+    return new UserName(userName);
+}
+
+public static implicit operator string(UserName userName)
+{
+    if (userName == null)
+        throw new ArgumentNullException("userName");
+
+    return userName.value;
+}
+
+public override string ToString()
+{
+    return internalName;
+}
+</code></pre>
+
+<p>The implicit operator enables us to use UserName and string side-by-side and it will automatically convert between them without any explicit casts. This enables us to start anywhere in the application and start replacing the Primitive Value types into Value Objects without breaking the application.</p>
+
+<pre><code class="csharp">string lastName = "Nath";
+UserName firstName = "Rahul";
+string fullNameString = string.Format("{0} {1}", firstName , lastName);
+UserName fullName = fullNameString;
+</code></pre>
+
+<p>At the application boundaries, if the data is serialized into different formats (JSON/XML) or persisted into ORM&rsquo;s (Entity Framework/NHibernate) you need to add <a href="http://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonConverter.htm">custom serialization formatters</a> or <a href="https://msdn.microsoft.com/en-au/data/jj591617.aspx">mapping configurations</a> to make sure that the Value Object gets serialized/persisted as expected.</p>
+
+<p>Value Objects helps model the domain better and keeps code more readable. It also helps you change domain constraints or rules more easily and keeps them contained. Consider introducing a value object the next time you see one!</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[When your Architecture Screams Technology!]]></title>
+    <link href="http://rahulpnath.com/blog/when-your-architecture-screams-technology/"/>
+    <updated>2015-05-04T03:13:55+10:00</updated>
+    <id>http://rahulpnath.com/blog/when-your-architecture-screams-technology</id>
+    <content type="html"><![CDATA[<p>In todays world the problem&rsquo;s that are solved by technology are innumerous and it is not just a single system that the customer is looking for. They usually need multiple systems solving different problems around their core domain. But as developers, we usually get carried away by the technology aspect of it, giving lesser importance to the problem or domain itself. Whenever we have multiple systems targeting the same core domain of the customer, we see that what gets reused across these systems are the &lsquo;<a href="https://msdn.microsoft.com/en-in/library/ee658105.aspx">Crosscutting concerns</a>&rsquo; like Caching, Authentication, Logging, Exception Management etc. But is this what really should be getting shared? Are our customer trying to solve these crosscutting issues? Should it not be their core domain logics and rules and validations that get shared. The Architecture Screams Technology preventing anything else but these crosscutting concerns (which are not technology specific) the only thing that is shareable across systems.</p>
+
+<h3>Common Traits of Technology Coupling</h3>
+
+<p>There are a lot of traits that indicate this dependency on technology and makes a system modeled around technology stand out from the one modeled around the domain. Below are some of the things that I have figured out are very strong hints indicating a tight coupling with the technology. The earlier we identify such smells the better we are to retract and get ourselves align to the needs of the domain and not the technology.</p>
+
+<p><strong>Solution Folders and Projects</strong></p>
+
+<p>Take a look at your solution directory from the top level and what do you infer that it is all about. Does it have folders reflecting technology stacks like ASP.Net, Web API, WPF, Ruby, NHibernate etc or does it reflect the domain space that you are trying to solve like Shipping, Stock Management, Customer Relations? This should give the first hint on what the Architecture of your application reflects. But you could easily get tricked here as &lsquo;what you see might not be what it is&rsquo;, so lets take a step in.
+Before we do you might ask, Are we not building a web-site for the customer so what is wrong in having the structure indicate that? We are building a solution that solves certain problems for our customer, it is only that it is getting delivered or accessed via a web-site. Tomorrow this might be delivered via a mobile application or a rich desktop client or even a console application so having it tightly bound to web delivery mechanism is only going to hinder us on the way forward.</p>
+
+<p><strong>Single Large Interface Project</strong></p>
+
+<p>Having all the interfaces used across the application to be in a single interfaces project is something that I have come across quite often and this clearly indicates that something is definitely wrong here. As mentioned in <a href="http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">Agile Principles, Patterns, and Practices in C#</a> by <a href="https://twitter.com/unclebobmartin">Uncle Bob</a>, Interfaces should belong to the clients and should stay close to them. If multiple clients needs to use the same interface then probably you could move them out into a common library. But all interfaces in a single project possibly means you have more of <a href="http://martinfowler.com/bliki/HeaderInterface.html">Header Interfaces</a> and not <a href="http://blog.ploeh.dk/2013/01/10/RoleInterfaceRoleHint/">Role interfaces</a> as that would primarily be specific to the clients that use them. Also watch out for the references that these projects have and whether they have any technology specific references which would possibly indicate a <a href="http://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a>.</p>
+
+<p><strong>Single Large Entities Project</strong></p>
+
+<p>Same as interfaces, this is another common thing that is quite common and might possible indicate a problem in the way a domain is modeled. In a complex domain it is highly likely that an entity is not the same everywhere and is very context specific. A customer might have a different meaning in the context of Shipping and totally different in context of Customer Relations, but having a single customer that is acts as a super set for all these contexts is a problem. Also having all the entities together probably means that enough thought has not been put into separating what parts of the system changes together and what does not. This is a clear indication of poorly modeled domain. On top of this if you are using any kind of O/RM technologies to map these to the database then it just adds on to your problems when you use a single large context to map to the database.</p>
+
+<p><strong>No Explicit boundaries</strong></p>
+
+<p>It&rsquo;s very likely that the application talks across difference boundaries and interacts with different systems. Some of them might be external, like a third party service and some other are internal, most commonly a database. If you see the same entities that are passed along at all these boundaries then its very likely that you have a leaky abstraction, which again would get reflected by looking at the reference folder of Entities/Interfaces project. This kind of abstractions tend to break the entire system when any of these boundaries changes, causing a  rippling effect in the code.</p>
+
+<p><strong>Source Control Commit History</strong></p>
+
+<p>Looking at the previous commits in your source control you can tell if your dependencies are well managed and if there are a lot of technology coupling. If you have commits that have large number of files associated especially one&rsquo;s modified then it again means that you have a lot of leaking abstractions. This leak could be a technology leak or even a function leak, where the abstractions are not well contained which causes a ripple effect when anything associated changes.</p>
+
+<p><strong>Anemic Domain Model</strong></p>
+
+<p>This is one of the most common and greatest indication of technology coupling and lack of proper modeling of the problem domain. Open up any of the classes in your entities project and all you see are properties with getters and setters with hardly any function in them. Object Oriented Programming brought data and functions together, but hardly do we see them together. We either have classes that act as data bags or classes that use these data classes to perform transactions over them. <a href="http://www.martinfowler.com/bliki/AnemicDomainModel.html">Anemic Domain Model </a> works fine for applications that perform basic <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> operations and with very less business logic in them, but as complexity grows it becomes very difficult to maintain and extend. Anemia in the entities is the biggest reason why we end up having only cross-cutting features to be shared across applications for the same domain.</p>
+
+<h3>Onion Architecture</h3>
+
+<p>Technology should be only seen as enablers for solving the problems and it should never get in way of the original problem. Onion Architecture or Hexagonal Architecture try to solve this problem of keeping the domain model clean and separate and have the technology dependency point into it. This enables switching out the technology specific implementations at any point and also enabling us to reuse the core domain components across various systems or hosts.</p>
+
+<blockquote><p>&ldquo;The overriding rule that makes this architecture work is <em>The Dependency Rule</em>. This rule says that source code dependencies can only point inwards. Nothing in an inner circle can know anything at all about something in an outer circle. In particular, the name of something declared in an outer circle must not be mentioned by the code in the an inner circle. That includes, functions, classes. variables, or any other named software entity.&rdquo;</p></blockquote>
+
+<p><a href="http://bit.ly/cleanarchitecture" class="center" title="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"><img src="http://rahulpnath.com/images/clean_architecture.jpg" class="center" alt="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"></a></p>
+
+<p>Screaming technology is a common thing in many a projects and it is not really a big problem when the domain you are trying to solve is not that complex. But usually that is not the case and we have very complex domain logics, multiple systems targeting for different areas and highly volatile requirements. These are just some of the most common indications that I have come across that indicate a tightly coupled solution. The <a href="http://www.objectmentor.com/resources/articles/CoffeeMaker.pdf">Mark IV Special Coffee Maker</a> problem presented by Uncle Bob in his <a href="Agile%20Principles,%20Patterns,%20and%20Practices%20in%20C#](http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">book</a>, presents us with an interesting modeling problem, shows some most common errors, why they are errors and possible ways to tackle them. That just helps to get started to think on the right path, to tackle issues in larger domains, methodologies like <a href="http://www.amazon.in/gp/product/0321125215/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0321125215&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=F6WJ7JK5CYQOIJV6">Domain Driven Design</a> would help us to solve the actual domain problems.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using Repository Pattern for Abstracting Data Access from a Cache and Data Store]]></title>
