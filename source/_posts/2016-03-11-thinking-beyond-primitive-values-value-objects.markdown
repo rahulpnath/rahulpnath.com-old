@@ -36,7 +36,7 @@ The problem with this is that these constraints/logics tends to leak across the 
 
 A common factor in all the above examples is that those domain concepts follow value equality and not reference equality. Just like two strings or integers compares with each other based on their value, two names, temperature, color all compare against each other based on their value. This is where a Value Object fits in well.
 
-> *[Value Object](http://martinfowler.com/bliki/ValueObject.html) is an object or entity whose equality is determined by the value it holds and are immutable.*
+> *[Value Object](http://martinfowler.com/bliki/ValueObject.html) is an object whose equality is determined by the value it holds and are immutable.*
 
 Below is a Value Object implementation of 'UserName' where we have the domain constraint that name should not be empty and at least be three characters (not a real world scenario, but just for an example). The Equals and GetHashCode methods below ensures that the equality comparison is based on the value that it holds. One could also [override the '==' and '!=' operator](https://msdn.microsoft.com/en-au/library/ms173147(v=vs.80).aspx) if you want to support those.
 
