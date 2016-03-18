@@ -9,7 +9,7 @@ date: 2016-03-18 12:21
 keywords: 
 description: 
 ---
-<a href="www.perspecsys.com" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="{{site.images_root}}\pfx_security.jpg" /></a>
+<a href="http://perspecsys.com/" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="{{site.images_root}}\pfx_security.jpg" /></a>
 
 You can use PFX certificate's along with Azure Key Vault in multiple ways, depending on your use case. You can import the PFX as a Key into Key Vault and use it just like you would use any other key or save it as a Secret and retrieve it as required. In this post I will explain how this is done.
 
