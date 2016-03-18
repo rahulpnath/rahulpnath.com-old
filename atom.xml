@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-16T16:20:05+11:00</updated>
+  <updated>2016-03-18T13:17:47+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[PFX Certificate in Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/"/>
+    <updated>2016-03-18T12:21:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault</id>
+    <content type="html"><![CDATA[<p><a href="www.perspecsys.com" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="http://rahulpnath.com/images\pfx_security.jpg" /></a></p>
+
+<p>You can use PFX certificate&rsquo;s along with Azure Key Vault in multiple ways, depending on your use case. You can import the PFX as a Key into Key Vault and use it just like you would use any other key or save it as a Secret and retrieve it as required. In this post I will explain how this is done.</p>
+
+<p>Before I get into more details let&rsquo;s take a moment to understand better the different file types used and <a href="http://stackoverflow.com/questions/2292495/what-is-the-difference-between-a-cer-pvk-and-pfx-file">what they represent</a>.</p>
+
+<ul>
+<li><p><strong>CER</strong>: Contains the public part of the certificate and usually distributed outside.</p></li>
+<li><p><strong>PVK</strong>: Contains the Private key and securely stored</p></li>
+<li><p><strong>PFX</strong>: Usually has public, private keys, other certificate chains and password protected.</p></li>
+</ul>
+
+
+<p>To create a test certificate for this sample I will use <em>makecert</em> and <em>pvktopfx</em> utilities. Alternatively, you could also use any existing certificate.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=Certificate Key&quot; CertificateKey.cer -b 03/03/2016 -e 06/05/2017 -r -sky exchange
+</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc CertificateKey.cer -pfx CertificateKey.pfx -po test
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>The <em>-sky exchange</em> sets the Subject Key Type to Exchange and allows encrypting/decrypting values using the certificate.</p></blockquote>
+
+<p>The <em>makecert</em> creates the CER and PVK, the public/private key files which gets combined into a single PFX file using <em>pvktopfx</em>.</p>
+
+<h3>Using the PFX Certificate to Encrypt and Decrypt</h3>
+
+<p>PFX files along with CER files allows to encrypt/decrypt data without the need for Key Vault. You can share the public key, CER, to your clients, who can then use it to encrypt data before sending it to the server. Using the private key, available in PFX, the server can decrypt this data</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// Client</span>
+</span><span class='line'><span class="kt">byte</span><span class="p">[]</span> <span class="n">encryptedData</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// You can also use the PFX here as it contains the private key</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">publicCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.cer&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">publicCertificate</span><span class="p">.</span><span class="n">PublicKey</span><span class="p">.</span><span class="n">Key</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">encryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Encrypt</span><span class="p">(</span><span class="n">byteData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Server</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">privateCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.pfx&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">privateCertificate</span><span class="p">.</span><span class="n">PrivateKey</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Decrypt</span><span class="p">(</span><span class="n">encryptedData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Creating a Key in Key Vault from PFX file</h3>
+
+<p>Now that I am able to use the PFX file (which essentially is a software-protected key) to encrypt/decrypt data, I will upload this to the Azure Key Vault so that it stays secure there. If you are new to Azure Key Vault and want to get started check my <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other posts</a>.</p>
+
+<p>To upload the PFX to Key Vault, you can use the <em><a href="https://msdn.microsoft.com/en-us/library/dn868048.aspx">Add-AzureKeyVaultKey</a></em> PowerShell cmdlet and specify the PFX file path and password.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$securepfxpwd</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="err">–</span><span class="n">String</span> <span class="s1">&#39;test&#39;</span> <span class="err">–</span><span class="n">AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;KeyFromCert&#39;</span> <span class="n">-KeyFilePath</span> <span class="s1">&#39;c:\CertificateKey.pfx&#39;</span> <span class="n">-KeyFilePassword</span> <span class="nv">$securepfxpwd</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the unique key identifier, I can now access this key from PowerShell or using the Web API. You can still distribute the public key, CER, to your clients for encrypting the data and use the Azure Key Vault API to decrypt the data. Or use the Azure Key Vault to encrypt and decrypt the data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net:443/keys/KeyFromCert/&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Client Remains the same or use the Key Vault Client</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">encryptedResult</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">EncryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">byteData</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Server</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">DecryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">certED</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The PFX file uploaded to the Key Vault is just like any other key vault key, the only difference being you give the public and private key. Once the key is created in Key Vault, the private part of the key stays secure within the Key Vault and is not accessible outside (except from the original PFX/PVK file).</p>
+
+<h3>Storing PFX file as a Secret</h3>
+
+<p>PFX files can also be stored as Secrets in Key Vault which allows you to retrieve and re-create the certificate as required. To add the certificate as a secret you can use the below PowerShell script (taken from <a href="http://stackoverflow.com/questions/33728213/how-to-store-pfx-certificate-in-azure-key-vault">here</a>).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$pfxFilePath</span> <span class="p">=</span> <span class="s1">&#39;C:\CertificateKey.pfx&#39;</span>
+</span><span class='line'><span class="nv">$pwd</span> <span class="p">=</span> <span class="s1">&#39;test&#39;</span>
+</span><span class='line'><span class="nv">$flag</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]</span><span class="p">::</span><span class="n">Exportable</span>
+</span><span class='line'><span class="nv">$collection</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2Collection</span>
+</span><span class='line'><span class="nv">$collection</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$pfxFilePath</span><span class="p">,</span> <span class="nv">$pwd</span><span class="p">,</span> <span class="nv">$flag</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$pkcs12ContentType</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509ContentType]</span><span class="p">::</span><span class="n">Pkcs12</span>
+</span><span class='line'><span class="nv">$clearBytes</span> <span class="p">=</span> <span class="nv">$collection</span><span class="p">.</span><span class="n">Export</span><span class="p">(</span><span class="nv">$pkcs12ContentType</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$fileContentEncoded</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$clearBytes</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$secret</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="nv">$fileContentEncoded</span> <span class="n">-AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
+</span><span class='line'><span class="nv">$secretContentType</span> <span class="p">=</span> <span class="s1">&#39;application/x-pkcs12&#39;</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span> <span class="n">-SecretValue</span> <span class="nv">$Secret</span> <span class="n">-ContentType</span> <span class="nv">$secretContentType</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The script exports the certificate to a byte array and converts it to Base64 string representation and saves it to Key Vault as Secret using the <a href="https://msdn.microsoft.com/en-us/library/dn868050.aspx">Set-AzureKeyVaultSecret</a> PowerShell cmdlet. You can export the certificate along with the password if required, so that when you recreate the certificate file, it will be password protected.</p>
+
+<p>To retrieve and re-create the certificate you can either use PowerShell or API as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$secretRetrieved</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span>
+</span><span class='line'><span class="nv">$pfxBytes</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">FromBase64String</span><span class="p">(</span><span class="nv">$secretRetrieved</span><span class="p">.</span><span class="n">SecretValueText</span><span class="p">)</span>
+</span><span class='line'><span class="no">[io.file]</span><span class="p">::</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s2">&quot;c:\CertFromSecret.pfx&quot;</span><span class="p">,</span> <span class="nv">$pfxBytes</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">secretRetrieved</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">pfxBytes</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">FromBase64String</span><span class="p">(</span><span class="n">secretRetrieved</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'><span class="n">File</span><span class="p">.</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s">@&quot;C:\cert\ADTestVaultApplicationNew.pfx&quot;</span><span class="p">,</span> <span class="n">pfxBytes</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// or recreate the certificate directly</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">certificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="n">pfxBytes</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can use the PFX certificate as earlier as a file or a certificate object. These are the various ways that you can use PFX certificated along with Key Vault.</p>
+
+<p>Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Developer Learnings from the IKEA Experience]]></title>
@@ -1907,74 +2078,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
 
 <p>So the next time you add in a test, think why you are doing it. Is it for the report or for the application that is getting developed. Lets all <a href="https://vimeo.com/43536488">strive to be really professional</a> in what we are doing and not just hide behind some numbers. Let the number be seen for what it is - nothing less and nothing more!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
-    <updated>2015-03-14T23:04:23+11:00</updated>
-    <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
-
-<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
-
-<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;d4f09821-ab30-44f3-8d57-69925489b932&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
-</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">TestVaultRahul</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">SecretValue</span>     <span class="err">:</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">SecureString</span>
-</span><span class='line'><span class="n">SecretValueText</span> <span class="err">:</span> <span class="n">ApiKey</span>
-</span><span class='line'><span class="n">VaultName</span>       <span class="err">:</span> <span class="n">testvaultrahul</span>
-</span><span class='line'><span class="n">Name</span>            <span class="err">:</span> <span class="n">ApiKey</span>
-</span><span class='line'><span class="n">Version</span>         <span class="err">:</span> <span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
-</span><span class='line'><span class="n">Id</span>              <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">secrets</span><span class="p">/</span><span class="n">ApiKey</span><span class="p">/</span><span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span>
-</span><span class='line'>    <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="s">&quot;https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
 ]]></content>
   </entry>
   

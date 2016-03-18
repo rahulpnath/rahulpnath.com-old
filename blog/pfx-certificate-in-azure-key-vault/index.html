@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PFX Certificate in Azure Key Vault - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:21:00+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 18<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        PFX Certificate in Azure Key Vault
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><a href="www.perspecsys.com" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="/images\pfx_security.jpg" /></a></p>
+
+<p>You can use PFX certificate&rsquo;s along with Azure Key Vault in multiple ways, depending on your use case. You can import the PFX as a Key into Key Vault and use it just like you would use any other key or save it as a Secret and retrieve it as required. In this post I will explain how this is done.</p>
+
+<p>Before I get into more details let&rsquo;s take a moment to understand better the different file types used and <a href="http://stackoverflow.com/questions/2292495/what-is-the-difference-between-a-cer-pvk-and-pfx-file">what they represent</a>.</p>
+
+<ul>
+<li><p><strong>CER</strong>: Contains the public part of the certificate and usually distributed outside.</p></li>
+<li><p><strong>PVK</strong>: Contains the Private key and securely stored</p></li>
+<li><p><strong>PFX</strong>: Usually has public, private keys, other certificate chains and password protected.</p></li>
+</ul>
+
+
+<p>To create a test certificate for this sample I will use <em>makecert</em> and <em>pvktopfx</em> utilities. Alternatively, you could also use any existing certificate.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=Certificate Key&quot; CertificateKey.cer -b 03/03/2016 -e 06/05/2017 -r -sky exchange
+</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc CertificateKey.cer -pfx CertificateKey.pfx -po test
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>The <em>-sky exchange</em> sets the Subject Key Type to Exchange and allows encrypting/decrypting values using the certificate.</p></blockquote>
+
+<p>The <em>makecert</em> creates the CER and PVK, the public/private key files which gets combined into a single PFX file using <em>pvktopfx</em>.</p>
+
+<h3>Using the PFX Certificate to Encrypt and Decrypt</h3>
+
+<p>PFX files along with CER files allows to encrypt/decrypt data without the need for Key Vault. You can share the public key, CER, to your clients, who can then use it to encrypt data before sending it to the server. Using the private key, available in PFX, the server can decrypt this data</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// Client</span>
+</span><span class='line'><span class="kt">byte</span><span class="p">[]</span> <span class="n">encryptedData</span><span class="p">;</span>
+</span><span class='line'><span class="c1">// You can also use the PFX here as it contains the private key</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">publicCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.cer&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">publicCertificate</span><span class="p">.</span><span class="n">PublicKey</span><span class="p">.</span><span class="n">Key</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">encryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Encrypt</span><span class="p">(</span><span class="n">byteData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//Server</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">privateCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.pfx&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">privateCertificate</span><span class="p">.</span><span class="n">PrivateKey</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Decrypt</span><span class="p">(</span><span class="n">encryptedData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Creating a Key in Key Vault from PFX file</h3>
+
+<p>Now that I am able to use the PFX file (which essentially is a software-protected key) to encrypt/decrypt data, I will upload this to the Azure Key Vault so that it stays secure there. If you are new to Azure Key Vault and want to get started check my <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other posts</a>.</p>
+
+<p>To upload the PFX to Key Vault, you can use the <em><a href="https://msdn.microsoft.com/en-us/library/dn868048.aspx">Add-AzureKeyVaultKey</a></em> PowerShell cmdlet and specify the PFX file path and password.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$securepfxpwd</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="err">–</span><span class="n">String</span> <span class="s1">&#39;test&#39;</span> <span class="err">–</span><span class="n">AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;KeyFromCert&#39;</span> <span class="n">-KeyFilePath</span> <span class="s1">&#39;c:\CertificateKey.pfx&#39;</span> <span class="n">-KeyFilePassword</span> <span class="nv">$securepfxpwd</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the unique key identifier, I can now access this key from PowerShell or using the Web API. You can still distribute the public key, CER, to your clients for encrypting the data and use the Azure Key Vault API to decrypt the data. Or use the Azure Key Vault to encrypt and decrypt the data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net:443/keys/KeyFromCert/&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Client Remains the same or use the Key Vault Client</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">encryptedResult</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">EncryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">byteData</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Server</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">DecryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">certED</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The PFX file uploaded to the Key Vault is just like any other key vault key, the only difference being you give the public and private key. Once the key is created in Key Vault, the private part of the key stays secure within the Key Vault and is not accessible outside (except from the original PFX/PVK file).</p>
+
+<h3>Storing PFX file as a Secret</h3>
+
+<p>PFX files can also be stored as Secrets in Key Vault which allows you to retrieve and re-create the certificate as required. To add the certificate as a secret you can use the below PowerShell script (taken from <a href="http://stackoverflow.com/questions/33728213/how-to-store-pfx-certificate-in-azure-key-vault">here</a>).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$pfxFilePath</span> <span class="p">=</span> <span class="s1">&#39;C:\CertificateKey.pfx&#39;</span>
+</span><span class='line'><span class="nv">$pwd</span> <span class="p">=</span> <span class="s1">&#39;test&#39;</span>
+</span><span class='line'><span class="nv">$flag</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]</span><span class="p">::</span><span class="n">Exportable</span>
+</span><span class='line'><span class="nv">$collection</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2Collection</span>
+</span><span class='line'><span class="nv">$collection</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$pfxFilePath</span><span class="p">,</span> <span class="nv">$pwd</span><span class="p">,</span> <span class="nv">$flag</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$pkcs12ContentType</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509ContentType]</span><span class="p">::</span><span class="n">Pkcs12</span>
+</span><span class='line'><span class="nv">$clearBytes</span> <span class="p">=</span> <span class="nv">$collection</span><span class="p">.</span><span class="n">Export</span><span class="p">(</span><span class="nv">$pkcs12ContentType</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$fileContentEncoded</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$clearBytes</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$secret</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="nv">$fileContentEncoded</span> <span class="n">-AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
+</span><span class='line'><span class="nv">$secretContentType</span> <span class="p">=</span> <span class="s1">&#39;application/x-pkcs12&#39;</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span> <span class="n">-SecretValue</span> <span class="nv">$Secret</span> <span class="n">-ContentType</span> <span class="nv">$secretContentType</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The script exports the certificate to a byte array and converts it to Base64 string representation and saves it to Key Vault as Secret using the <a href="https://msdn.microsoft.com/en-us/library/dn868050.aspx">Set-AzureKeyVaultSecret</a> PowerShell cmdlet. You can export the certificate along with the password if required, so that when you recreate the certificate file, it will be password protected.</p>
+
+<p>To retrieve and re-create the certificate you can either use PowerShell or API as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$secretRetrieved</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span>
+</span><span class='line'><span class="nv">$pfxBytes</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">FromBase64String</span><span class="p">(</span><span class="nv">$secretRetrieved</span><span class="p">.</span><span class="n">SecretValueText</span><span class="p">)</span>
+</span><span class='line'><span class="no">[io.file]</span><span class="p">::</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s2">&quot;c:\CertFromSecret.pfx&quot;</span><span class="p">,</span> <span class="nv">$pfxBytes</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">secretRetrieved</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">pfxBytes</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">FromBase64String</span><span class="p">(</span><span class="n">secretRetrieved</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'><span class="n">File</span><span class="p">.</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s">@&quot;C:\cert\ADTestVaultApplicationNew.pfx&quot;</span><span class="p">,</span> <span class="n">pfxBytes</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// or recreate the certificate directly</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">certificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="n">pfxBytes</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can use the PFX certificate as earlier as a file or a certificate object. These are the various ways that you can use PFX certificated along with Key Vault.</p>
+
+<p>Hope this helps!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/developer-learnings-from-the-ikea-experience/" title="Previous Post: Developer Learnings from the IKEA Experience">&laquo; Developer Learnings from the IKEA Experience</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/';
+        var disqus_url = 'http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
