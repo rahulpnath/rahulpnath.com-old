@@ -17,8 +17,8 @@ module Jekyll
       related_scores = Hash.new(0)
 
       posts.each do |post|
-        post.tags.each do |tag|
-          if self.tags.include?(tag) && post != self
+        post.categories.each do |tag|
+          if self.categories.include?(tag) && post != self
             cat_freq = tag_freq(posts)[tag]
             related_scores[post] += (1+highest_freq-cat_freq)
           end
@@ -34,7 +34,7 @@ module Jekyll
       return @tag_freq if @tag_freq
       @tag_freq = Hash.new(0)
       posts.each do |post|
-        post.tags.each {|tag| @tag_freq[tag] += 1}
+        post.categories.each {|tag| @tag_freq[tag] += 1}
       end
       @tag_freq
     end
