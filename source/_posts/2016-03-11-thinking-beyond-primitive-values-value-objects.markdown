@@ -79,25 +79,25 @@ There is no restriction on the number of parameters that a value object should b
 ``` csharp
 public class DateRange
 {
-	public DateTime StartDate { get; private set; }
-	public DateTime EndDate { get; private set; }
+    public DateTime StartDate { get; private set; }
+    public DateTime EndDate { get; private set; }
 
-	public DateRange(DateTime startDate, DateTime endDate)
-	{
-		// Ignoring null checks
-		if (endDate < startDate)
-			throw new ArgumentException("End Date cannot be less than Start Date");
+    public DateRange(DateTime startDate, DateTime endDate)
+    {
+        // Ignoring null checks
+        if (endDate < startDate)
+            throw new ArgumentException("End Date cannot be less than Start Date");
 
-		this.StartDate = startDate;
-		this.EndDate = endDate;
-	}
-    
+        this.StartDate = startDate;
+        this.EndDate = endDate;
+    }
+
     public DateRange WithEndDate(DateTime endDate)
-	{
-		return new DateRange(this.StartDate, endDate);
-	}
-    ... // Rest of Value Object Code to override Equals and GetHashCode
+    {
+        return new DateRange(this.StartDate, endDate);
+    }
 }
+... // Rest of Value Object Code to override Equals and GetHashCode
 ```
 
 ### Thinking as Value Objects ###
