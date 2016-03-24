@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Being Explicit About Time when Handling Multiple Timezone - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-25T06:41:00+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 25<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Being Explicit About Time when Handling Multiple Timezone
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><em>This article is to put my thoughts together on a possible solution. Challenges of real world implementation are yet to be discovered.</em></p>
+
+<p>Handling date/time in application&rsquo;s that affect different time zones is tricky! The general recommendation is that all dates be saved in UTC time and convert them as required. This works well if developers make sure of converting all dates to UTC at application boundaries and keep it consistent throughout the application.</p>
+
+<p><a href="https://unsplash.com/photos/yBzrPGLjMQw" class="center" title="Image By Heather Zabriskie , from https://unsplash.com/photos/yBzrPGLjMQw"><img src="/images\timezone.jpg" class="center" alt="Timezone"></a></p>
+
+<p>At one of my clients, we are facing similar issues with date time, with an application that deals with different <a href="https://en.wikipedia.org/wiki/Time_zone">time zones</a>. The client sells office spaces across the globe and the application is for their employees to manage their clients. It integrates with various back-end systems and provides a single point of access for everything, aggregating data across those different  systems and itself. Some of the backend systems are in different locations and deal with times local to them. This increases the challenge when sending and retrieving data from them. The application has defined a set of locations, identified by, three-letter codes (<em>SYD, TRV, SEA</em>), and these locations fall under different time zones. Office spaces are at these locations and the application allows to manage those from anywhere.</p>
+
+<p>Across the domain, we use either <a href="https://msdn.microsoft.com/en-us/library/system.datetime(v=vs.110).aspx">DateTime</a> or <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset(v=vs.110).aspx">DateTimeOffset</a> to represent time - there is a good recommendation on when to use what - <a href="https://msdn.microsoft.com/en-us/library/bb384267(v=vs.110).aspx">Choosing Between DateTime, DateTimeOffset, TimeSpan, and TimeZoneInfo</a>. The problem with using either is that it does not play well with the domain concept to where time is related to - the location. We do have property name suffixes (not consistent though) indicating whether it is Coordinated Universal Time (UTC) or local - like <em>bookingDateUTC</em>, <em>paymentDateLocal</em> etc. But it so happens that these naming conventions gets broken somewhere along the different layers and leads to conversion between time zone at the application boundary layers.</p>
+
+<h3>Issues with Current Approach</h3>
+
+<p>DateTime and DateTimeOffset have by default time zones attached to it and it might go unnoticed till we face issues.</p>
+
+<ul>
+<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetime.kind(v=vs.110).aspx">Kind</a> property on DateTime indicates whether the time represents a <a href="https://msdn.microsoft.com/en-us/library/shx7s921(v=vs.110).aspx">local time, UTC or neither</a>.</li>
+<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset.offset(v=vs.110).aspx">Offset</a> property on DateTimeOffset indicates the time&rsquo;s offset from UTC</li>
+</ul>
+
+
+<p>A common scenario in the current application is user selects a date time in the UI using a date picker, which gets send to the server as a string. This value flows through the entire system and is used to populate external systems. The problem here is that the time zone of the date time is not clear. The developer might treat this as UTC time, system local time or even time local to the location in context. This gives different results to the end user and puts the system in an inconsistent state.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">GetAvailability</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTime</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="c1">// Code to Get as on date</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even worse this date time might get converted back and forth to different time zones, even by the same developer or other developers in the team. These conversions implicitly depend on the Kind property and goes unnoticed. One of the most common problems that we see as a result of this is that the dates might fall over to a day before or after or after, depending on where in the world the user, the server running the application is.</p>
+
+<h3>Being Explicit Using Value Objects</h3>
+
+<blockquote><p><em>The issue in dealing with time is about not being explicit. It&rsquo;s a good idea to tie your domain concept (location in this case) and time together</em></p></blockquote>
+
+<p>Since time is always tied to a location (<em>SYD, TRV, SEA</em>) it&rsquo;s better to keep these together. Though DateTimeOffset and DateTime already has a timezone information attached it does not fit well into the domain, it makes more sense to have a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> encapsulating time and location. Timezone by itself is less likely to fit into a domain unless time zones are a domain concept. Most likely the domain would be dealing with a location, place, airport, station etc which falls under a timezone. So it&rsquo;s a good idea to tie your domain concept and the time together. Only for the creation of the Value Object, we need the location after which it is the date time it represents that is relevant. But if by default you want to get back the date time for the same location it was created for, then location can be saved along with the Value Object. In our case, we always want to show the time at the location, so I am keeping it in the Value Object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationDateTime</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Location</span> <span class="n">Location</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">DateTimeInUTC</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="n">DateTimeAtLocation</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateTimeUTC</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Utc</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;Date Time not in UTC&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Location</span> <span class="p">=</span> <span class="n">location</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DateTimeInUTC</span> <span class="p">=</span> <span class="n">dateTimeUTC</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DateTimeAtLocation</span> <span class="p">=</span> <span class="n">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">AtLocation</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">locationDateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">locationDateTime</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Unspecified</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;DateTimeKind should be unspecified&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">utcTime</span> <span class="p">=</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTimeToUtc</span><span class="p">(</span><span class="n">locationDateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">utcTime</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="nf">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTime</span><span class="p">((</span><span class="n">DateTimeOffset</span><span class="p">)</span><span class="n">DateTimeInUTC</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">objAsLocationDateTime</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="n">LocationDateTime</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="n">Object</span><span class="p">)</span><span class="n">objAsLocationDateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">objAsLocationDateTime</span><span class="p">.</span><span class="n">DateTimeInUTC</span> <span class="p">==</span> <span class="n">DateTimeInUTC</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">DateTimeInUTC</span><span class="p">.</span><span class="n">GetHashCode</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The Value Object mandates that all date time gets tracked as UTC and allows conversion to time at different locations. The public constructor enforces this by checking the Kind property on DateTime.</p>
+
+<blockquote><p><em>The Value Object Equality is only on the UTC time it represents</em></p></blockquote>
+
+<p><a href="https://github.com/rahulpnath/Blog/blob/master/ExplicitAboutDateTime/ExplicitAboutDateTime/Location.cs">Location</a> is another Value Object, that encapsulates the code, name and the time zone it belongs to. There is a factory method that allows the creation of the value object at a location, which assumes any passed in DateTime as the time at location, and mandates the Kind property is Unspecified. You could update this to accept UTC/Local time depending on the passed in location&rsquo;s time zone, checking if both fall under the same time zone. You can also create an implicit operator to cast to DateTime or DateTimeOffset values and have it return the desired date time value that you want.</p>
+
+<p>All occurrences of datetime in model classes can now be replaced with custom datetime value object. This makes creating a date explicit and mandates developers to make a decision on the location of datetime.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTimeAtLocation</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">location</span> <span class="p">=</span> <span class="n">GetLocation</span><span class="p">(</span><span class="n">locationCode</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTimeAtLocation</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Code to Get as on date</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even with the above code, you cannot restrict what gets passed into the API/application boundary method, but this has made it explicit to the application on how to start treating the date time. This forces the developer to think and be explicit on the time format expected at the boundary. This might lead to better naming of the variables at the boundary - instead of <em>dateTime</em> to <em>dateTimeAtLocation</em> - and being more explicit to the outside world too!</p>
+
+<h3>Custom Factories Using Extension Method</h3>
+
+<p>Depending on the use case there will be a lot of ways you want to create the value object and possibility of some being used over and over again is more. You can use factory methods to help you extract out this code duplication.</p>
+
+<p>As <a href="https://twitter.com/unclebobmartin">Uncle Bob</a> points out in <a href="http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">Agile Principles, Patterns, and Practices in C#</a>, interfaces should be closer to the client. <a href="http://blog.ploeh.dk/2014/12/24/placement-of-abstract-factories/">Factories are nothing but an interface</a>, so it should be defined closer to where it&rsquo;s consumed. Creating a LocationDateTime is always tied to a DateTime object. Using <a href="https://msdn.microsoft.com/en-AU/library/bb383977.aspx">Extension Methods</a> in C#, I have defined an extension on DateTime to create a LocationDateTime object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">ToLocationDateTime</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">dateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">dateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now creating a LocationDateTime from a DateTime is easy. Similarly, extension methods can be defined on Location, LocationDateTime to provide custom capabilities as required by the consuming clients.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">dateTimeAtLocation</span><span class="p">.</span><span class="n">ToLocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By using a Value Object to represent the DateTime within the application enforces developers to be more explicit on the date time at the boundaries, results in better naming of the variables at boundaries, ensures that it remains the same within the application. You can also override some of the most commonly used operators with DateTime like greater than, less than, equal to, so that it seamlessly fits into the application.</p>
+
+<p>Hoping this will work well in the application too, let me get on to fix it!</p>
+
+<p><em>Will update this post with more real life experiences once implemented!</em></p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/when-your-architecture-screams-technology/">When your Architecture Screams Technology!</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/using-repository-pattern-for-abstracting-data-access-from-a-cache-and-data-store/">Using Repository Pattern for Abstracting Data Access from a Cache and Data Store</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/developer-learnings-from-the-ikea-experience/">Developer Learnings from the IKEA Experience</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/pfx-certificate-in-azure-key-vault/" title="Previous Post: PFX Certificate in Azure Key Vault">&laquo; PFX Certificate in Azure Key Vault</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone/';
+        var disqus_url = 'http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
