@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-25T06:49:48+11:00</updated>
+  <updated>2016-03-28T04:36:51+11:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,121 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Refactoring to Improve Testability: Removing Unnecessary Dependencies]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/"/>
+    <updated>2016-03-28T04:27:00+11:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies</id>
+    <content type="html"><![CDATA[<p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="http://rahulpnath.com/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>Nowadays I am trying to stick to <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> (with the test first approach) and have found it to be of great help. One of the biggest reward doing TDD is that it helps me to <a href="https://vimeo.com/97419151">stay in the flow</a> and regain speed faster after a distraction. This post explains how to refactor code to remove unnecessary dependencies, which is easily found when writing tests.</p>
+
+<p>Unnecessary dependencies are those components which a <a href="http://xunitpatterns.com/SUT.html">SUT</a> depends on, but does not directly affect any of its functionalities. Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test Code Duplication</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>.</p>
+
+<blockquote><p><em>Cut-and-Paste code reuse for fixture setup happens often when there is an unnecessary dependency.</em></p></blockquote>
+
+<p>While looking for an example to write on, I came across a post from my friend <a href="https://twitter.com/zpbappi">Bappi</a>, where he explains <a href="http://zpbappi.com/testing-codes-with-configurationmanager-appsettings/">Testing Codes with ConfigurationManager</a>. It&rsquo;s a good read on how to remove the dependency with various Configuration Providers by creating an abstraction over it.</p>
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>While abstracting the Configuration Manager by using an interface is a good idea, you should also be careful on how the application classes depend on it. Configurations live at the application root and it is a good idea to restrict dependencies with it at that level. Rest of the application must be dependent only on the configuration value and not the configuration itself. Inner components having dependency with the  configuration provider brings in unnecessary complexities and makes code fragile. Some common issues are</p>
+
+<ul>
+<li>Class needs to know of Configuration key</li>
+<li>Extra mocking while testing</li>
+</ul>
+
+
+<p>As you see below, the test case from the original post has to set up the Configuration provider mock to return values before testing the class. MyService (assuming that it is not a Factory class, which I confirmed from Bappi) is unnecessarily depending on IAppSettings and coupling itself with the configuration name, which really is not its concern. This leads to brittle code and tests!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">appSettings</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="n">appSettings</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">].</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">appSettings</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Refactoring the Code</h3>
+
+<p>Refactoring such code is as easy as removing the dependency on IAppSettings and taking in the value of &lsquo;app.name&rsquo; as the dependency. This removes the interface dependency and requires only the string value to be passed in. Here I am passing in <a href="https://blogs.msdn.microsoft.com/ploeh/2008/11/17/anonymous-variables/">an anonymous Name</a>, as the value is not of concern for this test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">anonymousName</span> <span class="p">=</span> <span class="s">&quot;Anonymous Name&quot;</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">anonymousName</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>When looked at isolation these are minor code changes that hardly removes a line or two. But it has a cumulative effect when applied to all the tests for the class and makes code more robust.</em></p></blockquote>
+
+<p>When looked at isolation, this is a seemingly minor change of not mocking an interface and is just one line of code, which you could live with. But you need to mock that for all tests of that class, which is when you start to see the real benefit. Also, you have made the tests more resilient by not taking an unnecessary dependency. Even if you decide to change the configuration name to &lsquo;<em>ApplicationName</em>&rsquo;, none of the tests break now, whereas with the original code all of them would have.</p>
+
+<p><em>One possible argument with this refactoring is, <strong> What if I need an extra value from the dependency (app.domain in the above case), I now have to update the class constructor</strong>.</em></p>
+
+<p>Agreed, but then this violates <a href="https://blog.8thlight.com/uncle-bob/2014/05/12/TheOpenClosedPrinciple.html">Open Closed Principle</a>, which states &lsquo;You should be able to extend a classes behaviour without modifying it.&rsquo; If you need a new configuration value, you are essentially changing the components functionality, so you should either extend current functionality or write a new component. This also opens up a hidden code smell with the existing code and an anti-pattern - <a href="http://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/">Service Locator</a>. So the refactoring still holds good!</p>
+
+<p>Hope this helps you find dependencies with unnecessary components and remove them.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Being Explicit About Time when Handling Multiple Timezone]]></title>
@@ -2135,117 +2250,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 <p><a href="http://bit.ly/cleanarchitecture" class="center" title="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"><img src="http://rahulpnath.com/images/clean_architecture.jpg" class="center" alt="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"></a></p>
 
 <p>Screaming technology is a common thing in many a projects and it is not really a big problem when the domain you are trying to solve is not that complex. But usually that is not the case and we have very complex domain logics, multiple systems targeting for different areas and highly volatile requirements. These are just some of the most common indications that I have come across that indicate a tightly coupled solution. The <a href="http://www.objectmentor.com/resources/articles/CoffeeMaker.pdf">Mark IV Special Coffee Maker</a> problem presented by Uncle Bob in his <a href="Agile%20Principles,%20Patterns,%20and%20Practices%20in%20C#](http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">book</a>, presents us with an interesting modeling problem, shows some most common errors, why they are errors and possible ways to tackle them. That just helps to get started to think on the right path, to tackle issues in larger domains, methodologies like <a href="http://www.amazon.in/gp/product/0321125215/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0321125215&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=F6WJ7JK5CYQOIJV6">Domain Driven Design</a> would help us to solve the actual domain problems.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault in a Real World Application]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/"/>
-    <updated>2015-04-25T16:16:09+10:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-in-a-real-world-application</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Over the last couple of posts we have seen how to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Get Started with Azure Key Vault</a>, <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with the Vault</a> and also on how the vault can be used as an <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">alternate to the configuration file to keep sensitive information secure</a>. In this post we will explore into how a key vault can be fit into the life-cycle of an application, configuring application to use the keyvault for different deployments and also on how to manage the keys/secrets for these different deployments. Any application that uses the Key Vault to manage keys and other sensitive information, should be able to switch easily to use the vault configured for it.</p>
-
-<h3>Configuring Client-Applications to use the Key vault</h3>
-
-<p>Objects are uniquely identified within Azure Key Vault using a URL such that no two objects in the system, regardless of geo-location, have the same URL. The complete URL to an object is called the Object Identifier and consists of a prefix portion that identifies the Key Vault, the object type, a user provided Object Name, and an Object Version. The <em>object-name</em> is case-insensitive and immutable. When an object is first created it is given a unique version identifier and is marked as the current version of the object. Creation of a new instance with the same object name gives the new object a unique version identifier and causes it to become the current version. When querying for an object <em>object-version</em> is optional and if not provided will point to the current version of the given object-name.</p>
-
-<blockquote>https://{keyvault-name}.vault.azure.net/{object-type}/{object-name}/{object-version}</blockquote>
-
-
-<p>From a client application all we need to have is to the configuration for the key vault url, and configurations to identify key/secret name which can include the version if required. This could be saved in the application&rsquo;s configuration file as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;appSettings&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;KeyVaultUrl&quot;</span> <span class="na">value=</span><span class="s">&quot;https://testvaultrahul.vault.azure.net&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;SqlConnectionString&quot;</span> <span class="na">value=</span><span class="s">&quot;SqlConnectionString&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key =</span><span class="s">&quot;SecretWithVersion&quot;</span> <span class="na">value=</span><span class="s">&quot;SecretWithVersion/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;CryptoKey&quot;</span> <span class="na">value=</span><span class="s">&quot;CryptoKey&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the above configuration I assume that when these configurations are used from the code, we know that if a value is a key or secret. We could have an extended configuration or string prefix&rsquo;s (key<em> or secret</em>) to indicate this and then have the code automatically detect it too if required to decouple that, but I don&rsquo;t see it really necessary. So the application at any time would only depend on these configured values, and we can easily switch it use any vault configured with the required key/secret values.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyVaultIdentifierHelper</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultIdentifierHelper</span><span class="p">(</span><span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;KeyVaultUrl&quot;</span><span class="p">]);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">connectionStringIdentifier</span> <span class="p">=</span>
-</span><span class='line'>    <span class="n">keyVaultIdentifierHelper</span><span class="p">.</span><span class="n">GetSecretIdentifier</span><span class="p">(</span><span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;SqlConnectionString&quot;</span><span class="p">]);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">connectionStringSecret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">connectionStringIdentifier</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>KeyVaultIdentifierHelper</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">KeyVaultIdentifierHelper</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">KeyFormat</span> <span class="p">=</span> <span class="s">&quot;{0}/keys/{1}&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">SecretFormat</span> <span class="p">=</span> <span class="s">&quot;{0}/secrets/{1}&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">private</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">keyVaultUrl</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">KeyVaultIdentifierHelper</span><span class="p">(</span><span class="kt">string</span> <span class="n">keyVaultUrl</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">keyVaultUrl</span> <span class="p">=</span> <span class="n">keyVaultUrl</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">GetKeyIdentifier</span><span class="p">(</span><span class="kt">string</span> <span class="n">keyName</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">KeyFormat</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="n">keyVaultUrl</span><span class="p">,</span> <span class="n">keyName</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">GetSecretIdentifier</span><span class="p">(</span><span class="kt">string</span> <span class="n">secretName</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="n">SecretFormat</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="n">keyVaultUrl</span><span class="p">,</span> <span class="n">secretName</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Managing the Key Vault for Multiple Deployments</h3>
-
-<p>Now that we have decoupled the application from the Key Vault, we need to see how to configure key vaults to cater for multiple deployments. In any application development life-cycle, there would be multiple deployments at a given time for the application to cater for different roles - developers, testers and maybe a production one too. It is very likely that the connection strings and other sensitive information would be deployment specific and we would want to keep them separate. Best way to achieve this would be to create Key vault per deployment so that this separation is clearly maintained. You could check on the <a href="http://azure.microsoft.com/en-in/pricing/details/key-vault/">Key Vault Pricing</a> on how this would affect your overall cost. For each of these deployments you would need to make sure that all the required keys/secrets are added with valid values. Since this can soon end up as a repeated activity, it is best to automate this (using powershell scripts or your own application)</p>
-
-<h3>Restricting Permissions to Key Vault</h3>
-
-<p>We had seen how to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate a client application with a Key Vault</a> using an Active Directory (AD) application, and how to set various access policies for these application&rsquo;s. Applications should be given only the minimum set of permissions that it requires to operate on, most probably this would be only the read permissions. For <a href="https://github.com/rahulpnath/AzureKeyVaultExplorer">administrative application&rsquo;s</a> we would want to give all permissions so that it can modify the vault keys/secrets as required. For such a scenario it is best to have, two (or more) separate AD application&rsquo;s created and have separate permissions provided.</p>
-
-<p><img class="center" alt="Multiple AD applications to access key vault with different permissions" src="http://rahulpnath.com/images/multiple_ad_application.PNG" /></p>
-
-<h3>What all should be there in my configuration file?</h3>
-
-<p>All your <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">sensitive information should be moved out of your application configuration file</a>, and Key Vault is the one place to have them all. The application&rsquo;s configuration file should only have the azure key vault url and the AD application id and certificate identifier (thumb print) that can be used to authenticate with the AD. Yes it is advisable to use the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate authentication mechanism</a> as opposed to the secret mechanism, if not you would have to put the secret in your configuration file, which would be like &lsquo;giving a thief the key to your safe&rsquo;.Additionally you could also have the key identifier mappings in the configuration file that the application can use to map to key/secret in the vault as we had seen above.</p>
-
-<p>By doing this we have fully decoupled the application and its dependency with the vault store and have also protected all our sensitive information. This also helps in having the application to be tested with configurations appropriate to the type of deployment. Hope this helps you in developing your application against the key vault.</p>
 ]]></content>
   </entry>
   

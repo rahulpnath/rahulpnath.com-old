@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Refactoring to Improve Testability: Removing Unnecessary Dependencies - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-28T04:27:00+11:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 28<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Refactoring to Improve Testability: Removing Unnecessary Dependencies
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>Nowadays I am trying to stick to <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> (with the test first approach) and have found it to be of great help. One of the biggest reward doing TDD is that it helps me to <a href="https://vimeo.com/97419151">stay in the flow</a> and regain speed faster after a distraction. This post explains how to refactor code to remove unnecessary dependencies, which is easily found when writing tests.</p>
+
+<p>Unnecessary dependencies are those components which a <a href="http://xunitpatterns.com/SUT.html">SUT</a> depends on, but does not directly affect any of its functionalities. Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test Code Duplication</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>.</p>
+
+<blockquote><p><em>Cut-and-Paste code reuse for fixture setup happens often when there is an unnecessary dependency.</em></p></blockquote>
+
+<p>While looking for an example to write on, I came across a post from my friend <a href="https://twitter.com/zpbappi">Bappi</a>, where he explains <a href="http://zpbappi.com/testing-codes-with-configurationmanager-appsettings/">Testing Codes with ConfigurationManager</a>. It&rsquo;s a good read on how to remove the dependency with various Configuration Providers by creating an abstraction over it.</p>
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>While abstracting the Configuration Manager by using an interface is a good idea, you should also be careful on how the application classes depend on it. Configurations live at the application root and it is a good idea to restrict dependencies with it at that level. Rest of the application must be dependent only on the configuration value and not the configuration itself. Inner components having dependency with the  configuration provider brings in unnecessary complexities and makes code fragile. Some common issues are</p>
+
+<ul>
+<li>Class needs to know of Configuration key</li>
+<li>Extra mocking while testing</li>
+</ul>
+
+
+<p>As you see below, the test case from the original post has to set up the Configuration provider mock to return values before testing the class. MyService (assuming that it is not a Factory class, which I confirmed from Bappi) is unnecessarily depending on IAppSettings and coupling itself with the configuration name, which really is not its concern. This leads to brittle code and tests!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">appSettings</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="n">appSettings</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">].</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">appSettings</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Refactoring the Code</h3>
+
+<p>Refactoring such code is as easy as removing the dependency on IAppSettings and taking in the value of &lsquo;app.name&rsquo; as the dependency. This removes the interface dependency and requires only the string value to be passed in. Here I am passing in <a href="https://blogs.msdn.microsoft.com/ploeh/2008/11/17/anonymous-variables/">an anonymous Name</a>, as the value is not of concern for this test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">anonymousName</span> <span class="p">=</span> <span class="s">&quot;Anonymous Name&quot;</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">anonymousName</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>When looked at isolation these are minor code changes that hardly removes a line or two. But it has a cumulative effect when applied to all the tests for the class and makes code more robust.</em></p></blockquote>
+
+<p>When looked at isolation, this is a seemingly minor change of not mocking an interface and is just one line of code, which you could live with. But you need to mock that for all tests of that class, which is when you start to see the real benefit. Also, you have made the tests more resilient by not taking an unnecessary dependency. Even if you decide to change the configuration name to &lsquo;<em>ApplicationName</em>&rsquo;, none of the tests break now, whereas with the original code all of them would have.</p>
+
+<p><em>One possible argument with this refactoring is, <strong> What if I need an extra value from the dependency (app.domain in the above case), I now have to update the class constructor</strong>.</em></p>
+
+<p>Agreed, but then this violates <a href="https://blog.8thlight.com/uncle-bob/2014/05/12/TheOpenClosedPrinciple.html">Open Closed Principle</a>, which states &lsquo;You should be able to extend a classes behaviour without modifying it.&rsquo; If you need a new configuration value, you are essentially changing the components functionality, so you should either extend current functionality or write a new component. This also opens up a hidden code smell with the existing code and an anti-pattern - <a href="http://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/">Service Locator</a>. So the refactoring still holds good!</p>
+
+<p>Hope this helps you find dependencies with unnecessary components and remove them.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/tdd-and-refactoring/">TDD and Refactoring</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/is-code-coverage-a-lie/">Is Code Coverage a Lie?</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/replace-introduce-local-extension-with-extension-methods/">Replace ‘Introduce Local Extension’ With ‘Extension Methods’</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/using-fiddler-to-help-in-manual-testing/">Using Fiddler to help in Manual Testing</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/being-explicit-about-time-when-handling-multiple-timezone/" title="Previous Post: Being Explicit About Time when Handling Multiple Timezone">&laquo; Being Explicit About Time when Handling Multiple Timezone</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/';
+        var disqus_url = 'http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
