@@ -179,7 +179,7 @@ task :publish_draft do
     puts "Publishing post to: #{dest}"
     File.open(source) { |source_file|
       contents = source_file.read
-      contents.gsub!(/^thisIsStillADraft:$/, "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}")
+      contents.gsub!(/^thisIsStillADraft:$/, "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}")
       File.open(dest, "w+") { |f| f.write(contents) }
     }
     FileUtils.rm(source)
