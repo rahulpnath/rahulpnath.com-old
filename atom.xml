@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-31T04:21:22+11:00</updated>
+  <updated>2016-04-03T03:28:51+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,9 +14,289 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Refactoring to Improve Testability: Extracting Dependencies]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/"/>
+    <updated>2016-04-03T03:14:28+10:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies</id>
+    <content type="html"><![CDATA[<p><a href="https://pixabay.com/en/code-data-programming-code-944504/" class="center" title="Image By Lawrence Monk, from https://pixabay.com/en/code-data-programming-code-944504/"><img src="http://rahulpnath.com/images\coding.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see just the opposite of that - extracting functionality out of a class and creating another class to separate responsibilities, making it easier to test and adhere to <a href="https://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">Single Responsibility Principle</a>(SRP).</p>
+
+<blockquote><p><em>Violating Single Responsibility Principle makes writings tests harder.</em></p></blockquote>
+
+<p>Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Hard%20to%20Test%20Code.html">Hard-To-Test Code</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>. In this post we will explore the refactoring with the help of an example - I have to process usages (anything like electricity, internet, water etc.) for a list of locations aggregated over for a day. There is a repository where the last processed date for the location is stored, and whenever this process runs we have to process for all the days from the last processed date till the current day.</p>
+
+<p>The existing code looks like below, which loops through a list of locations passed in, fetches the last processed date from a repository , gets all the days to be processed till today (<em>DateTime.Now.Date</em>) and processes them for all the days.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationsUsagesCalculator</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">ILocationUsages</span> <span class="n">locationUsages</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">IUsageRepository</span> <span class="n">usageRepository</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">DateTime</span> <span class="n">lastProcessedDate</span> <span class="p">=</span> <span class="n">usageRepository</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span> <span class="p">=</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">lastProcessedDate</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">dateToProcess</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateToProcess</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">locationUsages</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">lastProcessedDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">lastProcessedDate</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">dateCounter</span> <span class="p">&lt;=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">Date</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">dateCounter</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">dateCounter</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>The code is self-explanatory and does what&rsquo;s expected. But what interests us more is the test code for this. From a test perspective we need to make sure
+that for all locations, usages gets processed for the pending days. Direct cases when last processed day is a day before, a couple of days before and different for each location are some of the likely scenarios. Let&rsquo;s see one of the cases where the last processed day is a few days before for all locations</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, AutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesWithCoupleOfDaysBeforeAsLastProcessedProcessesAllDaysTillTodayForEachLocation</span><span class="p">(</span>
+</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
+</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
+</span><span class='line'>   <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
+</span><span class='line'>   <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">days</span> <span class="p">=</span> <span class="m">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">threeDaysBefore</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="n">days</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">usageRepository</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">threeDaysBefore</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">expectedDates</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">days</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">threeDaysBefore</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">expectedDates</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">locationUsages</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Clearly this is not the kind of tests that I want to write! It has a lot of setup code and even some logics to generate <em>expectedDates</em>. Let&rsquo;s see the various dependencies that the SUT has:</p>
+
+<ul>
+<li>ProcessUsagesForLocationOnDate on ILocationUsages</li>
+<li>GetLastProcessedDateForLocation on IUsageRepository</li>
+<li>List of locations that it&rsquo;s processing</li>
+<li>Last processed date for each location</li>
+<li>Dates pending processing as of today</li>
+</ul>
+
+
+<p>We clearly see that this one class does a lot more things than what its name suggests. Let&rsquo;s see how we can refactor this to improve our test code and manage the dependencies better.</p>
+
+<h3>Refactoring the Code</h3>
+
+<p>Finding all the dates till a given date (today in this case) is not this classes responsibility and can easily be pulled out. Since the SUT depends on <em>IUsageRepository</em> just to calculate the dates I can pull that out along with the refactoring. I have created a new interface, <em>IUsageDatesCalculator</em>, to return all the days pending process. With this interface, the test code looks a bit more clear and easier to write.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, Tests.AutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesProcessesForAllLocationForPendingDays</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageDatesCalculator</span><span class="p">&gt;</span> <span class="n">usageDatesCalculator</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">usageDatesCalculator</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">datesToProcess</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">locationUsages</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This looks better and easy to write - we do not have to write any code in the test to generate the expected dates. All I need is a list of dates (no matter is what order) and I need to make sure that process calls all of those. We would also pull out a separate interface to process for a location, instead of a list of locations. This will further remove the need to loop through the locations list in the test.</p>
+
+<h3>DateTime and Tests</h3>
+
+<p>Both in the original code and the refactored code, the logic that generates the dates to be processed depends on <em>DateTime.Now</em> for getting the current date. Though this looks perfectly fine, it makes testing harder. In the original test code, I had to generate expected dates based on today (system time).</p>
+
+<p>It&rsquo;s a good practice to inject a Time Provider into the consumer so that you can mock the value of Now(today) for tests. <a href="https://msdn.microsoft.com/en-us/library/system.datetime.now(v=vs.110).aspx">DateTime.Now</a> is a static dependency on a class property and makes it hard for tests.
+Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimeProvider</a> and having overrides to set mocks for testing is not advised (also mentioned by Seemann in the <a href="http://stackoverflow.com/questions/2425721/unit-testing-datetime-now/2425739#comment38623763_2425739">comments</a>), as it creates problems for parallel tests execution.</p>
+
+<blockquote><p><em>Inject a Time Provider into the consumer. Do not depend on any static time provider (including DateTime.Now)</em></p></blockquote>
+
+<p>Refactoring the dependency with current time using a inject interface, <em>ITimeProvider</em>, makes setting the current day easy as shown in the tests below. I can now hard code my expected dates into the test code and not depend on a runtime generated list.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;,&quot;2016-03-29&quot;, &quot;2016-03-30,2016-03-31,2016-04-01,2016-04-02&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-02&quot;, &quot;&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-01&quot;, &quot;2016-04-02&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">GetDatesToCalculateReturnsExpectedDates</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">todayString</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">lastProcessedDayString</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">expectedDaysString</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ITimeProvider</span><span class="p">&gt;</span> <span class="n">timeProvider</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Location</span> <span class="n">dummyLocation</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">UsageDatesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="n">expectedDaysString</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;,&quot;</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">lastProcessedDay</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">lastProcessedDayString</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">today</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">todayString</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">timeProvider</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Now</span><span class="p">).</span><span class="n">Returns</span><span class="p">(</span><span class="n">today</span><span class="p">.</span><span class="n">Date</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">usageRepository</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">lastProcessedDay</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">dummyLocation</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We have refactored various dependencies that the original code had and made it more testable. Testing is easier and <a href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">repeatable</a>. Whenever writing tests become difficult - stop, think and refactor!</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Refactoring Test Code: Removing Constructor Dependency]]></title>
     <link href="http://rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/"/>
-    <updated>2016-03-31T04:18:00+11:00</updated>
+    <updated>2016-03-31T04:18:03+11:00</updated>
     <id>http://rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency</id>
     <content type="html"><![CDATA[<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="http://rahulpnath.com/images\testing.jpg" class="center" alt="Testing"></a></p>
 
@@ -270,7 +550,7 @@
   <entry>
     <title type="html"><![CDATA[Refactoring to Improve Testability: Removing Unnecessary Dependencies]]></title>
     <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/"/>
-    <updated>2016-03-28T04:27:00+11:00</updated>
+    <updated>2016-03-28T04:27:03+11:00</updated>
     <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies</id>
     <content type="html"><![CDATA[<p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="http://rahulpnath.com/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
 
@@ -385,7 +665,7 @@
   <entry>
     <title type="html"><![CDATA[Being Explicit About Time when Handling Multiple Timezone]]></title>
     <link href="http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone/"/>
-    <updated>2016-03-25T06:41:00+11:00</updated>
+    <updated>2016-03-25T06:41:03+11:00</updated>
     <id>http://rahulpnath.com/blog/being-explicit-about-time-when-handling-multiple-timezone</id>
     <content type="html"><![CDATA[<p><em>This article is to put my thoughts together on a possible solution. Challenges of real world implementation are yet to be discovered.</em></p>
 
@@ -603,7 +883,7 @@
   <entry>
     <title type="html"><![CDATA[PFX Certificate in Azure Key Vault]]></title>
     <link href="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/"/>
-    <updated>2016-03-18T12:21:00+11:00</updated>
+    <updated>2016-03-18T12:21:03+11:00</updated>
     <id>http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault</id>
     <content type="html"><![CDATA[<p><a href="http://perspecsys.com/" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="http://rahulpnath.com/images\pfx_security.jpg" /></a></p>
 
@@ -774,7 +1054,7 @@
   <entry>
     <title type="html"><![CDATA[Developer Learnings from the IKEA Experience]]></title>
     <link href="http://rahulpnath.com/blog/developer-learnings-from-the-ikea-experience/"/>
-    <updated>2016-03-16T05:44:00+11:00</updated>
+    <updated>2016-03-16T05:44:03+11:00</updated>
     <id>http://rahulpnath.com/blog/developer-learnings-from-the-ikea-experience</id>
     <content type="html"><![CDATA[<p>When we moved over to Sydney, last year, we had to start over with all the home furnishings. Since we were just starting out, didn&rsquo;t want to spent a lot on furnishings, so decided to go with <a href="http://www.ikea.com/au/en/?cid=au|ps|branded|brand|google|ikea_australia">IKEA</a> for its cost effectiveness and value for money.</p>
 
@@ -910,7 +1190,7 @@
   <entry>
     <title type="html"><![CDATA[Thinking Beyond Primitive Values: Value Objects]]></title>
     <link href="http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/"/>
-    <updated>2016-03-11T05:49:00+11:00</updated>
+    <updated>2016-03-11T05:49:03+11:00</updated>
     <id>http://rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects</id>
     <content type="html"><![CDATA[<p>When modelling objects for our application, we use primitive values to represent their attributes or properties. By primitive values, I refer to all the primitive types (like Byte, Boolean, Int, Date) and the in-built types (String etc.) that the language supports. These are the most basic types of the programming language and are the building blocks to create custom types.</p>
 
@@ -1162,7 +1442,7 @@
   <entry>
     <title type="html"><![CDATA[Using Fiddler to help in Manual Testing]]></title>
     <link href="http://rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/"/>
-    <updated>2016-03-07T17:33:00+11:00</updated>
+    <updated>2016-03-07T17:33:03+11:00</updated>
     <id>http://rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing</id>
     <content type="html"><![CDATA[<p>Fiddler is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It also enables modifying HTTP traffic when sent or received. Fiddler is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of the tools that I use daily</a> and is an indispensable one for any web developer.</p>
 
@@ -1205,7 +1485,7 @@
   <entry>
     <title type="html"><![CDATA[Automated ClickOnce Deployment of a WPF Application using Appveyor]]></title>
     <link href="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/"/>
-    <updated>2016-03-04T12:00:00+11:00</updated>
+    <updated>2016-03-04T12:00:03+11:00</updated>
     <id>http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor</id>
     <content type="html"><![CDATA[<p>This post covers the current deployment setup of <a href="https://github.com/rahulpnath/clal">CLAL</a>(Command Line Application Launcher), a desktop application, that I am building. Since it is a WPF application, it supports <a href="https://msdn.microsoft.com/en-us/library/t71a733d.aspx">ClickOnce Deployment</a> that enables to create self-updating applications which can install with minimum interaction from the user. ClickOnce supports different <a href="https://msdn.microsoft.com/en-us/library/71baz9ah.aspx">deployment strategy</a> of which distributing it through the web is quite popular as it makes software distribution easier. It works well when the software size is not large so that application installation is faster. For CLAL, there are two deployments served from Azure: <a href="http://www.rahulpnath.com/clal/Releases/commandlineapplicationlauncherui.application">Latest stable build</a> and the <a href="http://www.rahulpnath.com/clal/Latest/commandlineapplicationlauncherui.application">Current build</a>.</p>
 
@@ -1353,7 +1633,7 @@ Primarily there are two branches (<em>master</em> and <em>development</em>) on t
   <entry>
     <title type="html"><![CDATA[Getting Started With Freelancing Jobs Online]]></title>
     <link href="http://rahulpnath.com/blog/getting-started-with-freelancing-jobs-online/"/>
-    <updated>2016-03-01T11:57:00+11:00</updated>
+    <updated>2016-03-01T11:57:03+11:00</updated>
     <id>http://rahulpnath.com/blog/getting-started-with-freelancing-jobs-online</id>
     <content type="html"><![CDATA[<p>Freelancing is a good way to learn new technology, get some hands on experience and not getting limited to the technology stack at your full-time job and of course earn some extra money!. There is a great demand for developers out there, so if its &lsquo;legal&rsquo; (check with your employer, if you already have another full-time job) for you to freelance then give it a try. There are a lot of online freelance platforms(<a href="https://www.upwork.com/">Upwork</a>, <a href="https://www.freelancer.com/">Freelancer</a>) that connects businesses and developers remotely. These platforms enable you as a developer, to start a profile and bid for jobs of your interest. If the business/client finds you as a match for the job, then you get signed up and can start working immediately.</p>
 
@@ -1414,7 +1694,7 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
   <entry>
     <title type="html"><![CDATA[Using Azure Key Vault from a Java Application]]></title>
     <link href="http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/"/>
-    <updated>2016-02-27T14:56:00+11:00</updated>
+    <updated>2016-02-27T14:56:03+11:00</updated>
     <id>http://rahulpnath.com/blog/using-azure-key-vault-from-a-java-application</id>
     <content type="html"><![CDATA[<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. If you are new to Key Vault, read the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>. Access to Key Vault is primarily using <a href="https://msdn.microsoft.com/en-us/library/dn868052.aspx">PowerShell</a> or the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903609.aspx">REST API</a>. There are client API libraries available for <a href="https://github.com/Azure">various platforms</a> that wraps around the REST API, including one for <a href="https://github.com/Azure/azure-sdk-for-java/tree/master/services/keyvault">Java</a>. There have been some asks from my blog readers on how to use the Java SDK as there are no samples available, and this post is a result of that!</p>
 
@@ -1569,7 +1849,7 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
   <entry>
     <title type="html"><![CDATA[How the Deprecation of Switch AzureMode Affects Azure Key Vault]]></title>
     <link href="http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/"/>
-    <updated>2016-02-25T14:51:00+11:00</updated>
+    <updated>2016-02-25T14:51:03+11:00</updated>
     <id>http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault</id>
     <content type="html"><![CDATA[<p>It&rsquo;s been a while that the &lsquo;Switch AzureMode&rsquo; is <a href="https://github.com/Azure/azure-powershell/wiki/Deprecation-of-Switch-AzureMode-in-Azure-PowerShell">deprecated in the Azure PowerShell</a> and has left breaking changes in all the scripts that were using it. <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">I had come across this mode switch first</a>, when starting off with Azure Key Vault, as the then existing cmdlets depended on it. Now that it is deprecated we have updated versions of the PowerShell cmdlets to manage <a href="https://azure.microsoft.com/en-us/services/key-vault/">Azure Key Vault</a>. This post revisits all the scripts used in the <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">previous Key Vault posts</a> and provides the updated scripts.</p>
 
@@ -1656,7 +1936,7 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
   <entry>
     <title type="html"><![CDATA[Setting up AutoHotkey to Speed up Trivial Tasks]]></title>
     <link href="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/"/>
-    <updated>2016-02-09T04:22:00+11:00</updated>
+    <updated>2016-02-09T04:22:03+11:00</updated>
     <id>http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks</id>
     <content type="html"><![CDATA[<p>A lot of trivial tasks that we do daily on our computer can be automated to make it faster and reduce the number of keystrokes (<a href="http://www.keysleft.com">as they are limited</a>). <a href="https://autohotkey.com/">AutoHoykey</a>(AHK) is an excellent tool to automate a lot of these and is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favorite tool</a>. I use a very limited set of functionality of AHK,  to set up hot strings, launch applications, and mapping caps lock as backspace. The installer to the latest version is available <a href="https://autohotkey.com/download/ahk-install.exe">here</a>.</p>
 
@@ -2335,127 +2615,6 @@ rd</p>
 <p><img src="http://rahulpnath.com/images/msdn_magazine_sep_2015.jpg" style="height:500px;" alt=""></p>
 
 <p><em>If you are interested to <a href="http://blogs.msdn.com/b/msdnmagazine/archive/2009/12/24/9940803.aspx">write an article for the MSDN magazine</a></em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing Azure AD Application for Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
-    <updated>2015-06-27T23:43:48+10:00</updated>
-    <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
-
-<h4><strong>Creating AD application</strong></h4>
-
-<p>The <em><a href="https://msdn.microsoft.com/en-us/library/dn986794.aspx">New-AzureADApplication</a></em> cmdlet is used to create a new Azure AD application. It also provides an option to specify the certificate details used to authenticate with the AD application at the time of creation itself. This can be done as a separate step if required, which is shown later in the post.</p>
-
-<p>First we need a certificate that is to be used for authenticating against the AD application, for which I use the below commands to generate a test certificate</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=AD Test Vault Application&quot; ADTestVaultApplication.cer -b 03/03/2014 -e 06/05/2017 -r -len 2048
-</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po test
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This certificate is then used to create the AD application using the below script.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
-</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
-</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
-</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
-</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;KeyVaultADApplication&quot;</span>
-</span><span class='line'>  <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.rahulpnath.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.rahulpnath.com&quot;</span>
-</span><span class='line'>  <span class="n">-KeyValue</span>  <span class="nv">$credential</span> <span class="n">-KeyType</span> <span class="s2">&quot;AsymmetricX509Cert&quot;</span> <span class="n">-KeyUsage</span> <span class="s2">&quot;Verify&quot;</span>
-</span><span class='line'>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To associate the application created with the Key Vault, we need to create a service principal using <a href="https://msdn.microsoft.com/en-us/library/dn986799.aspx">New-AzureADServicePrincipal</a> and then associate that with the Vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
-</span><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;KeyVaultRahul&#39;</span> <span class="n">-ObjectId</span>  <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">Id</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
-</span><span class='line'><span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="c">#Outputs the ServicePrincipalName/AppPrincipalId</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Adding a Certificate</strong></h4>
-
-<p>The <em><a href="https://msdn.microsoft.com/en-us/library/azure/dn194106.aspx">New-MsolServicePrincipalCredential</a></em> cmdlet is used to add a new credential to a service principal or to an application. The service principal is identified by supplying one of the following: object ID, appPrincipalID, service principal name (SPN).</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$msolCredentials</span> <span class="p">=</span> <span class="nb">get-credential</span>
-</span><span class='line'><span class="nb">connect-msolservice</span> <span class="n">-credential</span> <span class="nv">$msolCredentials</span>
-</span><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplicationNew.cer&quot;</span>
-</span><span class='line'><span class="nv">$x509Certificate2</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
-</span><span class='line'><span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$rawCertData</span> <span class="p">=</span> <span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
-</span><span class='line'><span class="nv">$credentialValue</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertData</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
-</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
-</span><span class='line'><span class="nb">New-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-Type</span> <span class="n">Asymmetric</span> <span class="n">-Value</span> <span class="nv">$credentialValue</span> <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span>   <span class="nv">$endDate</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Removing a Certificate</strong></h4>
-
-<p>Whenever a credential gets compromised or as part of regular credential refresh, administrators would want to remove an old certificate and replace with a new one. The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194125.aspx">Remove-MsolServicePrincipalCredential</a> cmdlet is used to remove a credential key from a service principal by specifying the key ID for the credential and the objectID/applicationID/ServicePrincipalName to identify the service principal. To get the key ID of an existing credential, <a href="https://msdn.microsoft.com/en-us/library/azure/dn194091.aspx">Get-MsolServicePrincipalCredential</a> cmdlet can be used, which returns the list of credentials associated with a service principal. The below script just removes the first credential, you could loop through and remove all.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipalCredential</span> <span class="p">=</span> <span class="nb">Get-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-ReturnKeyValues</span> <span class="n">0</span>
-</span><span class='line'><span class="nb">Remove-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-KeyIds</span> <span class="nv">$servicePrincipalCredential</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">KeyId</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Delete an application</strong></h4>
-
-<p>The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194113.aspx">Remove-MsolServicePrincipal</a> cmdlet removes a service principal from Microsoft Azure Active Directory, by specifying objectID/applicationID/ServicePrincipalName to identify the service principal.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ObjectId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
-</span><span class='line'><span class="n">Or</span>
-</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-AppPrincipalId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
-</span><span class='line'><span class="n">Or</span>
-</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ServicePrincipalName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Managing the AD application is a very important and necessary process in the life cycle of a Key Vault, as the access to the Vault is controlled using that. Certificates securing the AD applciation should be rolled/updated frequently and application permissions should be reviewed often to make sure that all applications have only the required permissions.</p>
 ]]></content>
   </entry>
   

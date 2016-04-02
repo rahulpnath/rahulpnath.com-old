@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Refactoring to Improve Testability: Extracting Dependencies - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-03T03:14:28+10:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 3<sup>rd</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Refactoring to Improve Testability: Extracting Dependencies
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><a href="https://pixabay.com/en/code-data-programming-code-944504/" class="center" title="Image By Lawrence Monk, from https://pixabay.com/en/code-data-programming-code-944504/"><img src="/images\coding.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see just the opposite of that - extracting functionality out of a class and creating another class to separate responsibilities, making it easier to test and adhere to <a href="https://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">Single Responsibility Principle</a>(SRP).</p>
+
+<blockquote><p><em>Violating Single Responsibility Principle makes writings tests harder.</em></p></blockquote>
+
+<p>Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Hard%20to%20Test%20Code.html">Hard-To-Test Code</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>. In this post we will explore the refactoring with the help of an example - I have to process usages (anything like electricity, internet, water etc.) for a list of locations aggregated over for a day. There is a repository where the last processed date for the location is stored, and whenever this process runs we have to process for all the days from the last processed date till the current day.</p>
+
+<p>The existing code looks like below, which loops through a list of locations passed in, fetches the last processed date from a repository , gets all the days to be processed till today (<em>DateTime.Now.Date</em>) and processes them for all the days.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationsUsagesCalculator</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">ILocationUsages</span> <span class="n">locationUsages</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">IUsageRepository</span> <span class="n">usageRepository</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">DateTime</span> <span class="n">lastProcessedDate</span> <span class="p">=</span> <span class="n">usageRepository</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span> <span class="p">=</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">lastProcessedDate</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">dateToProcess</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateToProcess</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">locationUsages</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">lastProcessedDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">lastProcessedDate</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">dateCounter</span> <span class="p">&lt;=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">Date</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">dateCounter</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">dateCounter</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>The code is self-explanatory and does what&rsquo;s expected. But what interests us more is the test code for this. From a test perspective we need to make sure
+that for all locations, usages gets processed for the pending days. Direct cases when last processed day is a day before, a couple of days before and different for each location are some of the likely scenarios. Let&rsquo;s see one of the cases where the last processed day is a few days before for all locations</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, AutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesWithCoupleOfDaysBeforeAsLastProcessedProcessesAllDaysTillTodayForEachLocation</span><span class="p">(</span>
+</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
+</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
+</span><span class='line'>   <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
+</span><span class='line'>   <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">days</span> <span class="p">=</span> <span class="m">3</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">threeDaysBefore</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="n">days</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">usageRepository</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">threeDaysBefore</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">expectedDates</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">days</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">threeDaysBefore</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">expectedDates</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">locationUsages</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Clearly this is not the kind of tests that I want to write! It has a lot of setup code and even some logics to generate <em>expectedDates</em>. Let&rsquo;s see the various dependencies that the SUT has:</p>
+
+<ul>
+<li>ProcessUsagesForLocationOnDate on ILocationUsages</li>
+<li>GetLastProcessedDateForLocation on IUsageRepository</li>
+<li>List of locations that it&rsquo;s processing</li>
+<li>Last processed date for each location</li>
+<li>Dates pending processing as of today</li>
+</ul>
+
+
+<p>We clearly see that this one class does a lot more things than what its name suggests. Let&rsquo;s see how we can refactor this to improve our test code and manage the dependencies better.</p>
+
+<h3>Refactoring the Code</h3>
+
+<p>Finding all the dates till a given date (today in this case) is not this classes responsibility and can easily be pulled out. Since the SUT depends on <em>IUsageRepository</em> just to calculate the dates I can pull that out along with the refactoring. I have created a new interface, <em>IUsageDatesCalculator</em>, to return all the days pending process. With this interface, the test code looks a bit more clear and easier to write.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, Tests.AutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesProcessesForAllLocationForPendingDays</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageDatesCalculator</span><span class="p">&gt;</span> <span class="n">usageDatesCalculator</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">usageDatesCalculator</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">datesToProcess</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">locationUsages</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This looks better and easy to write - we do not have to write any code in the test to generate the expected dates. All I need is a list of dates (no matter is what order) and I need to make sure that process calls all of those. We would also pull out a separate interface to process for a location, instead of a list of locations. This will further remove the need to loop through the locations list in the test.</p>
+
+<h3>DateTime and Tests</h3>
+
+<p>Both in the original code and the refactored code, the logic that generates the dates to be processed depends on <em>DateTime.Now</em> for getting the current date. Though this looks perfectly fine, it makes testing harder. In the original test code, I had to generate expected dates based on today (system time).</p>
+
+<p>It&rsquo;s a good practice to inject a Time Provider into the consumer so that you can mock the value of Now(today) for tests. <a href="https://msdn.microsoft.com/en-us/library/system.datetime.now(v=vs.110).aspx">DateTime.Now</a> is a static dependency on a class property and makes it hard for tests.
+Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimeProvider</a> and having overrides to set mocks for testing is not advised (also mentioned by Seemann in the <a href="http://stackoverflow.com/questions/2425721/unit-testing-datetime-now/2425739#comment38623763_2425739">comments</a>), as it creates problems for parallel tests execution.</p>
+
+<blockquote><p><em>Inject a Time Provider into the consumer. Do not depend on any static time provider (including DateTime.Now)</em></p></blockquote>
+
+<p>Refactoring the dependency with current time using a inject interface, <em>ITimeProvider</em>, makes setting the current day easy as shown in the tests below. I can now hard code my expected dates into the test code and not depend on a runtime generated list.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;,&quot;2016-03-29&quot;, &quot;2016-03-30,2016-03-31,2016-04-01,2016-04-02&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-02&quot;, &quot;&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-01&quot;, &quot;2016-04-02&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">GetDatesToCalculateReturnsExpectedDates</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">todayString</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">lastProcessedDayString</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">expectedDaysString</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ITimeProvider</span><span class="p">&gt;</span> <span class="n">timeProvider</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Location</span> <span class="n">dummyLocation</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">UsageDatesCalculator</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="n">expectedDaysString</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;,&quot;</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">lastProcessedDay</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">lastProcessedDayString</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">today</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">todayString</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">timeProvider</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Now</span><span class="p">).</span><span class="n">Returns</span><span class="p">(</span><span class="n">today</span><span class="p">.</span><span class="n">Date</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">usageRepository</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">lastProcessedDay</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">dummyLocation</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We have refactored various dependencies that the original code had and made it more testable. Testing is easier and <a href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">repeatable</a>. Whenever writing tests become difficult - stop, think and refactor!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/tdd-and-refactoring/">TDD and Refactoring</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/is-code-coverage-a-lie/">Is Code Coverage a Lie?</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/refactoring-test-code-removing-constructor-dependency/" title="Previous Post: Refactoring Test Code: Removing Constructor Dependency">&laquo; Refactoring Test Code: Removing Constructor Dependency</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/';
+        var disqus_url = 'http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

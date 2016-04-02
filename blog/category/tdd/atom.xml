@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tdd | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tdd/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-03-31T04:21:22+11:00</updated>
+  <updated>2016-04-03T03:28:51+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,9 +14,178 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Refactoring to Improve Testability: Extracting Dependencies]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/"/>
+    <updated>2016-04-03T03:14:28+10:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies</id>
+    <content type="html"><![CDATA[<p><a href="https://pixabay.com/en/code-data-programming-code-944504/" class="center" title="Image By Lawrence Monk, from https://pixabay.com/en/code-data-programming-code-944504/"><img src="/images\coding.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see just the opposite of that - extracting functionality out of a class and creating another class to separate responsibilities, making it easier to test and adhere to <a href="https://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">Single Responsibility Principle</a>(SRP).</p>
+
+<blockquote><p><em>Violating Single Responsibility Principle makes writings tests harder.</em></p></blockquote>
+
+<p>Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Hard%20to%20Test%20Code.html">Hard-To-Test Code</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>. In this post we will explore the refactoring with the help of an example - I have to process usages (anything like electricity, internet, water etc.) for a list of locations aggregated over for a day. There is a repository where the last processed date for the location is stored, and whenever this process runs we have to process for all the days from the last processed date till the current day.</p>
+
+<p>The existing code looks like below, which loops through a list of locations passed in, fetches the last processed date from a repository , gets all the days to be processed till today (<em>DateTime.Now.Date</em>) and processes them for all the days.</p>
+
+<pre><code class="csharp">public class LocationsUsagesCalculator
+{
+    ILocationUsages locationUsages;
+    IUsageRepository usageRepository;
+
+    public void ProcessUsagesForLocations(IEnumerable&lt;Location&gt; locations)
+    {
+        foreach (var location in locations)
+        {
+            ProcessUsagesForLocation(location);
+        }
+    }
+
+    private void ProcessUsagesForLocation(Location location)
+    {
+        DateTime lastProcessedDate = usageRepository.GetLastProcessedDateForLocation(location);
+        IEnumerable&lt;DateTime&gt; datesToProcess = GetAllDaysTillTodayFromDate(lastProcessedDate);
+        foreach (var dateToProcess in datesToProcess)
+        {
+            ProcessUsagesForLocationOnDate(location, dateToProcess);
+        }
+    }
+
+    private void ProcessUsagesForLocationOnDate(Location location, DateTime dateToProcess)
+    {
+        locationUsages.ProcessUsagesForLocationOnDate(location, dateToProcess);
+    }
+
+    private IEnumerable&lt;DateTime&gt; GetAllDaysTillTodayFromDate(DateTime lastProcessedDate)
+    {
+        var dateCounter = lastProcessedDate.Date.AddDays(1);
+        while (dateCounter &lt;= DateTime.Now.Date)
+        {
+            yield return dateCounter;
+            dateCounter = dateCounter.AddDays(1);
+        }
+    }
+}
+</code></pre>
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>The code is self-explanatory and does what&rsquo;s expected. But what interests us more is the test code for this. From a test perspective we need to make sure
+that for all locations, usages gets processed for the pending days. Direct cases when last processed day is a day before, a couple of days before and different for each location are some of the likely scenarios. Let&rsquo;s see one of the cases where the last processed day is a few days before for all locations</p>
+
+<pre><code class="csharp">[Theory, AutoMoqData]
+public void ProcessUsagesWithCoupleOfDaysBeforeAsLastProcessedProcessesAllDaysTillTodayForEachLocation(
+   [Frozen]Mock&lt;ILocationUsages&gt; locationUsages,
+   [Frozen]Mock&lt;IUsageRepository&gt; usageRepository,
+   IEnumerable&lt;Location&gt; locations,
+   LocationsUsagesCalculator sut)
+{
+    var days = 3;
+    var threeDaysBefore = DateTime.Now.AddDays(-days);
+    usageRepository
+        .Setup(a =&gt; a.GetLastProcessedDateForLocation(It.IsAny&lt;Location&gt;()))
+        .Returns(threeDaysBefore);
+
+    sut.ProcessUsagesForLocations(locations);
+
+    var expectedDates = Enumerable.Range(1, days).Select(a =&gt; threeDaysBefore.Date.AddDays(a));
+
+    foreach (var location in locations)
+        foreach (var date in expectedDates)
+            locationUsages
+                .Verify(a =&gt; a.ProcessUsagesForLocationOnDate(location, date), Times.Once());
+}
+</code></pre>
+
+<p>Clearly this is not the kind of tests that I want to write! It has a lot of setup code and even some logics to generate <em>expectedDates</em>. Let&rsquo;s see the various dependencies that the SUT has:</p>
+
+<ul>
+<li>ProcessUsagesForLocationOnDate on ILocationUsages</li>
+<li>GetLastProcessedDateForLocation on IUsageRepository</li>
+<li>List of locations that it&rsquo;s processing</li>
+<li>Last processed date for each location</li>
+<li>Dates pending processing as of today</li>
+</ul>
+
+
+<p>We clearly see that this one class does a lot more things than what its name suggests. Let&rsquo;s see how we can refactor this to improve our test code and manage the dependencies better.</p>
+
+<h3>Refactoring the Code</h3>
+
+<p>Finding all the dates till a given date (today in this case) is not this classes responsibility and can easily be pulled out. Since the SUT depends on <em>IUsageRepository</em> just to calculate the dates I can pull that out along with the refactoring. I have created a new interface, <em>IUsageDatesCalculator</em>, to return all the days pending process. With this interface, the test code looks a bit more clear and easier to write.</p>
+
+<pre><code class="csharp">[Theory, Tests.AutoMoqData]
+public void ProcessUsagesProcessesForAllLocationForPendingDays(
+    IEnumerable&lt;DateTime&gt; datesToProcess,
+    [Frozen]Mock&lt;ILocationUsages&gt; locationUsages,
+    [Frozen]Mock&lt;IUsageDatesCalculator&gt; usageDatesCalculator,
+    IEnumerable&lt;Location&gt; locations,
+    LocationsUsagesCalculator sut)
+{
+    usageDatesCalculator
+        .Setup(a =&gt; a.GetDatesToCalculate(It.IsAny&lt;Location&gt;()))
+        .Returns(datesToProcess);
+
+    sut.ProcessUsagesForLocations(locations);
+
+    foreach (var location in locations)
+        foreach (var date in datesToProcess)
+        locationUsages
+            .Verify(a =&gt; a.ProcessUsagesForLocationOnDate(location, date), Times.Once());
+}
+</code></pre>
+
+<p>This looks better and easy to write - we do not have to write any code in the test to generate the expected dates. All I need is a list of dates (no matter is what order) and I need to make sure that process calls all of those. We would also pull out a separate interface to process for a location, instead of a list of locations. This will further remove the need to loop through the locations list in the test.</p>
+
+<h3>DateTime and Tests</h3>
+
+<p>Both in the original code and the refactored code, the logic that generates the dates to be processed depends on <em>DateTime.Now</em> for getting the current date. Though this looks perfectly fine, it makes testing harder. In the original test code, I had to generate expected dates based on today (system time).</p>
+
+<p>It&rsquo;s a good practice to inject a Time Provider into the consumer so that you can mock the value of Now(today) for tests. <a href="https://msdn.microsoft.com/en-us/library/system.datetime.now(v=vs.110).aspx">DateTime.Now</a> is a static dependency on a class property and makes it hard for tests.
+Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimeProvider</a> and having overrides to set mocks for testing is not advised (also mentioned by Seemann in the <a href="http://stackoverflow.com/questions/2425721/unit-testing-datetime-now/2425739#comment38623763_2425739">comments</a>), as it creates problems for parallel tests execution.</p>
+
+<blockquote><p><em>Inject a Time Provider into the consumer. Do not depend on any static time provider (including DateTime.Now)</em></p></blockquote>
+
+<p>Refactoring the dependency with current time using a inject interface, <em>ITimeProvider</em>, makes setting the current day easy as shown in the tests below. I can now hard code my expected dates into the test code and not depend on a runtime generated list.</p>
+
+<pre><code class="csharp">[Theory]
+[InlineAutoMoqData("2016-04-02","2016-03-29", "2016-03-30,2016-03-31,2016-04-01,2016-04-02")]
+[InlineAutoMoqData("2016-04-02", "2016-04-02", "")]
+[InlineAutoMoqData("2016-04-02", "2016-04-01", "2016-04-02")]
+public void GetDatesToCalculateReturnsExpectedDates(
+    string todayString, 
+    string lastProcessedDayString,
+    string expectedDaysString,
+    [Frozen]Mock&lt;ITimeProvider&gt; timeProvider,
+    [Frozen]Mock&lt;IUsageRepository&gt; usageRepository,
+    Location dummyLocation,
+    UsageDatesCalculator sut)
+{
+    var expected = expectedDaysString
+        .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
+        .Select(a =&gt; DateTime.Parse(a));
+    var lastProcessedDay = DateTime.Parse(lastProcessedDayString);
+    var today = DateTime.Parse(todayString);
+
+    timeProvider.Setup(a =&gt; a.Now).Returns(today.Date);
+    usageRepository
+        .Setup(a =&gt; a.GetLastProcessedDateForLocation(It.IsAny&lt;Location&gt;()))
+        .Returns(lastProcessedDay);
+
+    var actual = sut.GetDatesToCalculate(dummyLocation).ToList();
+
+    Assert.Equal(expected, actual);
+}
+</code></pre>
+
+<p>We have refactored various dependencies that the original code had and made it more testable. Testing is easier and <a href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">repeatable</a>. Whenever writing tests become difficult - stop, think and refactor!</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Refactoring Test Code: Removing Constructor Dependency]]></title>
     <link href="http://rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/"/>
-    <updated>2016-03-31T04:18:00+11:00</updated>
+    <updated>2016-03-31T04:18:03+11:00</updated>
     <id>http://rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency</id>
     <content type="html"><![CDATA[<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
 
@@ -179,7 +348,7 @@ public void PerformOperationsShouldReturnTrue(
   <entry>
     <title type="html"><![CDATA[Refactoring to Improve Testability: Removing Unnecessary Dependencies]]></title>
     <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/"/>
-    <updated>2016-03-28T04:27:00+11:00</updated>
+    <updated>2016-03-28T04:27:03+11:00</updated>
     <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies</id>
     <content type="html"><![CDATA[<p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
 
