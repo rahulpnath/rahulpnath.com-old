@@ -4,14 +4,13 @@
 
 void Main()
 {
-var groupByFormat = "yyy";
-	var allYears = GetAllYearsTillDateFromPostStart().ToList();
+	var allMonths = GetAllMonthsTillDateFromPostStart().ToList();
 	var files = Directory.GetFiles(@"C:\Users\rahulpnath\Documents\Work\Personal\rahulpnath.com\source\_posts").Select(a => Path.GetFileName(a));
 	var dateFiles = files.Select(a => new { Title = a, Date = DateTime.Parse(a.Substring(0, 10)) }).OrderBy(a => a.Date);
 
-	var filesGroupedByYear = dateFiles.ToLookup(a => a.Date.ToString(groupByFormat));
+	var filesGroupedByYear = dateFiles.ToLookup(a => a.Date.ToString("yyy MMM"));
 
-	var allDat = allYears.Select(a => new { YearMonth = a.ToString(groupByFormat), Data = filesGroupedByYear[a.ToString(groupByFormat)]});
+	var allDat = allMonths.Select(a => new { YearMonth = a.ToString("yyy MMM"), Data = filesGroupedByYear[a.ToString("yyy MMM")]});
 
 
 
@@ -22,14 +21,14 @@ var groupByFormat = "yyy";
 	Console.WriteLine(output);
 }
 
-private IEnumerable<DateTime> GetAllYearsTillDateFromPostStart()
+private IEnumerable<DateTime> GetAllMonthsTillDateFromPostStart()
 {
 	var postStartMonth = new DateTime(2009, 06, 01);
 	var current = postStartMonth;
-	while (current.Year <= DateTime.Now.Year)
+	while (current <= DateTime.Now)
 	{
 		yield return current;
-		current = current.AddYears(1);
+		current = current.AddMonths(1);
 	}
 }
 

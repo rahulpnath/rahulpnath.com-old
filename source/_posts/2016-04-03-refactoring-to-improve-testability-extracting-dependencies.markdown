@@ -99,7 +99,7 @@ Clearly this is not the kind of tests that I want to write! It has a lot of setu
 - Last processed date for each location
 - Dates pending processing as of today
 
-We clearly see that this one class does a lot more things than what its name suggests. Let's see how we can refactor this to improve our test code and manage the depencies better.
+We clearly see that this one class does a lot more things than what its name suggests. Let's see how we can refactor this to improve our test code and manage the dependencies better.
 
 ### Refactoring the Code ###
 
@@ -171,4 +171,4 @@ public void GetDatesToCalculateReturnsExpectedDates(
 }
 ```
 
-We have refactored various dependencies that the original code had and made it more testable. Testing is more easy and [repeatable](https://pragprog.com/magazines/2012-01/unit-tests-are-first). Whenever writing tests become difficult - stop, think and refactor!
+We have refactored various dependencies that the original code had and made it more testable. Testing is easier and [repeatable](https://pragprog.com/magazines/2012-01/unit-tests-are-first). Whenever writing tests become difficult - stop, think and refactor!
