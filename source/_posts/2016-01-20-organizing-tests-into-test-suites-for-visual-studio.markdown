@@ -47,7 +47,8 @@ function runTests(dllPath) {
         }));
 }
 ```
-
+> *You need to install [Node Package Manager](https://www.npmjs.com/package/npm) and grunt/gulp npm packages for TRE.*
+  
 Similarly we can have multiple tasks to execute different groups of tests and it will be available in the TRE within Visual Studio as shown below. This approach gives the most flexibility, allowing tests be grouped any way and providing ability to execute tests across the stack of technologies.
 <img class="center" alt="Visual Studio Task Runner Explorer" src="{{ site.images_root}}/vs_tre.png" />
 
