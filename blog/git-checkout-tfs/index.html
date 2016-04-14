@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Setting up AutoHotkey to Speed up Trivial Tasks - Rahul Nath</title>
+  <title>git checkout TFS - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks">
+  <link rel="canonical" href="http://rahulpnath.com/blog/git-checkout-tfs">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -139,13 +139,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-02-09T04:22:03+11:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 9<sup>th</sup>, 2016</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-15T05:23:08+10:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 15<sup>th</sup>, 2016</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tools/'>tools</a>
+    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/programming/'>programming</a>
   
 </span>
 
@@ -155,61 +155,82 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Setting up AutoHotkey to Speed up Trivial Tasks
+        git checkout TFS
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>A lot of trivial tasks that we do daily on our computer can be automated to make it faster and reduce the number of keystrokes (<a href="http://www.keysleft.com">as they are limited</a>). <a href="https://autohotkey.com/">AutoHoykey</a>(AHK) is an excellent tool to automate a lot of these and is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favorite tool</a>. I use a very limited set of functionality of AHK,  to set up hot strings, launch applications, and mapping caps lock as backspace. The installer to the latest version is available <a href="https://autohotkey.com/download/ahk-install.exe">here</a>.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>It&rsquo;s been a year since using <a href="https://git-scm.com/">Git</a> as my mainstream version control system and I am loving it! Before Git, I had used Team Foundation Version Control (TFVC) for a very long time and was so used to it that I found Git a bit complex and overwhelming in the beginning. Team Foundation Server (TFS) is the whole product suite from Microsoft that provides source code management. Until TFS 2013, it supported only TFVC which is when it introduced <a href="https://blogs.msdn.microsoft.com/mvpawardprogram/2013/11/13/git-for-tfs-2013/">Git in TFS</a>. Even today people use TFS and TFVC synonymously (like in the title of this post) though they are not the same.</p>
 
-<blockquote><p>&ldquo;AutoHotkey (AHK) is a free, open-source macro-creation and automation software for Windows that allows users to automate repetitive tasks. It is driven by a scripting language that was initially aimed at providing keyboard shortcuts, otherwise known as hotkeys, that over time evolved into a full-fledged scripting language.&rdquo;</p></blockquote>
+<h3>Fundamental shift in thinking</h3>
 
-<p><strong>Hotstrings</strong> are to map short key combinations that expand on completion. This one is to handle all common phrases, words like emails, default mail replies, etc. Defining a hotstring is as shown below or look up the <a href="https://autohotkey.com/docs/Hotstrings.htm">documentation here</a> for more details</p>
+<p>By design, Git is a Distributed VCS, whereas TFS is centralized one. It takes quite a while to get your head around this and what it actually means. By definition</p>
+
+<blockquote><p><em><strong>TFVC</strong>: Uses a single, centralized server repository to track and version files. Local changes are always checked in to the central server where other developers can get the latest changes.</em></p>
+
+<p><em><strong>Git</strong>: Git is a distributed version control system. Each developer has a copy of the source repository on their dev machine. Developers can commit each set of changes on their dev machine and perform version control operations such as history and compare without a network connection.</em></p></blockquote>
+
+<p>You. may not see the real Distributed benefits if you are working off a central repository (hosted on a server like GitHub or Bitbucket) and using <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/centralized-workflow">TFS way of development</a> :</p>
+
+<p><em>Get latest code => Make your changes => Merge latest +> Check in (</em>Commit and push<em>)</em></p>
+
+<p>The real power of Git is better understood when you start working disconnected, use branches to keep unrelated development activities separate and merge those into the main trunk (<em>master</em>) once comfortable. You get a local copy of the project and lets you make changes independent of all the other changes in the project.</p>
+
+<blockquote><p><em>Git feels so lightweight and never gets in the way of doing things.</em></p></blockquote>
+
+<h3>Make command line your friend</h3>
+
+<p>If you are a UI savvy person then Git might a good starting point to start using the command line. At first, it definitely feels hard especially if you were TFS/Visual Studio users and might be tempted to use the GUI tools available (<a href="https://desktop.github.com/">GitHub Desktop</a> or <a href="https://www.sourcetreeapp.com/">SourceTree</a>)</p>
+
+<blockquote><p><em>Repetitive tasks become more evident when you use a command line and easily automatable.</em></p></blockquote>
+
+<p>I use Cmder (<a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favourite tools</a>) with Git and have <a href="https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/">set up SSH</a> to Bitbucket and Github (expected soon on TFS), secured by a paraphrase, so that I do not have to key in the credentials every time I interact with the repositories. I <a href="https://github.com/cmderdev/cmder/issues/193#issuecomment-63040989">start the ssh-agent the very first time I open Cmder</a>, which prompts for my paraphrase and continues to run in the background. Alternatively, you can also use <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows">Credential Manager</a> to store credentials, when working with HTTP enabled Git repository. For the common commands, I have set up aliases like below, to save a bit on the keystrokes.</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>::emg::rahulpnath@gmail.com
-</span><span class='line'>::myn::Rahul P Nath
-</span><span class='line'>::myb::http://www.rahulpnath.com
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>gl=git log --oneline --all --graph --decorate  $*
+</span><span class='line'>gs=git status
+</span><span class='line'>ga=git add -A
+</span><span class='line'>gp=git pull
+</span><span class='line'>gpp=git push
+</span><span class='line'>gc=git commit -m &quot;$*&quot;
+</span><span class='line'>gcc=git commit
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>You can use some easy to remember keywords for these like emg means &lsquo;Email Gmail&rsquo; and myn means &lsquo;My Name&rsquo; etc.</p>
+<h3>Different workflows</h3>
 
-<p><strong>Hot keys</strong> are to launch applications on those key combinations. You can use this to launch your favorite applications with the key combinations of your choice. Defining  hot keys is as shown below or look up the <a href="https://autohotkey.com/docs/Hotkeys.htm">documentation here</a> for more details</p>
+<p>Git can be used in many ways and which makes it hard to get started. There are a few popular <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/">workflows</a> that one can use. Currently, I am using -  <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow">Feature Branch workflow</a> -
+which means that all work happen on independent feature branches and once completed gets merged into the main trunk (master branch). Code Reviews happens on the way it gets pulled into the main branch, which ensures code quality and familiarity.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>^!C::
-</span><span class='line'>Run &quot;C:\Users\rahulpnath\Documents\Apps\cmder\Cmder.exe&quot;
-</span><span class='line'>return
-</span></code></pre></td></tr></table></div></figure>
+<p><a href="https://www.atlassian.com/git/images/tutorials/collaborating/comparing-workflows/feature-branch-workflow/01.svg"><img class="center" alt="Git Feature Branch Workflow" src="/images/git_featurebranch_workflow.png" /></a></p>
 
+<h3>Not Just for Code</h3>
 
-<p><strong>Capslock to Backspace</strong> mapping is something that I got inspired from the <a href="http://colemak.com/">Colemak layout</a> and find it useful even with the QWERTY layout. I use the <a href="https://autohotkey.com/docs/commands/Send.htm">Send</a> command to send simulated keystrokes. In the rare case of actually needing the CapsLock key, I just need to press it along with Shift to toggle on and off.</p>
+<p>Git is a version control system and does not limit itself to storing code. You can use it for <a href="http://readwrite.com/2013/11/08/seven-ways-to-use-github-that-arent-coding/">version controlling any of your work</a>. For example, this blog is <a href="https://github.com/rahulpnath/rahulpnath.com">hosted on Github</a> and all the <a href="https://github.com/rahulpnath/rahulpnath.com/commits/master">changes are version controlled</a>, which gives me the flexibility to work and commit locally. Since the blog is <a href="http://www.rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">static generated</a> I can also preview all the changes locally. I use git whenever I work on any documents or <a href="https://github.com/rahulpnath/Speaking">presentations</a> so that I can avoid manual copy of files and renaming with suffixes like &lsquo;<em>Draft</em>, &rsquo;<em>Draft1</em>,<em>Final</em>,&ldquo;<em>FinalRevision</em>&lsquo; etc. (if that sounds any similar)</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>CapsLock:: Send {BackSpace}
-</span></code></pre></td></tr></table></div></figure>
+<h3>Managing Commits</h3>
 
+<p>When coming to commits, which are nothing but checkpoints of meaningful work done, people might have a different  definition for &lsquo;<em>meaningful</em>&rsquo; - for some it might be really granular, for others a bit coarse and for yet another it means all the work is done. I tend to commit quite often - even a rename of a variable leads to a commit so that I do not have to backtrack if at all something goes wrong immediately after that.</p>
 
-<h4><strong>Running AHK scripts on startup</strong></h4>
+<p>if you really like the idea of committing often (locally), but want the pushes to remotes more coarse, you can &lsquo;<strong><a href="http://stackoverflow.com/questions/5189560/squash-my-last-x-commits-together-using-git">squash your commits</a></strong>&rsquo;, before pushing it to remote branch. This allows you to commit often locally and still push  meaningful commit in the main source history. Make sure that the <a href="http://chris.beams.io/posts/git-commit/">commit messages and clear and communicates the intent</a> and helps <a href="http://megakemp.com/2014/08/14/the-importance-of-a-good-looking-history/">keep a good looking history</a>.</p>
 
-<p>To automatically run these scripts on startup, I use the <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> that comes with Windows. To create a new task follow the steps as shown below.</p>
+<p>Git is one of the best things that happened to developers and hopes it stays long!</p>
 
-<p>In Task Scheduler select &lsquo;Create Task&rsquo; and enter the Name and Description. Set it to run with highest privileges, so that the scripts work even when on application&rsquo;s running in admin mode. Create a trigger for the task to run and I have set it &lsquo;At log on&rsquo; to run every time I log on. Create an Action to &lsquo;Start a program&rsquo; and select the script file (.ahk) with all your scripts. Once created you can right-click on the task and select Run and verify that the script has started and is working.</p>
+<p><strong>References</strong></p>
 
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_general.PNG" /></p>
+<ul>
+<li><a href="http://gitref.org/index.html">Git Reference</a></li>
+<li><a href="https://git-scm.com/book/en/v2">Pro Git</a></li>
+</ul>
 
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_trigger.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_actions.PNG" /></p>
-
-<p>I synchronize these scripts over Onedrive, to make it available on all my computers. The only thing to do on all the computers is to create the startup task. The features discussed above is just the tip of an iceberg, and should help you get started. AHK has a lot more features that you can explore at the project site. Hope this helps you to set up and automate some of your tasks!</p>
 </div>
 
 
@@ -242,19 +263,19 @@
   
     <li>
     	<p>
-      		<a href="/blog/tools-that-I-use/">Tools that I use</a>
+      		<a href="/blog/being-explicit-about-time-when-handling-multiple-timezone/">Being Explicit About Time when Handling Multiple Timezone</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/staying-organized-finding-a-system-to-manage-it-all/">Staying Organized: Finding a system to manage it all</a>
+      		<a href="/blog/developer-learnings-from-the-ikea-experience/">Developer Learnings from the IKEA Experience</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/git-checkout-tfs/">git checkout TFS</a>
+      		<a href="/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>
   		</p>
     </li>
   
@@ -272,7 +293,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/git-checkout-tfs/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/git-checkout-tfs/" >Tweet</a>
   
   
   
@@ -284,10 +305,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/optimizing-octopress-workflow-for-new-posts/" title="Previous Post: Optimizing Octopress Workflow for New Posts">&laquo; Optimizing Octopress Workflow for New Posts</a></li>
+            <li class="previous"><a href="/blog/clal-command-line-application-launcher/" title="Previous Post: CLAL - Command Line Application Launcher">&laquo; CLAL - Command Line Application Launcher</a></li>
             
-            
-            <li class="next"><a href="/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/" title="Next Post: How the Deprecation of Switch AzureMode Affects Azure Key Vault">How the Deprecation of Switch AzureMode Affects Azure Key Vault &raquo;</a></li>
             
           </ul>
         
@@ -332,8 +351,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/';
-        var disqus_url = 'http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/git-checkout-tfs/';
+        var disqus_url = 'http://rahulpnath.com/blog/git-checkout-tfs/';
         var disqus_script = 'embed.js';
       
     (function () {

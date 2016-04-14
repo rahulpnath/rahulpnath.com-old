@@ -143,6 +143,120 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-08-20T14:50:06+10:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 20<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/web/'>web</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/yo-ko-a-yeoman-generator-for-knockoutjs/" itemprop="url">yo ko - A Yeoman Generator For KnockoutJS</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Templates/Scaffolding is something that we are all used to nowadays, given that we use an IDE for development. Visual Studio is one popular IDE, that is very popular among people developing on the Microsoft platform. Visual studio comes with a lot of pre-installed templates and scaffolding templates and also has a rich extension support from the <a href="http://visualstudiogallery.msdn.microsoft.com/site/search?f%5B0%5D.Type=RootCategory&amp;f%5B0%5D.Value=templates&amp;f%5B0%5D.Text=Templates">community</a>. While developing on text editors(say like <a href="http://www.sublimetext.com/">Sublime Text</a> which is what I have been using), which are not for any specific technology you might not have all the templating and scaffolding supported right out of the box. You might find plugins for specific editors but not for all the frameworks that are available today.</p>
+
+<p><a href="http://yeoman.io/">Yeoman</a> is the Web&rsquo;s scaffolding tool for Modern Web Apps. Yeoman is a command line tool that runs over <a href="http://nodejs.org/">Node.js</a>. Setting it up is pretty easy with the instructions <a href="http://yeoman.io/learning/index.html">here</a>. To scaffold web applications, which is the same as creating a new project in Visual Studio from a template, we need to install framework specific generators for Yeoman. There are some `<a href="http://yeoman.io/generators/official.html">officially maintained generators</a> and also ones that are <a href="http://yeoman.io/generators/community.html">maintained by the community</a>.</p>
+
+<p>KnockoutJs helps you simplify dynamic JavaScript UIs using the Model-View-ViewModel (MVVM) pattern. If you are new to knockout and come from a XAML backgorund, <a href="http://www.rahulpnath.com/blog/knockoutjs-for-xaml-developers/">KnockoutJS For XAML Developers</a>, would help you.   For KnockoutJs, there is an awesome generator that is written by <a href="https://twitter.com/stevensanderson">Steve Sanderson</a>, the creator of knockout itself and is available <a href="https://www.npmjs.org/package/generator-ko">here</a>. You can install this as below</p>
+
+<blockquote><p>$ npm install generator-ko</p></blockquote>
+
+<p>Once installed you can generate your web app from the command prompt and running the command &lsquo;<strong>yo ko</strong>&rsquo;. This is will ask for the name of the project, whether to use JavaScript or TypeScript and also if you need to include automated tests using Jasmine and Karma. On giving your options your web app would be  scaffolded out.</p>
+
+<p><img class="center" alt="hp_dv4" src="/images/yo_ko.png" /></p>
+
+<p><strong>Project Structure</strong></p>
+
+<p>The generated web app is a simple Single Page Application(SPA), using the components feature released with <a href="http://blog.stevensanderson.com/2014/08/18/knockout-3-2-0-released/">Knockout 3.2.0</a>, <a href="http://bower.io/">Bower</a> to manage packages and <a href="http://gulpjs.com/">Gulp</a> for the build</p>
+
+<p><img class="left" alt="hp_dv4" src="/images/yo_ko_structure.png" /> The generator creates the folder structure as shown here and by default has setup the required packages. It uses the following packages:</p>
+
+<ul>
+<li><a href="http://getbootstrap.com/">Bootstrap</a>: Responsive UI framework</li>
+<li><a href="http://millermedeiros.github.io/crossroads.js/">Crossroads</a>: Routing Library</li>
+<li><a href="https://github.com/millermedeiros/hasher/">Hahser</a>: Browsing History Manager</li>
+<li><a href="http://jquery.com/">Jquery</a>: Feature rich library</li>
+<li><a href="http://millermedeiros.github.io/js-signals/">Js-Signals</a>: Custom/Event Messaging System</li>
+<li><a href="http://www.rahulpnath.com/blog/knockoutjs-for-xaml-developers/">Knockout</a>: Simplifies dynamic Javascript UIs with <a href="http://www.rahulpnath.com/blog/tag/mvvm/">MVVM pattern</a></li>
+<li><a href="http://requirejs.org/">Requirejs</a>: File and Module Loader</li>
+<li><a href="https://github.com/requirejs/text">Requirejs-text</a>: AMD loader plugin for text resources</li>
+</ul>
+
+
+<p>There are three components: <em>about-page</em>, <em>home-page</em> and <em>nav-bar</em>. The main, <em>index.html</em> composes these components into the full blown view. The nav-bar component is referred as is and the home and about page are dynamically loaded based on the nav-bar menu interaction. As shown below the <em>div</em> binds to the component based on the selected route.We look further deep on how the view models bind and these components are tied together.<br style="clear:both;" /></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;body&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;nav-bar</span> <span class="na">params=</span><span class="s">&quot;route: route&quot;</span><span class="nt">&gt;&lt;/nav-bar&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;page&quot;</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span> <span class="na">data-bind=</span><span class="s">&quot;component: { name: route().page, params: route }&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'><span class="nt">&lt;/body&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The javascript modules are loaded using Requirejs and the startup class for this is <em>app/starup.js</em> as defined in the data-main attribute in index.html. The knockout components are registered here and view-bindings are setup.Registering a component can be in multiple ways and is well explained in the article <a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">here</a>. The <em>currentRoute</em> object is what gets binded to the page and is defined in the app/router.js where the crossroads is setup. To use any other routing library of your choice this is where you would need to update. Whenever a user clicks a menu item and navigates to a new route, the currentRoute is updated, which in turn triggers the corresponding component to get loaded. <a href="https://github.com/millermedeiros/hasher/">Hasher</a> library is used to listen to browser navigation events and update them to crossroads, where the input is parsed and dispatch matched signal for the first Route that matches the input.</p>
+
+<p>The knockout components are defined in the <em>components</em> folder and has both the html and js parts in the same component folder. Whenever the component is loaded the viewmodel defined in the corresponding js file gets bounded to it. This way of developments helps to keep different components of the app well separated as modules and compose them into the view as required.</p>
+
+<p>The build is managed is using <a href="http://gulpjs.com/">Gulp</a>, which can be installed using <a href="https://www.npmjs.org/package/gulp">npm</a>. To build the project, you need to run <em>gulp</em> at the root folder. The build packages all the javascript modules/files into a single file, replaces the required updates in the html file, minifies the html, js and css etc. If not for the build systems, the application would  have to make lots of file/scripts/css requests or would have to have it all in the same file while development which makes working as a team difficult. These build system are highly configurable and can be used to setup output as required. The build tasks are defined in the <em>gulpfile.js</em> and the &lsquo;<em>default</em>&rsquo; task runs when running the gulp command. This is will generate the optimized files in the <em>dist</em> folder, which can be hosted in the server of your choice. I use the <a href="https://www.npmjs.org/package/http-server">zero-configuration command-line http-server</a> available on nodejs.</p>
+
+<p><img src="/images/yo_ko_app.png" alt="yo ko application " /></p>
+
+<p><strong>Adding New Components</strong></p>
+
+<p>To add new components the knockout generator provides a command which generated the html/css components in the appropriate folder. You would still need to add the registration of the component in the startup file.</p>
+
+<blockquote><p>yo ko:component &lt;component name&gt;</p></blockquote>
+
+<p>This is just a starting point on building Single Page Applications using knockoutjs. Start on from here to build great web applications.</p>
+
+<p><strong>Additional Resources</strong></p>
+
+<ul>
+<li><a href="http://blog.stevensanderson.com/2014/06/11/architecting-large-single-page-applications-with-knockout-js/">Architecting large Single Page Applications with Knockout.js</a></li>
+<li><a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">Knockout.js 3.2 Preview : Components</a></li>
+<li><a href="http://www.scottlogic.com/blog/2014/02/28/developing-large-scale-knockoutjs-applications.html">Developing Large Scale Knockoutjs Applications</a></li>
+<li><a href="http://www.scottlogic.com/blog/2014/07/30/spa-angular-knockout.html">Single Page Applications - Angular Vs Knockout</a></li>
+</ul>
+
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-07-08T09:35:39+10:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 8<sup>th</sup>, 2014</time>
         
 
@@ -1222,68 +1336,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-02-03T17:39:27+11:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 3<sup>rd</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/speaking/'>speaking</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/thanks-to-everyone-who-attended-my-first-public-talk-at-ccorner-hyderabad-ug/" itemprop="url">Thanks to Everyone Who Attended My First Public Talk At C#Corner Hyderabad UG</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Thanks to everyone who attended <a href="http://www.c-sharpcorner.com/Events/64/">my very first public talk</a>, at the <a href="http://www.c-sharpcorner.com/">C#Corner</a> <a href="http://www.c-sharpcorner.com/Chapters/6/hyderabad-chapter.aspx">Hyderabad Chapter User Group(UG)</a> on February 1, Saturday on Windows Phone Development. Summary of the event is available <a href="http://www.c-sharpcorner.com/UploadFile/subhendude/C-Sharp-corner-hyderabad-user-group-meet-1-february-2014-offici/">here</a>. It was a very good experience speaking for the first time in front of a large audience, and from my side felt it went well. Here&rsquo;s some follow up information on the talk and also the code samples and presentations used.</p>
-
-<ul>
-<li><p>There might be a lot of you who would be planning to get started with phone development or yet in the dilema of whether or not to - <em><strong>&lsquo;Don&rsquo;t think much and just start <a href="http://developer.windowsphone.com/en-us">getting your hands dirty</a></strong></em>&rsquo;.</p></li>
-<li><p>If your current project/work does not demand you to use whatever we have got started with it, develop a simple application on your free time/weekends. You would get lot of app ideas at <a href="http://www.dvlup.com/SignIn">DVLUP</a> and may even get rewarded if you crack some of their challenges - <em><strong>Stay motivated.</strong></em></p></li>
-<li><p>Make sure whatever you develop is always properly backed up and stored - <em><strong>Use a source control</strong></em>.
-<a href="http://www.visualstudio.com/en-us/products/visual-studio-online-overview-vs#SKUDetailList_1">Visual Studio Online</a> or <a href="https://github.com/">Github</a> are great free services that could get you started with.</p></li>
-<li><p>Learn more about <a href="http://rahulpnath.com/blog/tag/mvvm/">MVVM</a>.The mvvm toolkit that we were using at the demo is <a href="http://mvvmlight.codeplex.com/">MVVM Light</a>. There are a couple of videos in <a href="http://mvvmlight.codeplex.com/">there</a> that will help you get started with it. <a href="http://compositewpf.codeplex.com/">Prism</a> is also another alternative that we had talked about. - <em><strong>Reuse across platforms</strong></em></p></li>
-<li><p>As we had discussed, Getting Started in Windows Phone Development means you have acquired the same skills to Get Started on Windows 8 application too - <em><strong>Get started <a href="http://msdn.microsoft.com/en-in/windows/apps/br211386.aspx">here</a></strong></em>.</p></li>
-<li><p>There are a lot of applications that are waiting to be developed for Windows phone and Windows 8 for which people are even ready to pay you. So if you want to earn out of your side projects, then try looking for projects in freelancing communities - <a href="https://www.odesk.com/">ODesk</a>, <a href="http://www.freelancer.in/">Freelancer</a>, <a href="https://www.elance.com/">Elance</a> are some to get you started - <em><strong>Earn while you Learn</strong></em></p></li>
-</ul>
-
-
-<p>Feel free to get in touch in case you need any help while on your Windows phone journey.</p>
-
-<p>The samples and presentation slides is available in the event summary above or <a href="https://github.com/rahulpnath/Speaking/tree/master/Getting%20Started%20with%20Windows%20Phone%208%20App%20Development">here</a>.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1307,6 +1359,8 @@ To check if this is successfully setup, open up command prompt and type in java.
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/git-checkout-tfs/">git checkout TFS</a>
+    
     <a class="list-group-item " href="/blog/clal-command-line-application-launcher/">CLAL - Command Line Application Launcher</a>
     
     <a class="list-group-item " href="/blog/refactoring-to-improve-testability-extracting-dependencies/">Refactoring to Improve Testability: Extracting Dependencies</a>
@@ -1314,8 +1368,6 @@ To check if this is successfully setup, open up command prompt and type in java.
     <a class="list-group-item " href="/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a>
     
     <a class="list-group-item " href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a>
-    
-    <a class="list-group-item " href="/blog/being-explicit-about-time-when-handling-multiple-timezone/">Being Explicit About Time when Handling Multiple Timezone</a>
     
   </div>
 </section>
