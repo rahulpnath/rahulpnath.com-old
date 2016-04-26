@@ -4,7 +4,7 @@
   <title><![CDATA[Category: thoughts | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/thoughts/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-04-15T05:23:39+10:00</updated>
+  <updated>2016-04-26T12:23:58+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,71 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Checking in Package Dependencies into Source Control]]></title>
+    <link href="http://rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/"/>
+    <updated>2016-04-26T12:21:21+10:00</updated>
+    <id>http://rahulpnath.com/blog/checking-in-package-dependencies-into-source-control</id>
+    <content type="html"><![CDATA[<p><em>This post looks into why we should include packages in the source control and not resolve it via configuration files at build time.</em></p>
+
+<p>Over the past few years, <a href="https://en.wikipedia.org/wiki/Package_manager">Package Managers</a> have gained an important role in the way software gets developed. There is an <a href="https://github.com/showcases/package-managers">increasing number of package managers</a> catering to different programming languages and areas of development, making the distribution of reusable libraries and plugins easy. The convention that&rsquo;s usually followed with these package dependencies is to exclude them from source control, and use a configuration file (<a href="https://docs.npmjs.com/files/package.json">package.json</a>, <a href="https://docs.nuget.org/consume/package-restore">packages.config</a>) to retrieve all the packages at build time. Even the <a href="https://github.com/github/gitignore">GitHub’s collection</a> of <a href="https://git-scm.com/docs/gitignore">.gitignore</a> file templates ignores the packages folders of various package managers.</p>
+
+<pre><code class="text"># NuGet Packages
+*.nupkg
+# The packages folder can be ignored because of Package Restore
+**/packages/*
+...
+# Dependency directories
+node_modules
+jspm_packages
+</code></pre>
+
+<h3>Common Arguments for not Checking in Packages</h3>
+
+<p>Since checking in packages is not a common practice, let&rsquo;s first see some of the arguments for not doing this and how it compares to having them checked in.</p>
+
+<h4><strong>Storage</strong></h4>
+
+<p><em>Packages are something that can be resolved at runtime and keeping them excluded saves that extra space on the source control system.</em></p>
+
+<p>Yes, this might have been a good reason few years back, but these days this is not a good reason as storage has become really cheap. Moreover popular source control systems charge by the <a href="https://github.com/pricing/plans">number of repositories</a> and not by the space it occupies (although it has <a href="https://help.github.com/articles/what-is-my-disk-quota/">limits</a> on it).</p>
+
+<h4><strong>Time</strong></h4>
+
+<p><em>The clone is faster when you do not have packages in the source control repository as opposed to having them.</em></p>
+
+<p>But for the project to build we need the packages restored first. So the time is either spent in the clone or in the restore. But if the packages are included in the git clone then you can immediately start working on the project after a clone and do not need any internet connectivity to make the project build. This is also of advantage if you want to run a &lsquo;<a href="https://git-scm.com/docs/git-clean">git clean</a>&rsquo; - which cleans the working tree by recursively removing files that are not under version control. With packages not under the source control, you have to restore them every time you run it - This is not a problem if you have internet connectivity, but will block your work if you do it when you don&rsquo;t.</p>
+
+<blockquote><p><em>Without checking in dependent packages, you can&rsquo;t git clone and get on a flight nor can you git clean while on a <a href="https://en.wikipedia.org/wiki/Airplane_mode">flight</a></em></p></blockquote>
+
+<p>Moreover cloning a repository is a one-time activity, while a clean can be done any time a developer wants to. So it actually saves more time to keep the packages checked in.</p>
+
+<h3>More Reason for Checking in Packages</h3>
+
+<p>Now that we have seen most of the common arguments are not valid, let&rsquo;s see more reasons on why including the packages into the source control is actually better.</p>
+
+<h4><strong>Explicit Dependencies</strong></h4>
+
+<p>It&rsquo;s always better to be explicit about your code dependencies and not have them resolved by a package manager.</p>
+
+<blockquote><p><em>Packages are nothing but code and can alter the behaviour of the application.</em></p></blockquote>
+
+<p>There are possibilities of specific package versions getting <a href="http://blog.npmjs.org/post/141577284765/kik-left-pad-and-npm">removed from the package manager</a>, which your application is still dependent on and leads to build breakage! If your package configuration is set up in such a way to resolve the latest available package of  the specific dependency, there are possibilities that the package owner pushes an update that is not backward compatible, causing the build to break! Given that these possibilities exist there is no reason to exclude package dependencies from checked in.</p>
+
+<h4><strong>Package Source Downtime</strong></h4>
+
+<p>Though the publicly available package sources like NuGet, npm are available almost all the time, it is likely that they too <a href="http://stackoverflow.com/questions/17806889/nuget-feed-reliability">can go down</a>. The last thing you would want is to get blocked by the downtime of these services - be it failure to build locally or on a server or even block a critical deployment. With the packages available in your source control, you have one less moving part in your whole deployment pipeline and it is better to have lesser dependencies.</p>
+
+<h4><strong>Custom Package Sources</strong></h4>
+
+<p>Many times I have had to update my Package sources in Visual Studio and break my head on the specific order of these entries to get the project building. This is very common when using custom packages sources like <a href="http://inedo.com/proget">ProGet</a> or <a href="https://myget.org/">MyGet</a>. Such dependencies make project setup harder and is easily avoided if all the dependent assemblies are available within the repository.  You can still have them as custom NuGet sources but have the dependencies included into the repository and update the references whenever source changes. This makes project ramp up easier and faster, with one less configuration step.</p>
+
+<p><img class="center" alt="Nuget custom package source" src="/images/nuget_package_sources.png" /></p>
+
+<p>Do you still see any reason for not checking in package dependencies into the source control? If not let&rsquo;s go and change that package folder exclude and have them included in the source. (I just updated <a href="http://www.rahulpnath.com/blog/clal-command-line-application-launcher/">CLAL</a> to <a href="https://github.com/rahulpnath/clal/commit/736023d9ab4bd285cb077ff54acd1bbaad142a08">include dependencies.</a>)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Developer Learnings from the IKEA Experience]]></title>
@@ -443,33 +508,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
       </div></p>
 
 <p>Hope you start of this year off with some nice readings and gift yourself with some these master pieces. I am sure that I have not covered all of them and there are still more to be &lsquo;chewed and digested&rsquo;. Do drop in with a comment on Which books have helped you be better in programming.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Get started with your blog]]></title>
-    <link href="http://rahulpnath.com/blog/get-started-with-your-blog/"/>
-    <updated>2013-09-17T23:31:58+10:00</updated>
-    <id>http://rahulpnath.com/blog/get-started-with-your-blog</id>
-    <content type="html"><![CDATA[<p>If you are a programmer and don’t have a blog, then there is no better time than now to start one. <a href="http://channel9.msdn.com/Shows/HanselminutesOn9/Hanselminutes-on-9-Social-Networking-for-Developers-Part-1-Every-Developer-Needs-a-Blog">Every developer should have a blog</a>, for a very simple reason – <strong>Otherwise all your work is just going wasted!.</strong> I can bet that the best of your code or ideas would either be in some old email that you hardly have access to or archived or in some backup hard-disk waiting to be formatted or already formatted and all gone. All the thought, research and creativity that you would have spent would be lying just wasted and with little or no use. Having an online presence has really become a necessity in today&rsquo;s connected world, and a blog is the best place to show your presence. I started off answering <a href="http://rahulpnath.com/blog/stars-do-count/">mdsn forums</a> and then figured that most of the people had similar questions and I was giving the same answers many a times, which gave me the thought of blogging answers and posting links to them. So anytime someone asks you something or you do something awesome blog it, so that your work does not get wasted and more people would find it useful. As with the <a href="http://en.wikipedia.org/wiki/Rule_of_three_(computer_programming">rule of three</a>) for refactoring, with blogging it’s just rule of one – <em><strong>blog it always </strong>(</em>even this blog is because some one asked me after I recently moved on to a self hosted blog<em>).</em>
-I have had a taste of blogspot and WordPress blog web hosting service,  before moving on to a self-hosted blog here. I think you would have guessed which one I would suggest you to get if you are starting your blog – a self hosted one. Indeed there is some effort that goes in to maintain the blog, but its worth every effort that you put.</p>
-
-<p>I use WordPress as the blogging software and am running it on a Linux server (had to change over from windows, as there were a lot of compatibility issues that I faced). WordPress is a very popular blogging engine and so has an immense collection of themes, plug-in and add-on that are available to enhance yours and your readers experience. Once you get your wordpress installed on your self hosted domain, which should be as easy as clicking a button, install the below plugin’s.</p>
-
-<ol>
-<li><p>The first thing would be to <strong>connect with </strong><a href="http://jetpack.me/"><strong>jetpack</strong></a>. This would give you a lot of features including stats, social integration, publicize options and many more.</p></li>
-<li><p>Connect with <a href="http://akismet.com/"><strong>akismet</strong></a> using the <a href="http://wordpress.org/plugins/akismet/">plug-in</a> for preventing/moderating spam comments. Akismet provides a free subscription for personal users.</p></li>
-<li><p><a href="http://feedburner.google.com/"><strong>Claim your feed</strong></a> and put it on your blog. You can again use a <a href="http://wordpress.org/plugins/feedburner-form/">feedburner-form</a> if you want.</p></li>
-<li><p>Integrate with<strong> </strong><a href="http://www.google.com/analytics/"><strong>Google analytics</strong></a>, if you want more detailed statistics than the one provided with jetpack. Once you get your code, you can use the <a href="http://wordpress.org/plugins/googleanalytics/">plug-in</a> to integrate with your site. This will add the necessary code in all your pages header.</p></li>
-<li><p>Make sure you have a <strong>backup plan</strong>, as you would not want all your data to vanish off if something happens with the hosting server. You could either use vaultpress or use freely available plug-in to back up to popular cloud storage like Dropbox, Skydrive or Google drive.</p></li>
-<li><p>Get a <strong>good theme</strong> for your blog, there a lot of free and paid ones out there.</p></li>
-</ol>
-
-
-<p>Now that you have most of the things setup, it’s time for you to put up your first page, <a href="http://rahulpnath.com/blog/about/">About me</a>. This is very important as it gives a sense of credibility to your readers, so make sure you have one. For creating content on to your blog, you can either use the online editor or use some offline editor. Personally I use <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows live writer</a>. I love using this and all my blogs are written using this. The one plug-in that you would want to get, if you are a developer is <a href="http://precode.codeplex.com/">PreCode</a>, which makes inserting code really easy.
-There are a lot more things that your blog would need, you would soon find that out and when you do, please leave a note of it in the comments section below. Happy Blogging!</p>
-
-<p><strong>Edit</strong>: Couple of people were asking about getting started with a free blog. <a href="http://wordpress.com/">Wordpress.com</a> or <a href="https://www.tumblr.com/">Tumblr</a> would be a very good option to start with. Personally I used Wordpress as I felt that better. The advantage with tumblr over wordpress is that you can <a href="http://www.tumblr.com/docs/en/custom_domains">link your custom domain name with tumblr for free</a> while <a href="http://en.support.wordpress.com/domains/map-existing-domain/">worpress charges for linking a custom domain</a>. (You would need to pay for the custom domain in either cases). But then I ended up hosting all myself after moving away from Wordpress.com.</p>
 ]]></content>
   </entry>
   
