@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-04-26T12:23:58+10:00</updated>
+  <updated>2016-05-02T13:28:42+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,129 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Disable NuGet Package Restore for a .Net Poject]]></title>
+    <link href="http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject/"/>
+    <updated>2016-05-02T13:26:59+10:00</updated>
+    <id>http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject</id>
+    <content type="html"><![CDATA[<p><em>If you have decided on <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">Checking in Package Dependencies into Source Control</a> for an existing project that uses Nuget Packages then this post is for you</em></p>
+
+<p>When using NuGet package references that are not included in the source control, these packages gets restored during build time. There are <a href="https://docs.nuget.org/consume/package-restore">multiple ways that NuGet supports restore these dependencies at build time</a></p>
+
+<ul>
+<li>Automatic Package Restore is the current recommended approach (within Visual Studio), which is available from NuGet 2.7.</li>
+<li>Command-line package restore on build servers</li>
+<li>MSBuild-integrated package restore approach is the original Package Restore implementation and is still used in many projects.</li>
+</ul>
+
+
+<p>Depending on the type to of restore the project uses, NuGet has different configuration entries in the <em>csproj</em> files and <em>.nuget</em> folder in the solution root. So when choosing to check in package dependencies into the source control, it is a good idea to remove all these <a href="https://docs.nuget.org/consume/package-restore/migrating-to-automatic-package-restore">generated configurations</a> and files that are not required any more. The below script does this for you!</p>
+
+<div class="alert alert-warning">
+<strong>WARNING!</strong> The script deletes the <em>.nuget</em> folder (if it exists), updates the <em>.csproj</em> files. Please make sure that the project folder is under source control or you have a backup of the folder. After running the script make sure that all the changes that you see are expected as explained here and the project builds and runs as before.
+</div>
+
+
+<p>The PowerShell script does the below for a given solution directory folder (mandatory)</p>
+
+<ul>
+<li>For each of the <em>csproj</em> file in the given folder, the script removes the
+
+<ul>
+<li><em>RestorePackages</em> node</li>
+<li><em>NugetPackageImportStamp</em> node</li>
+<li><em>nuget target import</em> from the solution root .nuget folder</li>
+<li><em>EnsureNuGetPackageBuildImports</em> node</li>
+</ul>
+</li>
+<li>Removes <em>.nuget</em> folder from the solution root if it exists.</li>
+</ul>
+
+
+<p><em>The script leaves blank lines in the </em>csproj<em> files in place of the removed nodes.</em></p>
+
+<figure class='code'><figcaption><span>Remove NuGet Restore</span><a href='https://gist.github.com/rahulpnath/13d3b4f54cec51e22344876b1566b911#file-remove-nuget-restore-ps1'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$solutionDirectory</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'> <span class="nv">$importNugetTargetsTag</span><span class="p">=</span> <span class="no">[regex]</span><span class="p">::</span><span class="n">escape</span><span class="p">(</span><span class="sh">@&#39;</span>
+</span><span class='line'><span class="sh">&lt;Import Project=&quot;$(SolutionDir)\.nuget\NuGet.targets&quot; Condition=&quot;Exists(&#39;$(SolutionDir)\.nuget\NuGet.targets&#39;)&quot; /&gt;</span>
+</span><span class='line'><span class="sh">&#39;@</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$restorePackagesTag</span> <span class="p">=</span> <span class="s1">&#39;&lt;RestorePackages&gt;.*?&lt;/RestorePackages&gt;&#39;</span>
+</span><span class='line'><span class="nv">$nuGetPackageImportStamp</span> <span class="p">=</span> <span class="s1">&#39;&lt;NuGetPackageImportStamp&gt;.*?&lt;/NuGetPackageImportStamp&gt;&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span> <span class="p">=</span> <span class="s1">&#39;(?smi)&lt;Target Name=&quot;EnsureNuGetPackageBuildImports&quot;.*?&lt;/Target&gt;&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="nv">$f</span> <span class="k">in</span> <span class="nb">Get-ChildItem</span> <span class="n">-Recurse</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">csproj</span> <span class="p">|</span> <span class="nb">sort-object</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nv">$text</span> <span class="p">=</span> <span class="nb">Get-Content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span> <span class="n">-Raw</span>
+</span><span class='line'>    <span class="nv">$text</span> <span class="p">`</span>
+</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$importNugetTargetsTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
+</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$nuGetPackageImportStamp</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
+</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$restorePackagesTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
+</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
+</span><span class='line'>        <span class="p">|</span> <span class="nb">set-content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Get-ChildItem</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-include</span> <span class="p">.</span><span class="n">nuget</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$_</span><span class="p">)</span> <span class="p">{</span> <span class="nb">remove-item</span> <span class="nv">$_</span><span class="p">.</span><span class="n">fullname</span> <span class="n">-Force</span> <span class="n">-Recurse</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Any similarity with the scripts <a href="http://weblogs.asp.net/jongalloway/scripting-net-project-migration-to-automatic-nuget-package-restore">here</a> is intended as that was my starting place. To explicitly <a href="https://docs.nuget.org/consume/package-restore#opting-out">opt out of the Automatic Package Restore</a> on Visual Studio add a <em>Nuget.config</em> in the solution root.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;configuration&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;packageRestore&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- Opts out of both Automatic Package Restore and MSBuild-Integrated Package Restore --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;enabled&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- Opts out of Automatic Package Restore in Visual Studio --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;automatic&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/packageRestore&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configuration&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Hope this helps you to move away from NuGet restore at build time.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Checking in Package Dependencies into Source Control]]></title>
@@ -2596,78 +2719,6 @@ rd</p>
 <p>Have a great year ahead and some good reading.</p>
 
 <p><em>* The links are Amazon Affiliate Links!</em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Learning TypeScript: Setting up the Environment]]></title>
-    <link href="http://rahulpnath.com/blog/learning-typescript-setting-up-the-environment/"/>
-    <updated>2015-12-25T23:30:07+11:00</updated>
-    <id>http://rahulpnath.com/blog/learning-typescript-setting-up-the-environment</id>
-    <content type="html"><![CDATA[<blockquote><p>TypeScript is  superset of JavaScript and compiles to clean JavaScript output.</p></blockquote>
-
-<p><a href="http://www.typescriptlang.org/">TypeScript</a> has been around for some time and is gaining more traction these days with more and more projects embracing it. The latest addition to the list <a href="https://angular.io/">Angular 2</a>, which is a very popular JavaScript framework. TypeScript brings in more structure to the way JavaScript is written and maintained. Being a compiled language, errors will be found as the code is written and not waiting till run time. Ease of refactoring and rich tooling support makes TypeScript a perfect choice for large-scale projects. TypeScript also provides improved code readability and organizing capabilities. The official documentation is a good starting point to get started with TypeScript and get some hands-on experience using <a href="http://www.typescriptlang.org/Playground">Playground</a>, which shows the compiled JavaScript real-time in browser. If you are like me, who would prefer a similar experience, but in you favourite editor then this post explains how to set up the environment for playing around with TypeScript and seeing the real-time compiled JavaScript.</p>
-
-<ul>
-<li><p><strong>Create folder</strong> To start with lets first create a folder to work in. In this example I would be using npm(Node Package Manager) to get all the required packages. If you are new to Node, then head off to <a href="https://nodejs.org/en/">here</a> to get started and install the runtime before continuing on.</p></li>
-<li><p><strong>npm init</strong> Once done with the node setup, run the <a href="https://docs.npmjs.com/cli/init">init</a> command, within the project folder (created above), to initialize the node project. This prompts a series of questions and creates a <em>package.json</em> file with the entered options.</p></li>
-<li><strong>npm install -g typescript</strong> If you already have TypeScript installed (which comes in default with Visual Studio 2013 Update 2 onwards) then you can skip this step. If not, run &lsquo;npm install -g typescript&rsquo;, which will install it into the global scope.</li>
-<li><strong>Hello World from TypeScript</strong> With the compiler setup, we are good to write out first hello world, for which we create a file with .ts extension.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">HelloWorld</span><span class="p">(</span><span class="nx">name</span><span class="o">:</span> <span class="nx">string</span><span class="p">){</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Hello World &#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">HelloWorld</span><span class="p">(</span><span class="s2">&quot;TypeScript&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To compile this manually we need to run the TypeScript compiler (which we installed in the previous step). The below command will compile the TypeScript file into JavaScript and output into the same folder.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>tsc HelloWorld.ts
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">HelloWorld</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Hello &#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">HelloWorld</span><span class="p">(</span><span class="s2">&quot;TypeScript&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><strong>Automating the compilation</strong> To prevent running the above step every time we make a change to the typescript file, we can automate the build step. The tsc has a compiler switch to watch the file for changes and automatically compile every time a change happens. For this run the above command with a &lsquo;<em>&ndash;watch</em>&rsquo; command.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>tsc HelloWorld.ts --watch
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>
-<img class="center" alt="Visual Studio Code Coverage" src="http://rahulpnath.com/images/tsc_options.png" /></p>
-
-<p>The watch switch is only available in the later versions of the compiler. To check whether your version supports it, run tsc alone which will show all the supported commands. If you do not see the watch switch as shown above, you will need to update the TypeScript compiler version. For this check the environment variables to see the path to your current compiler. If this has a path to an older version (possibly to one that Visual Studio installed at <em>Program Files (x86)\Microsoft SDKs\TypeScript</em>), then remove it. Now do a fresh install using npm, to install the latest version.</p>
-
-<p>Open up both the TypeScript file and the generated JavaScript file in your favorite editor and you will see real-time updates to the JavaScript code, when you update the TypeScript code.<br/>
-<img class="center" alt="Visual Studio Code Coverage" src="http://rahulpnath.com/images/TypeScript.gif" /></p>
-
-<p>Hope this helps you with setting up the development environment to learn TypeScript!</p>
 ]]></content>
   </entry>
   
