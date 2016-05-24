@@ -143,6 +143,298 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-01-20T22:51:03+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 20<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/optimizing-octopress-workflow-for-new-posts/" itemprop="url">Optimizing Octopress Workflow for New Posts</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Over the past month I had thought of migrating this blog to Hugo, a static site generator that is faster than the current one, Octopress. Lack of workflow for creating new posts and slower build times were the main reasons. I am the kind of person when writing post want to see often, how it looks like on the real site. With the current number of posts it takes around 40-50 seconds to build the entire site and it makes me to wander off to something else while the build is happening - at times it takes a long time to get back to writing!. But migrating to a new platform has a lot of challenges and time-consuming and I did not want to invest my time in that, so though of looking out for ways to optimize the current process. A bit of googling and playing around with Ruby, solved both of the major issues and I have an improved workflow!</p>
+
+<h4><strong>Draft workflow</strong></h4>
+
+<p>I was lucky to find this <a href="http://neverstopbuilding.com/how-to-enhance-your-octopress-draft-and-heroku-deploy-process">post</a> which handled most of the draft workflow process. Most of the code below is used from there with a very few minor additions. Newer versions of Jekyll support <a href="http://jekyllrb.com/docs/drafts/">working with drafts</a> and uses the &lsquo;<em>&ndash;drafts</em>&rsquo; switch to build the drafts (instead of using published flag as in thr above linked post), that are in &lsquo;<em>_drafts</em>&rsquo; folder. Drafts are posts which does not have date&rsquo;s, so I added in a placeholder text, &lsquo;<em>thisIsStillADraft</em>&rsquo;, in the yaml front matter of the post which will later be replaced with the post publish date. Also added in the code to open the default writer with the newly created post</p>
+
+<figure class='code'><figcaption><span>Rake new_draft</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># usage rake new_draft[my-new-draft] or rake new_draft[&#39;my new draft&#39;]</span>
+</span><span class='line'><span class="n">desc</span> <span class="s2">&quot;Begin a new draft in </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:new_draft</span><span class="p">,</span> <span class="ss">:title</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">title</span>
+</span><span class='line'>    <span class="n">title</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">title</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">title</span> <span class="o">=</span> <span class="n">get_stdin</span><span class="p">(</span><span class="s2">&quot;Enter a title for your post: &quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="k">raise</span> <span class="s2">&quot;### You haven&#39;t set anything up yet. First run `rake install` to set up an Octopress theme.&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">mkdir_p</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">title</span><span class="o">.</span><span class="n">to_url</span><span class="si">}</span><span class="s2">.</span><span class="si">#{</span><span class="n">new_post_ext</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">abort</span><span class="p">(</span><span class="s2">&quot;rake aborted!&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">ask</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> already exists. Do you want to overwrite?&quot;</span><span class="p">,</span> <span class="o">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="o">]</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Creating new draft: </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;---&quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;layout: post&quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;title: </span><span class="se">\&quot;</span><span class="si">#{</span><span class="n">title</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/&amp;/</span><span class="p">,</span><span class="s1">&#39;&amp;amp;&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;comments: true&quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;categories: &quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;tags: &quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;thisIsStillADraft:&quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;keywords: &quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;description: &quot;</span>
+</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;---&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">system</span> <span class="sx">%{cmd /c &quot;start </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">&quot;}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The publish draft task just asks for the post to publish and replaces the placeholder text with the current date time. Also it moves the post from the &lsquo;<em>_drafts</em>&rsquo; folder to the &lsquo;<em>_posts</em>&rsquo; folder with the file name appended with the date time. Since I run this just before deploying a post, the date on the post will be the actual publish date, and not the date I started writing the post (usually writing a  post spans over multiple days).</p>
+
+<figure class='code'><figcaption><span>Rake publish_draft</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># usage rake publish_draft</span>
+</span><span class='line'><span class="n">desc</span> <span class="s2">&quot;Select a draft to publish from </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2"> on the current date.&quot;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:publish_draft</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">drafts_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="n">drafts</span> <span class="o">=</span> <span class="no">Dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">drafts_path</span><span class="si">}</span><span class="s2">/*.</span><span class="si">#{</span><span class="n">new_post_ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">drafts</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">draft</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
+</span><span class='line'>    <span class="k">begin</span>
+</span><span class='line'>      <span class="n">content</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">content</span> <span class="o">=~</span> <span class="sr">/\A(---\s*\n.*?\n?)^(---\s*$\n?)/m</span>
+</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="vg">$1</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;Error reading file </span><span class="si">#{</span><span class="n">draft</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="k">rescue</span> <span class="no">SyntaxError</span> <span class="o">=&gt;</span> <span class="n">e</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;YAML Exception reading </span><span class="si">#{</span><span class="n">draft</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;  [</span><span class="si">#{</span><span class="n">index</span><span class="si">}</span><span class="s2">]  </span><span class="si">#{</span><span class="n">data</span><span class="o">[</span><span class="s1">&#39;title&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Publish which draft? &quot;</span>
+</span><span class='line'>  <span class="n">answer</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
+</span><span class='line'>  <span class="k">if</span> <span class="sr">/\d+/</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">drafts</span><span class="o">[</span><span class="n">answer</span><span class="o">.</span><span class="n">to_i</span><span class="o">].</span><span class="n">nil?</span>
+</span><span class='line'>    <span class="n">mkdir_p</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="n">source</span> <span class="o">=</span> <span class="n">drafts</span><span class="o">[</span><span class="n">answer</span><span class="o">.</span><span class="n">to_i</span><span class="o">]</span>
+</span><span class='line'>    <span class="n">filename</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/</span><span class="si">#{</span><span class="n">drafts_path</span><span class="si">}</span><span class="sr">\//</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">dest</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Publishing post to: </span><span class="si">#{</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
+</span><span class='line'>      <span class="n">contents</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/^thisIsStillADraft:$/</span><span class="p">,</span> <span class="s2">&quot;date: </span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="no">FileUtils</span><span class="o">.</span><span class="n">rm</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Index not found!&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With these two new rake tasks, I can now create as many draft posts at a time and publish them once ready.</p>
+
+<h4><strong>Improving the build time</strong></h4>
+
+<p>Jekyll build command options provides a switch, &lsquo;<em>configuration</em>&rsquo;, that allows to pass a configuration file instead of using &lsquo;<em>_config.yml</em>&rsquo;. In the configuration file we can specify a &lsquo;exclude&rsquo; option to exclude the directories and/or files from the build. I created a new task for building only the current drafts, by specifying the &lsquo;<em>&ndash;drafts</em>&rsquo; switch and a dynamically generated configuration file, <em>_previewconfig.yml</em>, which excludes the &lsquo;<em>_posts</em>&rsquo; folder. This dramatically increases the build time, and completes almost immediately after a making a change to a post. This fits perfectly into my workflow, as while writing new posts I do not want to see any already published posts. You can  add the dynamically generated configuration file name to the <em>.gitignore</em> as I do not delete it in the tasks. I did not want to use the &lsquo;<em>rake isolate</em>&rsquo; task that is already present in the  rakefile, as that does not integrate with the draft workflow and unnecessarily moves all the posts to a temporary place.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">desc</span> <span class="s2">&quot;preview the site in a web browser with all the draft posts&quot;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:previewdrafts</span> <span class="k">do</span>
+</span><span class='line'>  <span class="k">raise</span> <span class="s2">&quot;### You haven&#39;t set anything up yet. First run `rake install` to set up an Octopress theme.&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
+</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Starting to watch source with Jekyll and Compass. Starting Rack on port </span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;compass compile --css-dir </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/stylesheets&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/stylesheets/screen.css&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;_config.yml&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
+</span><span class='line'>      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;_previewconfig.yml&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">puts</span><span class="p">(</span><span class="s2">&quot;exclude: [</span><span class="se">\&quot;</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">]&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">jekyllPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">({</span><span class="s2">&quot;OCTOPRESS_ENV&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;preview&quot;</span><span class="p">},</span> <span class="s2">&quot;jekyll build --watch --drafts --config _previewconfig.yml&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">compassPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="s2">&quot;compass watch&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">rackupPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="s2">&quot;rackup --port </span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">trap</span><span class="p">(</span><span class="s2">&quot;INT&quot;</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="o">[</span><span class="n">jekyllPid</span><span class="p">,</span> <span class="n">compassPid</span><span class="p">,</span> <span class="n">rackupPid</span><span class="o">].</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">pid</span><span class="o">|</span> <span class="no">Process</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span> <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ESRCH</span> <span class="p">}</span>
+</span><span class='line'>    <span class="nb">exit</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">[</span><span class="n">jekyllPid</span><span class="p">,</span> <span class="n">compassPid</span><span class="p">,</span> <span class="n">rackupPid</span><span class="o">].</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">pid</span><span class="o">|</span> <span class="no">Process</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Dropbox integration</strong></h4>
+
+<p>At times, I have started to draft blog posts while commuting to work from my mobile device, so I wanted to sync my draft posts to <a href="https://db.tt/bvYw3pL6">Dropbox</a>, so that I can edit it from my <a href="http://www.rahulpnath.com/blog/review-two-months-and-counting-android-and-nexus-5/">mobile phone</a>. Apps like <a href="https://play.google.com/store/apps/details?id=net.keepzero.markdrop&amp;hl=en">MarkDrop</a>/<a href="https://play.google.com/store/apps/details?id=net.keepzero.markdrop&amp;hl=en">JotterPad</a> integrates with Dropbox and supports Markdown editing. I set up a drafts folder on my Dropbox folder on laptop, which is automatically synced using the <a href="https://www.dropbox.com/install">Dropbox application</a>. I then used <a href="https://technet.microsoft.com/en-us/library/cc753194.aspx">Mklink</a> to create a symbolic link from the folder on Dropbox to my drafts folder in my blog repository. Whenever a new draft post is added, it gets automatically inserted into the Dropbox folder, which will then be synced to cloud and available for edit on my mobile phone too. (Part of this post is written from my mobile!)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>mklink /D &quot;C:\blog\_drafts&quot; &quot;C:\dropbox\_drafts&quot;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h4><strong>Cmder integration</strong></h4>
+
+<p><a href="http://cmder.net/">Cmder</a> is a portable console emulator for Windows and provides a good nice looking feature rich console experience on Windows and is one of my <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">favourite tools</a>. Creating alias for commands is one of the features, that allows to create a short key combination for an otherwise long command. You can use this to create commands for the task in Octopress like below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>alias rp=rake previewdrafts
+</span><span class='line'>
+</span><span class='line'>// Below are the list of alias that I have for the rake tasks
+</span><span class='line'>rp=rake previewdrafts
+</span><span class='line'>rps=rake preview // Preview the whole site
+</span><span class='line'>rd=rake deploy
+</span><span class='line'>rnd=rake new_draft[&quot;$&quot;] // Takes in the post name as parameter
+</span><span class='line'>rpd=rake publish_draft
+</span><span class='line'>rd=rake deploy
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>So my new workflow is</strong></p>
+
+<p>rnd Optimizing Octopress Workflow for New Posts <br/>
+rp <br/>
+rpd <br/>
+rps <br/>
+rd</p>
+
+<p>It&rsquo;s much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on <a href="https://github.com/rahulpnath/rahulpnath.com/blob/master/Rakefile">github</a>.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-01-18T22:51:03+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 18<sup>th</sup>, 2016</time>
         
 
@@ -1123,94 +1415,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-04-11T23:30:42+10:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 11<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/test/'>test</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/is-code-coverage-a-lie/" itemprop="url">Is Code Coverage a Lie?</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Code Coverage has been one of the important things that was always there on a daily build report and a number that managers were both interested and worried about. This has been the same for all projects that I had worked on, across various organizations. Various tools support measuring coverage and can be included as part of the build reports, which essentially indicates the percentage of source code that is covered by &lsquo;unit tests&rsquo;. A higher percentage obviously indicates a better tested code and more stable one is what one would expect, as that would be the sole purpose of measuring this. But how far is this true? Is a code with higher test percentage one with lesser bugs? Does 100% indicate that it is totally bug free or is this a total wrong way of seeing that number?</p>
-
-<h3>What is Code Coverage and How is it Measured?</h3>
-
-<p>Code Coverage indicates the percentage of code that has been covered by at least one or more tests in your test suite. So if you have a simple function like the one shown below, which just divides two numbers and if you have one test that invokes that function, then you have a code coverage of 100%. When using Visual studio tests (as that is what I have used to depict the below one), code coverage is measured either based on blocks of code or based on lines of code.</p>
-
-<ul>
-<li><h4>Block-based statement coverage</h4>
-
-<p>For the purposes of the tools, a block is defined as a sequence of instructions that have a single entry point and a single exit point. Exit points include branch instructions, a function call, a return instruction, or, for managed code, a throw instruction.</p></li>
-<li><h4>Line-based coverage</h4>
-
-<p>For line-based coverage, the tools identify all of the blocks that make up a line and then use this information to determine the level of coverage for the line. If all of the blocks that make up the line are covered, then the tools report that the line is covered. If no blocks in the line are covered, then the tools report that the line is not covered. If some, but not all, of the blocks in the line are covered, then the tools report that the line is partially covered.</p></li>
-</ul>
-
-
-<p>In the below case we have both 100% as there is only one line and one block and the test covers both. So should managers be happy with this code, since it has 100% coverage? Maybe they are, but ask the developers, they definitely are not, or probably they are if at the first place they wrote the tests for the sake of the report and since the managers are happy they too are. But is this what we should strive for - definitely not!</p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/code_coverage.PNG" /></p>
-
-<h3>Trustworthy Unit Tests</h3>
-
-<blockquote><p>Unit tests should be like a parachute - trustworthy. You are not going to jump out from an airplane with one that you know is faulty.</p></blockquote>
-
-<p>Having unit tests that are run once in a while or just for the build reports or when the manager is at your back, are a complete waste of time. A set of faulty tests do more harm than having none, as it might give wrong judgment of the code. From the above code you can definitely find that though the coverage is 100%, the code would simply fail when a value of 0 is passed for &lsquo;b&rsquo;, and it is highly likely that this would happen too.</p>
-
-<blockquote><p>If unit tests are written just to meet the code coverage number on a report, then I would rather fake the report than writing the tests</p></blockquote>
-
-<p>Unit Tests really make sense only when you write them following &lsquo;<a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">The Three Rules of TDD</a>&rsquo; or at the very least you have tests associated with every change that you make and also you make sure that we run the entire test suite before a check-in to make sure that you have broken nothing with your changes. Only when there is such &lsquo;trustworthiness&rsquo; in the tests, does it make sense to have them in the first place and not for any number on a report.</p>
-
-<h3>How should we really see that number on the report?</h3>
-
-<p>Now that we have seen it is all about having trustworthy tests and not about reaching a targeted number for a report, what should we really use this Code coverage report data for?</p>
-
-<ol>
-<li>If you are less than 100% it clearly indicates that there are areas of your application that is not tested. You would really want to cross check if that is an intended miss or if there is something that is actually missing and add in some more tests to be covered better.</li>
-<li>When refactoring code, you can always make sure that you don&rsquo;t go back on the coverage number that you started with, so as to ensure that you have not introduced untested code into the system.</li>
-<li>When cleaning up tests a drop in the coverage number clearly indicates that you have actually removed some valid and non-redundant tests.</li>
-</ol>
-
-
-<p>So the next time you add in a test, think why you are doing it. Is it for the report or for the application that is getting developed. Lets all <a href="https://vimeo.com/43536488">strive to be really professional</a> in what we are doing and not just hide behind some numbers. Let the number be seen for what it is - nothing less and nothing more!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1234,6 +1438,8 @@ Before we do you might ask, Are we not building a web-site for the customer so w
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/managing-azure-key-vault-over-the-rest-api/">Managing Azure Key Vault over the REST API</a>
+    
     <a class="list-group-item " href="/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/">Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan</a>
     
     <a class="list-group-item " href="/blog/reactjs-setting-up-the-environment/">ReactJS: Setting up the Environment</a>
@@ -1241,8 +1447,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <a class="list-group-item " href="/blog/disable-nuget-package-restore-for-a-net-poject/">Disable NuGet Package Restore for a .Net Poject</a>
     
     <a class="list-group-item " href="/blog/checking-in-package-dependencies-into-source-control/">Checking in Package Dependencies into Source Control</a>
-    
-    <a class="list-group-item " href="/blog/git-checkout-tfs/">git checkout TFS</a>
     
   </div>
 </section>

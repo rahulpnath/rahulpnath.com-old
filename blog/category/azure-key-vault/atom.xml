@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-05-18T12:46:02+10:00</updated>
+  <updated>2016-05-25T06:36:56+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,121 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Azure Key Vault over the REST API]]></title>
+    <link href="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/"/>
+    <updated>2016-05-25T06:23:39+10:00</updated>
+    <id>http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api</id>
+    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
+
+<h3>Azure Resource Manager API</h3>
+
+<p>The <a href="https://msdn.microsoft.com/en-AU/library/azure/dn790568.aspx">Azure Resource Manager API</a> provides programmatic access to manage Azure services that support <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Resource Manager</a>. Since Key Vault supports Resource Manager, we will be using it. Any requests to the API must be authenticated and can be done using an Azure AD application. Most of the steps to create an AD application are same as we saw when creating an AD application to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with Azure Key Vault</a>. From the &lsquo;<em>permissions to other applications</em>&rsquo; tab in portal (as shown below), we can give the application access to Management API&rsquo;s.</p>
+
+<p>To get the token to access the Management API resource (<em><a href="https://management.azure.com">https://management.azure.com</a> </em>), I use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory">ADAL library</a> with the required data. All the information that needs to be passed to the ADAL library is available under the AD application in the azure portal (as shown below).</p>
+
+<pre><code class="csharp">string token = await GetAccessToken(
+                "https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                "https://management.azure.com/",
+                string.Empty);
+ ...
+
+private async Task&lt;string&gt; GetAccessToken(string authority, string resource, string scope)
+{
+    var adCredential = new ClientCredential(APPLICATION_ID, APPLICATION_SECRET);
+    var authenticationContext = new AuthenticationContext(authority);
+    return (await authenticationContext.AcquireTokenAsync(resource, adCredential)).AccessToken;
+}
+</code></pre>
+
+<blockquote><p><em>Earlier authentication requests were served from <a href="https://login.windows.net">https://login.windows.net</a> (authority URL) which is <a href="https://blogs.technet.microsoft.com/ad/2015/03/06/simplifying-our-azure-ad-authentication-flows/">now updated</a> to <a href="https://login.microsoftonline.com">https://login.microsoftonline.com</a> .</em></p></blockquote>
+
+<p><img src="/images\service_management_adAccess.png" class="center" alt="AD Application access to Azure Service Management API"></p>
+
+<h3>Key Vault Management Client</h3>
+
+<p>The <a href="https://www.nuget.org/packages/Microsoft.Azure.Management.KeyVault/">Microsoft.Azure.Management.KeyVault</a> NuGet package, provides capabilities to connect to the Management API&rsquo;s and manage the Vaults. With the NuGet reference added I can use the <em><a href="https://github.com/Azure/azure-sdk-for-net/blob/master/src/ResourceManagement/KeyVaultManagement/KeyVaultManagement/Generated/KeyVaultManagementClient.cs">KeyVaultManagementClient</a></em>.</p>
+
+<blockquote><p><em>Much of the SDK code is generated  using <a href="https://github.com/azure/autorest">Autorest</a>, from the REST API&rsquo;s metadata spec&rsquo;s in Swagger format.</em></p></blockquote>
+
+<p>With the Azure Subscription Id and the token from the previous step a TokenCloudCredentials is created that is used to connect the Key Vault Management Client.</p>
+
+<pre><code class="csharp">string token = await GetAccessToken(
+    "https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+    "https://management.azure.com/",
+    string.Empty);
+var tokenCredentials = new TokenCloudCredentials(SUBSCRIPTION_ID, token);
+var keyVaultManagementClient = new KeyVaultManagementClient(tokenCredentials);
+</code></pre>
+
+<p>Key Vaults exists under a Resource Group and for it to be accessible using the AD application authenticated token, we need to grant permission to the application. Just like we managed <a href="http://www.rahulpnath.com/blog/managing-user-permissions-for-key-vault/">User Permissions for Key Vault</a> we can give the AD application access to the Resource Group. We can do this from the new portal (as shown in the other post) or using the <em>New-AzureRmRoleAssignment</em> PowerShell cmdlet. <em>Get-AzureRmADServicePrincipal</em> is used o get the ObjectId of an existing application passing the application name as SearchString. I have yet not found a better way to find the application ObjectId. Please drop a comment if you know of any.</p>
+
+<pre><code class="powershell">Get-AzureRmADServicePrincipal  -SearchString 'AD Application Name'
+New-AzureRmRoleAssignment -ObjectId &lt;AD Application Object Id&gt;
+     -RoleDefinitionName Reader -ResourceGroupName SharedGroup
+</code></pre>
+
+<h3>Creating New Key Vault</h3>
+
+<p>We have all the required permissions setup, to create a key vault using the KeyVaultManagament client library. Using this is straightforward as shown below.
+The <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#sku">Sku</a></em> is used to specify <a href="https://azure.microsoft.com/en-us/pricing/details/key-vault/">Key vault service tier</a> - &lsquo;Standard&rsquo; or &lsquo;Premium&rsquo;. For HSM backed keys it is Premium. Family on Sku object takes in a hardcoded value of &lsquo;A&rsquo;. <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspolicies-object">AccessPolicies</a></em> specify the AD object identifier of user or application that can access the vault. In this case, I am adding the current AD application with full (<a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspoliciespermissions-object"><em>all</em></a>) access to Keys and Secrets. Adding an access policy in same as using the <a href="https://msdn.microsoft.com/en-us/library/mt603625.aspx"><em>Set-AzureRmKeyVaultAccessPolicy</em></a>.</p>
+
+<pre><code class="csharp">var parameters = new VaultCreateOrUpdateParameters()
+{
+    Location = "southeast asia",
+    Properties = new VaultProperties()
+    {
+        Sku = new Sku { Family = "A", Name = "Standard" },
+        TenantId = Guid.Parse(TENANT_ID),
+        AccessPolicies = new List&lt;AccessPolicyEntry&gt;() {
+            new AccessPolicyEntry
+                    {
+                        TenantId = Guid.Parse(TENANT_ID),
+                        ObjectId = Guid.Parse(AD_OBJECT_ID),
+                        PermissionsToKeys = new string[] { "all" },
+                        PermissionsToSecrets = new string[] { "all" }
+                    }
+        }
+    }
+};
+
+var vaultFromCode = await keyVaultManagementClient.Vaults
+        .CreateOrUpdateAsync("SharedGroup", "VaultFromCode", parameters);
+</code></pre>
+
+<h3>Managing Existing Key Vaults</h3>
+
+<p><strong>Update a Key Vault</strong></p>
+
+<p>When updating an existing Key Vault, the full state (<em>VaultCreateOrUpdateParameters</em>) must be passed back and not just the update. To add a new <em>AccessPolicyEntry</em>, the existing policy entry values must also be passed back. In the code below, I get the existing state of the Key Vault using the <em>Get</em> and use the current vault properties to add in the new AccessPolicyEntry.</p>
+
+<pre><code class="csharp">var keyVault = (await keyVaultManagementClient.Vaults
+   .GetAsync("SharedGroup", "VaultFromCode")).Vault;
+            parameters = new VaultCreateOrUpdateParameters();
+            parameters.Location = keyVault.Location;
+            parameters.Properties = keyVault.Properties;
+            parameters.Properties.AccessPolicies.Add(
+
+   new AccessPolicyEntry
+   {
+       TenantId = Guid.Parse(TENANT_ID),
+       ObjectId = Guid.Parse("AD Object IDentifier"),
+       PermissionsToKeys = new string[] { "get" },
+       PermissionsToSecrets = new string[] { "get" }
+   }
+            );
+await keyVaultManagementClient.Vaults.CreateOrUpdateAsync("SharedGroup", "VaultFromCode", parameters);
+</code></pre>
+
+<p><strong>Delete a Key Vault</strong>
+<code>csharp
+await keyVaultManagementClient.Vaults.DeleteAsync("SharedGroup", "VaultFromCode");
+</code></p>
+
+<p>Hope this helps you manage Azure Key Vault using the REST API.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PFX Certificate in Azure Key Vault]]></title>
@@ -209,6 +324,8 @@ var certificate = new X509Certificate2(pfxBytes);
 }
 </code></pre>
 
+<blockquote><p><em>If you are facing issues with threads not closing out properly after making call to Key Vault check this <a href="http://www.rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/#comment-2693376641">comment by Robert</a> for details on how to work around it. (As mentioned there it looks ugly, so if you know of a better way would love to hear that).</em></p></blockquote>
+
 <p>Hope this helps you to get started with Azure Key Vault on Java. The sample solution is available <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVaultUsingJavaClient">here</a>!</p>
 ]]></content>
   </entry>
@@ -333,21 +450,6 @@ Add-AzureKeyVaultKey -VaultName 'TestKeyVault' -Name 'MyKey' -Destination 'Softw
 </code></pre>
 
 <p>The newly created user now has full access on the key vault and only that. He can only add/remove objects within the key vault and see resources within the SharedGroup. This way the administrator can be rest assured that no other sensitive information or accesses is being shared accidentally. Periodically revisiting these permissions and revoking unnecessary accesses is recommended!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MSDN Magazine Article on Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/"/>
-    <updated>2015-10-06T13:15:35+11:00</updated>
-    <id>http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>My first article on MSDN Magazine is published in the September 2015 edition and is available for <a href="https://msdn.microsoft.com/magazine/mt422585">reading online</a>. The article titled, &lsquo;<em>Microsoft Azure - Protect Sensitive Information with Azure Key Vault</em>&rsquo;, discusses on common problems in storing sensitive information in applications, benefits of Azure Key Vault and how we can quickly setup and start using it.</p>
-
-<p>It was a great experience working with the MSDN magazine team, and got to learn a lot of things. Also special thanks to <a href="https://twitter.com/amitbapat">Amit Bapat</a> and <a href="https://twitter.com/sumedhbarde">Sumedh Barde</a> for doing the technical review and clarifying certain things for the article.</p>
-
-<p><img src="/images/msdn_magazine_sep_2015.jpg" style="height:500px;" alt=""></p>
-
-<p><em>If you are interested to <a href="http://blogs.msdn.com/b/msdnmagazine/archive/2009/12/24/9940803.aspx">write an article for the MSDN magazine</a></em></p>
 ]]></content>
   </entry>
   

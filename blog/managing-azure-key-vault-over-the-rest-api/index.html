@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Managing Azure Key Vault over the REST API - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Rahul Nath on Programming and life in general" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-25T06:23:39+10:00"  data-updated="true" itemprop="datePublished dateCreated">May 25<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Managing Azure Key Vault over the REST API
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
+
+<h3>Azure Resource Manager API</h3>
+
+<p>The <a href="https://msdn.microsoft.com/en-AU/library/azure/dn790568.aspx">Azure Resource Manager API</a> provides programmatic access to manage Azure services that support <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Resource Manager</a>. Since Key Vault supports Resource Manager, we will be using it. Any requests to the API must be authenticated and can be done using an Azure AD application. Most of the steps to create an AD application are same as we saw when creating an AD application to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with Azure Key Vault</a>. From the &lsquo;<em>permissions to other applications</em>&rsquo; tab in portal (as shown below), we can give the application access to Management API&rsquo;s.</p>
+
+<p>To get the token to access the Management API resource (<em><a href="https://management.azure.com">https://management.azure.com</a> </em>), I use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory">ADAL library</a> with the required data. All the information that needs to be passed to the ADAL library is available under the AD application in the azure portal (as shown below).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">token</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetAccessToken</span><span class="p">(</span>
+</span><span class='line'>                <span class="s">&quot;https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&quot;https://management.azure.com/&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+</span><span class='line'> <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">GetAccessToken</span><span class="p">(</span><span class="kt">string</span> <span class="n">authority</span><span class="p">,</span> <span class="kt">string</span> <span class="n">resource</span><span class="p">,</span> <span class="kt">string</span> <span class="n">scope</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">APPLICATION_ID</span><span class="p">,</span> <span class="n">APPLICATION_SECRET</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">)).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>Earlier authentication requests were served from <a href="https://login.windows.net">https://login.windows.net</a> (authority URL) which is <a href="https://blogs.technet.microsoft.com/ad/2015/03/06/simplifying-our-azure-ad-authentication-flows/">now updated</a> to <a href="https://login.microsoftonline.com">https://login.microsoftonline.com</a> .</em></p></blockquote>
+
+<p><img src="/images\service_management_adAccess.png" class="center" alt="AD Application access to Azure Service Management API"></p>
+
+<h3>Key Vault Management Client</h3>
+
+<p>The <a href="https://www.nuget.org/packages/Microsoft.Azure.Management.KeyVault/">Microsoft.Azure.Management.KeyVault</a> NuGet package, provides capabilities to connect to the Management API&rsquo;s and manage the Vaults. With the NuGet reference added I can use the <em><a href="https://github.com/Azure/azure-sdk-for-net/blob/master/src/ResourceManagement/KeyVaultManagement/KeyVaultManagement/Generated/KeyVaultManagementClient.cs">KeyVaultManagementClient</a></em>.</p>
+
+<blockquote><p><em>Much of the SDK code is generated  using <a href="https://github.com/azure/autorest">Autorest</a>, from the REST API&rsquo;s metadata spec&rsquo;s in Swagger format.</em></p></blockquote>
+
+<p>With the Azure Subscription Id and the token from the previous step a TokenCloudCredentials is created that is used to connect the Key Vault Management Client.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">token</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetAccessToken</span><span class="p">(</span>
+</span><span class='line'>    <span class="s">&quot;https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&quot;https://management.azure.com/&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">tokenCredentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">TokenCloudCredentials</span><span class="p">(</span><span class="n">SUBSCRIPTION_ID</span><span class="p">,</span> <span class="n">token</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">keyVaultManagementClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultManagementClient</span><span class="p">(</span><span class="n">tokenCredentials</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Key Vaults exists under a Resource Group and for it to be accessible using the AD application authenticated token, we need to grant permission to the application. Just like we managed <a href="http://www.rahulpnath.com/blog/managing-user-permissions-for-key-vault/">User Permissions for Key Vault</a> we can give the AD application access to the Resource Group. We can do this from the new portal (as shown in the other post) or using the <em>New-AzureRmRoleAssignment</em> PowerShell cmdlet. <em>Get-AzureRmADServicePrincipal</em> is used o get the ObjectId of an existing application passing the application name as SearchString. I have yet not found a better way to find the application ObjectId. Please drop a comment if you know of any.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureRmADServicePrincipal</span>  <span class="n">-SearchString</span> <span class="s1">&#39;AD Application Name&#39;</span>
+</span><span class='line'><span class="nb">New-AzureRmRoleAssignment</span> <span class="n">-ObjectId</span> <span class="p">&lt;</span><span class="n">AD</span> <span class="n">Application</span> <span class="n">Object</span> <span class="n">Id</span><span class="p">&gt;</span>
+</span><span class='line'>     <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h3>Creating New Key Vault</h3>
+
+<p>We have all the required permissions setup, to create a key vault using the KeyVaultManagament client library. Using this is straightforward as shown below.
+The <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#sku">Sku</a></em> is used to specify <a href="https://azure.microsoft.com/en-us/pricing/details/key-vault/">Key vault service tier</a> - &lsquo;Standard&rsquo; or &lsquo;Premium&rsquo;. For HSM backed keys it is Premium. Family on Sku object takes in a hardcoded value of &lsquo;A&rsquo;. <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspolicies-object">AccessPolicies</a></em> specify the AD object identifier of user or application that can access the vault. In this case, I am adding the current AD application with full (<a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspoliciespermissions-object"><em>all</em></a>) access to Keys and Secrets. Adding an access policy in same as using the <a href="https://msdn.microsoft.com/en-us/library/mt603625.aspx"><em>Set-AzureRmKeyVaultAccessPolicy</em></a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">parameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultCreateOrUpdateParameters</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Location</span> <span class="p">=</span> <span class="s">&quot;southeast asia&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Properties</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultProperties</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Sku</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Sku</span> <span class="p">{</span> <span class="n">Family</span> <span class="p">=</span> <span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Standard&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>        <span class="n">AccessPolicies</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">AccessPolicyEntry</span><span class="p">&gt;()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">new</span> <span class="n">AccessPolicyEntry</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>                        <span class="n">ObjectId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">AD_OBJECT_ID</span><span class="p">),</span>
+</span><span class='line'>                        <span class="n">PermissionsToKeys</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;all&quot;</span> <span class="p">},</span>
+</span><span class='line'>                        <span class="n">PermissionsToSecrets</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;all&quot;</span> <span class="p">}</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">vaultFromCode</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">CreateOrUpdateAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Managing Existing Key Vaults</h3>
+
+<p><strong>Update a Key Vault</strong></p>
+
+<p>When updating an existing Key Vault, the full state (<em>VaultCreateOrUpdateParameters</em>) must be passed back and not just the update. To add a new <em>AccessPolicyEntry</em>, the existing policy entry values must also be passed back. In the code below, I get the existing state of the Key Vault using the <em>Get</em> and use the current vault properties to add in the new AccessPolicyEntry.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyVault</span> <span class="p">=</span> <span class="p">(</span><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span>
+</span><span class='line'>   <span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">)).</span><span class="n">Vault</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultCreateOrUpdateParameters</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Location</span> <span class="p">=</span> <span class="n">keyVault</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Properties</span> <span class="p">=</span> <span class="n">keyVault</span><span class="p">.</span><span class="n">Properties</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Properties</span><span class="p">.</span><span class="n">AccessPolicies</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="k">new</span> <span class="n">AccessPolicyEntry</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>       <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>       <span class="n">ObjectId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="s">&quot;AD Object IDentifier&quot;</span><span class="p">),</span>
+</span><span class='line'>       <span class="n">PermissionsToKeys</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;get&quot;</span> <span class="p">},</span>
+</span><span class='line'>       <span class="n">PermissionsToSecrets</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;get&quot;</span> <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>            <span class="p">);</span>
+</span><span class='line'><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span><span class="p">.</span><span class="n">CreateOrUpdateAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Delete a Key Vault</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span><span class="p">.</span><span class="n">DeleteAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you manage Azure Key Vault using the REST API.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/pfx-certificate-in-azure-key-vault/">PFX Certificate in Azure Key Vault</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/using-azure-key-vault-from-a-java-application/">Using Azure Key Vault from a Java Application</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">How the Deprecation of Switch AzureMode Affects Azure Key Vault</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-user-permissions-for-key-vault/">Managing User Permissions for Key Vault</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/" title="Previous Post: Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan">&laquo; Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/';
+        var disqus_url = 'http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
