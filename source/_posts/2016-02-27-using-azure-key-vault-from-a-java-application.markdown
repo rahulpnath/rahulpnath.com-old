@@ -90,4 +90,7 @@ public static void main(String[] args) throws InterruptedException, ExecutionExc
 }
 ```
 
+> *If you are facing issues with threads not closing out properly after making call to Key Vault check this [comment by Robert](http://www.rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/#comment-2693376641) for details on how to work around it. (As mentioned there it looks ugly, so if you know of a better way would love to hear that).* 
+
+
 Hope this helps you to get started with Azure Key Vault on Java. The sample solution is available [here](https://github.com/rahulpnath/Blog/tree/master/AzureKeyVaultUsingJavaClient)!
