@@ -10,7 +10,7 @@ keywords:
 description: 
 ---
 
-Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets [initially](http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/), but there are multiple ways of achieving this now - REST API, [PowerShell](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/), CLI or ARM templates. In this post, we will look into how we can use the REST API to create and manage a Key Vault.
+Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets [initially](http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/), but there are multiple ways of achieving this now - REST API, [PowerShell](http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/), CLI or [ARM templates](http://www.rahulpnath.com/blog/managing-azure-key-vaults-using-azure-resource-manager-arm-templates/). In this post, we will look into how we can use the REST API to create and manage a Key Vault.
 
 ### Azure Resource Manager API ###
 
