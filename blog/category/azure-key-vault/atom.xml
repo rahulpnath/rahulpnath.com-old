@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-05-25T06:36:56+10:00</updated>
+  <updated>2016-06-05T06:17:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,11 +14,177 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Managing Azure Key Vault using Azure Resource Manager (ARM) Templates]]></title>
+    <link href="http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/"/>
+    <updated>2016-06-05T06:15:31+10:00</updated>
+    <id>http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates</id>
+    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/">Azure Resource Manager</a> (ARM) templates to create and manage a Key Vault.</p>
+
+<h3>Azure Resource Manager and Templates</h3>
+
+<p>Simply put, the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Azure Resource Manager</a>(ARM) allows to group different resources in your solution that form a logical unit and manage them together. It allows to spin up all the resources required for your system and deploy them as and when required. You can achieve this using custom PowerShell scripts or creating a template (in JSON format) - Azure Resource Manager Template.</p>
+
+<blockquote><p><em>Within the ARM template, you define the infrastructure for your app, how to configure that infrastructure, and how to publish your app code to that infrastructure.</em></p></blockquote>
+
+<p>You can <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-export-template/">export a template from existing resources</a> for a starting point and then work off that. But in this post, I will start with an empty template as it helps to understand all the template parts. A template is nothing but a JSON file with a specific <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">schema</a>. All templates have the below format where a few of the elements are not mandatory. If you are not familiar with the template format and the different elements that make it, I&rsquo;ll wait while you read more about the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#template-format">Template format</a></p>
+
+<pre><code class="json">{
+   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+   "contentVersion": "",
+   "parameters": {  },
+   "variables": {  },
+   "resources": [  ],
+   "outputs": {  }
+}
+</code></pre>
+
+<h3>Key Vault ARM Template</h3>
+
+<p>The <a href="https://github.com/Azure/azure-resource-manager-schemas/blob/c301d6ed1d8876cad60af1f81d420e9249a80594/schemas/2015-06-01/Microsoft.KeyVault.json">Key Vault schema</a> is authored here and is part of the root schema URL that we had <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">seen above</a>. Though it might not be able to fully understand the schema details, it helps to understand at a high level what are the different parameters that are allowed when defining a Key Vault. At present, the schema allows only creating <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">Secrets</a> within a Key Vault and <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Keys have to be created separately</a>.</p>
+
+<p>Like we did using the <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, with this ARM template I want to create or update a Key Vault with a specified set of properties (like Vault Name, tenant etc), the access policies to specify the AD objects (applications/users) that have access to the Vault and create a few secrets.</p>
+
+<p>Create a new JSON file with any name you like (<em>azuredeploy.json</em>) and copy the above template structure into it. For the content version, you can use any value that you like for e.g. 1.0.0. Next, we need to define the parameters that we need, that are specific to each Key Vault deployment. Without parameters, we will be always deploying the resources with the same name and properties, so it is a good practice to externalize it and use it as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#parameters">Parameters</a> have a defined structure and allows to have basic validation for the input values. All parameters that does not have a <em>defaultValue</em> needs to be passed in while using the template.</p>
+
+<h4><strong>Parameters</strong></h4>
+
+<p>Let&rsquo;s see a few of the different parameter types that we use in this template. The <em>keyVaultName</em> parameter is a simple string value and is required to be passed in as it does not have a default value specified, where as the <em>enableVaultForVolumeEncryption</em> is an optional parameter and defaults to false. The parameters <em>accessPolicies</em> and <em>secrets</em> are of type <em>array</em> and takes in any valid JSON array. But in this specific case, I want it to be in a specific format but I am yet not sure if I can specify a format structure for the JSON input. Sound off in the comments if you know of a way.</p>
+
+<pre><code>"parameters": {
+    "keyVaultName": {
+        "type": "string",
+        "metadata": {
+            "description": "Name of the Key Vault"
+        }
+    },
+    "accessPolicies": {
+        "type": "array",
+        "defaultValue": "{}",
+        "metadata": {
+            "description": "Access policies object {"tenantId":"","objectId":"",
+                    "permissions":{"keys":[""],"secrets":[""]}}"
+        }
+    },
+    "enableVaultForVolumeEncryption": {
+        "type": "bool",
+        "defaultValue": false,
+        "metadata": {
+            "description": "Specifies if the vault is enabled for volume encryption"
+        }
+    },
+    "secrets": {
+        "type": "array",
+        "defaultValue": "{}",
+        "metadata": {
+            "description": "all secrets {"secretName":"","secretValue":""}"
+        }
+    }
+    ...
+}
+</code></pre>
+
+<h4><strong>Resources</strong></h4>
+
+<p>The Resources section of the template defines the resources to be deployed or updated and takes in an array of values. Resource manager supports two modes of deployment - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#incremental-and-complete-deployments">Incremental and Complete deployment</a> - and the way you define the resources here will affect what and how things get deployed. The template supports the use of certain <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#expressions-and-functions">Expressions and Functions</a>, to enable dynamic creation of values. Expressions are enclosed in square brackets ([]) and can appear anywhere is a JSON string value and evaluated when the template is deployed. To use a literal string that starts with a bracket [, use two brackets [[.</p>
+
+<p>The <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-functions/#parameters">parameter function</a> is used to get the value of a parameter that is passed in. I use this to access the Vault name, accessPolicies and other parameters that we had defined earlier. Since accessPolicies in the template expects an array I pass in the parameter object as is to it.</p>
+
+<p>Secrets are defined as nested resources within the Key Vault and can be defined as a nested property within the Key Vault resource as shown in the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/#examples">example here</a>. Since here we are interested in dynamically generating the Secrets based on the array value passed in as <em>secrets</em> parameter, I use the <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-multiple/#copy-copyindex-and-length">copy, copyIndex and length function</a></em> to iterate through the array and generate the required template. The <em>copy</em> function iterates and produces the same template structure with different values as specified by the parameter values.</p>
+
+<p>Since the Secret is defined as a separate resource, <em>name</em> property needs to indicate that it is a nested resource, hence we are concatenating the Vault Name with it. Without that I was getting the error :</p>
+
+<p><span style='color: red;'><em>A nested resource type must have an identical number of segments as its resource name. A root resource type must have segment length one greater than its resource name.</em></span>.</p>
+
+<p>The <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-define-dependencies/#dependson">dependsOn</a></em> element specifies that the Secret resource is dependent on the Key Vault resource.</p>
+
+<pre><code class="json"> "resources": [
+    {
+        "type": "Microsoft.KeyVault/vaults",
+        "name": "[parameters('keyVaultName')]",
+        "accessPolicies": "[parameters('accessPolicies')]",
+        ...
+    },
+    {
+        "type": "Microsoft.KeyVault/vaults/secrets",
+        "name": "[concat(parameters('keyVaultName'), '/', parameters('secrets')[copyIndex()].secretName)]",
+        "properties": {
+            "value": "[parameters('secrets')[copyIndex()].secretValue]"
+        },
+        "dependsOn": [
+            "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
+        ],
+        "copy": {
+            "name": "secretsCopy",
+            "count": "[length(parameters('secrets'))]"
+        }
+    }
+]
+</code></pre>
+
+<h3>Deploying with ARM Templates</h3>
+
+<p>To deploy the ARM template we need to pass in the required parameters and run the template.</p>
+
+<h4><strong>Parameter File</strong></h4>
+
+<p>Parameters can be passed in individually or as a <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#parameter-file">Parameter File</a>. Parameter file (<em>azuredeploy.parameters.json</em>) is a JSON file with a specific format. Below is a sample parameter file for our Key Vault ARM template. We can have different such templates for each of our deployment environments with values specific for the environment.</p>
+
+<pre><code class="json">    {
+        "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {
+            "keyVaultName": {
+                "value": "NewARMVaultP"
+            },
+            "tenantId": {
+                "value": ""
+            },
+            "accessPolicies": {
+                "value": [
+                    {
+                        "tenantId": "&lt;TENANT ID&gt;",
+                        "objectId": "&lt;AD OBJECT ID&gt;",
+                        "permissions": {
+                            "keys": ["all"],
+                            "secrets": ["all"]
+                        }
+                    },
+                    { ... }
+                ]
+            },
+            "secrets": {
+                "value": [
+                    {
+                        "secretName": "ConnectionString",
+                        "secretValue": "SecureString1"
+                    },
+                    { ... }
+                ]
+            }
+        }
+    }
+</code></pre>
+
+<h4><strong>Deployment</strong></h4>
+
+<p>The ARM template along with the parameter file can be deployed in different ways - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/">PowerShell, Azure CLI, REST API, Visual Studio or from Azure Portal</a>. Using PowerShell we can deploy as below. The <em><a href="https://msdn.microsoft.com/en-us/library/mt679014.aspx">Test-AzureRmResourceGroupDeployment</a></em> cmdlet tests if the template file and parameter file are in correct format. This is mostly useful when authoring the template. <em><a href="https://msdn.microsoft.com/en-us/library/mt603823.aspx">New-AzureRmResourceGroupDeployment</a></em> deploys using the given template file and parameters.</p>
+
+<pre><code class="powershell">Test-AzureRmResourceGroupDeployment -ResourceGroupName SharedGroup -TemplateFile .\azuredeploy.json 
+        -TemplateParameterFile .\azuredeploy.parameters.json -Verbose
+New-AzureRmResourceGroupDeployment -ResourceGroupName SharedGroup -TemplateFile .\azuredeploy.json
+         -TemplateParameterFile .\azuredeploy.parameters.json -Verbose
+</code></pre>
+
+<p><a href="http://armviz.io/#">ARM Template Visualizer</a> (ArmViz) is a visual way of editing and managing ARM templates and can be useful when dealing with a large number of resource deployments in a template. Also check out some <a href="https://azure.microsoft.com/en-us/documentation/articles/best-practices-resource-manager-design-templates/">Good practices for designing templates</a>. Most of the template code above is <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/">based off this example here</a>. I will try to push this template into the <a href="https://github.com/Azure/azure-quickstart-templates">Azure Quickstart Templates</a> but meanwhile it is <a href="https://github.com/rahulpnath/Blog/tree/master/KeyVault%20ARM%20Template">available here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Managing Azure Key Vault over the REST API]]></title>
     <link href="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/"/>
     <updated>2016-05-25T06:23:39+10:00</updated>
     <id>http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api</id>
-    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
+    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vaults-using-azure-resource-manager-arm-templates/">ARM templates</a>. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
 
 <h3>Azure Resource Manager API</h3>
 
@@ -381,75 +547,6 @@ $ServicePrincipal.ApplicationId #Outputs the ServicePrincipalName/AppPrincipalId
 </code></pre>
 
 <p>Please drop a comment if I have missed any!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing User Permissions for Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/managing-user-permissions-for-key-vault/"/>
-    <updated>2015-10-11T01:08:17+11:00</updated>
-    <id>http://rahulpnath.com/blog/managing-user-permissions-for-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
-
-<p>In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.</p>
-
-<h4><strong>Creating the user</strong></h4>
-
-<p><a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-create-users/">Creating a new user to the azure subscription</a> can easily be done from the <a href="https://manage.windowsazure.com">management portal</a>. We need to create the user in the azure subscription, as any resource in the subscription can be accessed only after authenticating against the Active Directory (AD) associated with it.</p>
-
-<blockquote><p>Every Azure subscription is associated with an Azure Active Directory (AD) and needs to be authenticated with, before any of its resources can be used.</p></blockquote>
-
-<p>Azure Key Vault gets created in the default AD associated with the subscription, so we need to add the new user to that. (If you are not sure on how to find the default AD <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">this post</a> describes it in the beginning). In the portal under the <em>Azure Directory</em> option, select the default directory and on the <em>Users</em> tab, we can add a new user.</p>
-
-<p><img src="/images/ad_add_user.png" class="center"></img></p>
-
-<p>When creating the user, you can <a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-assign-admin-roles/">assign the role required</a> based on the requirement. In this case I have added the user to a &lsquo;<em>User</em>&rsquo; role, as I do not want this user to have any administrative access to the my azure subscriptions or resources.</p>
-
-<h4><strong>Creating the key vault</strong></h4>
-
-<p>To create a key vault that we want to give permissions for the user, the below powershell scripts can be used. If you are new to key vault, then check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure  Key Vault</a> or <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other related articles</a>.</p>
-
-<pre><code class="powershell">Switch-AzureMode AzureResourceManager
-New-AzureResourceGroup –Name 'SharedGroup' –Location 'East Asia'
-New-AzureKeyVault -VaultName 'TestKeyVault' -ResourceGroupName 
-    'SharedGroup' -Location 'East Asia'
-</code></pre>
-
-<p>The above scripts creates the key vault under the &lsquo;<em>SharedGroup</em>&rsquo;. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/#resource-groups">Resource Groups</a> are logical containers, used to group resources together as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/">Access to azure resources</a> can be assigned at any of the three levels (subscription, resource group or resource) and it inherits down the hierarchy as shown below. Roles can be assigned specifically to a resource, or to resource group (which would mean all to all resources in that group) or at the subscription level (which would apply to all resources/resource groups in that subscription.).</p>
-
-<p><a href="https://acomdpsstorage.blob.core.windows.net/dpsmedia-prod/azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/20151006095042/rbacassignmentscopes.png"><img src="/images/rbac_assignment_scopes.png" class="center"></img></a></p>
-
-<h4><strong>Setting Permission on the resource group</strong></h4>
-
-<p>As an administrator I want the newly created user to have permission to interact with the key vault, but not create new or delete existing vaults. I would also want to give the user ability to modify keys and secrets within the vault. Currently since the new user does not have any rights, we should first give him rights to see the vaults in the <em>SharedGroup</em>. For this a <em>Reader</em> role from the set of <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/#built-in-roles">built in roles</a> can be assinged, through the new azure portal or powershell.</p>
-
-<pre><code class="powershell">New-AzureRoleAssignment -Mail keyvaultuser@domain.onmicrosoft.com 
-    -RoleDefinitionName Reader -ResourceGroupName SharedGroup
-</code></pre>
-
-<p><img src="/images/resource_group_permission.png" class="center"></img></p>
-
-<p>To modify objects (keys/secrets) in the key vault we need to run <a href="https://msdn.microsoft.com/en-us/library/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> cmdlet with the required permissions, to grant access for the user. In the below script the user is given all Permissions to both keys and secrets, and this again depends on your requirement.</p>
-
-<pre><code class="powershell">Set-AzureKeyVaultAccessPolicy -VaultName "TestKeyVault" -UserPrincipalName "keyvaultuser@domain.onmicrosoft.com" 
-    -PermissionsToKeys all -PermissionsToSecrets all
-</code></pre>
-
-<h4><strong>Creating the key (new user)</strong></h4>
-
-<p>The new user can login with the email id and password, shared to him by the administrator (received when creating the user in the AD), in the powershell prompt and create keys/secrets in the key vault.</p>
-
-<pre><code class="powershell">$userName = 'keyvaultuser@domain.onmicrosoft.com'
-$subscriptionPassword = 'mypassword'
-$securePassword = ConvertTo-SecureString -String $subscriptionPassword -AsPlainText -Force
-$cred = New-Object System.Management.Automation.PSCredential($userName, $securePassword)
-Add-AzureAccount -Credential $cred
-Add-AzureKeyVaultKey -VaultName 'TestKeyVault' -Name 'MyKey' -Destination 'Software'
-</code></pre>
-
-<p>The newly created user now has full access on the key vault and only that. He can only add/remove objects within the key vault and see resources within the SharedGroup. This way the administrator can be rest assured that no other sensitive information or accesses is being shared accidentally. Periodically revisiting these permissions and revoking unnecessary accesses is recommended!</p>
 ]]></content>
   </entry>
   

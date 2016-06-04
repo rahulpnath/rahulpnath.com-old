@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-05-25T06:36:56+10:00</updated>
+  <updated>2016-06-05T06:17:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -14,11 +14,283 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Managing Azure Key Vault using Azure Resource Manager (ARM) Templates]]></title>
+    <link href="http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/"/>
+    <updated>2016-06-05T06:15:31+10:00</updated>
+    <id>http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates</id>
+    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/">Azure Resource Manager</a> (ARM) templates to create and manage a Key Vault.</p>
+
+<h3>Azure Resource Manager and Templates</h3>
+
+<p>Simply put, the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Azure Resource Manager</a>(ARM) allows to group different resources in your solution that form a logical unit and manage them together. It allows to spin up all the resources required for your system and deploy them as and when required. You can achieve this using custom PowerShell scripts or creating a template (in JSON format) - Azure Resource Manager Template.</p>
+
+<blockquote><p><em>Within the ARM template, you define the infrastructure for your app, how to configure that infrastructure, and how to publish your app code to that infrastructure.</em></p></blockquote>
+
+<p>You can <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-export-template/">export a template from existing resources</a> for a starting point and then work off that. But in this post, I will start with an empty template as it helps to understand all the template parts. A template is nothing but a JSON file with a specific <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">schema</a>. All templates have the below format where a few of the elements are not mandatory. If you are not familiar with the template format and the different elements that make it, I&rsquo;ll wait while you read more about the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#template-format">Template format</a></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;contentVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span class='line'>   <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;variables&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="p">},</span>
+</span><span class='line'>   <span class="nt">&quot;resources&quot;</span><span class="p">:</span> <span class="p">[</span>  <span class="p">],</span>
+</span><span class='line'>   <span class="nt">&quot;outputs&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Key Vault ARM Template</h3>
+
+<p>The <a href="https://github.com/Azure/azure-resource-manager-schemas/blob/c301d6ed1d8876cad60af1f81d420e9249a80594/schemas/2015-06-01/Microsoft.KeyVault.json">Key Vault schema</a> is authored here and is part of the root schema URL that we had <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">seen above</a>. Though it might not be able to fully understand the schema details, it helps to understand at a high level what are the different parameters that are allowed when defining a Key Vault. At present, the schema allows only creating <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">Secrets</a> within a Key Vault and <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Keys have to be created separately</a>.</p>
+
+<p>Like we did using the <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, with this ARM template I want to create or update a Key Vault with a specified set of properties (like Vault Name, tenant etc), the access policies to specify the AD objects (applications/users) that have access to the Vault and create a few secrets.</p>
+
+<p>Create a new JSON file with any name you like (<em>azuredeploy.json</em>) and copy the above template structure into it. For the content version, you can use any value that you like for e.g. 1.0.0. Next, we need to define the parameters that we need, that are specific to each Key Vault deployment. Without parameters, we will be always deploying the resources with the same name and properties, so it is a good practice to externalize it and use it as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#parameters">Parameters</a> have a defined structure and allows to have basic validation for the input values. All parameters that does not have a <em>defaultValue</em> needs to be passed in while using the template.</p>
+
+<h4><strong>Parameters</strong></h4>
+
+<p>Let&rsquo;s see a few of the different parameter types that we use in this template. The <em>keyVaultName</em> parameter is a simple string value and is required to be passed in as it does not have a default value specified, where as the <em>enableVaultForVolumeEncryption</em> is an optional parameter and defaults to false. The parameters <em>accessPolicies</em> and <em>secrets</em> are of type <em>array</em> and takes in any valid JSON array. But in this specific case, I want it to be in a specific format but I am yet not sure if I can specify a format structure for the JSON input. Sound off in the comments if you know of a way.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;parameters&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;keyVaultName&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Name of the Key Vault&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nt">&quot;accessPolicies&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;defaultValue&quot;</span><span class="p">:</span> <span class="s2">&quot;{}&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Access policies object {&quot;</span><span class="err">tenantId</span><span class="s2">&quot;:&quot;&quot;,&quot;</span><span class="err">objectId</span><span class="s2">&quot;:&quot;&quot;,</span>
+</span><span class='line'><span class="s2">                    &quot;</span><span class="err">permissions</span><span class="s2">&quot;:{&quot;</span><span class="err">keys</span><span class="s2">&quot;:[&quot;&quot;],&quot;</span><span class="err">secrets</span><span class="s2">&quot;:[&quot;&quot;]}}&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nt">&quot;enableVaultForVolumeEncryption&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;bool&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;defaultValue&quot;</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Specifies if the vault is enabled for volume encryption&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nt">&quot;secrets&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;defaultValue&quot;</span><span class="p">:</span> <span class="s2">&quot;{}&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;all secrets {&quot;</span><span class="err">secretName</span><span class="s2">&quot;:&quot;&quot;,&quot;</span><span class="err">secretValue</span><span class="s2">&quot;:&quot;&quot;}&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="err">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Resources</strong></h4>
+
+<p>The Resources section of the template defines the resources to be deployed or updated and takes in an array of values. Resource manager supports two modes of deployment - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#incremental-and-complete-deployments">Incremental and Complete deployment</a> - and the way you define the resources here will affect what and how things get deployed. The template supports the use of certain <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#expressions-and-functions">Expressions and Functions</a>, to enable dynamic creation of values. Expressions are enclosed in square brackets ([]) and can appear anywhere is a JSON string value and evaluated when the template is deployed. To use a literal string that starts with a bracket [, use two brackets [[.</p>
+
+<p>The <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-functions/#parameters">parameter function</a> is used to get the value of a parameter that is passed in. I use this to access the Vault name, accessPolicies and other parameters that we had defined earlier. Since accessPolicies in the template expects an array I pass in the parameter object as is to it.</p>
+
+<p>Secrets are defined as nested resources within the Key Vault and can be defined as a nested property within the Key Vault resource as shown in the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/#examples">example here</a>. Since here we are interested in dynamically generating the Secrets based on the array value passed in as <em>secrets</em> parameter, I use the <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-multiple/#copy-copyindex-and-length">copy, copyIndex and length function</a></em> to iterate through the array and generate the required template. The <em>copy</em> function iterates and produces the same template structure with different values as specified by the parameter values.</p>
+
+<p>Since the Secret is defined as a separate resource, <em>name</em> property needs to indicate that it is a nested resource, hence we are concatenating the Vault Name with it. Without that I was getting the error :</p>
+
+<p><span style='color: red;'><em>A nested resource type must have an identical number of segments as its resource name. A root resource type must have segment length one greater than its resource name.</em></span>.</p>
+
+<p>The <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-define-dependencies/#dependson">dependsOn</a></em> element specifies that the Secret resource is dependent on the Key Vault resource.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'> <span class="s2">&quot;resources&quot;</span><span class="err">:</span> <span class="p">[</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Microsoft.KeyVault/vaults&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;[parameters(&#39;keyVaultName&#39;)]&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;accessPolicies&quot;</span><span class="p">:</span> <span class="s2">&quot;[parameters(&#39;accessPolicies&#39;)]&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="err">...</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Microsoft.KeyVault/vaults/secrets&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;[concat(parameters(&#39;keyVaultName&#39;), &#39;/&#39;, parameters(&#39;secrets&#39;)[copyIndex()].secretName)]&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;[parameters(&#39;secrets&#39;)[copyIndex()].secretValue]&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;dependsOn&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>            <span class="s2">&quot;[concat(&#39;Microsoft.KeyVault/vaults/&#39;, parameters(&#39;keyVaultName&#39;))]&quot;</span>
+</span><span class='line'>        <span class="p">],</span>
+</span><span class='line'>        <span class="nt">&quot;copy&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;secretsCopy&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="nt">&quot;count&quot;</span><span class="p">:</span> <span class="s2">&quot;[length(parameters(&#39;secrets&#39;))]&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Deploying with ARM Templates</h3>
+
+<p>To deploy the ARM template we need to pass in the required parameters and run the template.</p>
+
+<h4><strong>Parameter File</strong></h4>
+
+<p>Parameters can be passed in individually or as a <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#parameter-file">Parameter File</a>. Parameter file (<em>azuredeploy.parameters.json</em>) is a JSON file with a specific format. Below is a sample parameter file for our Key Vault ARM template. We can have different such templates for each of our deployment environments with values specific for the environment.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;contentVersion&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0.0&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;parameters&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;keyVaultName&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;NewARMVaultP&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;tenantId&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;accessPolicies&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="nt">&quot;tenantId&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;TENANT ID&gt;&quot;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="nt">&quot;objectId&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;AD OBJECT ID&gt;&quot;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="nt">&quot;permissions&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>                        <span class="nt">&quot;keys&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">],</span>
+</span><span class='line'>                        <span class="nt">&quot;secrets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">]</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>                <span class="p">},</span>
+</span><span class='line'>                <span class="p">{</span> <span class="err">...</span> <span class="p">}</span>
+</span><span class='line'>            <span class="p">]</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nt">&quot;secrets&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="nt">&quot;secretName&quot;</span><span class="p">:</span> <span class="s2">&quot;ConnectionString&quot;</span><span class="p">,</span>
+</span><span class='line'>                    <span class="nt">&quot;secretValue&quot;</span><span class="p">:</span> <span class="s2">&quot;SecureString1&quot;</span>
+</span><span class='line'>                <span class="p">},</span>
+</span><span class='line'>                <span class="p">{</span> <span class="err">...</span> <span class="p">}</span>
+</span><span class='line'>            <span class="p">]</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h4><strong>Deployment</strong></h4>
+
+<p>The ARM template along with the parameter file can be deployed in different ways - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/">PowerShell, Azure CLI, REST API, Visual Studio or from Azure Portal</a>. Using PowerShell we can deploy as below. The <em><a href="https://msdn.microsoft.com/en-us/library/mt679014.aspx">Test-AzureRmResourceGroupDeployment</a></em> cmdlet tests if the template file and parameter file are in correct format. This is mostly useful when authoring the template. <em><a href="https://msdn.microsoft.com/en-us/library/mt603823.aspx">New-AzureRmResourceGroupDeployment</a></em> deploys using the given template file and parameters.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Test-AzureRmResourceGroupDeployment</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span> <span class="n">-TemplateFile</span> <span class="p">.\</span><span class="n">azuredeploy</span><span class="p">.</span><span class="n">json</span>
+</span><span class='line'>        <span class="n">-TemplateParameterFile</span> <span class="p">.\</span><span class="n">azuredeploy</span><span class="p">.</span><span class="n">parameters</span><span class="p">.</span><span class="n">json</span> <span class="n">-Verbose</span>
+</span><span class='line'><span class="nb">New-AzureRmResourceGroupDeployment</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span> <span class="n">-TemplateFile</span> <span class="p">.\</span><span class="n">azuredeploy</span><span class="p">.</span><span class="n">json</span>
+</span><span class='line'>         <span class="n">-TemplateParameterFile</span> <span class="p">.\</span><span class="n">azuredeploy</span><span class="p">.</span><span class="n">parameters</span><span class="p">.</span><span class="n">json</span> <span class="n">-Verbose</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="http://armviz.io/#">ARM Template Visualizer</a> (ArmViz) is a visual way of editing and managing ARM templates and can be useful when dealing with a large number of resource deployments in a template. Also check out some <a href="https://azure.microsoft.com/en-us/documentation/articles/best-practices-resource-manager-design-templates/">Good practices for designing templates</a>. Most of the template code above is <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/">based off this example here</a>. I will try to push this template into the <a href="https://github.com/Azure/azure-quickstart-templates">Azure Quickstart Templates</a> but meanwhile it is <a href="https://github.com/rahulpnath/Blog/tree/master/KeyVault%20ARM%20Template">available here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Managing Azure Key Vault over the REST API]]></title>
     <link href="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/"/>
     <updated>2016-05-25T06:23:39+10:00</updated>
     <id>http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api</id>
-    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
+    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vaults-using-azure-resource-manager-arm-templates/">ARM templates</a>. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
 
 <h3>Azure Resource Manager API</h3>
 
@@ -2756,62 +3028,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
 
 
 <p>Please drop a comment if I have missed any!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Setting up AutoHotkey to Speed up Trivial Tasks]]></title>
-    <link href="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/"/>
-    <updated>2016-02-09T04:22:03+11:00</updated>
-    <id>http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks</id>
-    <content type="html"><![CDATA[<p>A lot of trivial tasks that we do daily on our computer can be automated to make it faster and reduce the number of keystrokes (<a href="http://www.keysleft.com">as they are limited</a>). <a href="https://autohotkey.com/">AutoHoykey</a>(AHK) is an excellent tool to automate a lot of these and is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favorite tool</a>. I use a very limited set of functionality of AHK,  to set up hot strings, launch applications, and mapping caps lock as backspace. The installer to the latest version is available <a href="https://autohotkey.com/download/ahk-install.exe">here</a>.</p>
-
-<blockquote><p>&ldquo;AutoHotkey (AHK) is a free, open-source macro-creation and automation software for Windows that allows users to automate repetitive tasks. It is driven by a scripting language that was initially aimed at providing keyboard shortcuts, otherwise known as hotkeys, that over time evolved into a full-fledged scripting language.&rdquo;</p></blockquote>
-
-<p><strong>Hotstrings</strong> are to map short key combinations that expand on completion. This one is to handle all common phrases, words like emails, default mail replies, etc. Defining a hotstring is as shown below or look up the <a href="https://autohotkey.com/docs/Hotstrings.htm">documentation here</a> for more details</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>::emg::rahulpnath@gmail.com
-</span><span class='line'>::myn::Rahul P Nath
-</span><span class='line'>::myb::http://www.rahulpnath.com
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You can use some easy to remember keywords for these like emg means &lsquo;Email Gmail&rsquo; and myn means &lsquo;My Name&rsquo; etc.</p>
-
-<p><strong>Hot keys</strong> are to launch applications on those key combinations. You can use this to launch your favorite applications with the key combinations of your choice. Defining  hot keys is as shown below or look up the <a href="https://autohotkey.com/docs/Hotkeys.htm">documentation here</a> for more details</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>^!C::
-</span><span class='line'>Run &quot;C:\Users\rahulpnath\Documents\Apps\cmder\Cmder.exe&quot;
-</span><span class='line'>return
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Capslock to Backspace</strong> mapping is something that I got inspired from the <a href="http://colemak.com/">Colemak layout</a> and find it useful even with the QWERTY layout. I use the <a href="https://autohotkey.com/docs/commands/Send.htm">Send</a> command to send simulated keystrokes. In the rare case of actually needing the CapsLock key, I just need to press it along with Shift to toggle on and off.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>CapsLock:: Send {BackSpace}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Running AHK scripts on startup</strong></h4>
-
-<p>To automatically run these scripts on startup, I use the <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> that comes with Windows. To create a new task follow the steps as shown below.</p>
-
-<p>In Task Scheduler select &lsquo;Create Task&rsquo; and enter the Name and Description. Set it to run with highest privileges, so that the scripts work even when on application&rsquo;s running in admin mode. Create a trigger for the task to run and I have set it &lsquo;At log on&rsquo; to run every time I log on. Create an Action to &lsquo;Start a program&rsquo; and select the script file (.ahk) with all your scripts. Once created you can right-click on the task and select Run and verify that the script has started and is working.</p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="http://rahulpnath.com/images/ahk_task_general.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="http://rahulpnath.com/images/ahk_task_trigger.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="http://rahulpnath.com/images/ahk_task_actions.PNG" /></p>
-
-<p>I synchronize these scripts over Onedrive, to make it available on all my computers. The only thing to do on all the computers is to create the startup task. The features discussed above is just the tip of an iceberg, and should help you get started. AHK has a lot more features that you can explore at the project site. Hope this helps you to set up and automate some of your tasks!</p>
 ]]></content>
   </entry>
   
