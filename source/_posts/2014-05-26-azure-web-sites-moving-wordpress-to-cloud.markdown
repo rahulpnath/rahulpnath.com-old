@@ -8,6 +8,7 @@ title: 'Azure Web Sites: Moving Wordpress to Cloud'
 wordpress_id: 1431
 categories:
 - Azure
+- Blogging
 tags:
 - azure web site
 - blog
