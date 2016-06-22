@@ -145,6 +145,7 @@ task :new_draft, :title do |t, args|
     post.puts "thisIsStillADraft:"
     post.puts "keywords: "
     post.puts "description: "
+    post.puts "primaryImage: "
     post.puts "---"
   end
   system %{cmd /c "start #{filename}"}
