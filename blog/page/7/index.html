@@ -163,6 +163,297 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-21T18:55:25+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 21<sup>st</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/" itemprop="url">Windows Phone Series – Incremental Loading multiple data sources inside a Pivot</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
+
+<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
+
+<p><img src="/images/WP_IncrementalLoading.png" alt="image" /></p>
+
+<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
+
+<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">string</span><span class="p">[]</span> <span class="n">photoCollections</span> <span class="p">=</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="s">&quot;popular&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&quot;upcoming&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&quot;editors&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="s">&quot;fresh_today&quot;</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="n">List</span> <span class="n">PhotoCollectionViewModels</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PhotoCollectionViewModels</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photoCollection</span> <span class="k">in</span> <span class="n">photoCollections</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">PhotoCollectionViewModels</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">PhotoCollectionViewModel</span><span class="p">(</span><span class="n">photoCollection</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
+
+<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IncrementalLoader</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
+</span><span class='line'><span class="err">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">BaseUrl</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">CurrentPageNumber</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">CurrentUrl</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span><span class="p">,</span> <span class="p">++</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentPageNumber</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">IncrementalLoader</span><span class="p">(</span><span class="kt">string</span> <span class="n">baseUrl</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span> <span class="p">=</span> <span class="n">baseUrl</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">LoadNextPage</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// call in progress</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">HttpClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpClient</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Add Microsoft.Bcl.Async nuget for await to work on PCL.</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">GetStringAsync</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentUrl</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">serializer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">returnObject</span> <span class="p">=</span> <span class="n">serializer</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">response</span><span class="p">)))</span> <span class="k">as</span> <span class="n">T</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">returnObject</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Grid</span> <span class="na">x:Name=</span><span class="s">&quot;ContentPanel&quot;</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'> <span class="nt">&lt;phone:Pivot</span> <span class="na">Name=</span><span class="s">&quot;photoCollection&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding PhotoCollectionViewModels}&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> <span class="nt">&lt;phone:Pivot.ItemTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;phone:LongListSelector</span> <span class="na">ItemRealized=</span><span class="s">&quot;Photo_Loaded&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding Photos}&quot;</span> <span class="na">IsGroupingEnabled=</span><span class="s">&quot;False&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> <span class="nt">&lt;phone:LongListSelector.ItemTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding image_url}&quot;</span> <span class="na">Margin=</span><span class="s">&quot;10&quot;</span> <span class="na">Width=</span><span class="s">&quot;500&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector.ItemTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/phone:Pivot.ItemTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;phone:Pivot.HeaderTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;TextBlock</span> <span class="na">Text=</span><span class="s">&quot;{Binding Title}&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/phone:Pivot.HeaderTemplate&gt;</span>
+</span><span class='line'> <span class="nt">&lt;/phone:Pivot&gt;</span>
+</span><span class='line'><span class="nt">&lt;/Grid&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Photo_Loaded</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">LongListSelector</span> <span class="n">longList</span> <span class="p">=</span> <span class="n">sender</span> <span class="k">as</span> <span class="n">LongListSelector</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">PhotoCollectionViewModel</span> <span class="n">vm</span> <span class="p">=</span> <span class="n">longList</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">PhotoCollectionViewModel</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">vm</span><span class="p">.</span><span class="n">LoadMorePhotos</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">LoadMorePhotos</span><span class="p">(</span><span class="n">Photo</span> <span class="n">currentPhoto</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">currentPhoto</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">index</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">currentPhoto</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="m">3</span> <span class="p">&gt;</span> <span class="n">index</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">incrementalLoader</span><span class="p">.</span><span class="n">LoadNextPage</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
+
+<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-12T21:05:08+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 12<sup>th</sup>, 2014</time>
         
 
@@ -1516,282 +1807,6 @@ Below you see how we are registering for the interface IDataService and setting 
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-04-17T21:04:01+10:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2013</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>, <a class='category' href='/blog/category/wp7/'>wp7</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-mvvm-and-applicationbar/" itemprop="url">Windows Phone Series – MVVM and ApplicationBar</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>ApplicationBar on a windows phone, is to provide users of your app with quick access to the most commonly used tasks. For a mail app this would be refresh/new mail, for a photo app it might be like/unlike button, settings etc are common buttons that appear in an ApplicationBar . But then not always do we have them as static, and we would want to add/remove icons/menu items to that based on the applications current state.For example, you would want to add the like/unlike button only if the user is logged in, or even the settings icon would be only for logged in users. Whatever might be your scenario, if you are looking for to add/remove icons from the application bar from your code then this article is for you.</p>
-
-<p>In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(&lt;</span><span class="n">your</span> <span class="n">button</span><span class="p">&gt;);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same</p>
-
-<p><strong>1. Mesenger Service</strong></p>
-
-<p>Whenever we need to communicate between VM’s or between your view model and View then we would want to do that in the most decoupled manner. When using <a href="http://www.galasoft.ch/mvvm/">MVVMLight</a>, we could use the Messenger class to achieve this. We would send a message indicating that we want to add a new appbar button from the ViewModel, and the View code behind, which already has registered for such an event would get notified and add the icon for us .</p>
-
-<p>Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">MainPage</span> <span class="p">:</span> <span class="n">PhoneApplicationPage</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">get</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">MainViewModel</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="n">ApplicationBarIconButton</span> <span class="n">settingsButton</span><span class="p">;</span>
-</span><span class='line'>    <span class="c1">// Constructor</span>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">MainPage</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">InitializeComponent</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">settingsButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBarIconButton</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Settings&quot;</span><span class="p">,</span>
-</span><span class='line'>            <span class="n">IconUri</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="s">&quot;Images/appbar.feature.settings.rest.png&quot;</span><span class="p">,</span> <span class="n">UriKind</span><span class="p">.</span><span class="n">Relative</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">};</span>
-</span><span class='line'>        <span class="n">settingsButton</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="n">settingsButton_Click</span><span class="p">;</span>
-</span><span class='line'>        <span class="c1">// Register for the messenger </span>
-</span><span class='line'>        <span class="n">Messenger</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">,</span> <span class="n">OnNotificationMessage</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">void</span> <span class="nf">settingsButton_Click</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">viewModel</span><span class="p">.</span><span class="n">SettingsCommand</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">OnNotificationMessage</span><span class="p">(</span><span class="n">NotificationMessage</span> <span class="n">message</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="c1">// Check here for the notification</span>
-</span><span class='line'>        <span class="c1">// You can also build cutoms notification message here for this by inheriting from MessageBase</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">message</span><span class="p">.</span><span class="n">Notification</span> <span class="p">==</span> <span class="s">&quot;AddSettings&quot;</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">ApplicationBar</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">ApplicationBar</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBar</span><span class="p">();</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>            <span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">settingsButton</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<hr />
-
-<p><strong>2. ApplicationBar Service</strong></p>
-
-<p>Like we use <a href="http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2">NavigationService</a>, for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyModelBase</span><span class="p">:</span> <span class="n">ViewModelBase</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">IApplicationBarService</span> <span class="n">ApplicationBar</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">MyModelBase</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">MyModelBase</span><span class="p">(</span><span class="n">IApplicationBarService</span> <span class="n">appBar</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ApplicationBar</span> <span class="p">=</span> <span class="n">appBar</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IApplicationBarService</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">IApplicationBar</span> <span class="n">ApplicationBar</span> <span class="p">{</span> <span class="k">get</span><span class="p">;}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">void</span> <span class="nf">AddButton</span><span class="p">(</span><span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="n">Uri</span> <span class="n">imageUrl</span><span class="p">,</span> <span class="n">Action</span> <span class="n">OnClick</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Implementation for this interface is as below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ApplicationBarService</span><span class="p">:</span> <span class="n">IApplicationBarService</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">AddButton</span><span class="p">(</span><span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="n">Uri</span> <span class="n">imageUrl</span><span class="p">,</span> <span class="n">Action</span> <span class="n">OnClick</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ApplicationBarIconButton</span> <span class="n">newButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBarIconButton</span><span class="p">()</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">Text</span> <span class="p">=</span> <span class="n">title</span><span class="p">,</span>
-</span><span class='line'>                <span class="n">IconUri</span> <span class="p">=</span> <span class="n">imageUrl</span><span class="p">,</span>
-</span><span class='line'>            <span class="p">};</span>
-</span><span class='line'>        <span class="n">newButton</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">((</span><span class="n">sender</span><span class="p">,</span><span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span><span class="n">OnClick</span><span class="p">.</span><span class="n">Invoke</span><span class="p">();})</span> <span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newButton</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">IApplicationBar</span> <span class="n">ApplicationBar</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">get</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">currentPage</span> <span class="p">=</span> <span class="p">((</span><span class="n">App</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">).</span><span class="n">RootFrame</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">PhoneApplicationPage</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBar</span><span class="p">();</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple</p>
-
-<p>In cases where you don’t want to add buttons dynamically, but just have static buttons you could also use BindableApplicationBar implementations that are there. One such implementation is there along with the <a href="http://phone7.codeplex.com/">Phone7.Fx</a> library. There are also many other implementations for the same.</p>
-
-<p>Hope this helps you to decouple your application bar icons from the ViewModel.You can find a <a href="https://github.com/rahulpnath/Blog/tree/master/PhoneAppBarMvvm">sample</a> implementation for this. In the sample both these approaches are shown for adding icons. You could figure out the Remove pretty easily.</p>
-
-<p><img src="/images/wp_applicationbar_icon_mvvm.png" alt="windows phone applicationbar mvvm" /></p>
-
-<p>Hope it helps!!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1815,6 +1830,8 @@ Below you see how we are registering for the interface IDataService and setting 
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/own-your-urls/">Own Your URLs; Nothing Else Really Matters</a>
+    
     <a class="list-group-item " href="/blog/could-not-load-assembly-msshrtmi-dll/">Could Not Load Assembly msshrtmi.dll?</a>
     
     <a class="list-group-item " href="/blog/life-learnings-after-being-a-parent/">Life Learnings After Being a Parent</a>
@@ -1822,8 +1839,6 @@ Below you see how we are registering for the interface IDataService and setting 
     <a class="list-group-item " href="/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Managing Azure Key Vault using Azure Resource Manager (ARM) Templates</a>
     
     <a class="list-group-item " href="/blog/managing-azure-key-vault-over-the-rest-api/">Managing Azure Key Vault over the REST API</a>
-    
-    <a class="list-group-item " href="/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/">Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan</a>
     
   </div>
 </section>

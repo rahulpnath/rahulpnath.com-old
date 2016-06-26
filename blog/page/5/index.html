@@ -163,6 +163,169 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-10T15:54:15+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 10<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/testing-multiple-implementations-of-same-interface/" itemprop="url">Testing Multiple Implementations of same Interface</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often there are times when we need to test multiple implementations of the same interface. We would want to use the same test case against all the implementations so that we <a href="http://en.wikipedia.org/wiki/Don%27t_repeat_yourself">don&rsquo;t repeat ourselves</a>. In this post we will see how we can reuse the same test cases to test both the implementation, by running them against both the implementations.</p>
+
+<blockquote><p>If you are just interested in the approach - The same test project dll is run twice using vstest.console, by setting an environment variable. Inside the test, (either in the assembly initialize or test initialize) register the appropriate implementations into a IoC container, based on the environment variable value.</p></blockquote>
+
+<p>Interested in the full implementation, then read on!</p>
+
+<p>Since we are not much bothered about the actual interface and its implementation, I have a very simple interface as below, which calculates the length of the given string.There are two implementations for this that might have two different ways of calculating the length of the string given an input.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Implementation 1</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Count</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Implementation 2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Though the sample has a simple interface, this might not be the case in a real life project. So the sample mimics a real time implementation structure - we have one interface project and two other projects that have the corresponding implementation. The implementations could also be in the same assembly and this would be applicable for those scenarios too, and can be made to work with some few tweaks in one of the steps (which I will mention when we are there). The test case project that will have the appropriate test cases.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[TestMethod]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">TestThreeLetterLength</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">foo</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">returnValue</span> <span class="p">=</span> <span class="n">foo</span><span class="p">.</span><span class="n">GetLength</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">IsTrue</span><span class="p">(</span><span class="n">returnValue</span> <span class="p">==</span> <span class="m">3</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The test case uses the IoC container to get the corresponding implementation of the interface, so it is not all about switching the registered implementation in the container. If this is only for the tests in this particular class then we could do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.testinitializeattribute.aspx">TestInitialize</a> method. But most likely you would have multiple tests and also multiple interfaces that we are using. So we can do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.assemblyinitializeattribute.aspx">AssemblyInitialze</a> for the assembly.</p>
+
+<figure class='code'><figcaption><span>Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">test</span> <span class="p">=</span> <span class="n">Environment</span><span class="p">.</span><span class="n">GetEnvironmentVariable</span><span class="p">(</span><span class="n">TestEnviromentVariable</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;1&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation1</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;2&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation2</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above implementation might work in cases where the number of interfaces are less and also in cases where we have fewer possibilities of implementations, but as soon as the number goes up we will again have to keep repeating  the registrations and the if/else code. This is an IoC registration issue and is best handled using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">IoC Registration by Convention</a>. We can have a configuration file matching the environment variable and have the assemblies that are to be loaded mentioned in that and pass only those assemblies to be explicitly registered into the convention registration logic. Even in cases where you have the implementations in the same assembly you can write your convention registration logics accordingly and decide what to register.</p>
+
+<p>We can now run these test dll&rsquo;s using batch files by setting different environment variables as below. The bat files can be integrated into your build</p>
+
+<figure class='code'><figcaption><span>FooTest.Implementation2.bat</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bat'><span class='line'><span class="k">set</span> <span class="nv">Foo</span>.tests<span class="o">=</span><span class="m">2</span>
+</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Testing for configuration 2&quot;</span>
+</span><span class='line'>msbuild TestingMultipleImplementations.sln
+</span><span class='line'>vstest.console FooTestImpl<span class="m">1</span>\bin\Debug\FooTestImpl<span class="m">1</span>.dll <span class="n">/logger:trx</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps some one trying to reuse test cases for multiple implementations of the same interface. One another way to solve this issue would be to create multiple csproj files and have the same test case classes referred to both the project files, but have the reference assemblies specific to implementations. So in this case we would have multiple test dll&rsquo;s created, which can be run individually. The advantage of going via this approach is that we could have test cases specific to implementations too and also reuse test cases that are same across implementations by referring them as linked files. But currently we did not want this flexibility and did not want to add multiple project files and make it difficult for the team. You can find the sample implementation <a href="https://github.com/rahulpnath/Blog/tree/master/TestingMultipleImplementations">here</a>. Do you reuse test cases like this? Do drop in with a comment on your thoughts.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-03T23:33:17+11:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2015</time>
         
 
@@ -1788,188 +1951,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-07-08T09:35:39+10:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 8<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/web/'>web</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/knockoutjs-for-xaml-developers/" itemprop="url">KnockoutJS For XAML Developers</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>After a very long time since I have actually wanted to move out to web development, recently I have started developing a website as part of my personal project, along with a friend of mine. I have been into desktop/mobile development on Microsoft technologies, using XAML for a very long time. <a href="http://www.rahulpnath.com/blog/tag/mvvm/">Model-View-View Model (MVVM)</a> is a pattern that got popular because of the powerful binding engine in XAML. It is always comforting to see familiar patterns while moving into unexplored technology areas. Same is the reason I chose to explore <a href="http://knockoutjs.com/index.html">KnockoutJS</a>(KO), which simplifies dynamic JavaScript UIs with the MVVM pattern.</p>
-
-<p><img src="/images/MVVM_Knockoutjs.jpg" alt="MVVM Knockout" /></p>
-
-<p>KnockoutJS acts as the binding engine in XAML and binds your ViewModel(VM) with your View as shown in the figure. As you expect, like in XAML it provides a way to specify declarative-bindings on html using the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute and is also widely <a href="http://knockoutjs.com/documentation/browser-support.html">supported across different browsers</a>. The Model is the data that is populated from the server after your business logics applied,  mostly populated out of Ajax JSON calls from a web service/api. This Model data might mostly need some transformation to map to your View needs which is what exactly the ViewModel does. It transforms the Model data and wraps over it to provide features like 2-way-binding, client side validation, transformation of properties, UI specific state and a lot more</p>
-
-<p>We will see below how some of the major constructs in XAML map over to KnockoutJS.</p>
-
-<blockquote><p><em>I assume that you are a XAML developer and am not including detailed code samples for the XAML part and would be just mentioning them.</em></p></blockquote>
-
-<p><strong>1. INotifyPropertyChanged</strong></p>
-
-<p>Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110).aspx">INotifyPropertyChanged</a> interface. This is also required on web pages and is handled by KO using <em><a href="http://knockoutjs.com/documentation/observables.html">observables</a></em></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">personVM</span> <span class="o">=</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">Name</span><span class="o">:</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">observable</span><span class="p">(</span><span class="s1">&#39;Rahul&#39;</span><span class="p">),</span>
-</span><span class='line'>    <span class="nx">Age</span><span class="o">:</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">observable</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Declaring the property as an observable, makes any changes to the property immediately reflect on the bound UI elements, just like it happens on a property of a class that implements INotifyPropertyChanged.</p>
-
-<pre class="codepen" data-height="300" data-type="js" data-href="CuIfK" data-user="rahulpnath"><code> </code></pre>
-
-
-<script async src="http://codepen.io:/assets/embed/ei.js"></script>
-
-
-<p><strong>2. DataContext</strong></p>
-
-<p>In XAML we set the DataContext as the ViewModel to start binding the data from the ViewModel on the UI. Similarly in KO we have to call on to <em>applyBindings </em>method, passing on the ViewModel object to bind. You can see this in the above sample. You can also pass in an additional parameter indicating the part of the document that you want to explicitly bind to.</p>
-
-<p><strong>3. DataBinding</strong></p>
-
-<p>Binding the data to the UI in XAML is done declaratively using the <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110).aspx">Binding</a> syntax. Similarly in KO we use the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be <em>data-bind=&ldquo;text: Name&rdquo; . </em>You can also use the <a href="http://knockoutjs.com/documentation/with-binding.html">with binding</a> to create binding contexts for descendant elements as in XAML</p>
-
-<p><strong>4. INotifyCollectionChanged</strong></p>
-
-<p>In XAML updates to a collection is usually handled using an <a href="http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110).aspx">ObservableCollection</a>, which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use <em>observableArray</em>, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an <em>observable, </em>as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. </p>
-
-<pre class="codepen" data-height="300" data-type="js" data-href="FreIv" data-user="rahulpnath"><code> </code></pre>
-
-
-<script async src="http://codepen.io:/assets/embed/ei.js"></script>
-
-
-<p><strong>5. Dependent Properties</strong></p>
-
-<p>In XAML when there are properties dependent on others , to notify changes we have to explicitly call RaisePropertyChanged on all the dependent properties. A very common example is below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="kt">string</span> <span class="n">firstName</span><span class="p">;</span>
-</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">FirstName</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">firstName</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>   <span class="k">set</span>
-</span><span class='line'>   <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">firstName</span><span class="p">!=</span> <span class="k">value</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">firstName</span><span class="p">=</span> <span class="k">value</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">OnPropertyChanged</span><span class="p">(</span><span class="s">&quot;FirstName&quot;</span><span class="p">);</span>
-</span><span class='line'>            <span class="n">OnPropertyChanged</span><span class="p">(</span><span class="s">&quot;FullName&quot;</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>   <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">FullName</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">FirstName</span> <span class="p">+</span><span class="s">&quot; &quot;</span> <span class="p">+</span> <span class="n">LastName</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here whenever FirstName is updated to notify UI elements bound to FullName would be updated only if we explicitly call PropertyChanged on FullName property too. In KO this is handled using <a href="http://knockoutjs.com/documentation/computedObservables.html">computed observables</a> and is much more elegant.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="k">this</span><span class="p">.</span><span class="nx">fullName</span> <span class="o">=</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">computed</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">firstName</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">lastName</span><span class="p">();</span>
-</span><span class='line'><span class="p">},</span> <span class="k">this</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>6. Commanding</strong></p>
-
-<p>Commanding is how user interactions are bound to actions/functions on ViewModel, which will in turn perform something useful for the user. Like e.g. clicking a button. In KO this is handled using the same <a href="http://knockoutjs.com/documentation/click-binding.html">data-bind</a> attribute using key’s corresponding to event handlers. &#8220;</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;button</span> <span class="na">data-bind=</span><span class="s">&quot;click: performSomeAction&quot;</span><span class="nt">&gt;</span>Click me<span class="nt">&lt;/button&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>7. Value Converters </strong></p>
-
-<p>The <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx">IValueConverter</a> interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is <a href="http://knockoutjs.com/documentation/computedObservables.html">writable computed observable</a> to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.</p>
-
-<pre class="codepen" data-height="300" data-type="js" data-href="dJhLm" data-user="rahulpnath"><code> </code></pre>
-
-
-<script async src="http://codepen.io:/assets/embed/ei.js"></script>
-
-
-<p>There are a lot of useful resources on the web that are freely available to get started with KnockoutJS. Some of them are listed below</p>
-
-<ul>
-<li><p><a href="http://knockoutjs.com/documentation/introduction.html">Official Documentation</a></p></li>
-<li><p><a href="http://learn.knockoutjs.com/">Learn By Doing</a></p></li>
-<li><p><a href="https://www.youtube.com/results?search_query=knockout+javascript">Videos</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Search?term=knockout#ch9Search">More Videos</a></p></li>
-</ul>
-
-
-<p>Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1993,6 +1974,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/own-your-urls/">Own Your URLs; Nothing Else Really Matters</a>
+    
     <a class="list-group-item " href="/blog/could-not-load-assembly-msshrtmi-dll/">Could Not Load Assembly msshrtmi.dll?</a>
     
     <a class="list-group-item " href="/blog/life-learnings-after-being-a-parent/">Life Learnings After Being a Parent</a>
@@ -2000,8 +1983,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Managing Azure Key Vault using Azure Resource Manager (ARM) Templates</a>
     
     <a class="list-group-item " href="/blog/managing-azure-key-vault-over-the-rest-api/">Managing Azure Key Vault over the REST API</a>
-    
-    <a class="list-group-item " href="/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/">Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan</a>
     
   </div>
 </section>
