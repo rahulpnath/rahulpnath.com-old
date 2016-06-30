@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tools | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tools/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-06-27T12:15:23+10:00</updated>
+  <updated>2016-07-01T00:45:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,93 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception]]></title>
+    <link href="http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/"/>
+    <updated>2016-07-01T00:45:05+10:00</updated>
+    <id>http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies</id>
+    <content type="html"><![CDATA[<p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
+
+<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
+
+<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
+
+<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
+
+<h3>Using AsmSpy to find conflicting assemblies</h3>
+
+<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
+
+<pre><code class="text">asmspy WebApplication1\bin\ nonsystem
+
+Detailing only conflicting assembly references.
+Reference: Newtonsoft.Json
+   7.0.0.0 by SharedLibrary
+   6.0.0.0 by WebApplication1
+   4.5.0.0 by WebGrease
+</code></pre>
+
+<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
+
+<h3>Using MsBuild Structured Log to find conflicting writes</h3>
+
+<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
+
+<p><img src="/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
+
+<p><img class="left" src="/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
+
+<h3>Building Web application in Visual Studio</h3>
+
+<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
+
+<p><figure>
+    <img src="/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
+    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
+</figure></p>
+
+<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
+
+<p>I confirmed with other team members on the repro steps for this issue</p>
+
+<ul>
+<li>Get the latest code and do a full rebuild from VS</li>
+<li>Launch Web app works fine</li>
+<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
+<li>Launch Web app throws the error!</li>
+</ul>
+
+
+<p>It was a consistent repro with the above steps.</p>
+
+<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
+
+<h3>The Sample Application</h3>
+
+<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
+
+<ul>
+<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
+<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
+<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
+</ul>
+
+
+<pre><code class="powershell ">Install-Package Newtonsoft.Json -ProjectName WebApplication1 -Version 6.0.1
+Install-Package Newtonsoft.Json -ProjectName SharedLibrary -Version 7.0.1
+Install-Package Newtonsoft.Json -ProjectName WpfApplication1 -Version 8.0.3
+</code></pre>
+
+<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
+
+<p>Hope this helps in case you come across a similar issue!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[CLAL - Command Line Application Launcher]]></title>
@@ -224,35 +311,6 @@ return
 <p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_actions.PNG" /></p>
 
 <p>I synchronize these scripts over Onedrive, to make it available on all my computers. The only thing to do on all the computers is to create the startup task. The features discussed above is just the tip of an iceberg, and should help you get started. AHK has a lot more features that you can explore at the project site. Hope this helps you to set up and automate some of your tasks!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tools that I use]]></title>
-    <link href="http://rahulpnath.com/blog/tools-that-I-use/"/>
-    <updated>2015-10-10T06:44:19+11:00</updated>
-    <id>http://rahulpnath.com/blog/tools-that-I-use</id>
-    <content type="html"><![CDATA[<p>Tools are an indispensable part of our daily life and we all have our own likes and dislikes for them. Here are a list that I use (almost daily), most of them influenced from the <a href="http://www.hanselman.com/tools">greater list</a>. Having a great keyboard support is something that I look out for, especially for those that I interact with more frequently (IDE&rsquo;s or code editors). Couple of days back, while having a chat with my friend <a href="https://twitter.com/zpbappi">Bappi</a> some of these came up and he found a few interesting, so though of sharing the list over here.</p>
-
-<ul>
-<li><p><strong><a href="https://www.visualstudio.com/">Visual Studio</a></strong>: This one is almost daily and is one of them that gets on along with my laptop. For a Microsoft stack developer I do not think there are much alternatives(<a href="http://www.microsoft.com/web/webmatrix/">WebMatrix</a>, <a href="https://code.visualstudio.com/">Visual Studio Code</a>) if you are looking for full fledged development. Personally I am on VS2015 now(since I am lucky enough to have a free MSDN subscription), but being on any of the version is equally good.</p></li>
-<li><p><strong><a href="https://www.onenote.com/">One Note</a></strong>: For note taking I prefer OneNote as it is easy to manage and organize and is available on all platforms. Collaborating with multiple users is also so easy and comes loaded with features making it suitable for all kinds of scenarios.</p></li>
-<li><p><strong><a href="https://onedrive.live.com/about/en-in/">OneDrive</a>/<a href="https://db.tt/bvYw3pL6">Dropbox</a></strong>: I use a mix of OneDrive and Dropbox for backing up my data and photos and find the experience for both good on all devices.</p></li>
-<li><p><strong><a href="http://cmder.net/">Cmder</a></strong>: Looking out for a cool console in Windows, then this is the one! Loads of features and awesome color scheme makes it really one of the best consoles. Ctrl + C for copy and Ctrl + V works nicely on this(and you do not need to be on Windows 10 for this) and that alone would drive me to try out this one.</p></li>
-<li><p><strike><strong><a href="http://www.sublimetext.com/">Sublime Text</a></strong>: As the tag-line says, this is &lsquo;<em>The text editor that you would fall in love with</em>&rsquo;. I use this primarily for all my writing (except for markdown formats, for which I use <a href="http://markdownpad.com/">MarkdownPad</a>), quick edits, formatting and even for some coding when I do not want the full power of Visual Studio. There are loads of plugins available and a good community of users backing it.</strike>
-<strong><a href="https://code.visualstudio.com/">Visual Studio Code</a></strong>: The experience on VS Code has dramatically improved from the day that I originally wrote the post. Code is now my one stop editor and I use it for my blogging too.</p></li>
-<li><p><strong><a href="https://todoist.com/">Todoist</a></strong>: I have tried out a lot of tools and finally ended up with the premium version of Todoist for task management. Its got everything right and highly flexible to organize your tasks and has full fledged apps on all platforms, browsers and even mail integration. Its almost easy to access Todoist from any context that I am working on and syncs across all devices seamlessly. Its really worth paying for this one, if not you could use the free version with some reduced features.</p></li>
-<li><p><strong><a href="http://www.autohotkey.com/">AHK</a></strong>: This tiny little tool has innumerous uses and capabilities, but I just use very few of it to automate certain mundane tasks, store a list of <a href="http://ahkscript.org/docs/Hotstrings.htm">hotstring</a> and application <a href="http://ahkscript.org/docs/Hotkeys.htm">shortcut keys</a>. I have all my scripts synced across multiple PC&rsquo;s and have added a task in <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> to run the scripts with highest privileges every time I log on.</p></li>
-<li><p><strong><a href="https://agilebits.com/onepassword">1Password</a></strong>: It&rsquo;s a password manager and is available on all platforms and quite easy to get started with. I had been using the browser capabilities to store and sync passwords before which was working fine. But password managers solve a totally different problem of generating passwords (though they also sync generated passwords without which it would be more difficult to use them given that we have multiple devices these days) as a <a href="http://www.troyhunt.com/2011/03/only-secure-password-is-one-you-cant.html">secure password is one that you cannon remember</a>. 1Password has a one time fee for license, can shared by up to six family members living in the same household, has various synchronization options and mainly gives you the control where all the data is stored.</p></li>
-<li><p><strong><a href="http://www.noisli.com/">Noisli</a>,<a href="https://soundcloud.com/">SoundCloud</a></strong>: Like to here music or have some background noise then these are for you. Noisli is a background noise generator, and lets you create different different combinations for your taste. SoundCloud has a lot of music tracks in them and it is free for online streaming.</p></li>
-<li><p><strong><a href="http://www.telerik.com/fiddler">Fiddler</a></strong>: The free web debugging proxy for any browser, system or platform, this one is really an indispensable tool if you are doing any kind of web development.</p></li>
-<li><p><strong><a href="https://feedly.com/">Feedly</a>,<a href="https://getpocket.com/a/">Pocket</a></strong>: Feedly is an RSS reader and has got quite a good UI and syncs across all devices and helps me keep all the reading list in one place. If you want to have some articles to read while offline then Pocket is for you. Pocket downloads the article while online onto devices and keeps it available for reading. I have been experimenting (for a little over a month) to go offline on mobile and use this for my offline reading if I don&rsquo;t have the Kindle.(The experiment is going pretty good if not for a very few times I had to turn connectivity on for finding bus routes and timings.)</p></li>
-<li><p><strong><a href="http://www.scootersoftware.com/">Beyond Compare</a></strong>: Really its &lsquo;beyond&rsquo; just comparing files and is really useful for comparing and merging files. I use the pro version and really recommend it. Integrates nicely with Visual Studio and other IDE&rsquo;s and also provides context menu&rsquo;s on file explorer.</p></li>
-<li><p><del>Resharper</del>: I had been using this on and off and realized that mostly I was using only the &lsquo;navigate to&rsquo; feature and decided on to start using the in built features of Visual Studio. <a href="https://twitter.com/ploeh">Mark Seemann</a> has quite an interesting <a href="http://blog.ploeh.dk/2013/02/04/BewareofProductivityTools/">article</a> on this and I couldn&rsquo;t agree any more. Resharper is also changing their licensing model going from a one time fee to a <a href="https://www.jetbrains.com/toolbox/">monthly fee</a>, which I don&rsquo;t personally prefer especially for a tool like R#.</p></li>
-</ul>
-
-
-<p>While there are some more, this is what I use most of the time. What tools help you at work. Do you have any better alternatives that I could try to replace something on this list.</p>
 ]]></content>
   </entry>
   

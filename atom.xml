@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-06-27T12:15:23+10:00</updated>
+  <updated>2016-07-01T00:45:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,110 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception]]></title>
+    <link href="http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/"/>
+    <updated>2016-07-01T00:45:05+10:00</updated>
+    <id>http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies</id>
+    <content type="html"><![CDATA[<p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
+
+<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
+
+<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
+
+<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
+
+<h3>Using AsmSpy to find conflicting assemblies</h3>
+
+<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>asmspy WebApplication1\bin\ nonsystem
+</span><span class='line'>
+</span><span class='line'>Detailing only conflicting assembly references.
+</span><span class='line'>Reference: Newtonsoft.Json
+</span><span class='line'>   7.0.0.0 by SharedLibrary
+</span><span class='line'>   6.0.0.0 by WebApplication1
+</span><span class='line'>   4.5.0.0 by WebGrease
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
+
+<h3>Using MsBuild Structured Log to find conflicting writes</h3>
+
+<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
+
+<p><img src="http://rahulpnath.com/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
+
+<p><img class="left" src="http://rahulpnath.com/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
+
+<h3>Building Web application in Visual Studio</h3>
+
+<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
+
+<figure>
+    <img src="http://rahulpnath.com/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
+    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
+</figure>
+
+
+<p></p>
+
+<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
+
+<p>I confirmed with other team members on the repro steps for this issue</p>
+
+<ul>
+<li>Get the latest code and do a full rebuild from VS</li>
+<li>Launch Web app works fine</li>
+<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
+<li>Launch Web app throws the error!</li>
+</ul>
+
+
+<p>It was a consistent repro with the above steps.</p>
+
+<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
+
+<h3>The Sample Application</h3>
+
+<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
+
+<ul>
+<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
+<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
+<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WebApplication1</span> <span class="n">-Version</span> <span class="n">6</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
+</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">SharedLibrary</span> <span class="n">-Version</span> <span class="n">7</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
+</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WpfApplication1</span> <span class="n">-Version</span> <span class="n">8</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
+
+<p>Hope this helps in case you come across a similar issue!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Own Your URLs; Nothing Else Really Matters]]></title>
@@ -2772,154 +2876,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
 <p>With the AutoResponder set to matching URL, we can easily have it return error codes or simulated error messages to test how the UI handles them. You don&rsquo;t have to depend on &lsquo;actual server errors&rsquo; to test if the UI handles error correctly. You can use this to test how application behaves with different return values by mocking with valid custom responses.  Fiddler provides richer capabilities of using scripts to <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">modify a request or response</a>.</p>
 
 <p>Hope this helps you get started with using Fiddler for testing and manipulating requests/responses.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Automated ClickOnce Deployment of a WPF Application using Appveyor]]></title>
-    <link href="http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/"/>
-    <updated>2016-03-04T12:00:03+11:00</updated>
-    <id>http://rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor</id>
-    <content type="html"><![CDATA[<p>This post covers the current deployment setup of <a href="https://github.com/rahulpnath/clal">CLAL</a>(Command Line Application Launcher), a desktop application, that I am building. Since it is a WPF application, it supports <a href="https://msdn.microsoft.com/en-us/library/t71a733d.aspx">ClickOnce Deployment</a> that enables to create self-updating applications which can install with minimum interaction from the user. ClickOnce supports different <a href="https://msdn.microsoft.com/en-us/library/71baz9ah.aspx">deployment strategy</a> of which distributing it through the web is quite popular as it makes software distribution easier. It works well when the software size is not large so that application installation is faster. For CLAL, there are two deployments served from Azure: <a href="http://www.rahulpnath.com/clal/Releases/commandlineapplicationlauncherui.application">Latest stable build</a> and the <a href="http://www.rahulpnath.com/clal/Latest/commandlineapplicationlauncherui.application">Current build</a>.</p>
-
-<p>I did not want to do manually, the entire deployment process of building the solution, running all the tests, creating the ClickOnce package and pushing it up to Azure, I decided to automate this. Since <a href="https://www.appveyor.com/">Appveyor</a>, a hosted distributed continuous integration service used to build and test projects, is free for open-source projects and integrates very well with application developed on the Windows platform.</p>
-
-<h3>Setting up Appveyor project</h3>
-
-<p>Setting up Appveyor to read from Github is very easy. Once you authorize access to Github, Appveyor lists all the projects that you have in your Github account. After selecting a project, it creates a <a href="https://ci.appveyor.com/project/rahulpnath/clal">&lsquo;build project&rsquo;</a> for that in Appveyor, where you can control all build related activities. Appveyor automatically pulls in your latest source code from the repository, when a build triggers. Build configurations can be specified using a <a href="https://www.appveyor.com/docs/appveyor-yml">configuration file</a> (appveyor.yml) living at the repository root or using the user interface. For CLAL I exclusively use the configuration from the file and the latest version is available <a href="https://github.com/rahulpnath/clal/blob/master/appveyor.yml">here</a>.
-Primarily there are two branches (<em>master</em> and <em>development</em>) on the git repository which builds as the latest stable and current build. Since these two deployments have few attributes different (like the version numbers, deployment URL, update URL), I use <a href="https://www.appveyor.com/docs/branches#conditional-build-configuration">conditional build configuration</a> to have separate configuration properties for the branches.</p>
-
-<p>The primary things that vary for the different deployments are a few ClickOnce publishing properties, the version number, the build configurations - release/debug and the deployment locations. We will see in detail below how we handle this.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="p-Indicator">-</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
-</span><span class='line'>      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.0</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Release</span>
-</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
-</span><span class='line'>  <span class="p-Indicator">-</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debug</span>
-</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>ClickOnce Publish Profile</h3>
-
-<p>To create the publish profile, I used the Visual Studio Publish option on the project, which generates all the <a href="https://msdn.microsoft.com/en-us/library/ms165431.aspx#Anchor_2">Publishing Properties</a>. Most of these values remain the same across all deployment version (release and development). For the ones that are unique to the deployment version like the PublishUrl, UpdateUrl, and ApplicationVersion I removed them from <em>csproj</em> file. The deployment version specific properties is set in the Appveyor configuration file and used by the build script to set the right values.</p>
-
-<p><img class="center" alt="ClickOnce publish settings" src="http://rahulpnath.com/images/clickonce_publishsetting.png" /></p>
-
-<p>In the Appveyor configuration, the <a href="https://www.appveyor.com/docs/build-configuration#script-blocks-in-build-configuration">before_build</a> step these values are set as environment variables, which gets <a href="http://help.appveyor.com/discussions/questions/980-custom-msbuild-property">automatically passed into the MSBuild as Properties</a>. The certificate required for signing ClickOnce manifest gets installed during this step.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">before_build</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">nuget restore src\CommandLineApplicationLauncher.sln</span>
-</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="s">&quot;$env:ApplicationVersion=$env:APPVEYOR_BUILD_VERSION;$env:UpdateUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;</span>
-</span><span class='line'>    <span class="s">$env:PublishUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;$mypwd</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">ConvertTo-SecureString</span><span class="nv"> </span><span class="s">-String</span><span class="nv"> </span><span class="s">\&quot;/(Z&amp;rbrFG){p/6W@8xZvg\&quot;</span><span class="nv"> </span><span class="s">-Force</span>
-</span><span class='line'>    <span class="s">–AsPlainText\nImport-PfxCertificate</span><span class="nv"> </span><span class="s">–FilePath</span>
-</span><span class='line'>    <span class="s">C:\\projects\\clal\\src\\CommandLineApplicationLauncherUI\\CommandLineApplicationLauncherUI_TemporaryKey.pfx</span><span class="nv"> </span><span class="s">cert:\\currentuser\\my</span><span class="nv"> </span><span class="s">-Password</span><span class="nv"> </span><span class="s">$mypwd&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Versioning</h3>
-
-<p>I am using <a href="http://semver.org/">semantic versioning</a> and wanted to control the version numbers for the releases explicitly. Since ClickOnce supports only four digit version numbers, the last one always defaults to zero in the release version. For Current build (development) deployments, the fourth place is used to maintain the build number, so that I can support different build version in development. I use a <a href="https://www.appveyor.com/docs/build-configuration#build-versioning">sequential number generated by appveyor</a> and set in the configuration file.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For a  release I run the below script on the master branch, which updates the version number across the source code files and then push the changes to Github, which triggers a build to the updated version. Then I merge back the master into development so that the next build on development branch would be a build number off the latest released version. The script uses <a href="https://github.com/ploeh/ZeroToNine">ZeroToNine</a> for updating AssemblyInfo files and updates the version numbers in the Appveyor configuration files.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$version</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Update All AssemblyInfo file versions</span>
-</span><span class='line'><span class="nv">$z29</span> <span class="p">=</span> <span class="s2">&quot;./ExternalTools/ZeroToNine/Zero29.exe&quot;</span>
-</span><span class='line'><span class="p">&amp;</span><span class="nv">$z29</span> <span class="n">-a</span> <span class="nv">$version</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Update Appveyor.yml</span>
-</span><span class='line'><span class="p">((</span><span class="nb">Get-Content</span> <span class="p">./</span><span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span> <span class="p">|</span> <span class="nb">Out-String</span><span class="p">)</span>
-</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.0&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.0&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.{build}&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.{build}&quot;</span><span class="p">)).</span><span class="n">Trim</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">`r`n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="p">|</span> <span class="nb">Set-Content</span> <span class="n">-NoNewline</span> <span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Artifacts and Deployment</h3>
-
-<p>The csproj file of the WPF application has <em>Publish</em> also as a default target, which results in a publish everytime the project is build. By default, the publish directory is in the bin folder under a subdirectory <em>app.publish</em>. Appveyor allows specifying folders as <a href="https://www.appveyor.com/docs/packaging-artifacts">artifacts</a>, which marks all the files under them as artifacts. The below script is for the latest stable build and marks it with a name &lsquo;releaseBuild&rsquo;.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">$root = Resolve-Path .\src\CommandLineApplicationLauncherUI\bin\Release\app.publish;</span>
-</span><span class='line'>    <span class="-Error"> </span><span class="p-Indicator">[</span><span class="nv">IO.Directory</span><span class="p-Indicator">]</span><span class="l-Scalar-Plain">::GetFiles($root.Path, &#39;*.*&#39;, &#39;AllDirectories&#39;) | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName releaseBuild }</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Appveyor allows to <a href="https://www.appveyor.com/docs/deployment">deploy using multiple providers</a> and <a href="https://www.appveyor.com/docs/deployment/ftp">FTP</a> is one of them. I use this to deploy the artifcats generated to an Azure FTP from which I serve the installer. This is currently hosted on my blog domain. The password for the FTP location is <a href="https://ci.appveyor.com/tools/encrypt">encrypted using the Appveyor tool</a>. The below configuration pushes all the artifacts with the name &lsquo;releaseBuild&rsquo; to the FTP folder.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FTP</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">protocol</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ftps</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">waws-prod-sg1-003.ftp.azurewebsites.windows.net</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">rahulpnath\rahulpnath</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span>
-</span><span class='line'>      <span class="l-Scalar-Plain">secure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">YOmcTqGUyjYpJOKAnOAfO30hb59cCBTy+Otlj+qrcAo=</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">folder</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/site/wwwroot/clal/Releases</span>
-</span><span class='line'>    <span class="l-Scalar-Plain">artifact</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">releaseBuild</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>With each push into the Github repository now we have Appveyor listening to it, pulling the latest source code, installing the code signing certificate for ClickOnce, building and running all tests in the project, publish the ClickOnce application, packaging and deploying this to the Azure FTP. There is a completely automated deployment pipeline and makes it easy to publish updates to <a href="https://github.com/rahulpnath/clal">CLAL</a>!</p>
 ]]></content>
   </entry>
   
