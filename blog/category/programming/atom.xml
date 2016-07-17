@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-07-11T05:48:31+10:00</updated>
+  <updated>2016-07-18T04:53:06+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,199 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/"/>
+    <updated>2016-07-18T04:52:35+10:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics</id>
+    <content type="html"><![CDATA[<p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
+
+<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
+
+<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
+keeping the abstraction level consistent.</em></p></blockquote>
+
+<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
+
+<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
+<img class="center" src="/images/readable_code.jpg" alt="Code should be readable" />
+</a></p>
+
+<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
+
+<pre><code class="csharp">public class Subscription
+{
+    public List&lt;SubscriptionTerm&gt; Terms { get; set; }
+}
+
+public class SubscriptionTerm
+{
+    public int Id { get; set; }
+    public double Price { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+}
+</code></pre>
+
+<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
+
+<pre><code class="csharp">public bool Validate(Subscription subscription)
+{
+    var hasOverlappingItems = false;
+    foreach (var term in subscription.Terms)
+    {
+        var otherTerms = subscription.Terms.Where(a =&gt; a.Price != term.Price);
+        if (otherTerms.Any())
+        {
+            if (
+                (!term.EndDate.HasValue &amp;&amp; otherTerms.Any(a =&gt; term.StartDate &lt; a.EndDate)) ||
+                (otherTerms.Where(a =&gt; !a.EndDate.HasValue).Any(a =&gt; a.StartDate &lt; term.EndDate)) ||
+                (otherTerms.Any(a =&gt; term.StartDate &lt;= a.EndDate &amp;&amp; a.StartDate &lt;= term.EndDate))
+            )
+            {
+                hasOverlappingItems = true;
+                break;
+            }
+        }
+    }
+
+    return hasOverlappingItems;
+}
+</code></pre>
+
+<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
+
+<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
+
+<h3>Creating the Safety Net</h3>
+
+<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
+
+<pre><code class="csharp">[InlineData("10-Jan-2016", "10-Feb-2016", 1, "11-Feb-2016", "10-Dec-2016", 2, false)]
+[InlineData("10-Jan-2015", "10-Feb-2015", 1, "20-Jan-2015", "1-Feb-2016", 2, true)]
+public void ValidateReturnsExpected(
+    string startDate1, string endDate1, double price1,
+    string startDate2, string endDate2, double price2,
+    bool expected )
+{
+    // Fixture setup
+    var subscription = new Subscription();
+    var term1 = createTerm(startDate1, endDate1, price1);
+    var term2 = createTerm(startDate2, endDate2, price2);
+    subscription.Terms.Add(term1);
+    subscription.Terms.Add(term2);
+    // Exercise system
+    var sut = new OverlappingSubscriptionTermWithConflictingPriceValidator();
+    var actual = sut.Validate(subscription);
+    // Verify outcome
+    Assert.Equal(expected, actual);
+    // Teardown
+}
+</code></pre>
+
+<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
+
+<h3>Refactoring for Readability</h3>
+
+<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
+
+<pre><code class="csharp">public class DateRange
+{
+    public DateTime StartDate { get; private set; }
+
+    public DateTime? EndDate { get; private set; }
+
+    public DateRange(DateTime startDate, DateTime? endDate)
+    {
+        if (endDate.HasValue &amp;&amp; endDate.Value &lt; startDate)
+            throw new ArgumentException("End date cannot be less than start Date");
+
+        StartDate = startDate;
+        EndDate = endDate;
+    }
+}
+</code></pre>
+
+<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
+
+<pre><code class="csharp">public DateRange TermPeriod
+{
+    get
+    {
+        return new DateRange(StartDate, EndDate);
+    }
+}
+</code></pre>
+
+<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
+
+<pre><code class="csharp Tests for IsOverlapping">[InlineData("10-Jan-2016", "10-Feb-2016", "11-Feb-2016", "10-Dec-2016", false)]
+[InlineData("10-Jan-2015", "10-Feb-2015", "20-Jan-2015", "1-Feb-2016", true)]
+[InlineData("10-Jan-2015", null, "20-Jan-2016", null,  true)]
+[InlineData("28-Jan-16", "10-Mar-16", "10-Mar-16", null, true)]
+public void OverlappingDatesReturnsExpected(
+    string startDateTime1,
+    string endDateTime1,
+    string startDateTime2,
+    string endDateTime2,
+    bool expected)
+{
+    // Fixture setup
+    var range1 = CreateDateRange(startDateTime1, endDateTime1);
+    var range2 = CreateDateRange(startDateTime2, endDateTime2);
+    // Exercise system
+    var actual = range1.IsOverlapping(range2);
+    // Verify outcome
+    Assert.Equal(expected, actual);
+    // Teardown
+}
+</code></pre>
+
+<pre><code class="csharp IsOverlapping in DateRange">public bool IsOverlapping(DateRange dateRange)
+{
+    if (!EndDate.HasValue &amp;&amp; !dateRange.EndDate.HasValue)
+        return true;
+
+    if (!EndDate.HasValue)
+        return StartDate &lt;= dateRange.EndDate;
+
+    if (!dateRange.EndDate.HasValue)
+        return dateRange.StartDate &lt;= EndDate;
+
+    return StartDate &lt;= dateRange.EndDate
+        &amp;&amp; dateRange.StartDate &lt;= EndDate;
+}
+</code></pre>
+
+<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
+
+<pre><code class="csharp IsOverlapping in SubscriptionTerm">public bool IsOverlapping(SubscriptionTerm term)
+{
+    return TermPeriod.IsOverlapping(term.TermPeriod);
+}
+</code></pre>
+
+<pre><code class="csharp Validator after Refactoring">public bool Validate(Subscription subscription)
+{
+    foreach (var term in subscription.Terms)
+    {
+        var termsWithDifferentPrice = subscription.Terms.Where(a =&gt; a.Price != term.Price);
+        return termsWithDifferentPrice
+            .Any(a =&gt; a.IsOverlapping(term));
+    }
+
+    return false;
+}
+</code></pre>
+
+<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
+
+<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
+
+<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Protect Yourself Against Line Ending Issues when Using Environment.Newline to Split Text]]></title>
@@ -303,75 +496,6 @@ jspm_packages
 <p><img class="center" alt="Nuget custom package source" src="/images/nuget_package_sources.png" /></p>
 
 <p>Do you still see any reason for not checking in package dependencies into the source control? If not let&rsquo;s go and change that package folder exclude and have them included in the source. (I just updated <a href="http://www.rahulpnath.com/blog/clal-command-line-application-launcher/">CLAL</a> to <a href="https://github.com/rahulpnath/clal/commit/736023d9ab4bd285cb077ff54acd1bbaad142a08">include dependencies.</a>)</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[git checkout TFS]]></title>
-    <link href="http://rahulpnath.com/blog/git-checkout-tfs/"/>
-    <updated>2016-04-15T05:23:08+10:00</updated>
-    <id>http://rahulpnath.com/blog/git-checkout-tfs</id>
-    <content type="html"><![CDATA[<p>It&rsquo;s been a year since using <a href="https://git-scm.com/">Git</a> as my mainstream version control system and I am loving it! Before Git, I had used Team Foundation Version Control (TFVC) for a very long time and was so used to it that I found Git a bit complex and overwhelming in the beginning. Team Foundation Server (TFS) is the whole product suite from Microsoft that provides source code management. Until TFS 2013, it supported only TFVC which is when it introduced <a href="https://blogs.msdn.microsoft.com/mvpawardprogram/2013/11/13/git-for-tfs-2013/">Git in TFS</a>. Even today people use TFS and TFVC synonymously (like in the title of this post) though they are not the same.</p>
-
-<h3>Fundamental shift in thinking</h3>
-
-<p>By design, Git is a Distributed VCS, whereas TFS is centralized one. It takes quite a while to get your head around this and what it actually means. By definition</p>
-
-<blockquote><p><em><strong>TFVC</strong>: Uses a single, centralized server repository to track and version files. Local changes are always checked in to the central server where other developers can get the latest changes.</em></p>
-
-<p><em><strong>Git</strong>: Git is a distributed version control system. Each developer has a copy of the source repository on their dev machine. Developers can commit each set of changes on their dev machine and perform version control operations such as history and compare without a network connection.</em></p></blockquote>
-
-<p>You. may not see the real Distributed benefits if you are working off a central repository (hosted on a server like GitHub or Bitbucket) and using <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/centralized-workflow">TFS way of development</a> :</p>
-
-<p><em>Get latest code => Make your changes => Merge latest +> Check in (</em>Commit and push<em>)</em></p>
-
-<p>The real power of Git is better understood when you start working disconnected, use branches to keep unrelated development activities separate and merge those into the main trunk (<em>master</em>) once comfortable. You get a local copy of the project and lets you make changes independent of all the other changes in the project.</p>
-
-<blockquote><p><em>Git feels so lightweight and never gets in the way of doing things.</em></p></blockquote>
-
-<h3>Make command line your friend</h3>
-
-<p>If you are a UI savvy person then Git might a good starting point to start using the command line. At first, it definitely feels hard especially if you were TFS/Visual Studio users and might be tempted to use the GUI tools available (<a href="https://desktop.github.com/">GitHub Desktop</a> or <a href="https://www.sourcetreeapp.com/">SourceTree</a>)</p>
-
-<blockquote><p><em>Repetitive tasks become more evident when you use a command line and easily automatable.</em></p></blockquote>
-
-<p>I use Cmder (<a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favourite tools</a>) with Git and have <a href="https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/">set up SSH</a> to Bitbucket and Github (expected soon on TFS), secured by a paraphrase, so that I do not have to key in the credentials every time I interact with the repositories. I <a href="https://github.com/cmderdev/cmder/issues/193#issuecomment-63040989">start the ssh-agent the very first time I open Cmder</a>, which prompts for my paraphrase and continues to run in the background. Alternatively, you can also use <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows">Credential Manager</a> to store credentials, when working with HTTP enabled Git repository. For the common commands, I have set up aliases like below, to save a bit on the keystrokes.</p>
-
-<pre><code class="text">gl=git log --oneline --all --graph --decorate  $*
-gs=git status
-ga=git add -A 
-gp=git pull
-gpp=git push 
-gc=git commit -m "$*"  
-gcc=git commit
-</code></pre>
-
-<h3>Different workflows</h3>
-
-<p>Git can be used in many ways and which makes it hard to get started. There are a few popular <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/">workflows</a> that one can use. Currently, I am using -  <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow">Feature Branch workflow</a> -
-which means that all work happen on independent feature branches and once completed gets merged into the main trunk (master branch). Code Reviews happens on the way it gets pulled into the main branch, which ensures code quality and familiarity.</p>
-
-<p><a href="https://www.atlassian.com/git/images/tutorials/collaborating/comparing-workflows/feature-branch-workflow/01.svg"><img class="center" alt="Git Feature Branch Workflow" src="/images/git_featurebranch_workflow.png" /></a></p>
-
-<h3>Not Just for Code</h3>
-
-<p>Git is a version control system and does not limit itself to storing code. You can use it for <a href="http://readwrite.com/2013/11/08/seven-ways-to-use-github-that-arent-coding/">version controlling any of your work</a>. For example, this blog is <a href="https://github.com/rahulpnath/rahulpnath.com">hosted on Github</a> and all the <a href="https://github.com/rahulpnath/rahulpnath.com/commits/master">changes are version controlled</a>, which gives me the flexibility to work and commit locally. Since the blog is <a href="http://www.rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">static generated</a> I can also preview all the changes locally. I use git whenever I work on any documents or <a href="https://github.com/rahulpnath/Speaking">presentations</a> so that I can avoid manual copy of files and renaming with suffixes like &lsquo;<em>Draft</em>, &rsquo;<em>Draft1</em>,<em>Final</em>,&ldquo;<em>FinalRevision</em>&lsquo; etc. (if that sounds any similar)</p>
-
-<h3>Managing Commits</h3>
-
-<p>When coming to commits, which are nothing but checkpoints of meaningful work done, people might have a different  definition for &lsquo;<em>meaningful</em>&rsquo; - for some it might be really granular, for others a bit coarse and for yet another it means all the work is done. I tend to commit quite often - even a rename of a variable leads to a commit so that I do not have to backtrack if at all something goes wrong immediately after that.</p>
-
-<p>if you really like the idea of committing often (locally), but want the pushes to remotes more coarse, you can &lsquo;<strong><a href="http://stackoverflow.com/questions/5189560/squash-my-last-x-commits-together-using-git">squash your commits</a></strong>&rsquo;, before pushing it to remote branch. This allows you to commit often locally and still push  meaningful commit in the main source history. Make sure that the <a href="http://chris.beams.io/posts/git-commit/">commit messages and clear and communicates the intent</a> and helps <a href="http://megakemp.com/2014/08/14/the-importance-of-a-good-looking-history/">keep a good looking history</a>.</p>
-
-<p>Git is one of the best things that happened to developers and hopes it stays long!</p>
-
-<p><strong>References</strong></p>
-
-<ul>
-<li><a href="http://gitref.org/index.html">Git Reference</a></li>
-<li><a href="https://git-scm.com/book/en/v2">Pro Git</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

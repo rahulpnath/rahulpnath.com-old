@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Code should be readable and easy to reason about." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/" />
+<meta property="og:description" content="Code should be readable and easy to reason about." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/readable_code.jpg" />
+
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics" />
+<meta property="twitter:title" content="Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics" />
+<meta property="twitter:description" content="Code should be readable and easy to reason about." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/readable_code.jpg" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-18T04:52:35+10:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 18<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/refactoring/'>refactoring</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
+
+<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
+
+<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
+keeping the abstraction level consistent.</em></p></blockquote>
+
+<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
+
+<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
+<img class="center" src="/images/readable_code.jpg" alt="Code should be readable" />
+</a></p>
+
+<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Subscription</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">SubscriptionTerm</span><span class="p">&gt;</span> <span class="n">Terms</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SubscriptionTerm</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">double</span> <span class="n">Price</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">otherTerms</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span>
+</span><span class='line'>                <span class="p">(!</span><span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
+</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">).</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
+</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">&amp;&amp;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">hasOverlappingItems</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
+
+<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
+
+<h3>Creating the Safety Net</h3>
+
+<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, 1, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, 2, false)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, 1, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, 2, true)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ValidateReturnsExpected</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate1</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate2</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate2</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscription</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Subscription</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">term1</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate1</span><span class="p">,</span> <span class="n">endDate1</span><span class="p">,</span> <span class="n">price1</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">term2</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate2</span><span class="p">,</span> <span class="n">endDate2</span><span class="p">,</span> <span class="n">price2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">OverlappingSubscriptionTermWithConflictingPriceValidator</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">subscription</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
+
+<h3>Refactoring for Readability</h3>
+
+<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">endDate</span><span class="p">.</span><span class="n">Value</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End date cannot be less than start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">DateRange</span> <span class="n">TermPeriod</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">get</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">EndDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
+
+<figure class='code'><figcaption><span>Tests for IsOverlapping</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, false)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, true)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, null, &quot;20-Jan-2016&quot;, null,  true)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;28-Jan-16&quot;, &quot;10-Mar-16&quot;, &quot;10-Mar-16&quot;, null, true)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OverlappingDatesReturnsExpected</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">range1</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime1</span><span class="p">,</span> <span class="n">endDateTime1</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">range2</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime2</span><span class="p">,</span> <span class="n">endDateTime2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">range1</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">range2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>IsOverlapping in DateRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">DateRange</span> <span class="n">dateRange</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span>
+</span><span class='line'>        <span class="p">&amp;&amp;</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
+
+<figure class='code'><figcaption><span>IsOverlapping in SubscriptionTerm</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">SubscriptionTerm</span> <span class="n">term</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">TermPeriod</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">TermPeriod</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Validator after Refactoring</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">termsWithDifferentPrice</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">termsWithDifferentPrice</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
+
+<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
+
+<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-to-improve-testability-extracting-dependencies/">Refactoring to Improve Testability: Extracting Dependencies</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/replace-introduce-local-extension-with-extension-methods/">Replace ‘Introduce Local Extension’ With ‘Extension Methods’</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/protect-yourself-against-line-ending-issues-when-using-environment-dot-newline-to-split-text/" title="Previous Post: Protect Yourself Against Line Ending Issues when Using Environment.Newline to Split Text">&laquo; Protect Yourself Against Line Ending Issues when Using Environment.Newline to Split Text</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/';
+        var disqus_url = 'http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
