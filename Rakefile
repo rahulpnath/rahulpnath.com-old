@@ -84,6 +84,7 @@ task :previewdrafts do
   system "compass compile --css-dir #{source_dir}/stylesheets" unless File.exist?("#{source_dir}/stylesheets/screen.css")
   File.open("_config.yml") { |source_file|
       contents = source_file.read
+      contents.gsub!(/^google_analytics_tracking_id: UA-43172163-1$/, "google_analytics_tracking_id:")
       File.open("_previewconfig.yml", "w+") { |f|
       f.write(contents)
       f.puts("exclude: [\"#{posts_dir}\"]") 
