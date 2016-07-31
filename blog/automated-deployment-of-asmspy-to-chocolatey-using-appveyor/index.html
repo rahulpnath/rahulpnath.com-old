@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Automated Deployment of AsmSpy to Chocolatey Using AppVeyor - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Using AppVeyor to Automatically deploy AsmSpy to Chocolatey." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Automated Deployment of AsmSpy to Chocolatey Using AppVeyor" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/" />
+<meta property="og:description" content="Using AppVeyor to Automatically deploy AsmSpy to Chocolatey." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/asmspy.png" />
+
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor" />
+<meta property="twitter:title" content="Automated Deployment of AsmSpy to Chocolatey Using AppVeyor" />
+<meta property="twitter:description" content="Using AppVeyor to Automatically deploy AsmSpy to Chocolatey." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/asmspy.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-01T04:32:19+10:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 1<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/open-source/'>open source</a>, <a class='category' href='/blog/category/tools/'>tools</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Automated Deployment of AsmSpy to Chocolatey Using AppVeyor
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Recently I have been trying to contribute to open source projects, to build the habit of reading others code. I chose to start with projects that I use regularly. <a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is one such project.</p>
+
+<blockquote><p><em>AsmSpy is a Command line tool to view assembly references. It will output a list of all conflicting assembly references. That is where different assemblies in your bin folder reference different versions of the same assembly.</em></p></blockquote>
+
+<p><img class="center" alt="AsmSpy assembly conflicts" src="/images/asmspy.png" /></p>
+
+<p>I started with an <a href="https://github.com/mikehadlow/AsmSpy/pull/20">easy issue</a> to get familiar with the code and to confirm that the project owner, <a href="https://github.com/mikehadlow">Mike Hadlow</a>, accepts Pull Requests (PR). Mike was fast to approve and merge in the changes. There was a feature request to make AsmSpy available as <a href="https://chocolatey.org/">Chocolatey</a> package. Chocolatey is a package manger for Windows, to automate software management. AsmSpy, being a tool that&rsquo;s not project specific, it makes sense to deliver this via Chocolatey and makes installation easier. Mike added me as a project <a href="https://help.github.com/articles/permission-levels-for-a-user-account-repository/">collaborator</a>, which gave better control over the repository.</p>
+
+<h3>Manually Releasing the Chocolatey Package</h3>
+
+<p>AsmSpy is currently distributed as a <a href="http://static.mikehadlow.com/AsmSpy.zip">zip package</a>. Chocolatey supports packaging from a URL with a PowerShell script <a href="https://github.com/chocolatey/choco/wiki/HelpersInstallChocolateyZipPackage"><em>Install-ChocolateyZipPackage</em></a>. For the first release I <a href="https://github.com/mikehadlow/AsmSpy/pull/22">used this helper script to create the Chocolatey package</a> and uploaded it to my account. After fixing a few review comments the <a href="https://chocolatey.org/packages/asmspy/1.0.0">package got published</a>.</p>
+
+<p><img class="center" alt="choco install asmspy" src="/images/asmspy_choco.png" /></p>
+
+<h3>Automating Chocolatey Releases</h3>
+
+<p>Now that I have to manage the AsmSpy Chocolatey package installations, I decided to automate the process of Chocolatey package creation and upload. Since I had used AppVeyor for <a href="http://www.rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/">automating Click-Once deployment</a> of <a href="https://github.com/rahulpnath/clal">CLAL</a>, I decided to use AppVeyor for this.</p>
+
+<h4><strong>The Goal</strong></h4>
+
+<p>I wanted to automatically deploy any new version of the package to Chocolatey. Any time a <a href="https://git-scm.com/book/en/v2/Git-Basics-Tagging">tagged commit</a> is made in the main branch (master) it should trigger a deployment and push the new package to Chocolatey. This will give us the flexibility to control version numbers and decide when we actually want to make a release.</p>
+
+<h4><strong>Setting up the Appveyor Project</strong></h4>
+
+<p>Since now I am a collaborator on the project, AppVeyor shows the AsmSpy GitHub repository in my AppVeyor account too. Setting up a project is really quick in AppVeyor and most of it is automatic. Any commits now to the repository triggers an automated build</p>
+
+<p><img alt="Appveyor add new project" src="/images/asmspy_appveyor_addProject.png" /></p>
+
+<p>After playing around with different Appveyor project settings and build scripts, I noticed that AppVeyor was no longer triggering builds on commit pushes in the repository. I tried deleting and adding the AppVeyor project, but with no luck.</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/appveyor">@appveyor</a> project suddenly stopped triggering auto builds on pushes.Deleted and added new project <a href="https://t.co/qfV8P2fmWN">https://t.co/qfV8P2fmWN</a> any thoughts?</p>&mdash; Rahul P Nath (@rahulpnath) <a href="https://twitter.com/rahulpnath/status/754764006976466944">July 17, 2016</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AppVeyor team was quick to respond and suggested a possible problem with the Webhook URL not configured under the GitHub repository. The Webhook URL for AppVeyor is available under the projects settings. Since I did not have access to the Settings page of the GitHub repository, I reached out to Mike, who promptly updated the Webhook URL for AppVeyor under GitHub project settings. This fixed the issue of builds not triggering automatically when commits are pushed to the GitHub repository.</p>
+
+<p><img alt="Github webhook url for appveyor" src="/images/asmspy_github_webhook.png"/></p>
+
+<h4><strong>Creating Chocolatey Package</strong></h4>
+
+<p>AppVeyor has <a href="https://www.appveyor.com/blog/2014/11/06/appveyor-with-a-hint-of-chocolatey">support for Chocolatey commands</a> out of the box, which makes it easy to create packages on a successful build. I added in the <a href="https://github.com/mikehadlow/AsmSpy/blob/master/AsmSpy/AsmSpy.nuspec">nuspec file</a> that defines the Chocolatey Package and added an after-build script to generate the package. AppVeyor exposes <a href="https://www.appveyor.com/docs/environment-variables">environment variables</a>, that are set for every build. In the &lsquo;after_build&rsquo; scripts I trigger Chocolatey packaging only if the build is triggered by a commit with a tag (APPVEYOR_REPO_TAG_NAME). Every build generates the zip package that can be used to test the current build.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1.0.{build}</span>
+</span><span class='line'><span class="l-Scalar-Plain">build</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">verbosity</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">minimal</span>
+</span><span class='line'><span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cmd</span><span class="p-Indicator">:</span> <span class="p-Indicator">&gt;-</span>
+</span><span class='line'>    <span class="no">7z a asmspy.zip .\AsmSpy\bin\Debug\AsmSpy.exe</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME choco pack .\AsmSpy\AsmSpy.nuspec --version %APPVEYOR_REPO_TAG_NAME%</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME appveyor PushArtifact asmspy.%APPVEYOR_REPO_TAG_NAME%.nupkg -DeploymentName ReleaseNuget</span>
+</span><span class='line'><span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">asmspy.zip</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Zip Package</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="s">&#39;\AsmSpy\bin\*.nupkg&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Nuget Package</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Setting up Chocolatey Environment</strong></h4>
+
+<p>Since Chocolatey is built on top of NuGet infrastructure, it supports deployment to it like you would do for a NugGet package. The <a href="https://www.appveyor.com/docs/deployment/nuget">NuGet deployment provider</a> publishes packages to a NuGet feed. All you need to provide is the feed URL and the API key and the package to deploy. I created a NuGet deployment environment with the chocolatey NuGet URL, my account API key and the Artifact to deploy.</p>
+
+<p><img  alt="AppVeyor Chocolatey environment" src="/images/asmspy_appveyor_environment.png"/></p>
+
+<p>The projects build setting is configured to deploy to the Environment created above for a build triggered by a commit with a tag.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Environment</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">AsmSpy Chocolatey</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">on</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">branch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">APPVEYOR_REPO_TAG</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From now on any tagged commit is pushed into the master branch on the repository it will trigger a release into Chocolatey. I have not tested this yet as there were no updates to the tool. I might trigger a test release sometime soon to see if it all works well end to end. Since with this automated deployment, we no longer use the zip URL to download the package in Chocolatey. The exe gets bundled along with the package. There might be some extra build scripts required to support the upgrade scenario for Chocolatey. I will update the post after the first deployment using this new pipeline!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/windows-phone-series-image-caching-library-jetimageloader/">Windows Phone Series: Image Caching Library - JetImageLoader</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/">Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/clal-command-line-application-launcher/">CLAL - Command Line Application Launcher</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/using-fiddler-to-help-in-manual-testing/">Using Fiddler to help in Manual Testing</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/finding-a-job-abroad/" title="Previous Post: Finding a Job Abroad">&laquo; Finding a Job Abroad</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/';
+        var disqus_url = 'http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

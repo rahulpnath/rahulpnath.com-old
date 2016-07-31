@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tools | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tools/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-07-25T06:07:48+10:00</updated>
+  <updated>2016-08-01T04:36:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,90 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated Deployment of AsmSpy to Chocolatey Using AppVeyor]]></title>
+    <link href="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/"/>
+    <updated>2016-08-01T04:32:19+10:00</updated>
+    <id>http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor</id>
+    <content type="html"><![CDATA[<p>Recently I have been trying to contribute to open source projects, to build the habit of reading others code. I chose to start with projects that I use regularly. <a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is one such project.</p>
+
+<blockquote><p><em>AsmSpy is a Command line tool to view assembly references. It will output a list of all conflicting assembly references. That is where different assemblies in your bin folder reference different versions of the same assembly.</em></p></blockquote>
+
+<p><img class="center" alt="AsmSpy assembly conflicts" src="/images/asmspy.png" /></p>
+
+<p>I started with an <a href="https://github.com/mikehadlow/AsmSpy/pull/20">easy issue</a> to get familiar with the code and to confirm that the project owner, <a href="https://github.com/mikehadlow">Mike Hadlow</a>, accepts Pull Requests (PR). Mike was fast to approve and merge in the changes. There was a feature request to make AsmSpy available as <a href="https://chocolatey.org/">Chocolatey</a> package. Chocolatey is a package manger for Windows, to automate software management. AsmSpy, being a tool that&rsquo;s not project specific, it makes sense to deliver this via Chocolatey and makes installation easier. Mike added me as a project <a href="https://help.github.com/articles/permission-levels-for-a-user-account-repository/">collaborator</a>, which gave better control over the repository.</p>
+
+<h3>Manually Releasing the Chocolatey Package</h3>
+
+<p>AsmSpy is currently distributed as a <a href="http://static.mikehadlow.com/AsmSpy.zip">zip package</a>. Chocolatey supports packaging from a URL with a PowerShell script <a href="https://github.com/chocolatey/choco/wiki/HelpersInstallChocolateyZipPackage"><em>Install-ChocolateyZipPackage</em></a>. For the first release I <a href="https://github.com/mikehadlow/AsmSpy/pull/22">used this helper script to create the Chocolatey package</a> and uploaded it to my account. After fixing a few review comments the <a href="https://chocolatey.org/packages/asmspy/1.0.0">package got published</a>.</p>
+
+<p><img class="center" alt="choco install asmspy" src="/images/asmspy_choco.png" /></p>
+
+<h3>Automating Chocolatey Releases</h3>
+
+<p>Now that I have to manage the AsmSpy Chocolatey package installations, I decided to automate the process of Chocolatey package creation and upload. Since I had used AppVeyor for <a href="http://www.rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/">automating Click-Once deployment</a> of <a href="https://github.com/rahulpnath/clal">CLAL</a>, I decided to use AppVeyor for this.</p>
+
+<h4><strong>The Goal</strong></h4>
+
+<p>I wanted to automatically deploy any new version of the package to Chocolatey. Any time a <a href="https://git-scm.com/book/en/v2/Git-Basics-Tagging">tagged commit</a> is made in the main branch (master) it should trigger a deployment and push the new package to Chocolatey. This will give us the flexibility to control version numbers and decide when we actually want to make a release.</p>
+
+<h4><strong>Setting up the Appveyor Project</strong></h4>
+
+<p>Since now I am a collaborator on the project, AppVeyor shows the AsmSpy GitHub repository in my AppVeyor account too. Setting up a project is really quick in AppVeyor and most of it is automatic. Any commits now to the repository triggers an automated build</p>
+
+<p><img alt="Appveyor add new project" src="/images/asmspy_appveyor_addProject.png" /></p>
+
+<p>After playing around with different Appveyor project settings and build scripts, I noticed that AppVeyor was no longer triggering builds on commit pushes in the repository. I tried deleting and adding the AppVeyor project, but with no luck.</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/appveyor">@appveyor</a> project suddenly stopped triggering auto builds on pushes.Deleted and added new project <a href="https://t.co/qfV8P2fmWN">https://t.co/qfV8P2fmWN</a> any thoughts?</p>&mdash; Rahul P Nath (@rahulpnath) <a href="https://twitter.com/rahulpnath/status/754764006976466944">July 17, 2016</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AppVeyor team was quick to respond and suggested a possible problem with the Webhook URL not configured under the GitHub repository. The Webhook URL for AppVeyor is available under the projects settings. Since I did not have access to the Settings page of the GitHub repository, I reached out to Mike, who promptly updated the Webhook URL for AppVeyor under GitHub project settings. This fixed the issue of builds not triggering automatically when commits are pushed to the GitHub repository.</p>
+
+<p><img alt="Github webhook url for appveyor" src="/images/asmspy_github_webhook.png"/></p>
+
+<h4><strong>Creating Chocolatey Package</strong></h4>
+
+<p>AppVeyor has <a href="https://www.appveyor.com/blog/2014/11/06/appveyor-with-a-hint-of-chocolatey">support for Chocolatey commands</a> out of the box, which makes it easy to create packages on a successful build. I added in the <a href="https://github.com/mikehadlow/AsmSpy/blob/master/AsmSpy/AsmSpy.nuspec">nuspec file</a> that defines the Chocolatey Package and added an after-build script to generate the package. AppVeyor exposes <a href="https://www.appveyor.com/docs/environment-variables">environment variables</a>, that are set for every build. In the &lsquo;after_build&rsquo; scripts I trigger Chocolatey packaging only if the build is triggered by a commit with a tag (APPVEYOR_REPO_TAG_NAME). Every build generates the zip package that can be used to test the current build.</p>
+
+<pre><code class="yaml   ">version: 1.0.{build}
+build:
+  verbosity: minimal
+after_build:
+- cmd: &gt;-
+    7z a asmspy.zip .\AsmSpy\bin\Debug\AsmSpy.exe
+    if defined APPVEYOR_REPO_TAG_NAME choco pack .\AsmSpy\AsmSpy.nuspec --version %APPVEYOR_REPO_TAG_NAME%
+    if defined APPVEYOR_REPO_TAG_NAME appveyor PushArtifact asmspy.%APPVEYOR_REPO_TAG_NAME%.nupkg -DeploymentName ReleaseNuget
+artifacts:
+- path: asmspy.zip
+  name: Zip Package
+- path: '\AsmSpy\bin\*.nupkg'
+  name: Nuget Package
+</code></pre>
+
+<h4><strong>Setting up Chocolatey Environment</strong></h4>
+
+<p>Since Chocolatey is built on top of NuGet infrastructure, it supports deployment to it like you would do for a NugGet package. The <a href="https://www.appveyor.com/docs/deployment/nuget">NuGet deployment provider</a> publishes packages to a NuGet feed. All you need to provide is the feed URL and the API key and the package to deploy. I created a NuGet deployment environment with the chocolatey NuGet URL, my account API key and the Artifact to deploy.</p>
+
+<p><img  alt="AppVeyor Chocolatey environment" src="/images/asmspy_appveyor_environment.png"/></p>
+
+<p>The projects build setting is configured to deploy to the Environment created above for a build triggered by a commit with a tag.</p>
+
+<pre><code class="yaml   ">deploy:
+- provider: Environment
+  name: AsmSpy Chocolatey
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true
+</code></pre>
+
+<p>From now on any tagged commit is pushed into the master branch on the repository it will trigger a release into Chocolatey. I have not tested this yet as there were no updates to the tool. I might trigger a test release sometime soon to see if it all works well end to end. Since with this automated deployment, we no longer use the zip URL to download the package in Chocolatey. The exe gets bundled along with the package. There might be some extra build scripts required to support the upgrade scenario for Chocolatey. I will update the post after the first deployment using this new pipeline!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception]]></title>
@@ -265,52 +349,6 @@ $z29 = "./ExternalTools/ZeroToNine/Zero29.exe"
 </code></pre>
 
 <p>With each push into the Github repository now we have Appveyor listening to it, pulling the latest source code, installing the code signing certificate for ClickOnce, building and running all tests in the project, publish the ClickOnce application, packaging and deploying this to the Azure FTP. There is a completely automated deployment pipeline and makes it easy to publish updates to <a href="https://github.com/rahulpnath/clal">CLAL</a>!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Setting up AutoHotkey to Speed up Trivial Tasks]]></title>
-    <link href="http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/"/>
-    <updated>2016-02-09T04:22:03+11:00</updated>
-    <id>http://rahulpnath.com/blog/setting-up-autohotkey-to-speed-up-trivial-tasks</id>
-    <content type="html"><![CDATA[<p>A lot of trivial tasks that we do daily on our computer can be automated to make it faster and reduce the number of keystrokes (<a href="http://www.keysleft.com">as they are limited</a>). <a href="https://autohotkey.com/">AutoHoykey</a>(AHK) is an excellent tool to automate a lot of these and is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favorite tool</a>. I use a very limited set of functionality of AHK,  to set up hot strings, launch applications, and mapping caps lock as backspace. The installer to the latest version is available <a href="https://autohotkey.com/download/ahk-install.exe">here</a>.</p>
-
-<blockquote><p>&ldquo;AutoHotkey (AHK) is a free, open-source macro-creation and automation software for Windows that allows users to automate repetitive tasks. It is driven by a scripting language that was initially aimed at providing keyboard shortcuts, otherwise known as hotkeys, that over time evolved into a full-fledged scripting language.&rdquo;</p></blockquote>
-
-<p><strong>Hotstrings</strong> are to map short key combinations that expand on completion. This one is to handle all common phrases, words like emails, default mail replies, etc. Defining a hotstring is as shown below or look up the <a href="https://autohotkey.com/docs/Hotstrings.htm">documentation here</a> for more details</p>
-
-<pre><code class="text">::emg::rahulpnath@gmail.com
-::myn::Rahul P Nath
-::myb::http://www.rahulpnath.com
-</code></pre>
-
-<p>You can use some easy to remember keywords for these like emg means &lsquo;Email Gmail&rsquo; and myn means &lsquo;My Name&rsquo; etc.</p>
-
-<p><strong>Hot keys</strong> are to launch applications on those key combinations. You can use this to launch your favorite applications with the key combinations of your choice. Defining  hot keys is as shown below or look up the <a href="https://autohotkey.com/docs/Hotkeys.htm">documentation here</a> for more details</p>
-
-<pre><code class="text">^!C::
-Run "C:\Users\rahulpnath\Documents\Apps\cmder\Cmder.exe"
-return
-</code></pre>
-
-<p><strong>Capslock to Backspace</strong> mapping is something that I got inspired from the <a href="http://colemak.com/">Colemak layout</a> and find it useful even with the QWERTY layout. I use the <a href="https://autohotkey.com/docs/commands/Send.htm">Send</a> command to send simulated keystrokes. In the rare case of actually needing the CapsLock key, I just need to press it along with Shift to toggle on and off.</p>
-
-<pre><code class="text">CapsLock:: Send {BackSpace}
-</code></pre>
-
-<h4><strong>Running AHK scripts on startup</strong></h4>
-
-<p>To automatically run these scripts on startup, I use the <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> that comes with Windows. To create a new task follow the steps as shown below.</p>
-
-<p>In Task Scheduler select &lsquo;Create Task&rsquo; and enter the Name and Description. Set it to run with highest privileges, so that the scripts work even when on application&rsquo;s running in admin mode. Create a trigger for the task to run and I have set it &lsquo;At log on&rsquo; to run every time I log on. Create an Action to &lsquo;Start a program&rsquo; and select the script file (.ahk) with all your scripts. Once created you can right-click on the task and select Run and verify that the script has started and is working.</p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_general.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_trigger.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_actions.PNG" /></p>
-
-<p>I synchronize these scripts over Onedrive, to make it available on all my computers. The only thing to do on all the computers is to create the startup task. The features discussed above is just the tip of an iceberg, and should help you get started. AHK has a lot more features that you can explore at the project site. Hope this helps you to set up and automate some of your tasks!</p>
 ]]></content>
   </entry>
   

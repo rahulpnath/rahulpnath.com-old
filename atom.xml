@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-07-25T06:07:48+10:00</updated>
+  <updated>2016-08-01T04:36:22+10:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,111 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated Deployment of AsmSpy to Chocolatey Using AppVeyor]]></title>
+    <link href="http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/"/>
+    <updated>2016-08-01T04:32:19+10:00</updated>
+    <id>http://rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor</id>
+    <content type="html"><![CDATA[<p>Recently I have been trying to contribute to open source projects, to build the habit of reading others code. I chose to start with projects that I use regularly. <a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is one such project.</p>
+
+<blockquote><p><em>AsmSpy is a Command line tool to view assembly references. It will output a list of all conflicting assembly references. That is where different assemblies in your bin folder reference different versions of the same assembly.</em></p></blockquote>
+
+<p><img class="center" alt="AsmSpy assembly conflicts" src="http://rahulpnath.com/images/asmspy.png" /></p>
+
+<p>I started with an <a href="https://github.com/mikehadlow/AsmSpy/pull/20">easy issue</a> to get familiar with the code and to confirm that the project owner, <a href="https://github.com/mikehadlow">Mike Hadlow</a>, accepts Pull Requests (PR). Mike was fast to approve and merge in the changes. There was a feature request to make AsmSpy available as <a href="https://chocolatey.org/">Chocolatey</a> package. Chocolatey is a package manger for Windows, to automate software management. AsmSpy, being a tool that&rsquo;s not project specific, it makes sense to deliver this via Chocolatey and makes installation easier. Mike added me as a project <a href="https://help.github.com/articles/permission-levels-for-a-user-account-repository/">collaborator</a>, which gave better control over the repository.</p>
+
+<h3>Manually Releasing the Chocolatey Package</h3>
+
+<p>AsmSpy is currently distributed as a <a href="http://static.mikehadlow.com/AsmSpy.zip">zip package</a>. Chocolatey supports packaging from a URL with a PowerShell script <a href="https://github.com/chocolatey/choco/wiki/HelpersInstallChocolateyZipPackage"><em>Install-ChocolateyZipPackage</em></a>. For the first release I <a href="https://github.com/mikehadlow/AsmSpy/pull/22">used this helper script to create the Chocolatey package</a> and uploaded it to my account. After fixing a few review comments the <a href="https://chocolatey.org/packages/asmspy/1.0.0">package got published</a>.</p>
+
+<p><img class="center" alt="choco install asmspy" src="http://rahulpnath.com/images/asmspy_choco.png" /></p>
+
+<h3>Automating Chocolatey Releases</h3>
+
+<p>Now that I have to manage the AsmSpy Chocolatey package installations, I decided to automate the process of Chocolatey package creation and upload. Since I had used AppVeyor for <a href="http://www.rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/">automating Click-Once deployment</a> of <a href="https://github.com/rahulpnath/clal">CLAL</a>, I decided to use AppVeyor for this.</p>
+
+<h4><strong>The Goal</strong></h4>
+
+<p>I wanted to automatically deploy any new version of the package to Chocolatey. Any time a <a href="https://git-scm.com/book/en/v2/Git-Basics-Tagging">tagged commit</a> is made in the main branch (master) it should trigger a deployment and push the new package to Chocolatey. This will give us the flexibility to control version numbers and decide when we actually want to make a release.</p>
+
+<h4><strong>Setting up the Appveyor Project</strong></h4>
+
+<p>Since now I am a collaborator on the project, AppVeyor shows the AsmSpy GitHub repository in my AppVeyor account too. Setting up a project is really quick in AppVeyor and most of it is automatic. Any commits now to the repository triggers an automated build</p>
+
+<p><img alt="Appveyor add new project" src="http://rahulpnath.com/images/asmspy_appveyor_addProject.png" /></p>
+
+<p>After playing around with different Appveyor project settings and build scripts, I noticed that AppVeyor was no longer triggering builds on commit pushes in the repository. I tried deleting and adding the AppVeyor project, but with no luck.</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/appveyor">@appveyor</a> project suddenly stopped triggering auto builds on pushes.Deleted and added new project <a href="https://t.co/qfV8P2fmWN">https://t.co/qfV8P2fmWN</a> any thoughts?</p>&mdash; Rahul P Nath (@rahulpnath) <a href="https://twitter.com/rahulpnath/status/754764006976466944">July 17, 2016</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AppVeyor team was quick to respond and suggested a possible problem with the Webhook URL not configured under the GitHub repository. The Webhook URL for AppVeyor is available under the projects settings. Since I did not have access to the Settings page of the GitHub repository, I reached out to Mike, who promptly updated the Webhook URL for AppVeyor under GitHub project settings. This fixed the issue of builds not triggering automatically when commits are pushed to the GitHub repository.</p>
+
+<p><img alt="Github webhook url for appveyor" src="http://rahulpnath.com/images/asmspy_github_webhook.png"/></p>
+
+<h4><strong>Creating Chocolatey Package</strong></h4>
+
+<p>AppVeyor has <a href="https://www.appveyor.com/blog/2014/11/06/appveyor-with-a-hint-of-chocolatey">support for Chocolatey commands</a> out of the box, which makes it easy to create packages on a successful build. I added in the <a href="https://github.com/mikehadlow/AsmSpy/blob/master/AsmSpy/AsmSpy.nuspec">nuspec file</a> that defines the Chocolatey Package and added an after-build script to generate the package. AppVeyor exposes <a href="https://www.appveyor.com/docs/environment-variables">environment variables</a>, that are set for every build. In the &lsquo;after_build&rsquo; scripts I trigger Chocolatey packaging only if the build is triggered by a commit with a tag (APPVEYOR_REPO_TAG_NAME). Every build generates the zip package that can be used to test the current build.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1.0.{build}</span>
+</span><span class='line'><span class="l-Scalar-Plain">build</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">verbosity</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">minimal</span>
+</span><span class='line'><span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cmd</span><span class="p-Indicator">:</span> <span class="p-Indicator">&gt;-</span>
+</span><span class='line'>    <span class="no">7z a asmspy.zip .\AsmSpy\bin\Debug\AsmSpy.exe</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME choco pack .\AsmSpy\AsmSpy.nuspec --version %APPVEYOR_REPO_TAG_NAME%</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME appveyor PushArtifact asmspy.%APPVEYOR_REPO_TAG_NAME%.nupkg -DeploymentName ReleaseNuget</span>
+</span><span class='line'><span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">asmspy.zip</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Zip Package</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="s">&#39;\AsmSpy\bin\*.nupkg&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Nuget Package</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Setting up Chocolatey Environment</strong></h4>
+
+<p>Since Chocolatey is built on top of NuGet infrastructure, it supports deployment to it like you would do for a NugGet package. The <a href="https://www.appveyor.com/docs/deployment/nuget">NuGet deployment provider</a> publishes packages to a NuGet feed. All you need to provide is the feed URL and the API key and the package to deploy. I created a NuGet deployment environment with the chocolatey NuGet URL, my account API key and the Artifact to deploy.</p>
+
+<p><img  alt="AppVeyor Chocolatey environment" src="http://rahulpnath.com/images/asmspy_appveyor_environment.png"/></p>
+
+<p>The projects build setting is configured to deploy to the Environment created above for a build triggered by a commit with a tag.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Environment</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">AsmSpy Chocolatey</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">on</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">branch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">APPVEYOR_REPO_TAG</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From now on any tagged commit is pushed into the master branch on the repository it will trigger a release into Chocolatey. I have not tested this yet as there were no updates to the tool. I might trigger a test release sometime soon to see if it all works well end to end. Since with this automated deployment, we no longer use the zip URL to download the package in Chocolatey. The exe gets bundled along with the package. There might be some extra build scripts required to support the upgrade scenario for Chocolatey. I will update the post after the first deployment using this new pipeline!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Finding a Job Abroad]]></title>
@@ -2764,177 +2869,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
 <p>Hoping this will work well in the application too, let me get on to fix it!</p>
 
 <p><em>Will update this post with more real life experiences once implemented!</em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[PFX Certificate in Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/"/>
-    <updated>2016-03-18T12:21:03+11:00</updated>
-    <id>http://rahulpnath.com/blog/pfx-certificate-in-azure-key-vault</id>
-    <content type="html"><![CDATA[<p><a href="http://perspecsys.com/" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="http://rahulpnath.com/images\pfx_security.jpg" /></a></p>
-
-<p>You can use PFX certificate&rsquo;s along with Azure Key Vault in multiple ways, depending on your use case. You can import the PFX as a Key into Key Vault and use it just like you would use any other key or save it as a Secret and retrieve it as required. In this post I will explain how this is done.</p>
-
-<p>Before I get into more details let&rsquo;s take a moment to understand better the different file types used and <a href="http://stackoverflow.com/questions/2292495/what-is-the-difference-between-a-cer-pvk-and-pfx-file">what they represent</a>.</p>
-
-<ul>
-<li><p><strong>CER</strong>: Contains the public part of the certificate and usually distributed outside.</p></li>
-<li><p><strong>PVK</strong>: Contains the Private key and securely stored</p></li>
-<li><p><strong>PFX</strong>: Usually has public, private keys, other certificate chains and password protected.</p></li>
-</ul>
-
-
-<p>To create a test certificate for this sample I will use <em>makecert</em> and <em>pvktopfx</em> utilities. Alternatively, you could also use any existing certificate.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=Certificate Key&quot; CertificateKey.cer -b 03/03/2016 -e 06/05/2017 -r -sky exchange
-</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc CertificateKey.cer -pfx CertificateKey.pfx -po test
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>The <em>-sky exchange</em> sets the Subject Key Type to Exchange and allows encrypting/decrypting values using the certificate.</p></blockquote>
-
-<p>The <em>makecert</em> creates the CER and PVK, the public/private key files which gets combined into a single PFX file using <em>pvktopfx</em>.</p>
-
-<h3>Using the PFX Certificate to Encrypt and Decrypt</h3>
-
-<p>PFX files along with CER files allows to encrypt/decrypt data without the need for Key Vault. You can share the public key, CER, to your clients, who can then use it to encrypt data before sending it to the server. Using the private key, available in PFX, the server can decrypt this data</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// Client</span>
-</span><span class='line'><span class="kt">byte</span><span class="p">[]</span> <span class="n">encryptedData</span><span class="p">;</span>
-</span><span class='line'><span class="c1">// You can also use the PFX here as it contains the private key</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">publicCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.cer&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">publicCertificate</span><span class="p">.</span><span class="n">PublicKey</span><span class="p">.</span><span class="n">Key</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">encryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Encrypt</span><span class="p">(</span><span class="n">byteData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">//Server</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">privateCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="s">@&quot;C:\CertificateKey.pfx&quot;</span><span class="p">,</span> <span class="s">&quot;test&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">cryptoProvider</span> <span class="p">=</span> <span class="n">privateCertificate</span><span class="p">.</span><span class="n">PrivateKey</span> <span class="k">as</span> <span class="n">RSACryptoServiceProvider</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="n">cryptoProvider</span><span class="p">.</span><span class="n">Decrypt</span><span class="p">(</span><span class="n">encryptedData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Creating a Key in Key Vault from PFX file</h3>
-
-<p>Now that I am able to use the PFX file (which essentially is a software-protected key) to encrypt/decrypt data, I will upload this to the Azure Key Vault so that it stays secure there. If you are new to Azure Key Vault and want to get started check my <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other posts</a>.</p>
-
-<p>To upload the PFX to Key Vault, you can use the <em><a href="https://msdn.microsoft.com/en-us/library/dn868048.aspx">Add-AzureKeyVaultKey</a></em> PowerShell cmdlet and specify the PFX file path and password.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$securepfxpwd</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="err">–</span><span class="n">String</span> <span class="s1">&#39;test&#39;</span> <span class="err">–</span><span class="n">AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
-</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;KeyFromCert&#39;</span> <span class="n">-KeyFilePath</span> <span class="s1">&#39;c:\CertificateKey.pfx&#39;</span> <span class="n">-KeyFilePassword</span> <span class="nv">$securepfxpwd</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Using the unique key identifier, I can now access this key from PowerShell or using the Web API. You can still distribute the public key, CER, to your clients for encrypting the data and use the Azure Key Vault API to decrypt the data. Or use the Azure Key Vault to encrypt and decrypt the data.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net:443/keys/KeyFromCert/&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// Client Remains the same or use the Key Vault Client</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">encryptedResult</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">EncryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">byteData</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// Server</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">DecryptAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA-OAEP&quot;</span><span class="p">,</span> <span class="n">certED</span><span class="p">);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The PFX file uploaded to the Key Vault is just like any other key vault key, the only difference being you give the public and private key. Once the key is created in Key Vault, the private part of the key stays secure within the Key Vault and is not accessible outside (except from the original PFX/PVK file).</p>
-
-<h3>Storing PFX file as a Secret</h3>
-
-<p>PFX files can also be stored as Secrets in Key Vault which allows you to retrieve and re-create the certificate as required. To add the certificate as a secret you can use the below PowerShell script (taken from <a href="http://stackoverflow.com/questions/33728213/how-to-store-pfx-certificate-in-azure-key-vault">here</a>).</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$pfxFilePath</span> <span class="p">=</span> <span class="s1">&#39;C:\CertificateKey.pfx&#39;</span>
-</span><span class='line'><span class="nv">$pwd</span> <span class="p">=</span> <span class="s1">&#39;test&#39;</span>
-</span><span class='line'><span class="nv">$flag</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]</span><span class="p">::</span><span class="n">Exportable</span>
-</span><span class='line'><span class="nv">$collection</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2Collection</span>
-</span><span class='line'><span class="nv">$collection</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$pfxFilePath</span><span class="p">,</span> <span class="nv">$pwd</span><span class="p">,</span> <span class="nv">$flag</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$pkcs12ContentType</span> <span class="p">=</span> <span class="no">[System.Security.Cryptography.X509Certificates.X509ContentType]</span><span class="p">::</span><span class="n">Pkcs12</span>
-</span><span class='line'><span class="nv">$clearBytes</span> <span class="p">=</span> <span class="nv">$collection</span><span class="p">.</span><span class="n">Export</span><span class="p">(</span><span class="nv">$pkcs12ContentType</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$fileContentEncoded</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$clearBytes</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$secret</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="nv">$fileContentEncoded</span> <span class="n">-AsPlainText</span> <span class="err">–</span><span class="n">Force</span>
-</span><span class='line'><span class="nv">$secretContentType</span> <span class="p">=</span> <span class="s1">&#39;application/x-pkcs12&#39;</span>
-</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span> <span class="n">-SecretValue</span> <span class="nv">$Secret</span> <span class="n">-ContentType</span> <span class="nv">$secretContentType</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The script exports the certificate to a byte array and converts it to Base64 string representation and saves it to Key Vault as Secret using the <a href="https://msdn.microsoft.com/en-us/library/dn868050.aspx">Set-AzureKeyVaultSecret</a> PowerShell cmdlet. You can export the certificate along with the password if required, so that when you recreate the certificate file, it will be password protected.</p>
-
-<p>To retrieve and re-create the certificate you can either use PowerShell or API as shown below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$secretRetrieved</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;rahulkeyvault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;PfxFile&#39;</span>
-</span><span class='line'><span class="nv">$pfxBytes</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">FromBase64String</span><span class="p">(</span><span class="nv">$secretRetrieved</span><span class="p">.</span><span class="n">SecretValueText</span><span class="p">)</span>
-</span><span class='line'><span class="no">[io.file]</span><span class="p">::</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s2">&quot;c:\CertFromSecret.pfx&quot;</span><span class="p">,</span> <span class="nv">$pfxBytes</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">secretRetrieved</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">pfxBytes</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">FromBase64String</span><span class="p">(</span><span class="n">secretRetrieved</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
-</span><span class='line'><span class="n">File</span><span class="p">.</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="s">@&quot;C:\cert\ADTestVaultApplicationNew.pfx&quot;</span><span class="p">,</span> <span class="n">pfxBytes</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// or recreate the certificate directly</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">certificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span><span class="n">pfxBytes</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You can use the PFX certificate as earlier as a file or a certificate object. These are the various ways that you can use PFX certificated along with Key Vault.</p>
-
-<p>Hope this helps!</p>
 ]]></content>
   </entry>
   
