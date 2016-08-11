@@ -326,6 +326,24 @@ task :deploy do
   Rake::Task["#{deploy_default}"].execute
 end
 
+desc "Default deploy task"
+task :gitdeploy, :pushUrl do |t, args|
+  if args.pushUrl
+    pushUrl = args.pushUrl
+  else
+    pushUrl = get_stdin("Enter github pushUrl: ")
+  end
+  # Check if preview posts exist, which should not be published
+  if File.exists?(".preview-mode")
+    puts "## Found posts in preview mode, regenerating files ..."
+    File.delete(".preview-mode")
+    Rake::Task[:generate].execute
+  end
+
+  Rake::Task[:copydot].invoke(source_dir, public_dir)
+  Rake::Task[:pushToUrl].invoke(pushUrl)
+end
+
 desc "Generate website and deploy"
 task :gen_deploy => [:integrate, :generate, :deploy] do
 end
@@ -365,6 +383,30 @@ multitask :push do
     system "git commit -m \"#{message}\""
     puts "\n## Pushing generated #{deploy_dir} website"
     Bundler.with_clean_env { system "git push origin #{deploy_branch}" }
+    puts "\n## Github Pages deploy complete"
+  end
+end
+
+desc "deploy public directory specified in URL"
+multitask :pushToUrl, :pushUrl do |t, args|
+  pushUrl = args.pushUrl
+  puts "## Deploying branch to Github Pages "
+  puts "## Pulling any updates from Github Pages "
+  mkdir_p deploy_dir
+  cd "#{deploy_dir}" do 
+    Bundler.with_clean_env { system "git pull" }
+  end
+  (Dir["#{deploy_dir}/*"]).each { |f| rm_rf(f) }
+  Rake::Task[:copydot].invoke(public_dir, deploy_dir)
+  puts "\n## Copying #{public_dir} to #{deploy_dir}"
+  cp_r "#{public_dir}/.", deploy_dir
+  cd "#{deploy_dir}" do
+    system "git add -A"
+    message = "Site updated at #{Time.now.utc}"
+    puts "\n## Committing: #{message}"
+    system "git -c user.name='travis' -c user.email='travis' commit -m \"#{message}\""
+    puts "\n## Pushing generated #{deploy_dir} website"
+    Bundler.with_clean_env { system "git push #{pushUrl} #{deploy_branch}" }
     puts "\n## Github Pages deploy complete"
   end
 end
