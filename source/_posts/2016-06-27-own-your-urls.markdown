@@ -6,7 +6,7 @@ categories:
 - Blogging
 - Thoughts 
 tags: 
-date: 2016-06-27 05:07:00 +1000
+date: 2016-06-27 05:07:00 
 keywords: 
 description: The Golden Rule of Blogging - Own your URL's!
 primaryImage: url.jpg

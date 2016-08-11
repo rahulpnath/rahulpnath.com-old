@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "IoC Registration by Convention"
-date: 2015-01-03 18:03:17 +0530
+date: 2015-01-03 18:03:17 
 comments: true
 categories:
 - .net

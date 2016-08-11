@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Managing User Permissions for Key Vault"
-date: 2015-10-11 01:08:17 +1100
+date: 2015-10-11 01:08:17 
 comments: true
 categories: 
 - Azure Key Vault

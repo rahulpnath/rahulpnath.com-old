@@ -6,7 +6,7 @@ categories:
 - Design
 - Programming
 tags: 
-date: 2016-03-11 05:49:03 +1100
+date: 2016-03-11 05:49:03 
 keywords: 
 description: 
 ---

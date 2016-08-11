@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Authenticating a Client Application with Azure Key Vault"
-date: 2015-03-06 11:40:25 +0530
+date: 2015-03-06 11:40:25 
 comments: true
 categories:
 - Azure

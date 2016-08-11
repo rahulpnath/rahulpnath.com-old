@@ -5,7 +5,7 @@ comments: true
 categories: 
 - Programming
 tags: 
-date: 2016-08-08 15:26:15 +1000
+date: 2016-08-08 15:26:15 
 keywords: 
 description: A short recap of NDC Sydney 2016.
 primaryImage: ndc_logo.png

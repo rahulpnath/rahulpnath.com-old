@@ -6,7 +6,7 @@ categories:
 - Open Source
 - Tools
 tags: 
-date: 2016-08-01 04:32:19 +1000
+date: 2016-08-01 04:32:19 
 keywords: 
 description: Using AppVeyor to Automatically deploy AsmSpy to Chocolatey.
 primaryImage: asmspy.png

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Azure Key Vault in a Real World Application"
-date: 2015-04-25 11:46:09 +0530
+date: 2015-04-25 11:46:09 
 comments: true
 categories: 
 - Azure

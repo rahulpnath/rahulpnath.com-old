@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Learning TypeScript: Setting up the Environment"
-date: 2015-12-25 23:30:07 +1100
+date: 2015-12-25 23:30:07 
 comments: true
 categories: 
 - TypeScript

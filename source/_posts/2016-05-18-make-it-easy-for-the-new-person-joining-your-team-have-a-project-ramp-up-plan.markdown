@@ -6,7 +6,7 @@ categories:
 - Thoughts
 - Programming
 tags: 
-date: 2016-05-18 12:38:24 +1000
+date: 2016-05-18 12:38:24 
 keywords: 
 description: 
 ---

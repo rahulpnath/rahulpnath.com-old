@@ -6,7 +6,7 @@ categories:
 - Productivity
 - Blogging
 tags: 
-date: 2016-01-20 22:51:03 +1100
+date: 2016-01-20 22:51:03 
 keywords: octopress, performance, improving build speed, draft post
 description: 
 ---

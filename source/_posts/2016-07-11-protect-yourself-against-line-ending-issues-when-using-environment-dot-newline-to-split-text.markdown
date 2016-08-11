@@ -6,7 +6,7 @@ categories:
 - .Net
 - Programming
 tags: 
-date: 2016-07-11 05:45:31 +1000
+date: 2016-07-11 05:45:31 
 keywords: 
 description: The invisible character that at times take a lot of your time!
 primaryImage: newline_diff.png

@@ -6,7 +6,7 @@ categories:
 - Refactoring
 - Programming
 tags: 
-date: 2016-07-18 04:52:35 +1000
+date: 2016-07-18 04:52:35 
 keywords: 
 description: Code should be readable and easy to reason about.
 primaryImage: readable_code.jpg

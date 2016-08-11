@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Azure Key Vault and Powershell Module Version"
-date: 2015-01-17 18:05:53 +0530
+date: 2015-01-17 18:05:53 
 comments: true
 categories:
 - Azure

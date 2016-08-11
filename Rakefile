@@ -180,7 +180,7 @@ task :publish_draft do
     puts "Publishing post to: #{dest}"
     File.open(source) { |source_file|
       contents = source_file.read
-      contents.gsub!(/^thisIsStillADraft:$/, "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}")
+      contents.gsub!(/^thisIsStillADraft:$/, "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}")
       File.open(dest, "w+") { |f| f.write(contents) }
     }
     FileUtils.rm(source)
@@ -208,7 +208,7 @@ task :new_post, :title do |t, args|
     post.puts "---"
     post.puts "layout: post"
     post.puts "title: \"#{title.gsub(/&/,'&amp;')}\""
-    post.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S %z')}"
+    post.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
     post.puts "comments: true"
     post.puts "categories: "
     post.puts "tags: "
@@ -246,7 +246,7 @@ task :new_page, :filename do |t, args|
       page.puts "---"
       page.puts "layout: page"
       page.puts "title: \"#{title}\""
-      page.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}"
+      page.puts 053#{Time.now.strftime('%Y-%m-%d %H:%M')}"
       page.puts "comments: true"
       page.puts "sharing: true"
       page.puts "footer: true"

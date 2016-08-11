@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Language Agnostic Books For Every Developer 2"
-date: 2016-01-02 22:51:03 +1100
+date: 2016-01-02 22:51:03 
 comments: true
 categories: 
 - Programming

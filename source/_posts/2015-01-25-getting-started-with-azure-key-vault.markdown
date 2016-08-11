@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Getting Started with Azure Key Vault"
-date: 2015-01-25 18:22:06 +0530
+date: 2015-01-25 18:22:06 
 comments: true
 categories: 
 - Azure

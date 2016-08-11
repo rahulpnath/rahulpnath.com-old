@@ -2,7 +2,7 @@
 layout: post
 slug: yo-ko-a-yeoman-generator-for-knockoutjs
 title: "yo ko - A Yeoman Generator For KnockoutJS"
-date: 2014-08-20 10:20:06 +0530
+date: 2014-08-20 10:20:06 
 comments: true
 categories: 
 - JavaScript

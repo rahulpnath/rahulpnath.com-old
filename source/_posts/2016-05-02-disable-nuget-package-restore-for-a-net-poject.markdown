@@ -5,7 +5,7 @@ comments: true
 categories: 
 - Programming
 tags: 
-date: 2016-05-02 13:26:59 +1000
+date: 2016-05-02 13:26:59 
 keywords: 
 description: 
 ---

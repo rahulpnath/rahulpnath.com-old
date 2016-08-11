@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Testing Multiple Implementations of same Interface"
-date: 2015-01-10 10:24:15 +0530
+date: 2015-01-10 10:24:15 
 comments: true
 categories:
 - .net

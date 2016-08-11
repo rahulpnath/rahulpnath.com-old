@@ -6,7 +6,7 @@ categories:
 - Testing
 - Productivity 
 tags: 
-date: 2016-01-18 22:51:03 +1100
+date: 2016-01-18 22:51:03 
 keywords: 
 description: 
 ---

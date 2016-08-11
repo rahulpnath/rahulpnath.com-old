@@ -7,7 +7,7 @@ categories:
 - tools
 - wpf
 tags: 
-date: 2016-03-04 12:00:03 +1100
+date: 2016-03-04 12:00:03 
 keywords: 
 description: 
 ---

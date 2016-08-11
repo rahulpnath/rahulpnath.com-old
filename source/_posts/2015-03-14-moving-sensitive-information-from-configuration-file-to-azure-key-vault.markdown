@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Moving Sensitive Information from Configuration File to Azure Key Vault"
-date: 2015-03-14 17:34:23 +0530
+date: 2015-03-14 17:34:23 
 comments: true
 categories:
 - Azure Key Vault

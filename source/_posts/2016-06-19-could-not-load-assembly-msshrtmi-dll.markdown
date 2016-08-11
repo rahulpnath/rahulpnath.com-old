@@ -6,7 +6,7 @@ categories:
 - .Net
 - Azure
 tags: 
-date: 2016-06-19 17:38:37 +1000
+date: 2016-06-19 17:38:37 
 keywords: 
 description: 
 ---

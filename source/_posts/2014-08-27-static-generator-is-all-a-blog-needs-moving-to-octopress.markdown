@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Static Generator is All a Blog Needs - Moving to Octopress"
-date: 2014-08-27 21:34:12 +0530
+date: 2014-08-27 21:34:12 
 comments: true
 categories: 
 - Blogging

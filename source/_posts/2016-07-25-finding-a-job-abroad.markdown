@@ -5,7 +5,7 @@ comments: true
 categories: 
 - Thoughts
 tags: 
-date: 2016-07-25 06:07:21 +1000
+date: 2016-07-25 06:07:21 
 keywords: 
 description: How I found a job in Sydney.
 primaryImage: finding_job_abroad.png

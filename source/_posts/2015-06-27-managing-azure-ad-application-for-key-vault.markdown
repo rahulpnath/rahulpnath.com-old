@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Managing Azure AD Application for Key Vault"
-date: 2015-06-27 19:13:48 +0530
+date: 2015-06-27 19:13:48 
 comments: true
 categories: 
 - Azure

@@ -6,7 +6,7 @@ categories:
 - Productivity
 - Programming
 tags: 
-date: 2016-04-15 05:23:08 +1000
+date: 2016-04-15 05:23:08 
 keywords: 
 description: 
 ---

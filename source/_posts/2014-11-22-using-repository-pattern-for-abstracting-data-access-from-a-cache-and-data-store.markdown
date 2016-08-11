@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Using Repository Pattern for Abstracting Data Access from a Cache and Data Store"
-date: 2014-11-22 20:56:26 +0530
+date: 2014-11-22 20:56:26 
 comments: true
 categories:
 - Design

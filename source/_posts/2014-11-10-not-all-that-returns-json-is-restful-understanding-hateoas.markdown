@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Not All That Returns JSON is RESTful: Understanding HATEOAS"
-date: 2014-11-10 01:38:56 +0530
+date: 2014-11-10 01:38:56 
 comments: true
 categories:
 - web api

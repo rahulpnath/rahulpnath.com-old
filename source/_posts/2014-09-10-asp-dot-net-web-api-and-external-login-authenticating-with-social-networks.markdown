@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "ASP.NET Web API and External Login - Authenticating with Social Networks"
-date: 2014-09-10 19:29:35 +0530
+date: 2014-09-10 19:29:35 
 comments: true
 categories: 
 - asp.net

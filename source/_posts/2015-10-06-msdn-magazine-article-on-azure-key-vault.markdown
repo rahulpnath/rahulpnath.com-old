@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "MSDN Magazine Article on Azure Key Vault"
-date: 2015-10-06 13:15:35 +1100
+date: 2015-10-06 13:15:35 
 comments: true
 categories: 
 - Azure Key Vault

@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Is Code Coverage a Lie?"
-date: 2015-04-11 19:00:42 +0530
+date: 2015-04-11 19:00:42 
 comments: true
 categories:
 - Test

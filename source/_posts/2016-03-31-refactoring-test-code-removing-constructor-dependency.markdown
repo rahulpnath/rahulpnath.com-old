@@ -7,7 +7,7 @@ categories:
 - TDD
 - Refactoring
 tags: 
-date: 2016-03-31 04:18:03 +1100
+date: 2016-03-31 04:18:03 
 keywords: 
 description: 
 ---

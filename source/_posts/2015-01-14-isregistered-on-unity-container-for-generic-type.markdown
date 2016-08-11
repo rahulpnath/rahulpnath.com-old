@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "IsRegistered on Unity Container for Generic Type"
-date: 2015-01-14 22:31:51 +0530
+date: 2015-01-14 22:31:51 
 comments: true
 categories: 
 - Dependency Injection

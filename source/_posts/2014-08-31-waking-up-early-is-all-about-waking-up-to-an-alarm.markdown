@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Waking up Early is All About Waking up to an Alarm"
-date: 2014-08-31 18:47:05 +0530
+date: 2014-08-31 18:47:05 
 comments: true
 categories: 
 - Productivity
