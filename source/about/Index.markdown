@@ -18,6 +18,6 @@ My name is Rahul Nath. I am a programmer and work out of Sydney,Australia at Rea
 
 I would be more than happy to have you <img style="border:0;vertical-align: baseline;" alt="Rss feed" src="{{ site.images_root}}/icon-rss.png" /> [subscribe to my blog's RSS feeds](http://feeds2.feedburner.com/rahulpnath). I am also on <img style="border:0;vertical-align: baseline;" alt="Google+" src="{{ site.images_root}}/icon-gplus.png" /> <a href="https://www.google.com/+RahulNath?rel=me" rel="me">Google+</a>, <img style="border:0;vertical-align: baseline;" alt="Twitter" src="{{ site.images_root}}/icon-twitter.png" /> <a href="https://twitter.com/rahulpnath" rel="me">Twitter</a>, <img style="border:0;vertical-align: baseline;" alt="Facebook" src="{{ site.images_root}}/icon-fb.png" /> <a href="https://www.facebook.com/rahulpnath" rel="me">Facebook</a>, <img style="border:0;vertical-align: baseline;" alt="Instagram" src="{{ site.images_root}}/icon-instagram.png" /> <a href="http://instagram.com/rahulpnath/" rel="me">Instagram</a> and  <img style="border:0;vertical-align: baseline;" alt="500px" src="{{ site.images_root}}/icon-500px.png" /> <a href="http://500px.com/rahulpnath" rel="me">500px</a>
 
-If you want to drop a mail, feel free to drop to [me@rahulpnath.com](mailto:me@rahulpnath.com?subject=Hello Rahul)
+If you want to drop a mail, feel free to sent it to [me@rahulpnath.com](mailto:me@rahulpnath.com?subject=Hello Rahul).
 
 
