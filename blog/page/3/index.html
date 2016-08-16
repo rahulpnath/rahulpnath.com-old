@@ -163,6 +163,159 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-28T04:27:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 28<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/" itemprop="url">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
+
+<p>Nowadays I am trying to stick to <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> (with the test first approach) and have found it to be of great help. One of the biggest reward doing TDD is that it helps me to <a href="https://vimeo.com/97419151">stay in the flow</a> and regain speed faster after a distraction. This post explains how to refactor code to remove unnecessary dependencies, which is easily found when writing tests.</p>
+
+<p>Unnecessary dependencies are those components which a <a href="http://xunitpatterns.com/SUT.html">SUT</a> depends on, but does not directly affect any of its functionalities. Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test Code Duplication</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>.</p>
+
+<blockquote><p><em>Cut-and-Paste code reuse for fixture setup happens often when there is an unnecessary dependency.</em></p></blockquote>
+
+<p>While looking for an example to write on, I came across a post from my friend <a href="https://twitter.com/zpbappi">Bappi</a>, where he explains <a href="http://zpbappi.com/testing-codes-with-configurationmanager-appsettings/">Testing Codes with ConfigurationManager</a>. It&rsquo;s a good read on how to remove the dependency with various Configuration Providers by creating an abstraction over it.</p>
+
+<h3>Testability Issues with Current Design</h3>
+
+<p>While abstracting the Configuration Manager by using an interface is a good idea, you should also be careful on how the application classes depend on it. Configurations live at the application root and it is a good idea to restrict dependencies with it at that level. Rest of the application must be dependent only on the configuration value and not the configuration itself. Inner components having dependency with the  configuration provider brings in unnecessary complexities and makes code fragile. Some common issues are</p>
+
+<ul>
+<li>Class needs to know of Configuration key</li>
+<li>Extra mocking while testing</li>
+</ul>
+
+
+<p>As you see below, the test case from the original post has to set up the Configuration provider mock to return values before testing the class. MyService (assuming that it is not a Factory class, which I confirmed from Bappi) is unnecessarily depending on IAppSettings and coupling itself with the configuration name, which really is not its concern. This leads to brittle code and tests!</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">appSettings</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="n">appSettings</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">].</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">appSettings</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Refactoring the Code</h3>
+
+<p>Refactoring such code is as easy as removing the dependency on IAppSettings and taking in the value of &lsquo;app.name&rsquo; as the dependency. This removes the interface dependency and requires only the string value to be passed in. Here I am passing in <a href="https://blogs.msdn.microsoft.com/ploeh/2008/11/17/anonymous-variables/">an anonymous Name</a>, as the value is not of concern for this test.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Subject(typeof(MyService))]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceTests</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Establish</span> <span class="n">context</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">otherDependency</span> <span class="p">=</span> <span class="n">Substitute</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">anonymousName</span> <span class="p">=</span> <span class="s">&quot;Anonymous Name&quot;</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">anonymousName</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Because</span> <span class="n">of</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_call_my_dependency_utility_method_once</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">otherDependency</span><span class="p">.</span><span class="n">Received</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">UtilityMethod</span><span class="p">();</span>
+</span><span class='line'>    <span class="n">It</span> <span class="n">should_execute_successfully</span> <span class="p">=</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">result</span><span class="p">.</span><span class="n">ShouldBeTrue</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>When looked at isolation these are minor code changes that hardly removes a line or two. But it has a cumulative effect when applied to all the tests for the class and makes code more robust.</em></p></blockquote>
+
+<p>When looked at isolation, this is a seemingly minor change of not mocking an interface and is just one line of code, which you could live with. But you need to mock that for all tests of that class, which is when you start to see the real benefit. Also, you have made the tests more resilient by not taking an unnecessary dependency. Even if you decide to change the configuration name to &lsquo;<em>ApplicationName</em>&rsquo;, none of the tests break now, whereas with the original code all of them would have.</p>
+
+<p><em>One possible argument with this refactoring is, <strong> What if I need an extra value from the dependency (app.domain in the above case), I now have to update the class constructor</strong>.</em></p>
+
+<p>Agreed, but then this violates <a href="https://blog.8thlight.com/uncle-bob/2014/05/12/TheOpenClosedPrinciple.html">Open Closed Principle</a>, which states &lsquo;You should be able to extend a classes behaviour without modifying it.&rsquo; If you need a new configuration value, you are essentially changing the components functionality, so you should either extend current functionality or write a new component. This also opens up a hidden code smell with the existing code and an anti-pattern - <a href="http://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/">Service Locator</a>. So the refactoring still holds good!</p>
+
+<p>Hope this helps you find dependencies with unnecessary components and remove them.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-25T06:41:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 25<sup>th</sup>, 2016</time>
         
 
@@ -1759,100 +1912,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-02-09T04:22:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 9<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tools/'>tools</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/setting-up-autohotkey-to-speed-up-trivial-tasks/" itemprop="url">Setting up AutoHotkey to Speed up Trivial Tasks</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>A lot of trivial tasks that we do daily on our computer can be automated to make it faster and reduce the number of keystrokes (<a href="http://www.keysleft.com">as they are limited</a>). <a href="https://autohotkey.com/">AutoHoykey</a>(AHK) is an excellent tool to automate a lot of these and is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favorite tool</a>. I use a very limited set of functionality of AHK,  to set up hot strings, launch applications, and mapping caps lock as backspace. The installer to the latest version is available <a href="https://autohotkey.com/download/ahk-install.exe">here</a>.</p>
-
-<blockquote><p>&ldquo;AutoHotkey (AHK) is a free, open-source macro-creation and automation software for Windows that allows users to automate repetitive tasks. It is driven by a scripting language that was initially aimed at providing keyboard shortcuts, otherwise known as hotkeys, that over time evolved into a full-fledged scripting language.&rdquo;</p></blockquote>
-
-<p><strong>Hotstrings</strong> are to map short key combinations that expand on completion. This one is to handle all common phrases, words like emails, default mail replies, etc. Defining a hotstring is as shown below or look up the <a href="https://autohotkey.com/docs/Hotstrings.htm">documentation here</a> for more details</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>::emg::rahulpnath@gmail.com
-</span><span class='line'>::myn::Rahul P Nath
-</span><span class='line'>::myb::http://www.rahulpnath.com
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You can use some easy to remember keywords for these like emg means &lsquo;Email Gmail&rsquo; and myn means &lsquo;My Name&rsquo; etc.</p>
-
-<p><strong>Hot keys</strong> are to launch applications on those key combinations. You can use this to launch your favorite applications with the key combinations of your choice. Defining  hot keys is as shown below or look up the <a href="https://autohotkey.com/docs/Hotkeys.htm">documentation here</a> for more details</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>^!C::
-</span><span class='line'>Run &quot;C:\Users\rahulpnath\Documents\Apps\cmder\Cmder.exe&quot;
-</span><span class='line'>return
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Capslock to Backspace</strong> mapping is something that I got inspired from the <a href="http://colemak.com/">Colemak layout</a> and find it useful even with the QWERTY layout. I use the <a href="https://autohotkey.com/docs/commands/Send.htm">Send</a> command to send simulated keystrokes. In the rare case of actually needing the CapsLock key, I just need to press it along with Shift to toggle on and off.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>CapsLock:: Send {BackSpace}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Running AHK scripts on startup</strong></h4>
-
-<p>To automatically run these scripts on startup, I use the <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> that comes with Windows. To create a new task follow the steps as shown below.</p>
-
-<p>In Task Scheduler select &lsquo;Create Task&rsquo; and enter the Name and Description. Set it to run with highest privileges, so that the scripts work even when on application&rsquo;s running in admin mode. Create a trigger for the task to run and I have set it &lsquo;At log on&rsquo; to run every time I log on. Create an Action to &lsquo;Start a program&rsquo; and select the script file (.ahk) with all your scripts. Once created you can right-click on the task and select Run and verify that the script has started and is working.</p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_general.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_trigger.PNG" /></p>
-
-<p><img class="center" alt="Visual Studio Code Coverage" src="/images/ahk_task_actions.PNG" /></p>
-
-<p>I synchronize these scripts over Onedrive, to make it available on all my computers. The only thing to do on all the computers is to create the startup task. The features discussed above is just the tip of an iceberg, and should help you get started. AHK has a lot more features that you can explore at the project site. Hope this helps you to set up and automate some of your tasks!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1876,6 +1935,8 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/morning_routine/">My Morning Routine</a>
+    
     <a class="list-group-item " href="/blog/ndc-sydney/">NDC Sydney</a>
     
     <a class="list-group-item " href="/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/">Automated Deployment of AsmSpy to Chocolatey Using AppVeyor</a>
@@ -1883,8 +1944,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
     <a class="list-group-item " href="/blog/finding-a-job-abroad/">Finding a Job Abroad</a>
     
     <a class="list-group-item " href="/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics</a>
-    
-    <a class="list-group-item " href="/blog/protect-yourself-against-line-ending-issues-when-using-environment-dot-newline-to-split-text/">Protect Yourself Against Line Ending Issues when Using Environment.Newline to Split Text</a>
     
   </div>
 </section>
