@@ -6,7 +6,7 @@ categories:
 - Thoughts
 - Productivity
 tags: 
-date: 2016-08-16 07:00:35
+date: 2016-08-16 05:00:35
 keywords: 
 description: Find a Morning Routine that works for you!
 primaryImage: morning_routine.jpg
