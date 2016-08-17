@@ -7,10 +7,9 @@ categories:
 tags: 
 date: 2016-08-24 04:27:32
 keywords: 
-description: 
-primaryImage: 
+description: A retrospective into a recent data hotfix that I did.
+primaryImage: data_hotfix.jpg 
 ---
-
 
 Yesterday I was late to leave office as I had to data fix some of the systems that we are currently building. We had just migrated few hundred clients onto the new platform. Invoices generated for the clients had wrong invoice amounts due to some mismatching data used when migrating. We had the expected invoice from the old system which made finding the problem easy. We ran a few scripts to correct the data in different systems and fixed the issue.
 
