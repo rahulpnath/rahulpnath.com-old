@@ -5,7 +5,7 @@ comments: true
 categories: 
 - Programming
 tags: 
-date: 2016-08-24 04:27:32
+date: 2016-08-25 04:27:32
 keywords: 
 description: A retrospective into a recent data hotfix that I did.
 primaryImage: data_hotfix.jpg 
