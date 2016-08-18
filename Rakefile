@@ -176,17 +176,15 @@ task :publish_draft do
   puts "Publish Date?"
   publishDateString = STDIN.gets.chomp
   publishDate = DateTime.parse(publishDateString) 
-  t= DateTime.now
-  publishDateTime = DateTime.new(publishDate.year, publishDate.month, publishDate.day, t.hour, t.min, t.sec, t.zone)
   if /\d+/.match(answer) and not drafts[answer.to_i].nil?
     mkdir_p "#{source_dir}/#{posts_dir}"
     source = drafts[answer.to_i]
     filename = source.gsub(/#{drafts_path}\//, '')
-    dest = "#{source_dir}/#{posts_dir}/#{publishDateTime.strftime('%Y-%m-%d')}-#{filename}"
+    dest = "#{source_dir}/#{posts_dir}/#{publishDate.strftime('%Y-%m-%d')}-#{filename}"
     puts "Publishing post to: #{dest}"
     File.open(source) { |source_file|
       contents = source_file.read
-      contents.gsub!(/^thisIsStillADraft:$/, "date: #{publishDateTime.strftime('%Y-%m-%d %H:%M:%S')}")
+      contents.gsub!(/^thisIsStillADraft:$/, "date: #{publishDate.strftime('%Y-%m-%d')}\ncompletedDate: #{DateTime.now.strftime('%Y-%m-%d %H:%M:%S %z')}")
       File.open(dest, "w+") { |f| f.write(contents) }
     }
     FileUtils.rm(source)
@@ -252,7 +250,7 @@ task :new_page, :filename do |t, args|
       page.puts "---"
       page.puts "layout: page"
       page.puts "title: \"#{title}\""
-      page.puts 053#{Time.now.strftime('%Y-%m-%d %H:%M')}"
+      page.puts "date: #{Time.now.strftime('%Y-%m-%d %H:%M')}"
       page.puts "comments: true"
       page.puts "sharing: true"
       page.puts "footer: true"
