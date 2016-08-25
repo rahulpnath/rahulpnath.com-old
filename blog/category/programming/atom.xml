@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-08-24T04:50:56+00:00</updated>
+  <updated>2016-08-25T04:50:53+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,64 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Data Hotfix : Things to Remember]]></title>
+    <link href="http://rahulpnath.com/blog/data_hotfix/"/>
+    <updated>2016-08-25T04:27:32+00:00</updated>
+    <id>http://rahulpnath.com/blog/data_hotfix</id>
+    <content type="html"><![CDATA[<p>Yesterday I was late to leave office as I had to data fix some of the systems that we are currently building. We had just migrated few hundred clients onto the new platform. Invoices generated for the clients had wrong invoice amounts due to some mismatching data used when migrating. We had the expected invoice from the old system which made finding the problem easy. We ran a few scripts to correct the data in different systems and fixed the issue.</p>
+
+<p><a href="http://static1.squarespace.com/static/54652521e4b0045935420a6c/t/548dee03e4b0f1b25cb560d5/1418587652009/Data.jpg?format=1500w">
+    <img class="center" alt="Data Hotfix" src="/images/data_hotfix.jpg" />
+</a></p>
+
+<div class="alert alert-warning">
+<strong>WARNING!</strong> Normally I do not recommend making any changes directly in production server. In this case, there was a business urgency and was forced to do the data fix the same night, for smooth functioning the day after. We still managed to get in some testing in the development environment before running it in production.
+</div>
+
+
+<h3>It All Starts with a Few</h3>
+
+<p>I have seen it repeatedly happen that this kind of data fixes starts with a few in the beginning. Within a short span of time the affected data size grows drastically and manual updates might not be a good solution.</p>
+
+<blockquote><p><em>If you get a second thought of whether to script the fix or not, then you should script it.</em></p></blockquote>
+
+<p> Yesterday it started with data fix for 30 clients and the fix was relatively small. It could either be through UI or API. Fix through the UI took around 45 seconds each, and there were two of us. So it was just a matter of 12-15 minutes to fix it. While fixing, one of us found an extra scenario where the same fix needs to be applied. Re-running the query to find such clients bombarded the number to 379. At this moment, I stood up and said <em>I am going to script this. There is no way  I am doing this manually.</em> Manually fixing this would take five man hours, but will finish in two and half hours, as there were two of us. Even writing the script is going to take around an hour but that&rsquo;s just one man hour.</p>
+
+<blockquote><p><em>There is happiness you get when you script the fix and not manually plow through the UI fixing each of them</em></p></blockquote>
+
+<p>The script was in C#, written as a test case, invoked from a test runner (which I don&rsquo;t feel great about now) updating the systems with the data fix. It did its job and fixed all the cases it was supposed to. But I was not happy with the approach that I had chosen to make the fix. Correcting production data through a unit test script does not sound a robust solution. The reason to choose tests was that the test project had all the code required to access the other systems. It was just about changing the configuration values to point to the production system. It was the shortest path to having at least one client updated and verified.</p>
+
+<p>Having it as a test script restricted me from scaling the update process (though I could have done some fancy things to <a href="https://xunit.github.io/docs/running-tests-in-parallel.html">run tests in parallel</a>). It also forced me to hard-code the input data.Logging was harder  and I used <a href="https://msdn.microsoft.com/en-us/library/system.diagnostics.debug.writeline(v=vs.110).aspx">Debug.WriteLine</a> to the VS output window. All those were the aftermath of choosing the wrong execution method - running it as a test script!</p>
+
+<p>In retrospective, here are a few things that I should have done different and should be doing if ever I am in a similar situation again.</p>
+
+<h4><strong>Create Stand-alone Executable</strong></h4>
+
+<p>Having a stand-alone executable running the script provides the capability to scale the number of processes as I wanted. Input can be passed as a file or as an argument to the application allowing to break the large data set into smaller subsets.</p>
+
+<h4><strong>Log Error and Success</strong></h4>
+
+<p>It&rsquo;s very much possible that the &lsquo;fix-to-fix errors&rsquo; can go wrong or throw exceptions. So handle for errors and log appropriate message to take any corrective actions. It&rsquo;s better to log to a file or other durable storage as that is more foolproof. Logging to the output window (Debug.Writeline/Console.Writeline) is not recommended, as there is a risk of accidentally losing it (with another test run or closing VS).</p>
+
+<p> Logging successes are equally important to keep track of fixed records. It helps in cases where the process terminates suddenly while processing a set of data. It gives a track of all data sets that were successfully processed and exclude from following runs.</p>
+
+<h4><strong>Test</strong></h4>
+
+<p>It is very likely that the script has bugs and does not handle all possible cases. So as with any code, testing the data fix script is also mandatory. Preferably, test in a development/test environment, if not try for a small subset of input in the production. In my case, I was able to test in the development environment and then in production. But still, I ran a small subset in production first and ended up finding an issue that I could not find in development.</p>
+
+<h4><strong>Parallelize if Possible</strong></h4>
+
+<p>In cases where the data fixes are independent of each other (which likely is when dealing with large data fixes), each of the updates can be in parallel. Also using nonblocking calls when updating across the network helps speed up the process, by reducing the idle time and improves the overall processing time.</p>
+
+<h4><strong>Parameterize Input</strong></h4>
+
+<p>Parameterizing of input to the script (console) application helps when you want to scale the application. In my case updating each of the clients took around 8-10 seconds as it involved calling multiple geographically distributed systems. (Updating a system in the US from Australia does take a while!). Having a parameterized application enables to have multiple applications running with different input sets updating the data and speeds up the overall processing time.</p>
+
+<p>It&rsquo;s hard to come up with a solid plan for critical data fixes. It might not be possible to follow all of the points above. Also, there might be a lot other things to be done other than these. These are just a few things for reference so that I can stop, take a look and move on when a similar need arises.  Hope this helps someone else too! Drop in a comment if you have any tips for the &lsquo;eleventh hour&rsquo; fix!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NDC Sydney]]></title>
@@ -401,92 +459,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 <p>Updating back with the experiences of the people using the plan is important to keep it current and valuable. Suggesting improvements and updates should be an item in the plan so that this does not get missed. To make updates manageable, the plan must be accessible to all and preferably version controlled if they are documents.</p>
 
 <p>What are your thoughts on having a ramp up plan?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Disable NuGet Package Restore for a .Net Poject]]></title>
-    <link href="http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject/"/>
-    <updated>2016-05-02T13:26:59+00:00</updated>
-    <id>http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject</id>
-    <content type="html"><![CDATA[<p><em>If you have decided on <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">Checking in Package Dependencies into Source Control</a> for an existing project that uses Nuget Packages then this post is for you</em></p>
-
-<p>When using NuGet package references that are not included in the source control, these packages gets restored during build time. There are <a href="https://docs.nuget.org/consume/package-restore">multiple ways that NuGet supports restore these dependencies at build time</a></p>
-
-<ul>
-<li>Automatic Package Restore is the current recommended approach (within Visual Studio), which is available from NuGet 2.7.</li>
-<li>Command-line package restore on build servers</li>
-<li>MSBuild-integrated package restore approach is the original Package Restore implementation and is still used in many projects.</li>
-</ul>
-
-
-<p>Depending on the type to of restore the project uses, NuGet has different configuration entries in the <em>csproj</em> files and <em>.nuget</em> folder in the solution root. So when choosing to check in package dependencies into the source control, it is a good idea to remove all these <a href="https://docs.nuget.org/consume/package-restore/migrating-to-automatic-package-restore">generated configurations</a> and files that are not required any more. The below script does this for you!</p>
-
-<div class="alert alert-warning">
-<strong>WARNING!</strong> The script deletes the <em>.nuget</em> folder (if it exists), updates the <em>.csproj</em> files. Please make sure that the project folder is under source control or you have a backup of the folder. After running the script make sure that all the changes that you see are expected as explained here and the project builds and runs as before.
-</div>
-
-
-<p>The PowerShell script does the below for a given solution directory folder (mandatory)</p>
-
-<ul>
-<li>For each of the <em>csproj</em> file in the given folder, the script removes the
-
-<ul>
-<li><em>RestorePackages</em> node</li>
-<li><em>NugetPackageImportStamp</em> node</li>
-<li><em>nuget target import</em> from the solution root .nuget folder</li>
-<li><em>EnsureNuGetPackageBuildImports</em> node</li>
-</ul>
-</li>
-<li>Removes <em>.nuget</em> folder from the solution root if it exists.</li>
-</ul>
-
-
-<p><em>The script leaves blank lines in the </em>csproj<em> files in place of the removed nodes.</em></p>
-
-<pre><code class="powershell Remove NuGet Restore https://gist.github.com/rahulpnath/13d3b4f54cec51e22344876b1566b911#file-remove-nuget-restore-ps1">param([Parameter(Mandatory=$true)][string]$solutionDirectory) 
-
- $importNugetTargetsTag= [regex]::escape(@'
-&lt;Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" /&gt;
-'@)
-
-$restorePackagesTag = '&lt;RestorePackages&gt;.*?&lt;/RestorePackages&gt;'
-$nuGetPackageImportStamp = '&lt;NuGetPackageImportStamp&gt;.*?&lt;/NuGetPackageImportStamp&gt;'
-
-$EnsureNuGetPackageBuildImportsTargetTag = '(?smi)&lt;Target Name="EnsureNuGetPackageBuildImports".*?&lt;/Target&gt;'
-
-foreach ($f in Get-ChildItem -Recurse -Path $solutionDirectory -Filter *.csproj | sort-object)
-{
-    $text = Get-Content $f.FullName -Raw
-    $text `
-        -replace $importNugetTargetsTag, "" `
-        -replace $nuGetPackageImportStamp, "" `
-        -replace $restorePackagesTag, "" `
-        -replace $EnsureNuGetPackageBuildImportsTargetTag, "" `
-        | set-content $f.FullName
-}
-
-Get-ChildItem -Path $solutionDirectory -include .nuget -Recurse | foreach ($_) { remove-item $_.fullname -Force -Recurse }
-</code></pre>
-
-<p>Any similarity with the scripts <a href="http://weblogs.asp.net/jongalloway/scripting-net-project-migration-to-automatic-nuget-package-restore">here</a> is intended as that was my starting place. To explicitly <a href="https://docs.nuget.org/consume/package-restore#opting-out">opt out of the Automatic Package Restore</a> on Visual Studio add a <em>Nuget.config</em> in the solution root.
-&#8220;` xml
-&lt;?xml version=&ldquo;1.0&rdquo; encoding=&ldquo;utf-8&rdquo;?>
-<configuration>
-  <packageRestore>
-    <!-- Opts out of both Automatic Package Restore and MSBuild-Integrated Package Restore -->
-    <add key="enabled" value="False" /></p>
-
-<pre><code>&lt;!-- Opts out of Automatic Package Restore in Visual Studio --&gt;
-&lt;add key="automatic" value="False" /&gt;
-</code></pre>
-
-<p>  </packageRestore>
-</configuration>
-&#8220;`</p>
-
-<p>Hope this helps you to move away from NuGet restore at build time.</p>
 ]]></content>
   </entry>
   

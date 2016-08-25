@@ -163,6 +163,298 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-31T04:18:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 31<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/refactoring-test-code-removing-constructor-dependency/" itemprop="url">Refactoring Test Code: Removing Constructor Dependency</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
+
+<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see how the test code changed by the refactoring we did for removing the unnecessary dependency and explore ways to control these changes.</p>
+
+<h3>Impact on Tests by the Refactoring</h3>
+
+<p>The refactoring in the last post involved a change in the updating the constructor signature to take in a string value instead of an interface. This broke a lot of our tests and forced us to change all constructor usages with the below code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">anonymousName</span> <span class="p">=</span> <span class="s">&quot;Anonymous Name&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">anonymousName</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When seen in isolation, this is not much a change, but as the number of tests grows it becomes a pain. This definitely does not feel right. Breaking tests forces us out of <a href="http://xunitpatterns.com/test%20first%20development.html">Test-First Development</a> and reduces the confidence in the tests and in the code.</p>
+
+<blockquote><p><em>The idea behind TDD was <a href="http://www.jamesshore.com/Blog/Red-Green-Refactor.html">Red-Green-Refactor</a>. But if tests break when Refactoring, then why follow TDD at all?</em></p></blockquote>
+
+<h3>Refactoring Tests</h3>
+
+<p>Ideally, we should write tests that do not break when we refactor, so that it helps us to use the same tests over the refactored code. Let&rsquo;s see how we can improve the test code to prevent tests from breaking, when we refactor to <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">remove unnecessary dependency</a>. Below is the original code (<em>rewritten into xUnit and Moq, as I prefer that</em>) with the dependency on IAppSettings (which we will change it to string later)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Fact]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">PerformOperationsShouldReturnTrue</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">otherDependency</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">appSettings</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="n">appSettings</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">]).</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">appSettings</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">otherDependency</span><span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">UtilityMethod</span><span class="p">(),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s analyze the test code for the dependencies that it has:</p>
+
+<ul>
+<li><em>UtilityMethod</em> of IMyOtherDependency</li>
+<li><em>app.name</em> configuration value from IAppSettings</li>
+<li><em>Constructor</em> of <a href="http://xunitpatterns.com/SUT.html">System Under Test</a>(SUT) - MyService</li>
+<li><em>PerformOperations</em> of SUT which is getting tested</li>
+</ul>
+
+
+<p>The test by itself verifies that calling <em>PerformOperations</em> returns true and UtilityMethod gets called once. It is not dependent on the value (&lsquo;My Test Application&rsquo;) returned by appSettings. The only need is that it should return some (dummy) value when asked for &lsquo;app.name&rsquo;. Assuming that there are multiple tests in this class that does the same setup of IAppSettings to return a dummy value you can start smelling <em>Cut-and-Paste code reuse for fixture setup</em>.</p>
+
+<blockquote><p><em>Rule of Three: “The first time you do something, you just do it. Second time you do something similar, you wince at the duplication, but you do the duplicate thing anyway. The third time you do something similar, you refactor.”</em></p></blockquote>
+
+<p>The <a href="https://en.wikipedia.org/wiki/Rule_of_three_(computer_programming">Rule of Three</a> is applicable even when writing test code and we should always keep an eye for duplication. <strong>It is easy to get lost in the thought that it&rsquo;s just test code and does not hurt to copy paste</strong>. Code duplication in test code does hurt and it hurts the most when you refactor production code.</p>
+
+<p>So lets Refactor applying the <a href="http://www.refactoring.com/catalog/">various techniques</a> that we know of!</p>
+
+<h4><strong><a href="http://www.refactoring.com/catalog/extractMethod.html">Extract Method</a></strong></h4>
+
+<p><em>You have a code fragment that can be grouped together. Turn the fragment into a method whose name explains the purpose of the method.</em></p>
+
+<p>Since we only depend on the <em>IMyOtherDependency</em> and the SUT instance instantiated with that, we can extract SUT creation with a given instance of IMyOtherDependency as below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Fact]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">PerformOperationsShouldReturnTrue</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">otherDependency</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">myService</span> <span class="p">=</span> <span class="n">GetMyServiceWithMyOtherDependency</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">otherDependency</span><span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">UtilityMethod</span><span class="p">(),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="n">MyService</span> <span class="nf">GetMyServiceWithMyOtherDependency</span><span class="p">(</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;</span> <span class="n">otherDependency</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">appSettings</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="n">appSettings</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">]).</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyService</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">,</span> <span class="n">appSettings</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">myService</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This starts taking us towards <strong><a href="http://martinfowler.com/bliki/ObjectMother.html">Object Mother Pattern</a></strong>. It looks good to start with and might work well if all we have is the same <a href="http://xunitpatterns.com/Fixture%20Setup%20Patterns.html">fixture setup</a>. But if we have a different kind of fixture setup, with more dependency and combinations of setup, we will soon have a lot of similar creational methods with different combinations of parameters  - <em>GetMyServiceWithMyOtherDependencyAndAppSettings,GetMyServiceWithAppSettings</em> etc. The problem with having different methods is that all of them are dependent on the SUT constructor and set the same properties, leading to code duplication again.</p>
+
+<h4><strong><a href="http://www.refactoring.com/catalog/extractClass.html">Extract Class</a></strong></h4>
+
+<p><em>You have one class doing work that should be done by two. Create a new class and move the relevant fields and methods from the old class into the new class.</em></p>
+
+<p>With these new creational methods the test class is having more responsibility than it should actually have, so let&rsquo;s extract these creation methods into <em>MyServiceBuilder</em> class to see if we can further solve the problem.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyServiceBuilder</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IAppSettings</span> <span class="n">AppSettings</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IMyOtherDependency</span> <span class="n">OtherDependency</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">MyServiceBuilder</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">appsettingsMock</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IAppSettings</span><span class="p">&gt;();</span>
+</span><span class='line'>        <span class="n">appsettingsMock</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">[</span><span class="s">&quot;app.name&quot;</span><span class="p">]).</span><span class="n">Returns</span><span class="p">(</span><span class="s">&quot;My Test Application&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">AppSettings</span> <span class="p">=</span> <span class="n">appsettingsMock</span><span class="p">.</span><span class="n">Object</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">OtherDependency</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;().</span><span class="n">Object</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MyService</span> <span class="nf">Build</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">MyService</span><span class="p">(</span><span class="n">OtherDependency</span><span class="p">,</span> <span class="n">AppSettings</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MyServiceBuilder</span> <span class="nf">WithAppSettings</span><span class="p">(</span><span class="n">IAppSettings</span> <span class="n">appSettings</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">AppSettings</span> <span class="p">=</span> <span class="n">appSettings</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MyServiceBuilder</span> <span class="nf">WithOtherDependency</span><span class="p">(</span><span class="n">IMyOtherDependency</span> <span class="n">otherDependency</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">OtherDependency</span> <span class="p">=</span> <span class="n">otherDependency</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This takes us to <strong><a href="http://www.natpryce.com/articles/000714.html">Test Data Builder Pattern</a></strong> and as we notice we have reduced the dependency on the MyService constructor to just one and only place where we need to change if the constructor signature changes. Since the <a href="https://en.wikipedia.org/wiki/Cyclomatic_complexity">Cyclomatic Complexity</a> of <em>MyServiceBuilder</em> is one it is fine not to write tests for it   . Using the new builder class our original test case now looks like below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Fact]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">PerformOperationsShouldReturnTrue</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">otherDependency</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">myService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MyServiceBuilder</span><span class="p">().</span><span class="n">WithOtherDependency</span><span class="p">(</span><span class="n">otherDependency</span><span class="p">.</span><span class="n">Object</span><span class="p">).</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">otherDependency</span><span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">UtilityMethod</span><span class="p">(),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now the test is just dependent on the objects that it needs. If all the test use <em>MyServiceBuilder</em>, we can now easily refactor to <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Remove the Unnecessary Dependency</a> on IAppSettings, by just changing the <em>MyServiceBuilder</em> to use a string property. We will also need to change tests that use the <em>WithAppSettings</em> method which is expected, as those tests are dependent on the app settings value in the first place and so the tests definitely need to be re-written.</p>
+
+<h3>Generic Test Data Builder</h3>
+
+<p>We could have essentially stopped at the above step, but then we realize that it is too much work to create a Test Data Builder class for each of the production code classes that we have. It takes a lot out of the <a href="http://keysleft.com/">finite number of keystrokes left in your hands</a> and you definitely don&rsquo;t want to waste that in typing redundant code. This is where we can use
+<a href="https://github.com/AutoFixture/AutoFixture">AutoFixture</a>, that is an open source library for .NET that helps reduce the <a href="http://xunitpatterns.com/Four%20Phase%20Test.html">Setup</a>/<a href="http://c2.com/cgi/wiki?ArrangeActAssert">Arrange</a> phase. Using <a href="http://blog.ploeh.dk/2010/10/08/AutoDataTheorieswithAutoFixture/">AutoData Theories with AutoFixture</a> our test case now looks like below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, AutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">PerformOperationsShouldReturnTrue</span><span class="p">(</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IMyOtherDependency</span><span class="p">&gt;</span> <span class="n">otherDependency</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">MyService</span> <span class="n">myService</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">myService</span><span class="p">.</span><span class="n">PerformOperations</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">otherDependency</span><span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">UtilityMethod</span><span class="p">(),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The test code does not have any dependency on the constructor of the SUT and a change in constructor signature does not affect our tests at all. We can refactor <em>MyService</em> and use the same tests as long as the functionality served by the class remains the same. Constructors are implementation details and it&rsquo;s better to keep tests independent of it. This keeps our test code clean and more robust!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-28T04:27:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 28<sup>th</sup>, 2016</time>
         
 
@@ -1787,131 +2079,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-02-25T14:51:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 25<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/" itemprop="url">How the Deprecation of Switch AzureMode Affects Azure Key Vault</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>It&rsquo;s been a while that the &lsquo;Switch AzureMode&rsquo; is <a href="https://github.com/Azure/azure-powershell/wiki/Deprecation-of-Switch-AzureMode-in-Azure-PowerShell">deprecated in the Azure PowerShell</a> and has left breaking changes in all the scripts that were using it. <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">I had come across this mode switch first</a>, when starting off with Azure Key Vault, as the then existing cmdlets depended on it. Now that it is deprecated we have updated versions of the PowerShell cmdlets to manage <a href="https://azure.microsoft.com/en-us/services/key-vault/">Azure Key Vault</a>. This post revisits all the scripts used in the <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">previous Key Vault posts</a> and provides the updated scripts.</p>
-
-<p>Most of the scripts have the only change of having an extra &lsquo;Rm&rsquo; indicating that those were off the Resource Manager.</p>
-
-<figure class='code'><figcaption><span>Creating a New Azure Key Vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRmResourceGroup</span> <span class="n">-Name</span> <span class="n">KeyVaultGroup</span> <span class="n">-Location</span> <span class="s2">&quot;East Asia&quot;</span>
-</span><span class='line'><span class="nb">New-AzureRmKeyVault</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-ResourceGroupName</span> <span class="n">KeyVaultGroup</span> <span class="n">-Location</span> <span class="s2">&quot;East Asia&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Creating a new key/secret remains the same</p>
-
-<figure class='code'><figcaption><span>Creating a Key/Secret in Vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="c"># Key</span>
-</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-Name</span> <span class="n">NewKey</span> <span class="n">-Destination</span> <span class="n">Software</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Secret</span>
-</span><span class='line'><span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
-</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Getting existing Vault details</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureRmKeyVault</span> <span class="n">-VaultName</span> <span class="n">RahulKeyVault</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span>Creating AD application with certificate authentication</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
-</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
-</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
-</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
-</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;RahulTestADApplication&quot;</span>
-</span><span class='line'><span class="n">-HomePage</span>  <span class="s2">&quot;http://www.rahulpnath.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.rahulpnath.com&quot;</span>
-</span><span class='line'><span class="n">-KeyValue</span>  <span class="nv">$credential</span> <span class="n">-KeyType</span> <span class="s2">&quot;AsymmetricX509Cert&quot;</span> <span class="n">-KeyUsage</span> <span class="s2">&quot;Verify&quot;</span> <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Associating the AD application with the key vault</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
-</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ObjectId</span>  <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">Id</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
-</span><span class='line'><span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="c">#Outputs the ServicePrincipalName/AppPrincipalId </span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>User Role assignment</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRmRoleAssignment</span> <span class="n">-Mail</span> <span class="n">keyvaultuser</span><span class="nv">@domain</span><span class="p">.</span><span class="n">onmicrosoft</span><span class="p">.</span><span class="n">com</span>
-</span><span class='line'>  <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Please drop a comment if I have missed any!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1935,6 +2102,8 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/data_hotfix/">Data Hotfix : Things to Remember</a>
+    
     <a class="list-group-item " href="/blog/morning_routine/">My Morning Routine</a>
     
     <a class="list-group-item " href="/blog/ndc-sydney/">NDC Sydney</a>
@@ -1942,8 +2111,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
     <a class="list-group-item " href="/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/">Automated Deployment of AsmSpy to Chocolatey Using AppVeyor</a>
     
     <a class="list-group-item " href="/blog/finding-a-job-abroad/">Finding a Job Abroad</a>
-    
-    <a class="list-group-item " href="/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics</a>
     
   </div>
 </section>
