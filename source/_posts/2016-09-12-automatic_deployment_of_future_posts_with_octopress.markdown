@@ -6,7 +6,7 @@ categories:
 - Blogging
 - Productivity
 tags: 
-date: 2016-09-10
+date: 2016-09-12
 completedDate: 2016-08-19 06:36:11 +1000
 keywords: 
 description: Scheduling posts in the future and automatically deploy them in Octopress.

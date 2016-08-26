@@ -6,7 +6,7 @@ categories:
 - Blogging
 - Productivity
 tags: 
-date: 2016-09-02 04:11:12
+date: 2016-09-01 04:11:12
 keywords: 
 description: Setting up the automatic deployment of my blog.
 primaryImage: blog_ci.PNG
