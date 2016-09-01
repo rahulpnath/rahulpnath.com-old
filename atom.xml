@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-08-31T06:49:28+00:00</updated>
+  <updated>2016-09-01T04:50:50+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,101 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Continuos Delivery of Octopress Blog Using TravisCI and Docker]]></title>
+    <link href="http://rahulpnath.com/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/"/>
+    <updated>2016-09-01T04:11:12+00:00</updated>
+    <id>http://rahulpnath.com/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker</id>
+    <content type="html"><![CDATA[<p>It&rsquo;s been a while since I have wanted to deploy my blog automatically whenever there is a new commit pushed into the associated <a href="https://github.com/rahulpnath/rahulpnath.com">git repository</a>. I use Octopress as my blog engine and have been <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">tweaking it to my blogging workflow</a>. Octopress is a static blog generator built over Jekyll. So anytime I make any updates to the blog, I need to build the blog with the accompanying rake tasks and push the generated output (HTML, JavaScript, and CSS) to an Azure Web App that hosts my blog. For this I use the <a href="https://azure.microsoft.com/en-us/documentation/articles/web-sites-deploy/#continuousdeployment">git deployment feature</a> of web apps, so just pushing the built output to a git repo (branch) deploys it to my website. As you see every time, I make a change I have to build the site and push it to the git repository and this can be automated. Since Octopress is in Ruby, I decided to use <a href="https://travis-ci.org/">Travis CI</a> for the build and deploy.</p>
+
+<h3>Local Build Environment with Docker</h3>
+
+<p>I am on an older repository fork of Octopress and have not updated to latest version. So it has hard dependencies with specific versions of gem packages that it needs and also on the Ruby and Jekyll version. So every time I change laptop it&rsquo;s difficult to set up the blog environment. In the past, I manually installed the dependencies whenever I got a new laptop. As changing laptop does not happen frequently, I had been delaying creating any script for this. But now since I had to setup the Travis build environment, I thought of also having a local build environment to test before pushing it up to Travis. Travis provides a Docker image that matches exactly their build environment.</p>
+
+<p>Setting up Docker is just a few steps:</p>
+
+<ol>
+<li><a href="https://docs.docker.com/docker-for-windows/">Install</a> the Docker components</li>
+<li>Load the <a href="https://quay.io/organization/travisci">Docker image</a></li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>docker run -it -p 4000:4000 quay.io/travisci/travis-ruby /bin/bash
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once in the container, you can run the same build scripts that you manually run yo deploy and check. I had a few issues with the gem packages and <a href="https://github.com/rahulpnath/rahulpnath.com/commit/abefbf58e3696384c7931d5a4918239a41700106#diff-8b7db4d5cc4b8f6dc8feb7030baa2478">fixed it by specifying hard package dependency</a>. To launch the site hosted in Docker from host system <a href="https://github.com/wsargent/docker-cheat-sheet#exposing-ports">I expose incoming ports through the host container</a>. Once I have the local server running in the docker container (in port 4000) I can access it via <em>localhost:4000</em> from my host computer.</p>
+
+<h3>Post Dates and TimeZones</h3>
+
+<p>When building from the container, I noticed that the dates of posts were off by 1. For posts that were on month start (like Aug 1), it started coming up in July, on the archive page. After a bit of investigation, I realized that Jekyll parses the date time from the post and converts them into local system time. The container was running in UTC and when generating the site it converted post DateTime to UTC. All the posts that I had written after coming to Sydney had an offset of +1000 (or +1100) and most were published early in the morning. So it converted those posts to the previous date.
+Since I am not that worried about the time zone of the post, I decided to remove it. I removed timezone information getting set for new posts in my Rake scripts. For the existing posts, <a href="https://github.com/rahulpnath/rahulpnath.com/commit/1d8902fa69a1aad9ad6615ee3c47e3474b6cd263">I removed all the timezone information from the <em>datetime</em> YAML header in the posts</a>. I set the config.yml to built in UTC irrespective of the system timezone that it is getting build.</p>
+
+<h3>Setting up TravisCI</h3>
+
+<p>Setting up automated build on Travis CI is smooth and easy process TDK. I just added a travis.yml with the &lsquo;<em>rake generate</em>. TDK The post build script does the following</p>
+
+<ul>
+<li>Clones the current statically generated code from my <em>blog</em> branch.</li>
+<li>Perform a rake deploy that updates the cloned code above with the latest site.I updated the existing rake deploy to use GitHub token in push URL. As I did not want the token to be logged on to the Travis console I redirect the output using <em><a href="http://askubuntu.com/questions/12098/what-does-outputting-to-dev-null-accomplish-in-bash-scripts">&amp;> /dev/null</a></em>.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">language</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ruby</span>
+</span><span class='line'><span class="l-Scalar-Plain">rvm</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">1.9.3</span>
+</span><span class='line'><span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">bundle exec rake generate;</span>
+</span><span class='line'><span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+</span><span class='line'>  <span class="no">if [ -n &quot;$GITHUB_PUSH_URL&quot; ]; then</span>
+</span><span class='line'>    <span class="no">cd &quot;$TRAVIS_BUILD_DIR&quot;</span>
+</span><span class='line'>    <span class="no">git clone -b blog --single-branch https://github.com/rahulpnath/rahulpnath.com.git _azure &amp;&gt; /dev/null</span>
+</span><span class='line'>    <span class="no">bundle exec rake gitdeploy[&quot;$GITHUB_PUSH_URL&quot;] &amp;&gt; /dev/null</span>
+</span><span class='line'>    <span class="no">echo &quot;Deployed!&quot;</span>
+</span><span class='line'>  <span class="no">fi</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Every time I make a commit to the GitHub master branch, the automated build triggers and deploys the latest generated site.</p>
+
+<h3>Current Blogging Workflow <a href="https://travis-ci.org/rahulpnath/rahulpnath.com"><img src="https://travis-ci.org/rahulpnath/rahulpnath.com.svg?branch=master" alt="Build Status" /></a></h3>
+
+<p><img class="center" alt="Continuos Delivery of Octopress Blog" src="http://rahulpnath.com/images/blog_ci.PNG" /></p>
+
+<ul>
+<li>Write posts on my phone or laptop. (<a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">Using Dropbox to sync posts across devices</a>)</li>
+<li>Publish and Push to Github from laptop</li>
+<li>Travis builds triggered by Github webhook</li>
+<li>Travis pushes back generated site into Github (<em><a href="https://github.com/rahulpnath/rahulpnath.com/tree/blog">blog branch</a></em>).</li>
+<li>Azure Web App triggers automated deployment from Github.</li>
+</ul>
+
+
+<p>With the automated deployment, I have one less thing to take care of when writing posts. The whole process might feel a bit complicated, but it is not. It is just that I have been tweaking few things to ease blogging. And since I am a programmer, I like hacking things. If you are new to blogging you do not need them and don&rsquo;t get overwhelmed (if at all you are). All you need to make sure is to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">have a blog</a> and you <a href="http://www.rahulpnath.com/blog/own-your-urls/">own the URL</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Data Hotfix : Things to Remember]]></title>
@@ -2263,286 +2358,6 @@ which means that all work happen on independent feature branches and once comple
 <h4><strong>Credits</strong></h4>
 
 <p><a href="https://github.com/rahulpnath/clal/tree/master/Resources">Icons/Logo</a>: <a href="https://twitter.com/RoshTS">Rosh TS</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Testability: Extracting Dependencies]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/"/>
-    <updated>2016-04-03T03:14:28+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies</id>
-    <content type="html"><![CDATA[<p><a href="https://pixabay.com/en/code-data-programming-code-944504/" class="center" title="Image By Lawrence Monk, from https://pixabay.com/en/code-data-programming-code-944504/"><img src="http://rahulpnath.com/images\coding.jpg" class="center" alt="Refactoring"></a></p>
-
-<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see just the opposite of that - extracting functionality out of a class and creating another class to separate responsibilities, making it easier to test and adhere to <a href="https://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">Single Responsibility Principle</a>(SRP).</p>
-
-<blockquote><p><em>Violating Single Responsibility Principle makes writings tests harder.</em></p></blockquote>
-
-<p>Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Hard%20to%20Test%20Code.html">Hard-To-Test Code</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>. In this post we will explore the refactoring with the help of an example - I have to process usages (anything like electricity, internet, water etc.) for a list of locations aggregated over for a day. There is a repository where the last processed date for the location is stored, and whenever this process runs we have to process for all the days from the last processed date till the current day.</p>
-
-<p>The existing code looks like below, which loops through a list of locations passed in, fetches the last processed date from a repository , gets all the days to be processed till today (<em>DateTime.Now.Date</em>) and processes them for all the days.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationsUsagesCalculator</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">ILocationUsages</span> <span class="n">locationUsages</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">IUsageRepository</span> <span class="n">usageRepository</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">DateTime</span> <span class="n">lastProcessedDate</span> <span class="p">=</span> <span class="n">usageRepository</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span> <span class="p">=</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">lastProcessedDate</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">dateToProcess</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateToProcess</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">locationUsages</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">dateToProcess</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">GetAllDaysTillTodayFromDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">lastProcessedDate</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">lastProcessedDate</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">while</span> <span class="p">(</span><span class="n">dateCounter</span> <span class="p">&lt;=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">Date</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">dateCounter</span><span class="p">;</span>
-</span><span class='line'>            <span class="n">dateCounter</span> <span class="p">=</span> <span class="n">dateCounter</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="m">1</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Testability Issues with Current Design</h3>
-
-<p>The code is self-explanatory and does what&rsquo;s expected. But what interests us more is the test code for this. From a test perspective we need to make sure
-that for all locations, usages gets processed for the pending days. Direct cases when last processed day is a day before, a couple of days before and different for each location are some of the likely scenarios. Let&rsquo;s see one of the cases where the last processed day is a few days before for all locations</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, AutoMoqData]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesWithCoupleOfDaysBeforeAsLastProcessedProcessesAllDaysTillTodayForEachLocation</span><span class="p">(</span>
-</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
-</span><span class='line'><span class="na">   [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
-</span><span class='line'>   <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
-</span><span class='line'>   <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">days</span> <span class="p">=</span> <span class="m">3</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">threeDaysBefore</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Now</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="n">days</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">usageRepository</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">threeDaysBefore</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">expectedDates</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">days</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">threeDaysBefore</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">expectedDates</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">locationUsages</span>
-</span><span class='line'>                <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Clearly this is not the kind of tests that I want to write! It has a lot of setup code and even some logics to generate <em>expectedDates</em>. Let&rsquo;s see the various dependencies that the SUT has:</p>
-
-<ul>
-<li>ProcessUsagesForLocationOnDate on ILocationUsages</li>
-<li>GetLastProcessedDateForLocation on IUsageRepository</li>
-<li>List of locations that it&rsquo;s processing</li>
-<li>Last processed date for each location</li>
-<li>Dates pending processing as of today</li>
-</ul>
-
-
-<p>We clearly see that this one class does a lot more things than what its name suggests. Let&rsquo;s see how we can refactor this to improve our test code and manage the dependencies better.</p>
-
-<h3>Refactoring the Code</h3>
-
-<p>Finding all the dates till a given date (today in this case) is not this classes responsibility and can easily be pulled out. Since the SUT depends on <em>IUsageRepository</em> just to calculate the dates I can pull that out along with the refactoring. I have created a new interface, <em>IUsageDatesCalculator</em>, to return all the days pending process. With this interface, the test code looks a bit more clear and easier to write.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory, Tests.AutoMoqData]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ProcessUsagesProcessesForAllLocationForPendingDays</span><span class="p">(</span>
-</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;</span> <span class="n">datesToProcess</span><span class="p">,</span>
-</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ILocationUsages</span><span class="p">&gt;</span> <span class="n">locationUsages</span><span class="p">,</span>
-</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageDatesCalculator</span><span class="p">&gt;</span> <span class="n">usageDatesCalculator</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locations</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">LocationsUsagesCalculator</span> <span class="n">sut</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">usageDatesCalculator</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">datesToProcess</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">sut</span><span class="p">.</span><span class="n">ProcessUsagesForLocations</span><span class="p">(</span><span class="n">locations</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">location</span> <span class="k">in</span> <span class="n">locations</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">date</span> <span class="k">in</span> <span class="n">datesToProcess</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">locationUsages</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">Verify</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">ProcessUsagesForLocationOnDate</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">date</span><span class="p">),</span> <span class="n">Times</span><span class="p">.</span><span class="n">Once</span><span class="p">());</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This looks better and easy to write - we do not have to write any code in the test to generate the expected dates. All I need is a list of dates (no matter is what order) and I need to make sure that process calls all of those. We would also pull out a separate interface to process for a location, instead of a list of locations. This will further remove the need to loop through the locations list in the test.</p>
-
-<h3>DateTime and Tests</h3>
-
-<p>Both in the original code and the refactored code, the logic that generates the dates to be processed depends on <em>DateTime.Now</em> for getting the current date. Though this looks perfectly fine, it makes testing harder. In the original test code, I had to generate expected dates based on today (system time).</p>
-
-<p>It&rsquo;s a good practice to inject a Time Provider into the consumer so that you can mock the value of Now(today) for tests. <a href="https://msdn.microsoft.com/en-us/library/system.datetime.now(v=vs.110).aspx">DateTime.Now</a> is a static dependency on a class property and makes it hard for tests.
-Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimeProvider</a> and having overrides to set mocks for testing is not advised (also mentioned by Seemann in the <a href="http://stackoverflow.com/questions/2425721/unit-testing-datetime-now/2425739#comment38623763_2425739">comments</a>), as it creates problems for parallel tests execution.</p>
-
-<blockquote><p><em>Inject a Time Provider into the consumer. Do not depend on any static time provider (including DateTime.Now)</em></p></blockquote>
-
-<p>Refactoring the dependency with current time using a inject interface, <em>ITimeProvider</em>, makes setting the current day easy as shown in the tests below. I can now hard code my expected dates into the test code and not depend on a runtime generated list.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;,&quot;2016-03-29&quot;, &quot;2016-03-30,2016-03-31,2016-04-01,2016-04-02&quot;)]</span>
-</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-02&quot;, &quot;&quot;)]</span>
-</span><span class='line'><span class="na">[InlineAutoMoqData(&quot;2016-04-02&quot;, &quot;2016-04-01&quot;, &quot;2016-04-02&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">GetDatesToCalculateReturnsExpectedDates</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">todayString</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">lastProcessedDayString</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">expectedDaysString</span><span class="p">,</span>
-</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ITimeProvider</span><span class="p">&gt;</span> <span class="n">timeProvider</span><span class="p">,</span>
-</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">IUsageRepository</span><span class="p">&gt;</span> <span class="n">usageRepository</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">Location</span> <span class="n">dummyLocation</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">UsageDatesCalculator</span> <span class="n">sut</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="n">expectedDaysString</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;,&quot;</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">a</span><span class="p">));</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">lastProcessedDay</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">lastProcessedDayString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">today</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">todayString</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">timeProvider</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Now</span><span class="p">).</span><span class="n">Returns</span><span class="p">(</span><span class="n">today</span><span class="p">.</span><span class="n">Date</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">usageRepository</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">GetLastProcessedDateForLocation</span><span class="p">(</span><span class="n">It</span><span class="p">.</span><span class="n">IsAny</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;()))</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Returns</span><span class="p">(</span><span class="n">lastProcessedDay</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">GetDatesToCalculate</span><span class="p">(</span><span class="n">dummyLocation</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We have refactored various dependencies that the original code had and made it more testable. Testing is easier and <a href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">repeatable</a>. Whenever writing tests become difficult - stop, think and refactor!</p>
 ]]></content>
   </entry>
   
