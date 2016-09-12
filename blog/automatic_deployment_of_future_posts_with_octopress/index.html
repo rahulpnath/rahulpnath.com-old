@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Automatic Deployment of Future Posts With Octopress - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Scheduling posts in the future and automatically deploy them in Octopress." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Automatic Deployment of Future Posts With Octopress" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/" />
+<meta property="og:description" content="Scheduling posts in the future and automatically deploy them in Octopress." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/blog_scheduled.png" />
+
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress" />
+<meta property="twitter:title" content="Automatic Deployment of Future Posts With Octopress" />
+<meta property="twitter:description" content="Scheduling posts in the future and automatically deploy them in Octopress." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/blog_scheduled.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 12<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Automatic Deployment of Future Posts With Octopress
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Since the start of this year, I have been trying to blog to a schedule and publish posts more often. The goal that I have set myself with is to post four posts a month, preferably one each week. I have been sticking to it till now, and I hope it continues. Initially, I did not have this upper limit on the number of posts in a month. In the month of March 2016, I went a bit aggressive and published nine articles. It made me think more about setting an upper limit on the number of posts so that I don&rsquo;t end up having higher expectations out of myself.</p>
+
+<h3>Staying Ahead</h3>
+
+<p>Having published nine posts, also made me realize that I could write faster if required and have posts ready for future. It will help me to stay ahead of the posting schedule and give me some off-time when I need it. But this also presented me with a new problem on how to manage and schedule posts for the future.</p>
+
+<blockquote><p><em>The more I automate the mundane tasks of blogging, the more I can concentrate on the writing part</em></p></blockquote>
+
+<h3>Jekyll Future flag</h3>
+
+<p><a href="http://octopress.org/docs/">Octopress</a> is over <a href="https://jekyllrb.com/">Jekyll</a> and it provides all the capabilities that Jekyll provides. The <a href="https://jekyllrb.com/docs/configuration/"><em>future</em> flag</a> in Jekyll indicates <strong><em>whether or not to publish posts or collection documents with a future date.</em></strong> With the flag set to false, Jekyll will not generate posts that have a date in the future. It works perfectly for me as all I need to do is to publish posts into the <em>_posts</em> directory once it&rsquo;s ready, with a date in the future. I have a <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">draft workflow</a>, which puts posts into a <em>_drafts</em> folder and move them into the <em>_posts</em> folder once ready. I updated the rake script that publishes drafts as posts, to take in a publish date and use that to update the post date.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='Ruby'><span class='line'><span class="n">task</span> <span class="ss">:publish_draft</span> <span class="k">do</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publish Date?&quot;</span>
+</span><span class='line'><span class="n">publishDateString</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
+</span><span class='line'><span class="n">publishDate</span> <span class="o">=</span> <span class="no">DateTime</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">publishDateString</span><span class="p">)</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'><span class="n">dest</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publishing post to: </span><span class="si">#{</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
+</span><span class='line'><span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
+</span><span class='line'><span class="n">contents</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/^thisIsStillADraft:$/</span><span class="p">,</span> <span class="s2">&quot;date: </span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">completedDate: </span><span class="si">#{</span><span class="no">DateTime</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S %z&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The rake script appends the publish date to the post file name and also the yaml date information and moves it from the <em>_drafts</em> to <em>_posts</em> folder. It also adds a completedDate set to the current time with the timezone information, just for reference.</p>
+
+<h3>Integrating with Travis CI</h3>
+
+<p>I have the <a href="/blog/continuos_delivery_of_octopress_blog_using_travisci_and_docker">deployment of my blog automated via Travis CI</a>, which builds and deploys the site when committing to the <a href="https://github.com/rahulpnath/rahulpnath.com">GitHub repository</a>. For future posts since there might not be a commit on the publish date, I need to trigger the build on those days, to publish the posts scheduled. The <a href="https://azure.microsoft.com/en-us/services/scheduler/">Azure Scheduler</a> enables scheduling requests and also provides out of the box support to invoke web service endpoints over HTTP/HTTPS. <a href="https://docs.travis-ci.com/api">Travis CI exposes an API</a> to interact with the build system and is the same API that the official Web interface uses. The API supports <a href="https://docs.travis-ci.com/user/triggering-builds">triggering builds</a> by making a POST request with an API token and the build details. The API has <a href="https://github.com/travis-ci/travis-ci/issues/5101">an existing bug</a> that requires the slash separating username and repository name in the trigger URL be encoded(%2F). Azure, however, does not like this and treats it as an invalid URL with the bellow error.</p>
+
+<p><img class="center" alt="Azure Scheduler Encoded URL error" src="/images/blogtrigger_scheduler_url_error.png" /></p>
+
+<p>The only way now is to have to custom write this code and have it scheduled. I chose the one with the least work involved - Azure Automation. <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> allows to create Run books and automatically trigger it on a schedule. The Azure Automation has a <a href="https://azure.microsoft.com/en-us/pricing/details/automation/">pricing plan with 500 minutes free</a> Job run time in a month, which meets my requirements. I created a <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-types/#powershell-runbooks">PowerShell script</a> and added in the token (<em>TravisToken</em>) and the build URL (<em>TravisBuildUrl</em>) as <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-input-parameters/">parameters to the script</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$travisBlogTriggerApiUrl</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisBuildUrl&#39;</span>
+</span><span class='line'><span class="nv">$token</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisToken&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$body</span> <span class="p">=</span> <span class="s2">&quot;{&quot;&quot;request&quot;&quot;: {&quot;&quot;message&quot;&quot;:&quot;&quot;Scheduled Automated build&quot;&quot;,&quot;&quot;branch&quot;&quot;:&quot;&quot;master&quot;&quot;}}&quot;</span>
+</span><span class='line'><span class="nv">$headers</span> <span class="p">=</span> <span class="p">@{</span>
+</span><span class='line'>    <span class="s1">&#39;Content-Type&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Accept&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Travis-API-Version&#39;</span> <span class="p">=</span> <span class="s1">&#39;3&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Authorization&#39;</span> <span class="p">=</span> <span class="s1">&#39;token &#39;</span> <span class="p">+</span> <span class="nv">$token</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Invoke-WebRequest</span> <span class="n">-Method</span> <span class="n">Post</span> <span class="nv">$travisBlogTriggerApiUrl</span> <span class="n">-Body</span> <span class="nv">$body</span> <span class="n">-Headers</span> <span class="nv">$headers</span> <span class="n">-UseBasicParsing</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The script runs on a schedule every day and triggers the Travis CI build. It deploys the latest generated site to Azure WebApp that hosts the site. Any posts scheduled for the current date gets picked up by Jekyll and included in the site generation.</p>
+
+<figure>
+    <img alt="Automatic Deployment of Future Posts With Octopress" src="/images/blog_scheduled.png" />
+    <figcaption><em>Scheduler triggers TravisCI build. For details on how TravisCI is set up check <a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a></em></figcaption>
+</figure>
+
+
+<p></p>
+
+<h3>Post to Social Media</h3>
+
+<p>With the posts getting deployed automatically, I want to update all my social networks. I already use <a href="https://buffer.com/">Buffer</a> to post updates to all social networks. Buffer is like &lsquo;<strong><em>Write Once, Post Everywhere</em></strong>&rsquo; kind of service. It clubs all your social media profiles into one place and allows you to post to all of them by just writing it once.</p>
+
+<p><a href="https://ifttt.com/recipes">IFTTT</a>(&lsquo;<em>If This Then That</em>&rsquo;) is a service that helps connect different apps and devices together based on a trigger. As the name says, you can trigger an action based on a trigger. IFTTT has many <a href="https://ifttt.com/channels">Channels</a> that can act as a source of the trigger. In my case, the trigger is a post getting published and I can hook into that event using the <a href="https://ifttt.com/feed">Feed Channel</a>. The feed channel has an option to trigger when a <a href="https://ifttt.com/channels/feed/triggers/5-new-feed-item">new item is available</a> on the feed. I use this to trigger an update to Buffer. <a href="https://ifttt.com/buffer">Buffer</a> is available as a channel on IFTTT but allows only update to one of the connected accounts in Buffer, which requires me to setup a recipe per social media account. I chose to use <a href="https://buffer.com/guides/email">update via email feature</a> in Buffer. It allows me to have just one recipe in IFTTT to update to all of my connected profiles in Buffer.</p>
+
+<p><img class="center" alt="Trigger Buffer Email When New Post is Published" src="/images/blog_ifttt.png" /></p>
+
+<p>With the Automated publishing of posts and ability to schedule them, I can concentrate more on just the writing part. I no longer have to push out posts manually. I had never thought that I would be scheduling posts in the future. But now that it is happening it&rsquo;s a great feeling when there are posts for a few weeks ahead all ready to go.</p>
+
+<p><em><a href="http://www.rahulpnath.com/blog/morning_routine/">My Morning Routine</a> was the first posts to be deployed using the schedule.</em></p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/optimizing-octopress-workflow-for-new-posts/">Optimizing Octopress Workflow for New Posts</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/own-your-urls/">Own Your URLs; Nothing Else Really Matters</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">Static Generator is All a Blog Needs - Moving to Octopress</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/" title="Previous Post: Continuos Delivery of Octopress Blog Using TravisCI and Docker">&laquo; Continuos Delivery of Octopress Blog Using TravisCI and Docker</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/';
+        var disqus_url = 'http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
