@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>MSDN Magazine Article on Azure Key Vault - Rahul Nath</title>
+  <title>Keeping Sensitive Configuration Data Out of Source Control - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Rahul Nath on Programming and life in general" />
+<meta name="description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault">
+  <link rel="canonical" href="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="MSDN Magazine Article on Azure Key Vault" />
+<meta property="og:title" content="Keeping Sensitive Configuration Data Out of Source Control" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/" />
-<meta property="og:description" content="Rahul Nath on Programming and life in general" />
+<meta property="og:url" content="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" />
+<meta property="og:description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-
+<meta property="og:image" content="http://www.rahulpnath.com/images/sensitivedata_source_control.png" />
 
 
 <meta property="twitter:card" content="summary" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault" />
-<meta property="twitter:title" content="MSDN Magazine Article on Azure Key Vault" />
-<meta property="twitter:description" content="Rahul Nath on Programming and life in general" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control" />
+<meta property="twitter:title" content="Keeping Sensitive Configuration Data Out of Source Control" />
+<meta property="twitter:description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
 <meta property="twitter:creator" content="rahulpnath" />
-
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/sensitivedata_source_control.png" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-06T13:15:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 6<sup>th</sup>, 2015</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 19<sup>th</sup>, 2016</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>, <a class='category' href='/blog/category/programming/'>programming</a>
   
 </span>
 
@@ -175,20 +175,59 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        MSDN Magazine Article on Azure Key Vault
+        Keeping Sensitive Configuration Data Out of Source Control
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>My first article on MSDN Magazine is published in the September 2015 edition and is available for <a href="https://msdn.microsoft.com/magazine/mt422585">reading online</a>. The article titled, &lsquo;<em>Microsoft Azure - Protect Sensitive Information with Azure Key Vault</em>&rsquo;, discusses on common problems in storing sensitive information in applications, benefits of Azure Key Vault and how we can quickly setup and start using it.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>Most applications today deals with some form of sensitive information. The most commonly seen are database connection strings, API keys, token etc. The web.config seems the best place to have these values, but it definitely is not. In most cases it gets pushed into the source control systems as well. If it is a private repository then you at least have one level of security on top of it. It still exposes sensitive information to anyone who has access to the repository. It’s worse when the <a href="http://www.internetnews.com/blog/skerner/github-search-exposes-passwords.html">repository is public</a>.</p>
 
-<p>It was a great experience working with the MSDN magazine team, and got to learn a lot of things. Also special thanks to <a href="https://twitter.com/amitbapat">Amit Bapat</a> and <a href="https://twitter.com/sumedhbarde">Sumedh Barde</a> for doing the technical review and clarifying certain things for the article.</p>
+<p><img alt="Keep sensitive data out of source control" src="/images/sensitivedata_source_control.png" /></p>
 
-<p><img src="/images/msdn_magazine_sep_2015.jpg" style="height:500px;" alt=""></p>
+<p>There are different ways you can  avoid pushing sensitive data into source control. In this post, I will explore options that I am familiar with.</p>
 
-<p><em>If you are interested to <a href="http://blogs.msdn.com/b/msdnmagazine/archive/2009/12/24/9940803.aspx">write an article for the MSDN magazine</a></em></p>
+<blockquote><p><em>Use configuration files as template definitions for the configuration data your application requires. Have the actual values stored elsewhere</em></p></blockquote>
+
+<h3>Azure App Settings</h3>
+
+<p>If you are deploying your application as a Web App on Azure, you can store <a href="https://azure.microsoft.com/en-us/blog/windows-azure-web-sites-how-application-strings-and-connection-strings-work/">application settings and connection strings in Azure</a>. At runtime, Windows Azure Web Sites automatically retrieves these values for you and makes them available to code running in your website. This removes the need for having sensitive data in the configuration file.</p>
+
+<p><img alt="Azure App Settings and Connection Strings" src="/images/sensitiveData_azure_app_settings.png" /></p>
+
+<h3>Release Management Tools</h3>
+
+<p>Release management tools like Octopus Deploy, Microsoft Release Management, that performs configuration transformation. It supports creating different environments (development, production) and corresponding configurations. On creating a package for an environment, it applies the corresponding environment configurations</p>
+
+<p><img alt="Release Management Tools - Octopus Deploy" src="/images/sensitiveData_releaseManagement_tool_octopus.png" /></p>
+
+<p>Packaging embeds the configuration value into the configuration file. This makes it available to anyone who has access to the host systems.</p>
+
+<h3>Azure Key Vault</h3>
+
+<p>Azure Key Vault acts as a centralized repository for all sensitive information. Key vault stores cryptographic keys and Secrets and makes them available over a HTTP Api. The objects (keys and secrets) in key vault has unique identifier to retrieve them. Check <a href="http://www.rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in real world application</a> for more details on how to achieve this. A client application can <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate with Azure Key Vault using a ClientID/secret or ClientID/certificate</a>. Using certificate to authenticate is the preferred approach. To get Keys/Secret from key vault all you need is the AD Application Id, the client secret or certificate identifier and the key/secret names. The certificate itself can be deployed separately into the application host.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='XML'><span class='line'><span class="nt">&lt;appSettings&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;KeyVaultUrl&quot;</span> <span class="na">value=</span><span class="s">&quot;https://testvaultrahul.vault.azure.net&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADApplicationId&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADCertificateThumbprint&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;DbConnectionString&quot;</span> <span class="na">value=</span><span class="s">&quot;SqlConnectionString&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key =</span><span class="s">&quot;ApiToken&quot;</span> <span class="na">value=</span><span class="s">&quot;ApiToken/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are using the &lsquo;client secret&rsquo; to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">Key Vault</a> is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application.</p>
+
+<p>These are some approaches to keep sensitive information out of source control. What approach do you use? Irrespective of the approach you use, make sure that you don’t check them in!</p>
 </div>
 
 
@@ -221,12 +260,6 @@
   
     <li>
     	<p>
-      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
       		<a href="/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Managing Azure Key Vault using Azure Resource Manager (ARM) Templates</a>
   		</p>
     </li>
@@ -243,6 +276,12 @@
   		</p>
     </li>
   
+    <li>
+    	<p>
+      		<a href="/blog/using-azure-key-vault-from-a-java-application/">Using Azure Key Vault from a Java Application</a>
+  		</p>
+    </li>
+  
   </ul>
 </div>
 <br>
@@ -251,7 +290,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" >Tweet</a>
   
   
   
@@ -263,10 +302,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/managing-azure-ad-application-for-key-vault/" title="Previous Post: Managing Azure AD Application for Key Vault">&laquo; Managing Azure AD Application for Key Vault</a></li>
+            <li class="previous"><a href="/blog/automatic_deployment_of_future_posts_with_octopress/" title="Previous Post: Automatic Deployment of Future Posts With Octopress">&laquo; Automatic Deployment of Future Posts With Octopress</a></li>
             
-            
-            <li class="next"><a href="/blog/tools-that-I-use/" title="Next Post: Tools that I use">Tools that I use &raquo;</a></li>
             
           </ul>
         
@@ -311,8 +348,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/';
-        var disqus_url = 'http://rahulpnath.com/blog/msdn-magazine-article-on-azure-key-vault/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/';
+        var disqus_url = 'http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/';
         var disqus_script = 'embed.js';
       
     (function () {

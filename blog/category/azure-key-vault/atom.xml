@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-09-18T04:50:56+00:00</updated>
+  <updated>2016-09-19T04:50:29+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,52 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Keeping Sensitive Configuration Data Out of Source Control]]></title>
+    <link href="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/"/>
+    <updated>2016-09-19T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control</id>
+    <content type="html"><![CDATA[<p>Most applications today deals with some form of sensitive information. The most commonly seen are database connection strings, API keys, token etc. The web.config seems the best place to have these values, but it definitely is not. In most cases it gets pushed into the source control systems as well. If it is a private repository then you at least have one level of security on top of it. It still exposes sensitive information to anyone who has access to the repository. It’s worse when the <a href="http://www.internetnews.com/blog/skerner/github-search-exposes-passwords.html">repository is public</a>.</p>
+
+<p><img alt="Keep sensitive data out of source control" src="/images/sensitivedata_source_control.png" /></p>
+
+<p>There are different ways you can  avoid pushing sensitive data into source control. In this post, I will explore options that I am familiar with.</p>
+
+<blockquote><p><em>Use configuration files as template definitions for the configuration data your application requires. Have the actual values stored elsewhere</em></p></blockquote>
+
+<h3>Azure App Settings</h3>
+
+<p>If you are deploying your application as a Web App on Azure, you can store <a href="https://azure.microsoft.com/en-us/blog/windows-azure-web-sites-how-application-strings-and-connection-strings-work/">application settings and connection strings in Azure</a>. At runtime, Windows Azure Web Sites automatically retrieves these values for you and makes them available to code running in your website. This removes the need for having sensitive data in the configuration file.</p>
+
+<p><img alt="Azure App Settings and Connection Strings" src="/images/sensitiveData_azure_app_settings.png" /></p>
+
+<h3>Release Management Tools</h3>
+
+<p>Release management tools like Octopus Deploy, Microsoft Release Management, that performs configuration transformation. It supports creating different environments (development, production) and corresponding configurations. On creating a package for an environment, it applies the corresponding environment configurations</p>
+
+<p><img alt="Release Management Tools - Octopus Deploy" src="/images/sensitiveData_releaseManagement_tool_octopus.png" /></p>
+
+<p>Packaging embeds the configuration value into the configuration file. This makes it available to anyone who has access to the host systems.</p>
+
+<h3>Azure Key Vault</h3>
+
+<p>Azure Key Vault acts as a centralized repository for all sensitive information. Key vault stores cryptographic keys and Secrets and makes them available over a HTTP Api. The objects (keys and secrets) in key vault has unique identifier to retrieve them. Check <a href="http://www.rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in real world application</a> for more details on how to achieve this. A client application can <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate with Azure Key Vault using a ClientID/secret or ClientID/certificate</a>. Using certificate to authenticate is the preferred approach. To get Keys/Secret from key vault all you need is the AD Application Id, the client secret or certificate identifier and the key/secret names. The certificate itself can be deployed separately into the application host.</p>
+
+<pre><code class="XML">&lt;appSettings&gt;
+  &lt;add key="KeyVaultUrl" value="https://testvaultrahul.vault.azure.net"/&gt;
+  &lt;add key="ADApplicationId" value="" /&gt;
+  &lt;add key="ADCertificateThumbprint" value="" /&gt;
+  &lt;add key="DbConnectionString" value="SqlConnectionString"/&gt;
+  &lt;add key ="ApiToken" value="ApiToken/cfedea84815e4ca8bc19cf8eb943ee13"/&gt;
+&lt;/appSettings&gt;
+</code></pre>
+
+<p>If you are using the &lsquo;client secret&rsquo; to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">Key Vault</a> is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application.</p>
+
+<p>These are some approaches to keep sensitive information out of source control. What approach do you use? Irrespective of the approach you use, make sure that you don’t check them in!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Managing Azure Key Vault using Azure Resource Manager (ARM) Templates]]></title>
@@ -493,60 +539,6 @@ var certificate = new X509Certificate2(pfxBytes);
 <blockquote><p><em>If you are facing issues with threads not closing out properly after making call to Key Vault check this <a href="http://www.rahulpnath.com/blog/using-azure-key-vault-from-a-java-application/#comment-2693376641">comment by Robert</a> for details on how to work around it. (As mentioned there it looks ugly, so if you know of a better way would love to hear that).</em></p></blockquote>
 
 <p>Hope this helps you to get started with Azure Key Vault on Java. The sample solution is available <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVaultUsingJavaClient">here</a>!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How the Deprecation of Switch AzureMode Affects Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/"/>
-    <updated>2016-02-25T14:51:03+00:00</updated>
-    <id>http://rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault</id>
-    <content type="html"><![CDATA[<p>It&rsquo;s been a while that the &lsquo;Switch AzureMode&rsquo; is <a href="https://github.com/Azure/azure-powershell/wiki/Deprecation-of-Switch-AzureMode-in-Azure-PowerShell">deprecated in the Azure PowerShell</a> and has left breaking changes in all the scripts that were using it. <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">I had come across this mode switch first</a>, when starting off with Azure Key Vault, as the then existing cmdlets depended on it. Now that it is deprecated we have updated versions of the PowerShell cmdlets to manage <a href="https://azure.microsoft.com/en-us/services/key-vault/">Azure Key Vault</a>. This post revisits all the scripts used in the <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">previous Key Vault posts</a> and provides the updated scripts.</p>
-
-<p>Most of the scripts have the only change of having an extra &lsquo;Rm&rsquo; indicating that those were off the Resource Manager.</p>
-
-<pre><code class="powershell Creating a New Azure Key Vault">New-AzureRmResourceGroup -Name KeyVaultGroup -Location "East Asia"
-New-AzureRmKeyVault -VaultName RahulKeyVault -ResourceGroupName KeyVaultGroup -Location "East Asia"
-</code></pre>
-
-<p>Creating a new key/secret remains the same
-&#8220;` powershell Creating a Key/Secret in Vault</p>
-
-<h1>Key</h1>
-
-<p>Add-AzureKeyVaultKey -VaultName RahulKeyVault -Name NewKey -Destination Software</p>
-
-<h1>Secret</h1>
-
-<p>$apiKey = ConvertTo-SecureString -String &ldquo;ApiKey&rdquo; -AsPlainText -Force
-Set-AzureKeyVaultSecret -VaultName RahulKeyVault -Name &ldquo;ApiKey&rdquo; -SecretValue $apiKey
-&#8220;`</p>
-
-<pre><code class="powershell Getting existing Vault details">Get-AzureRmKeyVault -VaultName RahulKeyVault
-</code></pre>
-
-<pre><code class="powershell Creating AD application with certificate authentication">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
-$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificate.Import($certificateFilePath)
-$rawCertificateData = $certificate.GetRawCertData()
-$credential = [System.Convert]::ToBase64String($rawCertificateData)
-$startDate= [System.DateTime]::Now
-$endDate = $startDate.AddYears(1)
-$adApplication = New-AzureRmADApplication -DisplayName "RahulTestADApplication" 
--HomePage  "http://www.rahulpnath.com" -IdentifierUris "http://www.rahulpnath.com" 
--KeyValue  $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify" -StartDate $startDate -EndDate $endDate
-</code></pre>
-
-<pre><code class="powershell Associating the AD application with the key vault">$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
-Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ObjectId  $servicePrincipal.Id -PermissionsToKeys all -PermissionsToSecrets all
-$ServicePrincipal.ApplicationId #Outputs the ServicePrincipalName/AppPrincipalId 
-</code></pre>
-
-<pre><code class="powershell User Role assignment">New-AzureRmRoleAssignment -Mail keyvaultuser@domain.onmicrosoft.com
-  -RoleDefinitionName Reader -ResourceGroupName SharedGroup
-</code></pre>
-
-<p>Please drop a comment if I have missed any!</p>
 ]]></content>
   </entry>
   
