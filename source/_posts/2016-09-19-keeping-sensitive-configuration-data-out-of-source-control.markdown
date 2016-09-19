@@ -6,7 +6,7 @@ categories:
 - Programming
 - Azure Key Vault
 tags: 
-date: 2016-09-20
+date: 2016-09-19
 completedDate: 2016-08-27 07:12:16 +1000
 keywords: 
 description: Different options to manage sensitive configuration data and to keep it out of source control.
