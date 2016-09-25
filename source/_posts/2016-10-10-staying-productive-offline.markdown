@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Living an Offline Life"
+title: "Staying Productive Offline"
 comments: true
 categories:
 - Productivity
