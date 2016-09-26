@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tdd | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tdd/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-09-25T04:51:43+00:00</updated>
+  <updated>2016-09-26T04:50:46+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Introduce Tests when Fixing Bugs]]></title>
+    <link href="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/"/>
+    <updated>2016-09-26T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs</id>
+    <content type="html"><![CDATA[<p><em>When creating a subscription for a client, the calculated number of months was off by one at times</em> - This was a bug reported from production application that I was currently working on. Though, not a blocker, it was creating enough issues for the end users that it required a hotfix. One of my friends picked this issue up and started working on it. A while later, while I was checking the status of that bug I noticed him playing around with  <a href="https://www.linqpad.net/">Linqpad</a>. He was testing a method to calculate the number of months between two dates with different values.</p>
+
+<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
+
+<p>We often test our code elsewhere because it&rsquo;s coupled with other code making it difficult to test at the source itself. The fact that we need to test an isolated part of a larger piece of code is a &lsquo;<a href="https://en.wikipedia.org/wiki/Code_smell">Code smell</a>&rsquo;. There possibly is a class or method that can be extracted and unit tested separately.</p>
+
+<blockquote><p><em>Having to test code elsewhere other than the source is a Smell. Look for a method or class waiting to be extracted</em></p></blockquote>
+
+<p>In this specific case, below is how the code that calculates month difference between two dates looked like. As you can see below, the code is coupled with the newAccount, which in turn is coupled with a few other entities that I have omitted. Added to this, this method existed in an MVC controller, which had other dependencies.</p>
+
+<pre><code class="csharp Existing Code">...
+var date1 = newAccount.StartDate;
+var date2 = newAccount.EndDate;
+int monthsApart = Math.Abs(12 * (date1.Year - date2.Year) + date1.Month - date2.Month) - 1;
+decimal daysInMonth1 = DateTime.DaysInMonth(date1.Year, date1.Month);
+decimal daysInMonth2 = DateTime.DaysInMonth(date2.Year, date2.Month);
+decimal dayPercentage = ((daysInMonth1 - date1.Day) / daysInMonth1)
+                      + (date2.Day / daysInMonth2);
+var months = (int)Math.Ceiling(monthsApart + dayPercentage);
+...
+</code></pre>
+
+<p>This explains why it was easier to copy this code across and test it in Linqpad. It was difficult to construct the whole hierarchy of objects and to test this. So the easiest thing to fix the bug in is to test elsewhere and fit back in its original place.</p>
+
+<h3>Extract Method Refactoring</h3>
+
+<p>This is one of the scenario where <a href="http://refactoring.com/catalog/extractMethod.html">Extract Method</a> Refactoring fits in best. According to the definition</p>
+
+<blockquote><p><em>You have a code fragment that can be grouped together. <strong>Turn the fragment into a method whose name explains the purpose of the method.</strong></em></p></blockquote>
+
+<p>Extract Method Refactoring is also referred in <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131177052&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=TTKEEYQLEMTOXPPQ">Working Effectively With Legacy Code</a> and <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131495054&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=XR55UAOEPPMVMFK3">xUnit Test Patterns</a> (to refactor test code).  It helps separate logic from rest of the object hierarchy and test individually. In this scenario, we can extract the logic to calculate the number of months between two dates into a separate method.</p>
+
+<p>For <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">Test driving</a> the extracted method, all I do initially is to extract the method. As the method purely depends on its passed in parameters and not on any instance variables, I mark it as a static method. This removes the dependency from the MVC controller class parameters and the need to construct them in the tests . The test cases includes the failed &lsquo;off by one&rsquo; case (<em>(&ldquo;25-Aug-2017&rdquo;, &ldquo;25-Feb-2018&rdquo;, 6)</em>). With tests that pass and fail it&rsquo;s now safe to make changes to the extracted method to fix the failing cases.</p>
+
+<pre><code class="csharp Tests">[Theory]
+[InlineData("10-Feb-2016", "10-Mar-2016", 1)]
+[InlineData("10-Feb-2016", "11-Mar-2016", 2)]
+[InlineData("10-Feb-2015", "11-Mar-2016", 14)]
+[InlineData("01-Feb-2015", "01-Mar-2015", 1)]
+[InlineData("21-Sep-2016", "22-Sep-2016", 1)]
+[InlineData("25-Aug-2017", "25-Feb-2018", 6)]
+[InlineData("12-Aug-2016", "15-Mar-2019", 32)]
+public void MonthsToReturnsExpectedMonths(
+    string date1,
+    string date2,
+    int expected)
+{
+    var actual = SubscriptionController.MonthsTo(DateTime.Parse(date1), DateTime.Parse(date2));
+    Assert.Equal(expected, actual);
+}
+</code></pre>
+
+<p>More than the algorithm used to solve the original issue what is more important is in identifying such scenarios and extracting them as a method. Make the least possible change to make it testable and fix step by step.</p>
+
+<blockquote><p><em>Whenever there are code fragments that depend only on a subset of properties of your class or function inputs, it could be extracted into a separate method.</em></p></blockquote>
+
+<pre><code class="csharp Extracted method after Refactoring.">public static int MonthsTo(DateTime date1, DateTime date2)
+{
+    int months = Math.Abs(12*(date1.Year - date2.Year) + date1.Month - date2.Month);
+    if (date2.Date.Day &gt; date1.Date.Day)
+        months = months + 1;
+
+    return months;
+}
+</code></pre>
+
+<h3>Introduce Value Object</h3>
+
+<p>Now that we have fixed the bug and have tests covering the different combinations, let&rsquo;s see if this method can live elsewhere and make it reusable. The start date and end date on account always go together and is a domain concept that can be extracted out as an &lsquo;Account Term Range&rsquo;. It can be represented as a DateRange <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. We can then introduce a method in the DateRange Value Object to return the number of months in the range. This makes the function reusable and also <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">code more readable</a>. I made the original refactored method as an extension method on DateTime and used it from DateRange Value Object.</p>
+
+<pre><code class="csharp Encapsulate into Value Object">public static class DateTimeExtensions 
+{
+    public static int MonthsTo(this DateTime date1, DateTime date2)
+    {
+        int months = Math.Abs(12*(date1.Year - date2.Year) + date1.Month - date2.Month);
+        if (date2.Date.Day &gt; date1.Date.Day)
+            months = months + 1;
+
+        return months;
+    }
+}
+
+public class DateRange
+{
+    public DateTime StartDate { get; private set; }
+    public DateTime EndDate { get; private set; }
+
+    public DateRange(DateTime startDate, DateTime endDate)
+    {
+        // Ignoring null checks
+        if (endDate &lt; startDate)
+            throw new ArgumentException("End Date cannot be less than Start Date");
+
+        this.StartDate = startDate;
+        this.EndDate = endDate;
+    }
+
+    public int GetMonths()
+    {
+        return StartDate.MonthsTo(EndDate);
+    }
+}
+... // Rest of Value Object Code to override Equals and GetHashCode
+</code></pre>
+
+<p>If you are new to TDD or just getting started with tests, introducing tests while fixing bugs is a good place to start. This might also help make code decoupled and readable. Try <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">covering a fix with tests</a> the next time you fix a bug!</p>
+
+<h4><strong>References</strong></h4>
+
+<div>
+    <div class="row">
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131495054&linkCode=as2&tag=rahulpnath-20&linkId=XR55UAOEPPMVMFK3">
+                    <img src="http://rahulpnath.com/images/books_xunit.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0321503627/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321503627&linkCode=as2&tag=rahulpnath-20&linkId=TR6UCCVP6CMGBBZQ">
+                    <img src="http://rahulpnath.com/images/books_goos.jpeg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131177052&linkCode=as2&tag=rahulpnath-20&linkId=TTKEEYQLEMTOXPPQ">
+                    <img src="http://rahulpnath.com/images/books_welc.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Refactoring to Improve Testability: Extracting Dependencies]]></title>
@@ -472,28 +615,6 @@ public class MyServiceTests
 
 
 <p>So the next time you add in a test, think why you are doing it. Is it for the report or for the application that is getting developed. Lets all <a href="https://vimeo.com/43536488">strive to be really professional</a> in what we are doing and not just hide behind some numbers. Let the number be seen for what it is - nothing less and nothing more!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[TDD and Refactoring]]></title>
-    <link href="http://rahulpnath.com/blog/tdd-and-refactoring/"/>
-    <updated>2010-08-23T10:42:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/tdd-and-refactoring</id>
-    <content type="html"><![CDATA[<p>Over the days I have been reading on Test Driven Development(TDD) and it seems really interesting methodology to go with as per development is concerned.<br/>
-Basic of TDD is that the development process relies on &lsquo;tests&rsquo;, that are written prior to code.<br/>
-Sounds astonishing!!!!<br/>
-It might to someone into the normal development mode,where tests are usually written after code, so as to match the code that is written.<br/>
-But TDD says just the opposite.<br/>
-Code to make the tests pass&hellip;Just pass..<em>Nothing more and Nothing less</em>.<br/>
-Thats where the catch is where most of we developers might find it difficult and needs getting used to.Not getting more into it as I would not be the best to comment on it :)<br/>
-So whats refactoring got to do here.<br/>
-Refactoring plays an integral part of TDD,so that the code is elegant and conveys just what it needs to,avoiding duplication.<br/>
-The TDD approach also assists in refactoring as you have tests readily available to assure that the functional behaviour is not affected while changing the code design.You are just click of a button away if you are having a automated test scripts (like nUnit) in veryfying refactoring. <br/>
-So both TDD and Refactoring goes hand in hand and helps in greatly improving the overall code quality.<br/>
-There are quite a lot resources out there on these.<br/>
-The best for refactoring would be of <a href="http://www.amazon.com/gp/product/0201485672/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0201485672&amp;linkCode=as2&amp;tag=rahulpnath-20">Refactoring: Improving the Design of Existing Code</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0201485672" alt="" />.<br/>
-For TDD <a href="http://www.amazon.com/gp/product/0735619484/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0735619484&amp;linkCode=as2&amp;tag=rahulpnath-20">Test-Driven Development in Microsoft  .NET (Microsoft Professional)</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0735619484" alt="" /> would be a good start and also the one by Kent Beck <a href="http://www.amazon.com/gp/product/0321146530/ref=as_li_qf_sp_asin_tl?ie=UTF8&amp;camp=1789&amp;creative=9325&amp;creativeASIN=0321146530&amp;linkCode=as2&amp;tag=rahulpnath-20">Test Driven Development: By Example</a><img src="http://ir-na.amazon-adsystem.com/e/ir?t=rahulpnath-20&amp;l=as2&amp;o=1&amp;a=0321146530" alt="" /></p>
 ]]></content>
   </entry>
   

@@ -163,6 +163,120 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-26T12:21:21+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 26<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/checking-in-package-dependencies-into-source-control/" itemprop="url">Checking in Package Dependencies into Source Control</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This post looks into why we should include packages in the source control and not resolve it via configuration files at build time.</em></p>
+
+<p>Over the past few years, <a href="https://en.wikipedia.org/wiki/Package_manager">Package Managers</a> have gained an important role in the way software gets developed. There is an <a href="https://github.com/showcases/package-managers">increasing number of package managers</a> catering to different programming languages and areas of development, making the distribution of reusable libraries and plugins easy. The convention that&rsquo;s usually followed with these package dependencies is to exclude them from source control, and use a configuration file (<a href="https://docs.npmjs.com/files/package.json">package.json</a>, <a href="https://docs.nuget.org/consume/package-restore">packages.config</a>) to retrieve all the packages at build time. Even the <a href="https://github.com/github/gitignore">GitHub’s collection</a> of <a href="https://git-scm.com/docs/gitignore">.gitignore</a> file templates ignores the packages folders of various package managers.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'># NuGet Packages
+</span><span class='line'>*.nupkg
+</span><span class='line'># The packages folder can be ignored because of Package Restore
+</span><span class='line'>**/packages/*
+</span><span class='line'>...
+</span><span class='line'># Dependency directories
+</span><span class='line'>node_modules
+</span><span class='line'>jspm_packages
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h3>Common Arguments for not Checking in Packages</h3>
+
+<p>Since checking in packages is not a common practice, let&rsquo;s first see some of the arguments for not doing this and how it compares to having them checked in.</p>
+
+<h4><strong>Storage</strong></h4>
+
+<p><em>Packages are something that can be resolved at runtime and keeping them excluded saves that extra space on the source control system.</em></p>
+
+<p>Yes, this might have been a good reason few years back, but these days this is not a good reason as storage has become really cheap. Moreover popular source control systems charge by the <a href="https://github.com/pricing/plans">number of repositories</a> and not by the space it occupies (although it has <a href="https://help.github.com/articles/what-is-my-disk-quota/">limits</a> on it).</p>
+
+<h4><strong>Time</strong></h4>
+
+<p><em>The clone is faster when you do not have packages in the source control repository as opposed to having them.</em></p>
+
+<p>But for the project to build we need the packages restored first. So the time is either spent in the clone or in the restore. But if the packages are included in the git clone then you can immediately start working on the project after a clone and do not need any internet connectivity to make the project build. This is also of advantage if you want to run a &lsquo;<a href="https://git-scm.com/docs/git-clean">git clean</a>&rsquo; - which cleans the working tree by recursively removing files that are not under version control. With packages not under the source control, you have to restore them every time you run it - This is not a problem if you have internet connectivity, but will block your work if you do it when you don&rsquo;t.</p>
+
+<blockquote><p><em>Without checking in dependent packages, you can&rsquo;t git clone and get on a flight nor can you git clean while on a <a href="https://en.wikipedia.org/wiki/Airplane_mode">flight</a></em></p></blockquote>
+
+<p>Moreover cloning a repository is a one-time activity, while a clean can be done any time a developer wants to. So it actually saves more time to keep the packages checked in.</p>
+
+<h3>More Reason for Checking in Packages</h3>
+
+<p>Now that we have seen most of the common arguments are not valid, let&rsquo;s see more reasons on why including the packages into the source control is actually better.</p>
+
+<h4><strong>Explicit Dependencies</strong></h4>
+
+<p>It&rsquo;s always better to be explicit about your code dependencies and not have them resolved by a package manager.</p>
+
+<blockquote><p><em>Packages are nothing but code and can alter the behaviour of the application.</em></p></blockquote>
+
+<p>There are possibilities of specific package versions getting <a href="http://blog.npmjs.org/post/141577284765/kik-left-pad-and-npm">removed from the package manager</a>, which your application is still dependent on and leads to build breakage! If your package configuration is set up in such a way to resolve the latest available package of  the specific dependency, there are possibilities that the package owner pushes an update that is not backward compatible, causing the build to break! Given that these possibilities exist there is no reason to exclude package dependencies from checked in.</p>
+
+<h4><strong>Package Source Downtime</strong></h4>
+
+<p>Though the publicly available package sources like NuGet, npm are available almost all the time, it is likely that they too <a href="http://stackoverflow.com/questions/17806889/nuget-feed-reliability">can go down</a>. The last thing you would want is to get blocked by the downtime of these services - be it failure to build locally or on a server or even block a critical deployment. With the packages available in your source control, you have one less moving part in your whole deployment pipeline and it is better to have lesser dependencies.</p>
+
+<h4><strong>Custom Package Sources</strong></h4>
+
+<p>Many times I have had to update my Package sources in Visual Studio and break my head on the specific order of these entries to get the project building. This is very common when using custom packages sources like <a href="http://inedo.com/proget">ProGet</a> or <a href="https://myget.org/">MyGet</a>. Such dependencies make project setup harder and is easily avoided if all the dependent assemblies are available within the repository.  You can still have them as custom NuGet sources but have the dependencies included into the repository and update the references whenever source changes. This makes project ramp up easier and faster, with one less configuration step.</p>
+
+<p><img class="center" alt="Nuget custom package source" src="/images/nuget_package_sources.png" /></p>
+
+<p>Do you still see any reason for not checking in package dependencies into the source control? If not let&rsquo;s go and change that package folder exclude and have them included in the source. (I just updated <a href="http://www.rahulpnath.com/blog/clal-command-line-application-launcher/">CLAL</a> to <a href="https://github.com/rahulpnath/clal/commit/736023d9ab4bd285cb077ff54acd1bbaad142a08">include dependencies.</a>)</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-15T05:23:08+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 15<sup>th</sup>, 2016</time>
         
 
@@ -2018,87 +2132,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-07T17:33:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 7<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/testing/'>testing</a>, <a class='category' href='/blog/category/tools/'>tools</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/using-fiddler-to-help-in-manual-testing/" itemprop="url">Using Fiddler to help in Manual Testing</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Fiddler is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It also enables modifying HTTP traffic when sent or received. Fiddler is <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of the tools that I use daily</a> and is an indispensable one for any web developer.</p>
-
-<p>This post gives an introduction on how you can use fiddler to help with &lsquo;manual testing&rsquo;. We will see how to use Fiddler to create requests to Web API,  modify and replay an existing request. We will also see how to test error scenarios to see how the application functions in those cases. The sample solution is the default Web API project in Visual Studio with a few changes.</p>
-
-<h3>Composing a Request</h3>
-
-<p>When testing API&rsquo;s to see how it behaves with various inputs, one often needs to send in different parameters. Fiddler allows composing new requests and  modifying existing ones.</p>
-
-<p>Using the Fiddler composer window (shown in the image below), we can create new requests from scratch and execute them. It provides two modes to create requests:</p>
-
-<ul>
-<li>Parsed : This is an assisted form to create requests</li>
-<li>Raw : This allows to create raw http requests and issue them.</li>
-</ul>
-
-
-<p>Fiddler also allows saving raw requests in the Scratchpad tab to execute as and when required. On clicking Execute Fiddler creates an HTTP request from the entered data and sends to the server. To modify requests you can either drag and drop the request from the displayed URL&rsquo;s list into the composer tab or right-click on an entry and <em>Unlock for Editing</em> (keyboard shortcut - F2). After making the changes to the request in the Inspector window, right-click on the request again to Replay -> Reissue ( R).</p>
-
-<p><img class="center" alt="Fiddler Composer tab" src="/images/fiddler_composer.png" /></p>
-
-<h3>Testing Error Cases</h3>
-
-<p>Testing error cases is tricky, especially from a UI level. Things usually don&rsquo;t go wrong in the development/testing environment and <a href="http://blog.codinghorror.com/the-works-on-my-machine-certification-program/">almost never on a developers machine</a> which makes it very hard to test for cases where something does not work. Fiddler makes it easy to test error scenarios with <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder">AutoResponder</a>, which allows returning handcrafted responses for requests, without actually hitting the server.</p>
-
-<p>To create an auto response for a URL, select the URL from the URL&rsquo;s list and drag it into the AutoResponder tab or select the URL and click on Add Rule button on AutoResponder tab, which will create a new rule. By default Fiddler creates a rule with an exact match (Exact:) with the selected URL. Fiddler supports different <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matching rules</a> which include regular expression matches. A list of default response text are available to choose from to respond to requests that match the URL matching rule. We can also create a custom response and save it for reuse. The next time a request with matching URL is found the custom response gets returned to the caller.</p>
-
-<blockquote><p><em>Make sure that the &lsquo;Unmatched requests passthrough&rsquo; option is true in the AutoResponder tab to make sure that all other requests pass through to the server.</em></p></blockquote>
-
-<p><img class="center" alt="Fiddler AutoResponder tab" src="/images/fiddler_autoresponder.png" /></p>
-
-<p>To create a custom response, choose &lsquo;Create a New Response&rsquo; or &lsquo;Find a file&rsquo; (if you already have the response saved in a text file). You can save custom responses in the <em>ResponseTemplates</em> folder in the root folder of Fiddler installation, to have them populated in the AutoResponder tab. When editing existing response data, make sure properties like Content-Length reflects the correct values. You can also set a <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">Latency</a> for the response, to simulate response coming from a server. RIght click on the rules for the Set Latency option and enter the value in milliseconds.</p>
-
-<p>With the AutoResponder set to matching URL, we can easily have it return error codes or simulated error messages to test how the UI handles them. You don&rsquo;t have to depend on &lsquo;actual server errors&rsquo; to test if the UI handles error correctly. You can use this to test how application behaves with different return values by mocking with valid custom responses.  Fiddler provides richer capabilities of using scripts to <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">modify a request or response</a>.</p>
-
-<p>Hope this helps you get started with using Fiddler for testing and manipulating requests/responses.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2122,6 +2155,8 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/introduce-tests-when-fixing-bugs/">Introduce Tests when Fixing Bugs</a>
+    
     <a class="list-group-item " href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
     
     <a class="list-group-item " href="/blog/automatic_deployment_of_future_posts_with_octopress/">Automatic Deployment of Future Posts With Octopress</a>
@@ -2129,8 +2164,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
     <a class="list-group-item " href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a>
     
     <a class="list-group-item " href="/blog/data_hotfix/">Data Hotfix : Things to Remember</a>
-    
-    <a class="list-group-item " href="/blog/morning_routine/">My Morning Routine</a>
     
   </div>
 </section>

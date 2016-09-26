@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-09-25T04:51:43+00:00</updated>
+  <updated>2016-09-26T04:50:46+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,220 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Introduce Tests when Fixing Bugs]]></title>
+    <link href="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/"/>
+    <updated>2016-09-26T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs</id>
+    <content type="html"><![CDATA[<p><em>When creating a subscription for a client, the calculated number of months was off by one at times</em> - This was a bug reported from production application that I was currently working on. Though, not a blocker, it was creating enough issues for the end users that it required a hotfix. One of my friends picked this issue up and started working on it. A while later, while I was checking the status of that bug I noticed him playing around with  <a href="https://www.linqpad.net/">Linqpad</a>. He was testing a method to calculate the number of months between two dates with different values.</p>
+
+<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="http://rahulpnath.com/images\testing.jpg" class="center" alt="Testing"></a></p>
+
+<p>We often test our code elsewhere because it&rsquo;s coupled with other code making it difficult to test at the source itself. The fact that we need to test an isolated part of a larger piece of code is a &lsquo;<a href="https://en.wikipedia.org/wiki/Code_smell">Code smell</a>&rsquo;. There possibly is a class or method that can be extracted and unit tested separately.</p>
+
+<blockquote><p><em>Having to test code elsewhere other than the source is a Smell. Look for a method or class waiting to be extracted</em></p></blockquote>
+
+<p>In this specific case, below is how the code that calculates month difference between two dates looked like. As you can see below, the code is coupled with the newAccount, which in turn is coupled with a few other entities that I have omitted. Added to this, this method existed in an MVC controller, which had other dependencies.</p>
+
+<figure class='code'><figcaption><span>Existing Code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">date1</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">StartDate</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">date2</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">monthsApart</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span> <span class="p">*</span> <span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">)</span> <span class="p">-</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth1</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth2</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">dayPercentage</span> <span class="p">=</span> <span class="p">((</span><span class="n">daysInMonth1</span> <span class="p">-</span> <span class="n">date1</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span> <span class="p">/</span> <span class="n">daysInMonth1</span><span class="p">)</span>
+</span><span class='line'>                      <span class="p">+</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Day</span> <span class="p">/</span> <span class="n">daysInMonth2</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">months</span> <span class="p">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">Math</span><span class="p">.</span><span class="n">Ceiling</span><span class="p">(</span><span class="n">monthsApart</span> <span class="p">+</span> <span class="n">dayPercentage</span><span class="p">);</span>
+</span><span class='line'><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This explains why it was easier to copy this code across and test it in Linqpad. It was difficult to construct the whole hierarchy of objects and to test this. So the easiest thing to fix the bug in is to test elsewhere and fit back in its original place.</p>
+
+<h3>Extract Method Refactoring</h3>
+
+<p>This is one of the scenario where <a href="http://refactoring.com/catalog/extractMethod.html">Extract Method</a> Refactoring fits in best. According to the definition</p>
+
+<blockquote><p><em>You have a code fragment that can be grouped together. <strong>Turn the fragment into a method whose name explains the purpose of the method.</strong></em></p></blockquote>
+
+<p>Extract Method Refactoring is also referred in <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131177052&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=TTKEEYQLEMTOXPPQ">Working Effectively With Legacy Code</a> and <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131495054&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=XR55UAOEPPMVMFK3">xUnit Test Patterns</a> (to refactor test code).  It helps separate logic from rest of the object hierarchy and test individually. In this scenario, we can extract the logic to calculate the number of months between two dates into a separate method.</p>
+
+<p>For <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">Test driving</a> the extracted method, all I do initially is to extract the method. As the method purely depends on its passed in parameters and not on any instance variables, I mark it as a static method. This removes the dependency from the MVC controller class parameters and the need to construct them in the tests . The test cases includes the failed &lsquo;off by one&rsquo; case (<em>(&ldquo;25-Aug-2017&rdquo;, &ldquo;25-Feb-2018&rdquo;, 6)</em>). With tests that pass and fail it&rsquo;s now safe to make changes to the extracted method to fix the failing cases.</p>
+
+<figure class='code'><figcaption><span>Tests</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;10-Mar-2016&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;11-Mar-2016&quot;, 2)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2015&quot;, &quot;11-Mar-2016&quot;, 14)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;01-Feb-2015&quot;, &quot;01-Mar-2015&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;21-Sep-2016&quot;, &quot;22-Sep-2016&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;25-Aug-2017&quot;, &quot;25-Feb-2018&quot;, 6)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;12-Aug-2016&quot;, &quot;15-Mar-2019&quot;, 32)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsToReturnsExpectedMonths</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">date1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">date2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">SubscriptionController</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date1</span><span class="p">),</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date2</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>More than the algorithm used to solve the original issue what is more important is in identifying such scenarios and extracting them as a method. Make the least possible change to make it testable and fix step by step.</p>
+
+<blockquote><p><em>Whenever there are code fragments that depend only on a subset of properties of your class or function inputs, it could be extracted into a separate method.</em></p></blockquote>
+
+<figure class='code'><figcaption><span>Extracted method after Refactoring.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Introduce Value Object</h3>
+
+<p>Now that we have fixed the bug and have tests covering the different combinations, let&rsquo;s see if this method can live elsewhere and make it reusable. The start date and end date on account always go together and is a domain concept that can be extracted out as an &lsquo;Account Term Range&rsquo;. It can be represented as a DateRange <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. We can then introduce a method in the DateRange Value Object to return the number of months in the range. This makes the function reusable and also <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">code more readable</a>. I made the original refactored method as an extension method on DateTime and used it from DateRange Value Object.</p>
+
+<figure class='code'><figcaption><span>Encapsulate into Value Object</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">DateTimeExtensions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Ignoring null checks</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End Date cannot be less than Start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetMonths</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">EndDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Rest of Value Object Code to override Equals and GetHashCode</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are new to TDD or just getting started with tests, introducing tests while fixing bugs is a good place to start. This might also help make code decoupled and readable. Try <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">covering a fix with tests</a> the next time you fix a bug!</p>
+
+<h4><strong>References</strong></h4>
+
+<div>
+    <div class="row">
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131495054&linkCode=as2&tag=rahulpnath-20&linkId=XR55UAOEPPMVMFK3">
+                    <img src="http://rahulpnath.com/images/books_xunit.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0321503627/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321503627&linkCode=as2&tag=rahulpnath-20&linkId=TR6UCCVP6CMGBBZQ">
+                    <img src="http://rahulpnath.com/images/books_goos.jpeg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131177052&linkCode=as2&tag=rahulpnath-20&linkId=TTKEEYQLEMTOXPPQ">
+                    <img src="http://rahulpnath.com/images/books_welc.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Keeping Sensitive Configuration Data Out of Source Control]]></title>
@@ -2335,82 +2549,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 <p></p>
 
 <p>Hope this helps you to move away from NuGet restore at build time.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Checking in Package Dependencies into Source Control]]></title>
-    <link href="http://rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/"/>
-    <updated>2016-04-26T12:21:21+00:00</updated>
-    <id>http://rahulpnath.com/blog/checking-in-package-dependencies-into-source-control</id>
-    <content type="html"><![CDATA[<p><em>This post looks into why we should include packages in the source control and not resolve it via configuration files at build time.</em></p>
-
-<p>Over the past few years, <a href="https://en.wikipedia.org/wiki/Package_manager">Package Managers</a> have gained an important role in the way software gets developed. There is an <a href="https://github.com/showcases/package-managers">increasing number of package managers</a> catering to different programming languages and areas of development, making the distribution of reusable libraries and plugins easy. The convention that&rsquo;s usually followed with these package dependencies is to exclude them from source control, and use a configuration file (<a href="https://docs.npmjs.com/files/package.json">package.json</a>, <a href="https://docs.nuget.org/consume/package-restore">packages.config</a>) to retrieve all the packages at build time. Even the <a href="https://github.com/github/gitignore">GitHub’s collection</a> of <a href="https://git-scm.com/docs/gitignore">.gitignore</a> file templates ignores the packages folders of various package managers.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'># NuGet Packages
-</span><span class='line'>*.nupkg
-</span><span class='line'># The packages folder can be ignored because of Package Restore
-</span><span class='line'>**/packages/*
-</span><span class='line'>...
-</span><span class='line'># Dependency directories
-</span><span class='line'>node_modules
-</span><span class='line'>jspm_packages
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<h3>Common Arguments for not Checking in Packages</h3>
-
-<p>Since checking in packages is not a common practice, let&rsquo;s first see some of the arguments for not doing this and how it compares to having them checked in.</p>
-
-<h4><strong>Storage</strong></h4>
-
-<p><em>Packages are something that can be resolved at runtime and keeping them excluded saves that extra space on the source control system.</em></p>
-
-<p>Yes, this might have been a good reason few years back, but these days this is not a good reason as storage has become really cheap. Moreover popular source control systems charge by the <a href="https://github.com/pricing/plans">number of repositories</a> and not by the space it occupies (although it has <a href="https://help.github.com/articles/what-is-my-disk-quota/">limits</a> on it).</p>
-
-<h4><strong>Time</strong></h4>
-
-<p><em>The clone is faster when you do not have packages in the source control repository as opposed to having them.</em></p>
-
-<p>But for the project to build we need the packages restored first. So the time is either spent in the clone or in the restore. But if the packages are included in the git clone then you can immediately start working on the project after a clone and do not need any internet connectivity to make the project build. This is also of advantage if you want to run a &lsquo;<a href="https://git-scm.com/docs/git-clean">git clean</a>&rsquo; - which cleans the working tree by recursively removing files that are not under version control. With packages not under the source control, you have to restore them every time you run it - This is not a problem if you have internet connectivity, but will block your work if you do it when you don&rsquo;t.</p>
-
-<blockquote><p><em>Without checking in dependent packages, you can&rsquo;t git clone and get on a flight nor can you git clean while on a <a href="https://en.wikipedia.org/wiki/Airplane_mode">flight</a></em></p></blockquote>
-
-<p>Moreover cloning a repository is a one-time activity, while a clean can be done any time a developer wants to. So it actually saves more time to keep the packages checked in.</p>
-
-<h3>More Reason for Checking in Packages</h3>
-
-<p>Now that we have seen most of the common arguments are not valid, let&rsquo;s see more reasons on why including the packages into the source control is actually better.</p>
-
-<h4><strong>Explicit Dependencies</strong></h4>
-
-<p>It&rsquo;s always better to be explicit about your code dependencies and not have them resolved by a package manager.</p>
-
-<blockquote><p><em>Packages are nothing but code and can alter the behaviour of the application.</em></p></blockquote>
-
-<p>There are possibilities of specific package versions getting <a href="http://blog.npmjs.org/post/141577284765/kik-left-pad-and-npm">removed from the package manager</a>, which your application is still dependent on and leads to build breakage! If your package configuration is set up in such a way to resolve the latest available package of  the specific dependency, there are possibilities that the package owner pushes an update that is not backward compatible, causing the build to break! Given that these possibilities exist there is no reason to exclude package dependencies from checked in.</p>
-
-<h4><strong>Package Source Downtime</strong></h4>
-
-<p>Though the publicly available package sources like NuGet, npm are available almost all the time, it is likely that they too <a href="http://stackoverflow.com/questions/17806889/nuget-feed-reliability">can go down</a>. The last thing you would want is to get blocked by the downtime of these services - be it failure to build locally or on a server or even block a critical deployment. With the packages available in your source control, you have one less moving part in your whole deployment pipeline and it is better to have lesser dependencies.</p>
-
-<h4><strong>Custom Package Sources</strong></h4>
-
-<p>Many times I have had to update my Package sources in Visual Studio and break my head on the specific order of these entries to get the project building. This is very common when using custom packages sources like <a href="http://inedo.com/proget">ProGet</a> or <a href="https://myget.org/">MyGet</a>. Such dependencies make project setup harder and is easily avoided if all the dependent assemblies are available within the repository.  You can still have them as custom NuGet sources but have the dependencies included into the repository and update the references whenever source changes. This makes project ramp up easier and faster, with one less configuration step.</p>
-
-<p><img class="center" alt="Nuget custom package source" src="http://rahulpnath.com/images/nuget_package_sources.png" /></p>
-
-<p>Do you still see any reason for not checking in package dependencies into the source control? If not let&rsquo;s go and change that package folder exclude and have them included in the source. (I just updated <a href="http://www.rahulpnath.com/blog/clal-command-line-application-launcher/">CLAL</a> to <a href="https://github.com/rahulpnath/clal/commit/736023d9ab4bd285cb077ff54acd1bbaad142a08">include dependencies.</a>)</p>
 ]]></content>
   </entry>
   

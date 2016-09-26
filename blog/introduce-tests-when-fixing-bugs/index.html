@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Introduce Tests when Fixing Bugs - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Refactoring to add tests when fixing bugs helps increase your confidence and grow your test coverage." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Introduce Tests when Fixing Bugs" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/" />
+<meta property="og:description" content="Refactoring to add tests when fixing bugs helps increase your confidence and grow your test coverage." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/testing.jpg" />
+
+
+<meta property="twitter:card" content="summary" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs" />
+<meta property="twitter:title" content="Introduce Tests when Fixing Bugs" />
+<meta property="twitter:description" content="Refactoring to add tests when fixing bugs helps increase your confidence and grow your test coverage." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/testing.jpg" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-26T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 26<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Introduce Tests when Fixing Bugs
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><em>When creating a subscription for a client, the calculated number of months was off by one at times</em> - This was a bug reported from production application that I was currently working on. Though, not a blocker, it was creating enough issues for the end users that it required a hotfix. One of my friends picked this issue up and started working on it. A while later, while I was checking the status of that bug I noticed him playing around with  <a href="https://www.linqpad.net/">Linqpad</a>. He was testing a method to calculate the number of months between two dates with different values.</p>
+
+<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
+
+<p>We often test our code elsewhere because it&rsquo;s coupled with other code making it difficult to test at the source itself. The fact that we need to test an isolated part of a larger piece of code is a &lsquo;<a href="https://en.wikipedia.org/wiki/Code_smell">Code smell</a>&rsquo;. There possibly is a class or method that can be extracted and unit tested separately.</p>
+
+<blockquote><p><em>Having to test code elsewhere other than the source is a Smell. Look for a method or class waiting to be extracted</em></p></blockquote>
+
+<p>In this specific case, below is how the code that calculates month difference between two dates looked like. As you can see below, the code is coupled with the newAccount, which in turn is coupled with a few other entities that I have omitted. Added to this, this method existed in an MVC controller, which had other dependencies.</p>
+
+<figure class='code'><figcaption><span>Existing Code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">date1</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">StartDate</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">date2</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">monthsApart</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span> <span class="p">*</span> <span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">)</span> <span class="p">-</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth1</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth2</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">dayPercentage</span> <span class="p">=</span> <span class="p">((</span><span class="n">daysInMonth1</span> <span class="p">-</span> <span class="n">date1</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span> <span class="p">/</span> <span class="n">daysInMonth1</span><span class="p">)</span>
+</span><span class='line'>                      <span class="p">+</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Day</span> <span class="p">/</span> <span class="n">daysInMonth2</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">months</span> <span class="p">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">Math</span><span class="p">.</span><span class="n">Ceiling</span><span class="p">(</span><span class="n">monthsApart</span> <span class="p">+</span> <span class="n">dayPercentage</span><span class="p">);</span>
+</span><span class='line'><span class="p">...</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This explains why it was easier to copy this code across and test it in Linqpad. It was difficult to construct the whole hierarchy of objects and to test this. So the easiest thing to fix the bug in is to test elsewhere and fit back in its original place.</p>
+
+<h3>Extract Method Refactoring</h3>
+
+<p>This is one of the scenario where <a href="http://refactoring.com/catalog/extractMethod.html">Extract Method</a> Refactoring fits in best. According to the definition</p>
+
+<blockquote><p><em>You have a code fragment that can be grouped together. <strong>Turn the fragment into a method whose name explains the purpose of the method.</strong></em></p></blockquote>
+
+<p>Extract Method Refactoring is also referred in <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131177052&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=TTKEEYQLEMTOXPPQ">Working Effectively With Legacy Code</a> and <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131495054&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=XR55UAOEPPMVMFK3">xUnit Test Patterns</a> (to refactor test code).  It helps separate logic from rest of the object hierarchy and test individually. In this scenario, we can extract the logic to calculate the number of months between two dates into a separate method.</p>
+
+<p>For <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">Test driving</a> the extracted method, all I do initially is to extract the method. As the method purely depends on its passed in parameters and not on any instance variables, I mark it as a static method. This removes the dependency from the MVC controller class parameters and the need to construct them in the tests . The test cases includes the failed &lsquo;off by one&rsquo; case (<em>(&ldquo;25-Aug-2017&rdquo;, &ldquo;25-Feb-2018&rdquo;, 6)</em>). With tests that pass and fail it&rsquo;s now safe to make changes to the extracted method to fix the failing cases.</p>
+
+<figure class='code'><figcaption><span>Tests</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;10-Mar-2016&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;11-Mar-2016&quot;, 2)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2015&quot;, &quot;11-Mar-2016&quot;, 14)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;01-Feb-2015&quot;, &quot;01-Mar-2015&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;21-Sep-2016&quot;, &quot;22-Sep-2016&quot;, 1)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;25-Aug-2017&quot;, &quot;25-Feb-2018&quot;, 6)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;12-Aug-2016&quot;, &quot;15-Mar-2019&quot;, 32)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsToReturnsExpectedMonths</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">date1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">date2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">SubscriptionController</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date1</span><span class="p">),</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date2</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>More than the algorithm used to solve the original issue what is more important is in identifying such scenarios and extracting them as a method. Make the least possible change to make it testable and fix step by step.</p>
+
+<blockquote><p><em>Whenever there are code fragments that depend only on a subset of properties of your class or function inputs, it could be extracted into a separate method.</em></p></blockquote>
+
+<figure class='code'><figcaption><span>Extracted method after Refactoring.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Introduce Value Object</h3>
+
+<p>Now that we have fixed the bug and have tests covering the different combinations, let&rsquo;s see if this method can live elsewhere and make it reusable. The start date and end date on account always go together and is a domain concept that can be extracted out as an &lsquo;Account Term Range&rsquo;. It can be represented as a DateRange <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. We can then introduce a method in the DateRange Value Object to return the number of months in the range. This makes the function reusable and also <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">code more readable</a>. I made the original refactored method as an extension method on DateTime and used it from DateRange Value Object.</p>
+
+<figure class='code'><figcaption><span>Encapsulate into Value Object</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">DateTimeExtensions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Ignoring null checks</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End Date cannot be less than Start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetMonths</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">EndDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Rest of Value Object Code to override Equals and GetHashCode</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you are new to TDD or just getting started with tests, introducing tests while fixing bugs is a good place to start. This might also help make code decoupled and readable. Try <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">covering a fix with tests</a> the next time you fix a bug!</p>
+
+<h4><strong>References</strong></h4>
+
+<div>
+    <div class="row">
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131495054&linkCode=as2&tag=rahulpnath-20&linkId=XR55UAOEPPMVMFK3">
+                    <img src="/images/books_xunit.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0321503627/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321503627&linkCode=as2&tag=rahulpnath-20&linkId=TR6UCCVP6CMGBBZQ">
+                    <img src="/images/books_goos.jpeg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+        <div class="col-sm-6 col-md-3">
+            <div class="thumbnail">
+                <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131177052&linkCode=as2&tag=rahulpnath-20&linkId=TTKEEYQLEMTOXPPQ">
+                    <img src="/images/books_welc.jpg" data-holder-rendered="true" style="display: block;">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-to-improve-testability-extracting-dependencies/">Refactoring to Improve Testability: Extracting Dependencies</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/tdd-and-refactoring/">TDD and Refactoring</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/" title="Previous Post: Keeping Sensitive Configuration Data Out of Source Control">&laquo; Keeping Sensitive Configuration Data Out of Source Control</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/';
+        var disqus_url = 'http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
