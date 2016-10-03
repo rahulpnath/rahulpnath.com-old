@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-10-02T03:50:37+00:00</updated>
+  <updated>2016-10-03T03:50:48+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,166 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Introducing Code Formatting into a Large Code Base]]></title>
+    <link href="http://rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/"/>
+    <updated>2016-10-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase</id>
+    <content type="html"><![CDATA[<p>Code Formatting is an important aspect of writing code. If followed well it helps keep the code more readable and easy to work with. Here are some of the different aspects of formatting code and my personal preferences. I then explore options to enforce code formatting and ways to introduce it into an existing code base.</p>
+
+<p>Below are some of the popular formatting rules and those that have a high value when enforced in a project.</p>
+
+<h4><strong>Tabs vs Spaces</strong></h4>
+
+<p>One of the most debated topic in code formatting is whether to use tabs or spaces to intend code. I never knew such a debate existed until my most recent project. It had developers from different parts of the world and with different preferences. I came across the below excerpt from Jeff Atwood, to which I completely agree.</p>
+
+<blockquote><p><em>Choose tabs, choose spaces, choose whatever layout conventions make sense to you and your team. It doesn&rsquo;t actually matter which coding styles you pick. What does matter is that you, and everyone else on your team, <strong>sticks with those conventions and uses them consistently.</strong></em></p>
+
+<p><em>That said, only a moron would use tabs to format their code.</em></p>
+
+<p><em>- <a href="https://blog.codinghorror.com/death-to-the-space-infidels/">Jeff Atwood</a></em></p></blockquote>
+
+<p>Settings for these are often available at the IDE level. In Visual Studio this is available under <a href="https://msdn.microsoft.com/en-us/library/7sffa753.aspx">Options, Text Editor, All Languages, Tabs</a>. Be aware of what you choose and make sure you have the same settings across your team members.</p>
+
+<h4><strong>Horizontal Alignment</strong></h4>
+
+<p>Avoid aligning by common separators (=;,) when they occur in adjacent lines. This kind of alignment falls out of order when we rename variables or properties. It happens when you chaange property names.</p>
+
+<figure class='code'><figcaption><span>Not Refactoring friendly and needs extra effort to keep it formatted</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LastName</span>  <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Site</span>      <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Refactoring friendly</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LastName</span> <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Site</span> <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Horizontal Formatting</strong></h4>
+
+<p><em>You should never have to scroll to the right</em> - I caught on with this recommendation from the book Clean Code (<a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>). It is also recommended that a function should fit on the screen, without needing to scroll up or down. This encourages to keep functions short and specific.</p>
+
+<blockquote><p><em>We should strive to keep our lines short. The old Hollerith limit of 80 is a bit arbitrary, and I’m not opposed to lines edging out to 100 or even 120. But beyond that is probably just careless</em></p>
+
+<p><em>- Uncle Bob</em></p></blockquote>
+
+<p>The <a href="https://visualstudiogallery.msdn.microsoft.com/d0d33361-18e2-46c0-8ff2-4adea1e34fef">Productivity Power Tools</a> extension for Visual Studio allows adding a Column Guide. A Column Guide reminds developers their full line of code or comments may not fit on a single screen.</p>
+
+<p><img class="center" alt="Code Formatting Maximum Width Column Guide in Visual Studio using Power Tools"
+src="http://rahulpnath.com/images/codeformatting_column_guide.png" /></p>
+
+<h4><strong>Aligning Function Parameters</strong></h4>
+
+<p>Always try to keep the number of parameters as less as possible. In cases where there are more parameters or longer function names, the team must choose a style. There are different styling formats followed when splitting parameters to a new line.</p>
+
+<p>Allowing parameters to take the <strong><em>natural flow of IDE</em></strong> (Visual Studio) is the simplest approach. This often leads to poor readability and code cluttering.</p>
+
+<p><img class="center" alt="Function Parameters taking natural flow of IDE"
+src="http://rahulpnath.com/images/codeformatting_functionparameters_naturalflowide.png" /></p>
+
+<p>Breaking parameters into separate lines is important for readability. Use the Column guide to decide when to break function parameters into different lines. There are different approaches followed when splitting parameters into new lines. Keeping the first parameter on the same line as the function and then having all other <strong><em>parameters on new line aligned with the first parameter</em></strong> is another approach. This works well when viewed in the same font and resolution used when writing. When you change font or resolution this kind of formatting falls out of place.</p>
+
+<p><img class="center" alt="Function Parameters on new line aligned with first parameter"
+src="http://rahulpnath.com/images/codeformatting_functionparameters_alignzoom.png" /></p>
+
+<p>A better variant of the above style is to have the parameters in the new line aligned to the left. This ensures parameters stay in the same place when changing font or resolutions. The one that I prefer is to have all parameters in a new line. This formatting works well with different font sizes and resolutions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">int</span> <span class="nf">ThisIsALongFunctionNameWithLotsOfParameters</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">parameter2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter3</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">optionalParameter</span> <span class="p">=</span> <span class="s">&quot;Test&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Visibility Based Ordering</strong></h4>
+
+<p>It is a good practice to maintain a specific order of items within a class. Have all properties declared first, then constructors, public methods, protected methods, private methods etc. This is up to the team to  determine the order, but sticking on to it makes the code more readable.</p>
+
+<h3>Code Analysis Tools</h3>
+
+<p>Checking for styling and formatting issues in a code review requests is a boring task. It’s best to automate style checks at build time (local and server builds). Making build throw errors for styling issues forces developers to fix them. Once developers get used to the rules, writing code without any formatting issues becomes second nature.  <a href="https://stylecop.codeplex.com">StyleCop</a> is an open source static code analysis tool from Microsoft that checks C# code for conformance to StyleCop&rsquo;s recommended coding styles and a subset of Microsoft&rsquo;s .NET Framework Design Guidelines. It has a Visual Studio plugin and also integrates well with <a href="https://stylecop.codeplex.com/wikipage?title=Setting%20Up%20StyleCop%20MSBuild%20Integration">MsBuild</a>.</p>
+
+<h4><strong>Cleaning up a Large Code Base</strong></h4>
+
+<p>Introducing StyleCop (or any code format enforcement) into a large pre-existing code base is challenging. Turning the tool on would immediately throw hundreds and thousands of errors. Trying to fix them in a stretch might impact the ongoing development process. This often causes us to delay the introduction of such enforcement&rsquo;s into the project and it continues to be a technical debt.</p>
+
+<p>Taking an incremental approach, fixing one by one as and when a file is changed seems a good idea. Teams can come with the <a href="http://programmer.97things.oreilly.com/wiki/index.php/The_Boy_Scout_Rule">Boy Scout Rule</a> - &lsquo;<em>Leave the file cleaner than you find</em>&rsquo;. Every time a file is touched for a fix, run StyleCop analysis and fix the errors. Over a period of time, this will make the project clean. The only problem with this approach is developers often tend to ignore/forget running the analysis and fix them.</p>
+
+<blockquote><p><em>Trivial things like code formatting is hard to mandate within a team unless it is enforced through tooling</em></p></blockquote>
+
+<h3>Source Control Hooks</h3>
+
+<p>We can plug into various hooks that source controls give to enforce code formatting on developer machines. In git, you can add a <a href="https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks">custom pre-commit hook</a> to run the StyleCop analysis on all the staged files. <a href="https://github.com/bbadjari/stylecopcli">StyleCopcli</a> is an open source application that wraps over the StyleCop DLLs and allows running the analysis from the command line. So in the hook, I use this CLI to run StyleCop analysis on all the staged files.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bat'><span class='line'>#!<span class="n">/bin/sh</span>
+</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Running Code Analysis&quot;</span>
+</span><span class='line'>.<span class="n">/stylecopcli/StyleCopCLI.exe</span> -cs $(git diff --cached --name-only)
+</span><span class='line'><span class="k">if</span> [ $? <span class="o">=</span> <span class="m">2</span> ]
+</span><span class='line'>    then
+</span><span class='line'>        <span class="k">echo</span> Commit Failed! Fix StyleCop Errors
+</span><span class='line'>        exit <span class="m">1</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>        <span class="k">echo</span> No SyleCop Errors!
+</span><span class='line'>        exit <span class="m">0</span>
+</span><span class='line'>fi
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If there are any StyleCop validation errors the commit is aborted, forcing the developer to fix it. The git hooks work fine when committing from a command line or UI tools like Source Tree. However, Visual Studio git plugin does not run the git hooks and fails to do the check.</p>
+
+<p><img class="center" alt="StyleCop git hook failing commit in console" src="http://rahulpnath.com/images/code_formatting_git_hook_console.png" /></p>
+
+<p><img class="center" alt="StyleCop git hook failing commit in Source Tree" src="http://rahulpnath.com/images/code_formatting_git_hook_sourcetree.png" /></p>
+
+<p>Over a period of time, most of the files will get cleaned and remaining can be done all at once with less effort. Once the entire code base passes all StyleCop rules, this can be enforced in the build server. This ensures that no more bad formatted code gets checked into the source control.</p>
+
+<p>Code is read more than written. So it is important to keep it readable and well-formatted. It also makes navigating code bases easier and faster. These are minor things that are often <a href="https://vimeo.com/97329157">overlooked by developers</a>, but have a high impact on productivity when followed. Do you enforce code formatting rules in your current project? What are the rules that you find important. Sound off in the comments below!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introduce Tests when Fixing Bugs]]></title>
@@ -2426,129 +2586,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 <p>You can find the hello world project template <a href="https://github.com/rahulpnath/Blog/tree/master/React_Template">here</a>. The repository size is a bit high as I have <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">included the npm packages</a> (<em>node_modules</em>) in the repository, which you would have anyways downloaded when doing a &lsquo;<a href="https://docs.npmjs.com/cli/install">npm install</a>&rsquo;.</p>
 
 <p>Hope this helps you to get started with React!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Disable NuGet Package Restore for a .Net Poject]]></title>
-    <link href="http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject/"/>
-    <updated>2016-05-02T13:26:59+00:00</updated>
-    <id>http://rahulpnath.com/blog/disable-nuget-package-restore-for-a-net-poject</id>
-    <content type="html"><![CDATA[<p><em>If you have decided on <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">Checking in Package Dependencies into Source Control</a> for an existing project that uses Nuget Packages then this post is for you</em></p>
-
-<p>When using NuGet package references that are not included in the source control, these packages gets restored during build time. There are <a href="https://docs.nuget.org/consume/package-restore">multiple ways that NuGet supports restore these dependencies at build time</a></p>
-
-<ul>
-<li>Automatic Package Restore is the current recommended approach (within Visual Studio), which is available from NuGet 2.7.</li>
-<li>Command-line package restore on build servers</li>
-<li>MSBuild-integrated package restore approach is the original Package Restore implementation and is still used in many projects.</li>
-</ul>
-
-
-<p>Depending on the type to of restore the project uses, NuGet has different configuration entries in the <em>csproj</em> files and <em>.nuget</em> folder in the solution root. So when choosing to check in package dependencies into the source control, it is a good idea to remove all these <a href="https://docs.nuget.org/consume/package-restore/migrating-to-automatic-package-restore">generated configurations</a> and files that are not required any more. The below script does this for you!</p>
-
-<div class="alert alert-warning">
-<strong>WARNING!</strong> The script deletes the <em>.nuget</em> folder (if it exists), updates the <em>.csproj</em> files. Please make sure that the project folder is under source control or you have a backup of the folder. After running the script make sure that all the changes that you see are expected as explained here and the project builds and runs as before.
-</div>
-
-
-<p>The PowerShell script does the below for a given solution directory folder (mandatory)</p>
-
-<ul>
-<li>For each of the <em>csproj</em> file in the given folder, the script removes the
-
-<ul>
-<li><em>RestorePackages</em> node</li>
-<li><em>NugetPackageImportStamp</em> node</li>
-<li><em>nuget target import</em> from the solution root .nuget folder</li>
-<li><em>EnsureNuGetPackageBuildImports</em> node</li>
-</ul>
-</li>
-<li>Removes <em>.nuget</em> folder from the solution root if it exists.</li>
-</ul>
-
-
-<p><em>The script leaves blank lines in the </em>csproj<em> files in place of the removed nodes.</em></p>
-
-<figure class='code'><figcaption><span>Remove NuGet Restore</span><a href='https://gist.github.com/rahulpnath/13d3b4f54cec51e22344876b1566b911#file-remove-nuget-restore-ps1'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$solutionDirectory</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'> <span class="nv">$importNugetTargetsTag</span><span class="p">=</span> <span class="no">[regex]</span><span class="p">::</span><span class="n">escape</span><span class="p">(</span><span class="sh">@&#39;</span>
-</span><span class='line'><span class="sh">&lt;Import Project=&quot;$(SolutionDir)\.nuget\NuGet.targets&quot; Condition=&quot;Exists(&#39;$(SolutionDir)\.nuget\NuGet.targets&#39;)&quot; /&gt;</span>
-</span><span class='line'><span class="sh">&#39;@</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$restorePackagesTag</span> <span class="p">=</span> <span class="s1">&#39;&lt;RestorePackages&gt;.*?&lt;/RestorePackages&gt;&#39;</span>
-</span><span class='line'><span class="nv">$nuGetPackageImportStamp</span> <span class="p">=</span> <span class="s1">&#39;&lt;NuGetPackageImportStamp&gt;.*?&lt;/NuGetPackageImportStamp&gt;&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span> <span class="p">=</span> <span class="s1">&#39;(?smi)&lt;Target Name=&quot;EnsureNuGetPackageBuildImports&quot;.*?&lt;/Target&gt;&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="nv">$f</span> <span class="k">in</span> <span class="nb">Get-ChildItem</span> <span class="n">-Recurse</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">csproj</span> <span class="p">|</span> <span class="nb">sort-object</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="nv">$text</span> <span class="p">=</span> <span class="nb">Get-Content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span> <span class="n">-Raw</span>
-</span><span class='line'>    <span class="nv">$text</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$importNugetTargetsTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$nuGetPackageImportStamp</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$restorePackagesTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="p">|</span> <span class="nb">set-content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Get-ChildItem</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-include</span> <span class="p">.</span><span class="n">nuget</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$_</span><span class="p">)</span> <span class="p">{</span> <span class="nb">remove-item</span> <span class="nv">$_</span><span class="p">.</span><span class="n">fullname</span> <span class="n">-Force</span> <span class="n">-Recurse</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Any similarity with the scripts <a href="http://weblogs.asp.net/jongalloway/scripting-net-project-migration-to-automatic-nuget-package-restore">here</a> is intended as that was my starting place. To explicitly <a href="https://docs.nuget.org/consume/package-restore#opting-out">opt out of the Automatic Package Restore</a> on Visual Studio add a <em>Nuget.config</em> in the solution root.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;configuration&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;packageRestore&gt;</span>
-</span><span class='line'>    <span class="c">&lt;!-- Opts out of both Automatic Package Restore and MSBuild-Integrated Package Restore --&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;enabled&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c">&lt;!-- Opts out of Automatic Package Restore in Visual Studio --&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;automatic&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/packageRestore&gt;</span>
-</span><span class='line'><span class="nt">&lt;/configuration&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Hope this helps you to move away from NuGet restore at build time.</p>
 ]]></content>
   </entry>
   
