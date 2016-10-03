@@ -5,7 +5,7 @@ comments: true
 categories:
 - Programming
 tags: 
-date: 2016-10-04
+date: 2016-10-03
 completedDate: 2016-09-20 06:02:13 +0530
 keywords: 
 description: A walk through of popular code formatting rules and using source control hooks to introduce styling rules into a large code base.
