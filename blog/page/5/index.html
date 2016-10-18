@@ -163,6 +163,119 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-01-18T22:51:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 18<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/organizing-tests-into-test-suites-for-visual-studio/" itemprop="url">Organizing Tests into Test Suites for Visual Studio</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>While working with large code base, that has a lot of tests (unit, integration, acceptance etc), running all of them every time we make a small  change (if you are doing TDD or just using build for feedback) takes a lot of time. Organizing tests into different test suites, making it easier to run as required by the current context, is handy in such cases.</p>
+
+<p>There are multiple ways that we can do this within Visual Studio and below are some of the options available. I tend to use a mix of all these in my current project. This gives the flexibility to run only the new tests that I am writing while writing new code or set of related tests for the updates that I am making. Once done with the changes, I can run the full suite of unit tests, followed by the integration tests. This reduces the interruption duration while coding and has a direct impact on the overall productivity too. (If you think small interruptions does not matter much think twice!)</p>
+
+<p><img class="center" alt="Geek productivity" src="/images/geek_productivity.jpg" /></p>
+
+<h4><strong>Test Traits</strong></h4>
+
+<p>Traits are a good way to group tests together and to run them as different suites. It encompasses TestCategory, TestProperty, Priority and Owner. Using <a href="https://msdn.microsoft.com/en-au/library/microsoft.visualstudio.testtools.unittesting.testcategoryattribute.aspx">TestCategory</a> attribute we can specify  the group of the test and the Visual Studio Test Explorer uses this value to group the tests and allows executing tests in specific groups.</p>
+
+<p><img class="center" alt="Visual Studio Test Traits" width="75%" src="/images/vs_testExplorer_traits.png" /></p>
+
+<p>Limitation with the above approach is that it depends on developers to put these attributes on the test cases or class level and not leveraging any existing conventions that might be already in place. Having integration tests, unit tests, acceptance tests in different projects is a very common practice, with conventions like project names ending with &lsquo;.UnitTests, .IntegrationTests, .AcceptanceTests&rsquo; etc.</p>
+
+<h4><strong>Build Tasks and Task Runner Explorer</strong></h4>
+
+<p>The <a href="https://visualstudiogallery.msdn.microsoft.com/8e1b4368-4afb-467a-bc13-9650572db708">Task Runner Explorer</a> (TRE) provides custom task runner support to Visual Studio, allowing to run grunt/gulp task or target inside Visual Studio. Grunt/Gulp has packages for most of the unit testing frameworks, using which different build tasks can be created. To select the tests to execute different conventions can also be used. Below is an example of a gulp task to execute all the c# unit tests in the project.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">gulp</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;gulp&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">xunit</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;gulp-xunit-runner&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">xunitConsolePath</span> <span class="o">=</span> <span class="s1">&#39;xunit.console.exe&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">unitTestsConvention</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;**/*.Tests.dll&#39;</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;c#UnitTests&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">runTests</span><span class="p">(</span><span class="nx">unitTestsConvention</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">function</span> <span class="nx">runTests</span><span class="p">(</span><span class="nx">dllPath</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="nx">dllPath</span><span class="p">,</span> <span class="p">{</span> <span class="nx">read</span><span class="o">:</span> <span class="kc">false</span> <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">xunit</span><span class="p">({</span>
+</span><span class='line'>            <span class="nx">executable</span><span class="o">:</span> <span class="nx">xunitConsolePath</span><span class="p">,</span>
+</span><span class='line'>            <span class="nx">options</span><span class="o">:</span> <span class="p">{</span> <span class="nx">parallel</span><span class="o">:</span> <span class="s1">&#39;all&#39;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>You need to install <a href="https://www.npmjs.com/package/npm">Node Package Manager</a> and grunt/gulp npm packages for TRE.</em></p></blockquote>
+
+<p>Similarly we can have multiple tasks to execute different groups of tests and it will be available in the TRE within Visual Studio as shown below. This approach gives the most flexibility, allowing tests be grouped any way and providing ability to execute tests across the stack of technologies.
+<img class="center" alt="Visual Studio Task Runner Explorer" src="/images/vs_tre.png" /></p>
+
+<h4><strong>Tests Settings File</strong></h4>
+
+<p>Creating Test Playlist is an easy way to group tests into a playlist and executing them as  group. From the Test Explorer, select the tests to be grouped and on right-click, the option to create playlist is available. The saved playlists can be selected from the drop down menu on the top bar for later execution.</p>
+
+<p><img class="center" alt="Visual Studio Test Playlist" src="/images/vs_testExplorer_playlist.png" /></p>
+
+<p>This works well for short-lived groupings, when we are actively working on a part of the code and need to execute tests for that area. Every time a new test is added, we need to add it explicitly to the playlist if required.</p>
+
+<p>We have seen multiple ways of grouping tests into test suites, and each of them comes handy in different situations. For project wide convention tests, I tend to use build tasks that integrate with TRE as it is more flexible and extendable. Do you use any other ways to group your tests, drop in with a comment!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-01-02T22:51:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 2<sup>nd</sup>, 2016</time>
         
 
@@ -1118,112 +1231,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-03-14T17:34:23+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 14<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/" itemprop="url">Moving Sensitive Information from Configuration File to Azure Key Vault</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
-
-<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
-
-<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;d4f09821-ab30-44f3-8d57-69925489b932&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
-</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">TestVaultRahul</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">SecretValue</span>     <span class="err">:</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">SecureString</span>
-</span><span class='line'><span class="n">SecretValueText</span> <span class="err">:</span> <span class="n">ApiKey</span>
-</span><span class='line'><span class="n">VaultName</span>       <span class="err">:</span> <span class="n">testvaultrahul</span>
-</span><span class='line'><span class="n">Name</span>            <span class="err">:</span> <span class="n">ApiKey</span>
-</span><span class='line'><span class="n">Version</span>         <span class="err">:</span> <span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
-</span><span class='line'><span class="n">Id</span>              <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">secrets</span><span class="p">/</span><span class="n">ApiKey</span><span class="p">/</span><span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span>
-</span><span class='line'>    <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="s">&quot;https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1247,6 +1254,8 @@ Before we do you might ask, Are we not building a web-site for the customer so w
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/review-six-months-and-counting-logitech-mx-master/">Review: Six Months and Counting - Logitech MX Master</a>
+    
     <a class="list-group-item " href="/blog/staying-productive-offline/">Staying Productive Offline</a>
     
     <a class="list-group-item " href="/blog/introducing-code-formatting-into-a-large-codebase/">Introducing Code Formatting into a Large Code Base</a>
@@ -1254,8 +1263,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <a class="list-group-item " href="/blog/introduce-tests-when-fixing-bugs/">Introduce Tests when Fixing Bugs</a>
     
     <a class="list-group-item " href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
-    
-    <a class="list-group-item " href="/blog/automatic_deployment_of_future_posts_with_octopress/">Automatic Deployment of Future Posts With Octopress</a>
     
   </div>
 </section>

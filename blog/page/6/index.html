@@ -163,6 +163,112 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-03-14T17:34:23+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 14<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/" itemprop="url">Moving Sensitive Information from Configuration File to Azure Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
+
+<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
+
+<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;d4f09821-ab30-44f3-8d57-69925489b932&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nv">$apiKey</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="n">TestVaultRahul</span> <span class="n">-Name</span> <span class="s2">&quot;ApiKey&quot;</span> <span class="n">-SecretValue</span> <span class="nv">$apiKey</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">SecretValue</span>     <span class="err">:</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">SecureString</span>
+</span><span class='line'><span class="n">SecretValueText</span> <span class="err">:</span> <span class="n">ApiKey</span>
+</span><span class='line'><span class="n">VaultName</span>       <span class="err">:</span> <span class="n">testvaultrahul</span>
+</span><span class='line'><span class="n">Name</span>            <span class="err">:</span> <span class="n">ApiKey</span>
+</span><span class='line'><span class="n">Version</span>         <span class="err">:</span> <span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
+</span><span class='line'><span class="n">Id</span>              <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">secrets</span><span class="p">/</span><span class="n">ApiKey</span><span class="p">/</span><span class="n">cfedea84815e4ca8bc19cf8eb943ee13</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span>
+</span><span class='line'>    <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="s">&quot;https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-03-06T11:40:25+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 6<sup>th</sup>, 2015</time>
         
 
@@ -1800,197 +1906,6 @@ Level 3 - Hypermedia Controls</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-10-19T11:42:54+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 19<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/dependency-injection/'>dependency injection</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/" itemprop="url">Configuring Unity Container: Comparing Code and Xml Configuration Side by Side</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Setting up dependency containers from code is very easy, but not at all the same when done using a configuration file. The project that I am currently working on uses xml configuration for <a href="https://unity.codeplex.com/">Unity container</a> and I did struggle mapping certain dependencies, so thought of putting this up.</p>
-
-<p>To start with I have created a console application and added the Unity <a href="https://www.nuget.org/packages/Unity/">nuget package</a>. You could directly add the configurations in the app.config file, but I prefer to keep the configurations separately in a different file, <em>unity.config</em>, and have it referred in the app.config(or web.config). Also make sure that the unity.config file gets copied to the build directory(setting build properties as content and copy always should help) so that it is available to the application.</p>
-
-<figure class='code'><figcaption><span>app.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configSections&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;section</span> <span class="na">name=</span><span class="s">&quot;unity&quot;</span> <span class="na">type=</span><span class="s">&quot;Microsoft.Practices.Unity.Configuration.UnityConfigurationSection, Microsoft.Practices.Unity.Configuration&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/configSections&gt;</span>
-</span><span class='line'><span class="nt">&lt;unity</span> <span class="na">configSource=</span><span class="s">&quot;unity.config&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the unity.config we need to specify the assemblies and namespaces that we will be injecting the dependencies from. Inside the container is where we register the dependencies.</p>
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;unity</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/practices/2010/unity&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'><span class="c">&lt;!-- Define Assemblies--&gt;</span>
-</span><span class='line'><span class="nt">&lt;assembly</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="c">&lt;!-- End Assemblies--&gt;</span>
-</span><span class='line'><span class="c">&lt;!-- Define Namespaces--&gt;</span>
-</span><span class='line'><span class="nt">&lt;namespace</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="c">&lt;!-- End Namespaces--&gt;</span>
-</span><span class='line'><span class="nt">&lt;container&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nt">&lt;/container&gt;</span>
-</span><span class='line'><span class="nt">&lt;/unity&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now that we have the basic infrastructure set up to start using the container, lets take a look at some common dependency injection scenarios that we come across. The <a href="http://msdn.microsoft.com/en-us/library/ff660914(v=pandp.20).aspx">Unity Configuration Schema</a> is worth  taking a look, to understand about the configuration elements and their attributes.</p>
-
-<p><strong>Simple Class and Interface</strong></p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">NormalClass</span><span class="p">&gt;();</span>
-</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">INormalInterface</span><span class="p">,</span> <span class="n">NormalInterfaceImplementation</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;NormalClass&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;INormalInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;NormalInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>
-Since we have only given the interface name while registering the type, specifying the assembly and namespace names of the type is important.Unity will look through these elements to find the type specified, whenever the specified type is not a full type name. This mechanism is also referred to as <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Automatic_Type_Lookup">Automatic Type Lookup</a></p>
-
-<p><strong>Generic Interface</strong></p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterface</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceImplementation</span><span class="p">&lt;&gt;));</span>
-</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterfaceWithTwoParameter</span><span class="p">&lt;,&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceWithTwoParametersImplementation</span><span class="p">&lt;,&gt;));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface`1&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation`1&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter`2&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation`2&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>// or
-</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface[]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation[]&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter[,]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation[,]&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As shown above registering <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Generic_Types">generic types</a> in config can either use the CLR notation of `N, where N is the number of generic parameters or use square brackets with commas to indicate the number of parameters. Examples using one and two parameters are shown above. <br/>
-For a generic interface, the parameters can have typed parameter associated with it, something like <em>IComplexGenericInterface&lt;ComplexGenericClass<GenericClass>></em>. In these cases we cannot directly register this using either of the notation above, as the configuration does not allow recursive formats of those notation. We can use <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Type_Aliases">Aliases</a> for specifying the parameter type names and then refer the alias for registering the interface.</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IComplexGenericInterface</span><span class="p">&lt;</span><span class="n">ComplexGenericClass</span><span class="p">&lt;</span><span class="n">GenericClass</span><span class="p">&gt;&gt;,</span> <span class="n">ComplexGenericInterfaceImplementation</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;alias</span> <span class="na">alias=</span><span class="s">&quot;ComplexGenericInterfaceType&quot;</span>
-</span><span class='line'>         <span class="na">type=</span><span class="s">&quot;ConfiguringUnity.ComplexGenericClass`1[[ConfiguringUnity.GenericClass, ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;container&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IComplexGenericInterface[ComplexGenericInterfaceType]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ComplexGenericInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/container&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As shown above alias is nothing but a shorthand name that will be replaced with the full type name when the configuration is loaded. This is only available at configuration time and not at runtime.</p>
-
-<p><strong>Conflicting Interfaces</strong> <br/>
-When you have conflicting interface names , probably from two different assemblies then you can create aliases or use full names to register the types. For the example I have created a class library project, ExternalLibrary and added it as a reference to the Console Application.</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
-</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IConflictingInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ConflictingInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;ExternalLibrary.IConflictingInterface, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ExternalLibrary.ConflictingInterfaceImplementation, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong><em>Code and Config</em></strong> instead of <strong><em>Code Vs Config</em></strong></h4>
-
-<p>Now that we have seen some of the common usage scenarios in registering types with containers, one main thought would be &lsquo;<a href="http://stackoverflow.com/questions/5418392/should-unity-be-configured-in-code-or-configuration-file">Should Unity be configured in code or configuration file?</a>&rsquo;. Xml configurations are anytime a pain for the developer as it more prone to errors and configuration complexities. But then there are scenarios where dependencies would have to be plugged in at runtime, for which xml configuration is really helpful. Unity does allow to specify both together, making the best use of both worlds. You can choose to have only your dependencies that are Late Bound in the config and have all others in the code. You could also override an already registered dependency.</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IOverridableDependency</span><span class="p">,</span> <span class="n">OverridableCodeImplementation</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IOverridableDependency&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;OverridableConfigImplementation&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>As shown above we have a different mapping in code and config for the same interface and I am loading the configuration into the container after all the  code registrations are done. In this case the dependency that is registered last will take precedence. So you could use this feature to override any dependencies specified in the code.</p>
-
-<p>There surely are a lot more cases that you would have come across while registering dependencies, do drop in a comment on the missing ones. The sample for this can be found <a href="https://github.com/rahulpnath/Blog/tree/master/ConfiguringUnity">here</a>
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2014,6 +1929,8 @@ When you have conflicting interface names , probably from two different assembli
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/review-six-months-and-counting-logitech-mx-master/">Review: Six Months and Counting - Logitech MX Master</a>
+    
     <a class="list-group-item " href="/blog/staying-productive-offline/">Staying Productive Offline</a>
     
     <a class="list-group-item " href="/blog/introducing-code-formatting-into-a-large-codebase/">Introducing Code Formatting into a Large Code Base</a>
@@ -2021,8 +1938,6 @@ When you have conflicting interface names , probably from two different assembli
     <a class="list-group-item " href="/blog/introduce-tests-when-fixing-bugs/">Introduce Tests when Fixing Bugs</a>
     
     <a class="list-group-item " href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
-    
-    <a class="list-group-item " href="/blog/automatic_deployment_of_future_posts_with_octopress/">Automatic Deployment of Future Posts With Octopress</a>
     
   </div>
 </section>
