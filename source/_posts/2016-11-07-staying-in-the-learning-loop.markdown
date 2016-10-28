@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Staying in the learning loop"
+title: "Staying in the Learning Loop"
 comments: true
 categories: 
 - Productivity
