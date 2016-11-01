@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Keeping Sensitive Configuration Data Out of Source Control - Rahul Nath</title>
+  <title>Managing Key Vault Through Azure Portal - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
+<meta name="description" content="Walkthrough Key Vault features available in Azure Portal." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control">
+  <link rel="canonical" href="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="Keeping Sensitive Configuration Data Out of Source Control" />
+<meta property="og:title" content="Managing Key Vault Through Azure Portal" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" />
-<meta property="og:description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
+<meta property="og:url" content="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/" />
+<meta property="og:description" content="Walkthrough Key Vault features available in Azure Portal." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-<meta property="og:image" content="http://www.rahulpnath.com/images/sensitivedata_source_control.png" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/manage_key_vault_portal.png" />
 
 
 <meta property="twitter:card" content="summary" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control" />
-<meta property="twitter:title" content="Keeping Sensitive Configuration Data Out of Source Control" />
-<meta property="twitter:description" content="Different options to manage sensitive configuration data and to keep it out of source control." />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal" />
+<meta property="twitter:title" content="Managing Key Vault Through Azure Portal" />
+<meta property="twitter:description" content="Walkthrough Key Vault features available in Azure Portal." />
 <meta property="twitter:creator" content="rahulpnath" />
-<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/sensitivedata_source_control.png" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/manage_key_vault_portal.png" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 19<sup>th</sup>, 2016</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-01T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 1<sup>st</sup>, 2016</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
   
 </span>
 
@@ -175,59 +175,42 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Keeping Sensitive Configuration Data Out of Source Control
+        Managing Key Vault Through Azure Portal
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>Most applications today deals with some form of sensitive information. The most commonly seen are database connection strings, API keys, token etc. The web.config seems the best place to have these values, but it definitely is not. In most cases it gets pushed into the source control systems as well. If it is a private repository then you at least have one level of security on top of it. It still exposes sensitive information to anyone who has access to the repository. It’s worse when the <a href="http://www.internetnews.com/blog/skerner/github-search-exposes-passwords.html">repository is public</a>.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>You can now manage Key Vault through the Azure portal. Prior to this the Key Vault&rsquo;s were managed either using <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Powershell</a>, <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">ARM Templates</a> or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>. Managing key Vault is now easy and user-friendly for the nontechnical people. In this post, I will walk through the new features in Azure Portal to manage key vault.</p>
 
-<p><img alt="Keep sensitive data out of source control" src="/images/sensitivedata_source_control.png" /></p>
+<blockquote><p><em>If you find any difference between what you see in the portal versus those in the screenshots below, it&rsquo;s likely that the portal is updated</em></p></blockquote>
 
-<p>There are different ways you can  avoid pushing sensitive data into source control. In this post, I will explore options that I am familiar with.</p>
+<p>In the new Azure portal search for &lsquo;key vault&rsquo; to access this new feature. Or you can go to &lsquo;More Services&rsquo; and scroll down to &lsquo;Security + Identity&rsquo; section in the menu. Selecting Key Vault takes you to all the available Key Vaults under your subscription. You can further filter the Vault&rsquo;s list by the vault name using the filter box or based on your subscriptions.</p>
 
-<blockquote><p><em>Use configuration files as template definitions for the configuration data your application requires. Have the actual values stored elsewhere</em></p></blockquote>
+<p><img  alt="Key Vault in Azure Portal" src="/images/keyvaultportal_menu_option.png"/></p>
 
-<h3>Azure App Settings</h3>
+<h4><strong>Creating Key Vault</strong></h4>
 
-<p>If you are deploying your application as a Web App on Azure, you can store <a href="https://azure.microsoft.com/en-us/blog/windows-azure-web-sites-how-application-strings-and-connection-strings-work/">application settings and connection strings in Azure</a>. At runtime, Windows Azure Web Sites automatically retrieves these values for you and makes them available to code running in your website. This removes the need for having sensitive data in the configuration file.</p>
+<p>To create a new Key Vault select the &lsquo;Create&rsquo; option. By entering the Vault Name, Subscription, Resource Group and Location you can create a new Key Vault.</p>
 
-<p><img alt="Azure App Settings and Connection Strings" src="/images/sensitiveData_azure_app_settings.png" /></p>
+<p><img  alt="Create Key Vault in Azure Portal" src="/images/keyvaultportal_create_key_vault.png"/></p>
 
-<h3>Release Management Tools</h3>
+<p>The pricing tier defaults to Standard and it does not support HSM backed keys. This means you will be only able to create Software keys. You can select the  Premium pricing tier if you need HSM backed keys. By default the login with which you create the subscription with gets granted access to the vault and is added to the access policies. You can grant additional applications or users access and control the permissions. Below I am adding in an AD application.</p>
 
-<p>Release management tools like Octopus Deploy, Microsoft Release Management, that performs configuration transformation. It supports creating different environments (development, production) and corresponding configurations. On creating a package for an environment, it applies the corresponding environment configurations</p>
+<p><img  alt="Key Vault Add Access Policy" src="/images/keyvaultportal_access_policy.png"/></p>
 
-<p><img alt="Release Management Tools - Octopus Deploy" src="/images/sensitiveData_releaseManagement_tool_octopus.png" /></p>
+<p>You can specify the Key Permissions and the Secret Permissions that the ServicePrincipal.</p>
 
-<p>Packaging embeds the configuration value into the configuration file. This makes it available to anyone who has access to the host systems.</p>
+<p><img  alt="Access Policy set Secret Permissions" src="/images/keyvaultportal_secretpermissions.png"/></p>
 
-<h3>Azure Key Vault</h3>
+<h4><strong>Keys and Secrets</strong></h4>
 
-<p>Azure Key Vault acts as a centralized repository for all sensitive information. Key vault stores cryptographic keys and Secrets and makes them available over a HTTP Api. The objects (keys and secrets) in key vault has unique identifier to retrieve them. Check <a href="http://www.rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in real world application</a> for more details on how to achieve this. A client application can <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate with Azure Key Vault using a ClientID/secret or ClientID/certificate</a>. Using certificate to authenticate is the preferred approach. To get Keys/Secret from key vault all you need is the AD Application Id, the client secret or certificate identifier and the key/secret names. The certificate itself can be deployed separately into the application host.</p>
+<p>Once the Vault is created you can add in Keys and Secrets into the vault. This can be done by selecting the Vault that was just created from the Vaults list. From here you can manage different aspects of the Vault and also manage Keys and Secrets.</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='XML'><span class='line'><span class="nt">&lt;appSettings&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;KeyVaultUrl&quot;</span> <span class="na">value=</span><span class="s">&quot;https://testvaultrahul.vault.azure.net&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADApplicationId&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADCertificateThumbprint&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;DbConnectionString&quot;</span> <span class="na">value=</span><span class="s">&quot;SqlConnectionString&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key =</span><span class="s">&quot;ApiToken&quot;</span> <span class="na">value=</span><span class="s">&quot;ApiToken/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
+<p><img  alt="Access Policy set Secret Permissions" src="/images/keyvaultportal_keyvault.png"/></p>
 
-
-<p>If you are using the &lsquo;client secret&rsquo; to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">Key Vault</a> is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application.</p>
-
-<p>These are some approaches to keep sensitive information out of source control. What approach do you use? Irrespective of the approach you use, make sure that you don’t check them in!</p>
+<p>The Azure Portal experience of Key Vault is good. It covers most of the functionalities needed when using a Key Vault. How do you find the new UI experience?</p>
 </div>
 
 
@@ -260,7 +243,7 @@
   
     <li>
     	<p>
-      		<a href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
+      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
   		</p>
     </li>
   
@@ -290,7 +273,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/" >Tweet</a>
   
   
   
@@ -302,10 +285,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/automatic_deployment_of_future_posts_with_octopress/" title="Previous Post: Automatic Deployment of Future Posts With Octopress">&laquo; Automatic Deployment of Future Posts With Octopress</a></li>
+            <li class="previous"><a href="/blog/maintaining-a-blogging-schedule/" title="Previous Post: Maintaining a Blogging Schedule">&laquo; Maintaining a Blogging Schedule</a></li>
             
-            
-            <li class="next"><a href="/blog/introduce-tests-when-fixing-bugs/" title="Next Post: Introduce Tests when Fixing Bugs">Introduce Tests when Fixing Bugs &raquo;</a></li>
             
           </ul>
         
@@ -350,8 +331,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/';
-        var disqus_url = 'http://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/';
+        var disqus_url = 'http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/';
         var disqus_script = 'embed.js';
       
     (function () {
