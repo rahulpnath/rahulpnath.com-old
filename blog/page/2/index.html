@@ -163,6 +163,102 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-25T04:27:32+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 25<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/data_hotfix/" itemprop="url">Data Hotfix : Things to Remember</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Yesterday I was late to leave office as I had to data fix some of the systems that we are currently building. We had just migrated few hundred clients onto the new platform. Invoices generated for the clients had wrong invoice amounts due to some mismatching data used when migrating. We had the expected invoice from the old system which made finding the problem easy. We ran a few scripts to correct the data in different systems and fixed the issue.</p>
+
+<p><a href="http://static1.squarespace.com/static/54652521e4b0045935420a6c/t/548dee03e4b0f1b25cb560d5/1418587652009/Data.jpg?format=1500w">
+    <img class="center" alt="Data Hotfix" src="/images/data_hotfix.jpg" />
+</a></p>
+
+<div class="alert alert-warning">
+<strong>WARNING!</strong> Normally I do not recommend making any changes directly in production server. In this case, there was a business urgency and was forced to do the data fix the same night, for smooth functioning the day after. We still managed to get in some testing in the development environment before running it in production.
+</div>
+
+
+<h3>It All Starts with a Few</h3>
+
+<p>I have seen it repeatedly happen that this kind of data fixes starts with a few in the beginning. Within a short span of time the affected data size grows drastically and manual updates might not be a good solution.</p>
+
+<blockquote><p><em>If you get a second thought of whether to script the fix or not, then you should script it.</em></p></blockquote>
+
+<p> Yesterday it started with data fix for 30 clients and the fix was relatively small. It could either be through UI or API. Fix through the UI took around 45 seconds each, and there were two of us. So it was just a matter of 12-15 minutes to fix it. While fixing, one of us found an extra scenario where the same fix needs to be applied. Re-running the query to find such clients bombarded the number to 379. At this moment, I stood up and said <em>I am going to script this. There is no way  I am doing this manually.</em> Manually fixing this would take five man hours, but will finish in two and half hours, as there were two of us. Even writing the script is going to take around an hour but that&rsquo;s just one man hour.</p>
+
+<blockquote><p><em>There is happiness you get when you script the fix and not manually plow through the UI fixing each of them</em></p></blockquote>
+
+<p>The script was in C#, written as a test case, invoked from a test runner (which I don&rsquo;t feel great about now) updating the systems with the data fix. It did its job and fixed all the cases it was supposed to. But I was not happy with the approach that I had chosen to make the fix. Correcting production data through a unit test script does not sound a robust solution. The reason to choose tests was that the test project had all the code required to access the other systems. It was just about changing the configuration values to point to the production system. It was the shortest path to having at least one client updated and verified.</p>
+
+<p>Having it as a test script restricted me from scaling the update process (though I could have done some fancy things to <a href="https://xunit.github.io/docs/running-tests-in-parallel.html">run tests in parallel</a>). It also forced me to hard-code the input data.Logging was harder  and I used <a href="https://msdn.microsoft.com/en-us/library/system.diagnostics.debug.writeline(v=vs.110).aspx">Debug.WriteLine</a> to the VS output window. All those were the aftermath of choosing the wrong execution method - running it as a test script!</p>
+
+<p>In retrospective, here are a few things that I should have done different and should be doing if ever I am in a similar situation again.</p>
+
+<h4><strong>Create Stand-alone Executable</strong></h4>
+
+<p>Having a stand-alone executable running the script provides the capability to scale the number of processes as I wanted. Input can be passed as a file or as an argument to the application allowing to break the large data set into smaller subsets.</p>
+
+<h4><strong>Log Error and Success</strong></h4>
+
+<p>It&rsquo;s very much possible that the &lsquo;fix-to-fix errors&rsquo; can go wrong or throw exceptions. So handle for errors and log appropriate message to take any corrective actions. It&rsquo;s better to log to a file or other durable storage as that is more foolproof. Logging to the output window (Debug.Writeline/Console.Writeline) is not recommended, as there is a risk of accidentally losing it (with another test run or closing VS).</p>
+
+<p> Logging successes are equally important to keep track of fixed records. It helps in cases where the process terminates suddenly while processing a set of data. It gives a track of all data sets that were successfully processed and exclude from following runs.</p>
+
+<h4><strong>Test</strong></h4>
+
+<p>It is very likely that the script has bugs and does not handle all possible cases. So as with any code, testing the data fix script is also mandatory. Preferably, test in a development/test environment, if not try for a small subset of input in the production. In my case, I was able to test in the development environment and then in production. But still, I ran a small subset in production first and ended up finding an issue that I could not find in development.</p>
+
+<h4><strong>Parallelize if Possible</strong></h4>
+
+<p>In cases where the data fixes are independent of each other (which likely is when dealing with large data fixes), each of the updates can be in parallel. Also using nonblocking calls when updating across the network helps speed up the process, by reducing the idle time and improves the overall processing time.</p>
+
+<h4><strong>Parameterize Input</strong></h4>
+
+<p>Parameterizing of input to the script (console) application helps when you want to scale the application. In my case updating each of the clients took around 8-10 seconds as it involved calling multiple geographically distributed systems. (Updating a system in the US from Australia does take a while!). Having a parameterized application enables to have multiple applications running with different input sets updating the data and speeds up the overall processing time.</p>
+
+<p>It&rsquo;s hard to come up with a solid plan for critical data fixes. It might not be possible to follow all of the points above. Also, there might be a lot other things to be done other than these. These are just a few things for reference so that I can stop, take a look and move on when a similar need arises.  Hope this helps someone else too! Drop in a comment if you have any tips for the &lsquo;eleventh hour&rsquo; fix!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-16T05:00:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 16<sup>th</sup>, 2016</time>
         
 
@@ -1524,105 +1620,6 @@ Signed    : 0</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-14T16:48:25+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 14<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/parenting/'>parenting</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/life-learnings-after-being-a-parent/" itemprop="url">Life Learnings After Being a Parent</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p><em>His father asked Ethan in a raspy voice, &ldquo;You spend time with your son?&rdquo;</em></p>
-
-<p><em>&ldquo;Much as I can,&rdquo; he’d answered, but his father had caught the lie in his eyes.</em></p>
-
-<p><em>&ldquo;It’ll be your loss, Ethan. Day&rsquo;ll come, when he’s grown and it’s too late, that you&rsquo;d give a kingdom to go back and spend a single hour with your son as a boy. To hold him.Read a book to him. Throw a ball with a person in whose eyes you can do no wrong. He doesn&rsquo;t see your failings yet. He looks at you with pure love and it won&rsquo;t last, so you revel in it while it&rsquo;s here.&rdquo;</em></p>
-
-<p><em>Ethan thinks often of that conversation, mostly when he&rsquo;s lying awake in bed at night and everyone else is asleep, and his life screaming past at the speed of light—the weight of bills and the future and his prior failings and all these moments he&rsquo;s missing—all the lost joy—perched like a boulder on his chest.</em></p>
-
-<p>- <strong> <em><a href="http://amzn.to/1YdxuYm">Pines (The Wayward Pines Trilogy, Book 1)</a></em> </strong></p></blockquote>
-
-<p>Every second that I spent with Gautham is a pure joy and I enjoy it to the most. It&rsquo;s true that I have very less time to spend for myself, but then it also made me realized I have not been using all the time I did have before he was born. I have re-arranged all my schedules so that whenever I am home and he is awake, I do nothing else, but be with him! There has been a lot of learnings and realizations that I have had since the last 20 months.</p>
-
-<p><img class="center" alt="Command Line Application Launcher" src="/images/gautham.jpg" /></p>
-
-<h4><strong>Curiosity is what keeps us going</strong></h4>
-
-<p>Each day is a new day and he learns at least one new thing. Though to us (the &lsquo;grown-ups&rsquo;), it feels that he is doing the same thing over and over again, for him, it&rsquo;s the same thing in a new perspective. He is curious about everything that he sees and happens around. I often felt that my job was boring, mundane and repetitive and often ended up being the same thing every day. But then I understood that it is not about what you do but how you see what you are doing, that matters. Having at least one new thing to learn from whatever you do daily is a good way to stay motivated.</p>
-
-<blockquote><p><em>Always try to understand one level below your current level of abstraction - happiness lies there!</em></p></blockquote>
-
-<h4><strong>Making the Complex Simple</strong></h4>
-
-<p>Often when playing with him I realize how overwhelming things are in the world and all that he is yet to learn. But that&rsquo;s just me putting my perspective through his eyes. For him, it&rsquo;s always &lsquo;try try and try again&rsquo;. He tries the best he can do something now and improve on it over the days or months.</p>
-
-<blockquote><p><em>How do you eat an elephant? One bite at a time.</em></p></blockquote>
-
-<p>I often get overwhelmed when dealing with something new - learning a new language, buying a car or even planning a vacation. There are innumerable options for everything these days and all that information is available at our fingertips. But then the way to approach these is to break it down into smaller chunks of work and target that individually. Just like writing this blog post is overwhelming for me for all the things that I think I need to write, but then I write section by section or even line by line. Forming <a href="http://amzn.to/1toWtyy">habits</a> to break anything <a href="http://amzn.to/1Xg6biH">complex into smaller pieces</a> and tackling that is a good way to approach tasks.</p>
-
-<h4><strong>Learning to Disconnect</strong></h4>
-
-<p>I certainly do not want Gautham to be entertained with a smartphone, iPad or laptop while I get to do something else. Though it is very much plausible, that&rsquo;s just setting him up the wrong path. It&rsquo;s easy for us to get distracted into all these and not do what matters to us the most - just like all of us hooked into the social media.</p>
-
-<blockquote><p><em><a href="https://medium.com/life-learning/how-to-live-a-life-of-balance-and-high-productivity-bd5434a61c79#.26mh9yvec">Social media is best as planned entertainment rather than unplanned distraction.</a></em></p></blockquote>
-
-<p>The more you stay offline from these &lsquo;addictive&rsquo; social networks the less you will feel the need to check it. Like I do not want my kid to be addicted to these, I do not want it to get in the way of me using that time for something more useful. Staying disconnected from the internet and social network is a good way to get a lot of time for yourself.</p>
-
-<h4><strong>Less is More</strong></h4>
-
-<p>Gautham is happy just with a bottle cap, or a small thread of a shirt and can spend a lot of time playing with it. It&rsquo;s not in what you have but how you see things that you have matters. I was always attracted to the latest and coolest gadgets and often bought them too. Happiness then was directly related to the things I had in possession and how current I was. I have learned to get over that minimize my expense to what matters most. Though it&rsquo;s a bit late , the saying &lsquo;<em>Do not save what is left after spending but spend what is left after saving</em>&rsquo;, starts making a lot of sense. The fact that there is someone who is completely dependent on me(/wife) brings in a lot of responsibility to life which was missing earlier and puts savings in front of expenses.</p>
-
-<h4><strong>Time is Valuable</strong></h4>
-
-<p>One of the most precious things that I have is time. I used to while away time earlier but now I have very limited of it for myself that I try to spend it usefully. Having your <a href="http://zenhabits.net/purpose-your-day-most-important-task/">Most Important Task</a> (MIT) defined is important and helps prioritize your tasks for the day. If you feel a lot of time is getting lost, while sitting down to work (on a laptop for me) use monitoring tools like <a href="https://www.rescuetime.com/">Rescue Time</a> to understand your daily habits and improve on it.</p>
-
-<blockquote><p><em><a href="http://quoteinvestigator.com/2013/10/30/inspire-nine/">Someone once asked</a> Somerset Maugham if he wrote on a schedule or only when struck by inspiration. “I write only when inspiration strikes,” he replied. “Fortunately, it strikes every morning at nine o’clock sharp.”</em></p></blockquote>
-
-<p>Habits decide what we do every day so it&rsquo;s very important that we form good ones. Though it takes effort, it is possible to <a href="http://charlesduhigg.com/how-habits-work/">rewire any of your habits</a> just by giving attention to it.</p>
-
-<h4><strong>Learning from Mistakes</strong></h4>
-
-<p>When you try, you fail and you fail again and again until you succeed. When you don&rsquo;t try you fail - you fail to succeed! <a href="http://www.psychologyinaction.org/2012/11/22/infants-learn-to-walk-by-learning-to-fall/">Infants learn to walk by learning to fall</a>. It&rsquo;s easy to get into a comfort zone and stay there be it in your jobs or elsewhere. Intentionally putting yourself into a position to learn and grow is important. I spent a large part of my time at the workplace. So I try to own up a lot more unfamiliar things and get exposed more - It&rsquo;s Ok to fail!</p>
-
-<p>Parenting is hard but it&rsquo;s also real fun. You get to learn a lot yourself while on the journey and <strong><em>they give back the initial years of your life</em></strong>. Let me wrap this up quickly as he is about to wake up and the last thing I want is to have all the keys pulled off my keyboard!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1646,6 +1643,8 @@ Signed    : 0</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/staying-in-the-learning-loop/">Staying in the Learning Loop</a>
+    
     <a class="list-group-item " href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
     
     <a class="list-group-item " href="/blog/maintaining-a-blogging-schedule/">Maintaining a Blogging Schedule</a>
@@ -1653,8 +1652,6 @@ Signed    : 0</p>
     <a class="list-group-item " href="/blog/review-six-months-and-counting-logitech-mx-master/">Review: Six Months and Counting - Logitech MX Master</a>
     
     <a class="list-group-item " href="/blog/staying-productive-offline/">Staying Productive Offline</a>
-    
-    <a class="list-group-item " href="/blog/introducing-code-formatting-into-a-large-codebase/">Introducing Code Formatting into a Large Code Base</a>
     
   </div>
 </section>
