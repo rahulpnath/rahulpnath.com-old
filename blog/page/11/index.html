@@ -163,6 +163,68 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-06-15T16:24:47+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 15<sup>th</sup>, 2011</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/thoughts/'>thoughts</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/venturing-out/" itemprop="url">Venturing out </a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Blogs are always a very good medium to express our thoughts,views,knowledge and much more.In cases of where you blog on topics new to you,blogging can also be a way to learn and to get feedback.</p>
+
+<p>But what good does it come to if the reader base for your blogs are less.It&rsquo;s true that with social sites like Facebook,twitter etc you stand a better chance to publicize your blogs more and increase your reader base.But still it has its own limitations as not all of the people that follows you might be interested in the topics that you blog.<del>So the best thing would be to find communities/group blogs that relate to topics that you commonly blog on and contribute there.</del></p>
+
+<p><del>Being in Microsoft I have this privilege of having a space in the msdn blogs.Its been a long time since I had started an account <a href="http://blogs.msdn.com/b/rahulpnath/">there</a> and kept thinking on what to post.I think its high time to start off with that and enjoy one of the biggest reader base for technical topics.</del></p>
+
+<p><del>Why from today but???&hellip;..Thanks to the guys who motivated me to move on and venture out. :)
+</del></p>
+
+<p><strong>Edit:</strong> Yes I still do have the privilege, but I think it is better to have it here in my on domain than anywhere else, as it will always be mine. So I have decided to keep all my thoughts and posts on this site. I have even moved from wordpress hosting to a self hosted one so I have more control.</p>
+
+<p>“<em>Human beings, who are almost unique in having the ability to learn from the experience of others, are also remarkable for their apparent disinclination to do so.</em>”</p>
+
+<p>PS: Posting out my recent blog on REST</p>
+
+<p><a href="http://blogs.msdn.com/b/rahulpnath/">http://blogs.msdn.com/b/rahulpnath/</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-06-11T14:22:28+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 11<sup>th</sup>, 2011</time>
         
 
@@ -810,69 +872,6 @@ class Employee
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2010-11-17T05:40:57+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 17<sup>th</sup>, 2010</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/wp7/'>wp7</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/wp7-application-model/" itemprop="url">WP7 Application Model</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Mobile phones should be always responsive,highly responsive infact.If it&rsquo;s not responding within 10 to 15 seconds,the users hits the switch off button or removes the battery to reset the phone&hellip;.I have done this many a times.</p>
-
-<p>The WP7 application model allows only 1 application to be running at a time.But its not that bad that you have to always start from the beginning of an app if you switch away from it.Whenever you switch away from an app,it just goes into a hibernation mode,tombstoning to be more precise.Whenever a user switches between applications,the phone activates and deactivates the applications.Events are raised to notify this activating and deactivating so that the developers can handle them and maintain the state of the application between switches,as if it was just back there running.A user may also explicitly close down an application by pressing the back button on the device at the first page of the application.</p>
-
-<p>On start of a new instance of an application,which happens whenever an application is opened other than by switching to it using the back button,a launching event is raised after which the application moves on into the running state.It&#8217;s advised not to perform any time consuming activities in the Launching event handler,as any latency of more than 10 seconds causes the application to be bought down by the phone.So any IsolatedStorage access is recommended to be done after the application is up and running,making the app more responsive,which is our primary goal.On normal close the application raises a Closing event,where you might be saving persistent data to the IsolatedStorage.Data relating to a particular instance of application need not be saved here as the only way now to start the application is coming right from the beginning,raising the Launching even all over again.Again saving to the IsolatedStorage can be a little tricky.If it takes more than 10 seconds,the application will be terminated forcefully.The key here is that any data to be persisted should be done as and when you have the data and in a asynchronous manner.The earlier this happens the better it is for your application.Otherwise you may run into forceful termination of your application and loosing data and thereby decreasing you application&#8217;s reliability and use.</p>
-
-<p>Tombstoning opens up a whole new path for the application lifecylcle,introducing additional two events,Activated and Deactivated.The State Dictionary maintained by the <a href="http://msdn.microsoft.com/en-us/library/microsoft.phone.shell.phoneapplicationservice(v=VS.92).aspx">PhoneApplicationService</a>(which also provides all the above mentioned events) is kept as is between application switches.That is whatever is saved in that before deactivating the app will be available after the application is activated.This is how maintaining application state is achieved between application switches.On start of a new application instance the State Dictionary would be empty.Data that is required for just a particular application instance goes into the State Dictionary and the data that is required for all application instances gets saved into the IsolatedStorage.Applications may get tombstoned due to many reasons.It maybe due to user hitting the start button when in an application,launching choosers or launchers(in some cases of doesn&rsquo;t get tombstoned,but its always better to handle for this),due to phone going into idle state(which again can be handled).</p>
-
-<p>The below diagram,as from msdn, gives the complete picture of the application model.</p>
-
-<p><img src="/images/wp7_application_model.png" alt="wp7 application model" /></p>
-
-<p>Getting a good idea of the application model is important to build highly responsive,reliable application for the Windows Phone 7.</p>
-
-<p><strong><em>References:</em></strong></p>
-
-<p><a href="http://msdn.microsoft.com/en-us/library/ff769557(v=VS.92).aspx">Execution Model For Windows Phone</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -896,6 +895,8 @@ class Employee
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-key-vault-digital-signatures-and-offline-verification/">Azure Key Vault: Digital Signatures and Offline Verification</a>
+    
     <a class="list-group-item " href="/blog/staying-in-the-learning-loop/">Staying in the Learning Loop</a>
     
     <a class="list-group-item " href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
@@ -903,8 +904,6 @@ class Employee
     <a class="list-group-item " href="/blog/maintaining-a-blogging-schedule/">Maintaining a Blogging Schedule</a>
     
     <a class="list-group-item " href="/blog/review-six-months-and-counting-logitech-mx-master/">Review: Six Months and Counting - Logitech MX Master</a>
-    
-    <a class="list-group-item " href="/blog/staying-productive-offline/">Staying Productive Offline</a>
     
   </div>
 </section>

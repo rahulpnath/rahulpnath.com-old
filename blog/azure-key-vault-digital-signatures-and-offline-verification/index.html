@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Azure Key Vault: Digital Signatures and Offline Verification - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Explore using Digital Signatures with Azure Key Vault and how to verify signatures offline." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Azure Key Vault: Digital Signatures and Offline Verification" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/" />
+<meta property="og:description" content="Explore using Digital Signatures with Azure Key Vault and how to verify signatures offline." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/verify_signature.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification" />
+<meta property="twitter:title" content="Azure Key Vault: Digital Signatures and Offline Verification" />
+<meta property="twitter:description" content="Explore using Digital Signatures with Azure Key Vault and how to verify signatures offline." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/verify_signature.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-15T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 15<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Azure Key Vault: Digital Signatures and Offline Verification
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Digital Signature is a mechanism to ensure the validity of a digital document or message. Digital signatures use <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">asymmetric cryptography</a> - uses a public and private key pair.</p>
+
+<blockquote><p><em>A valid <a href="https://en.wikipedia.org/wiki/Digital_signature">digital signature</a> gives a recipient reason to believe that the message was created by a known sender (authentication), that the sender cannot deny having sent the message (non-repudiation), and that the message was not altered in transit (integrity)</em></p></blockquote>
+
+<p>The below diagram shows the overview of the different steps involved in the Digital Signature process. We generate a hash of the data that we need to protect and encrypt the hash value using a private key pair. This signed hash is sent along with the original data. The receiver generates a hash of the data received and also decrypts the attached signature using the public key. If both the hashes are same, the signature is valid, and the document has not been tampered with.</p>
+
+<p><a href="https://commons.wikimedia.org/wiki/File:Digital_Signature_diagram.svg"><img class="center" alt="Azure Key Vault - Verify Signature Offline" src="/images/signing_verification.png"/></a></p>
+
+<p>Azure Key Vault supports sign and verify operations and can be used to implement Digital Signatures. In this post, we will explore how to sign and verify a message using Key Vault. Verifying the hash locally is the recommended approach as per the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903623.aspx#BKMK_KeyOperations">documentation</a> and we will explore how this can be achieved.</p>
+
+<blockquote><p><em>Verification of signed hashes is supported as a convenience operation for applications that may not have access to [public] key material; it is recommended that, for best application performance, verify operations are performed locally.</em></p></blockquote>
+
+<h3>Signing Data</h3>
+
+<p>Sign and Verify operations on Key Vault are allowed only on hashed data. So the application calling these API methods should locally hash the data before invoking the method. The algorithm property value passed to the Key Vault Client API depends on the hashing algorithm used to hash the data. Below are the <a href="https://msdn.microsoft.com/library/en-us/Mt149357.aspx">supported algorithms</a>.</p>
+
+<ul>
+<li><em>RS256: RSASSA-PKCS-v1_5 using SHA-256. The application supplied digest value must be computed using SHA-256 and must be 32 bytes in length.</em></li>
+<li><em>RS384: RSASSA-PKCS-v1_5 using SHA-384. The application supplied digest value must be computed using SHA-384 and must be 48 bytes in length.</em></li>
+<li><em>RS512: RSASSA-PKCS-v1_5 using SHA-512. The application supplied digest value must be computed using SHA-512 and must be 64 bytes in length.</em></li>
+<li><em>RSNULL: See [RFC2437], a specialized use-case to enable certain TLS scenarios.</em></li>
+</ul>
+
+
+<p>The below code sample uses SHA-256 hashing algorithm to hash and sign the data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">textToEncrypt</span> <span class="p">=</span> <span class="s">&quot;This is a test message&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SHA256CryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">digest</span> <span class="p">=</span> <span class="n">hasher</span><span class="p">.</span><span class="n">ComputeHash</span><span class="p">(</span><span class="n">byteData</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">signedResult</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultClient</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SignAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="n">JsonWebKeySignatureAlgorithm</span><span class="p">.</span><span class="n">RS256</span><span class="p">,</span> <span class="n">digest</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Verify Online</h3>
+
+<p>To verify a signature online, the keyVaultClient supports a <a href="https://msdn.microsoft.com/en-us/library/microsoft.azure.keyvault.keyvaultclient.verifyasync.aspx">Verify method</a>. It takes the key identifier, algorithm, digest and signature to verify if the signature is valid for the given digest.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">isVerified</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultClient</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">VerifyAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="n">JsonWebKeySignatureAlgorithm</span><span class="p">.</span><span class="n">RS256</span><span class="p">,</span> <span class="n">digest</span><span class="p">,</span> <span class="n">signedResult</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Verify Offline</h3>
+
+<p>To Verify offline, we need access to the public portion of the key used to sign the data. The client application that needs to verify signatures can connect to the vault and get the key details or use a public key shared out of band. The <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application used to authenticate</a> with the key vault should have Get access for retrieving the public key from the vault. Get access can be set using the PermissionToKeys switch when registering the AD application with the key vault. Assuming we have access to the public key as a JSON string, we can use the <a href="https://msdn.microsoft.com/en-us/library/system.security.cryptography.rsacryptoserviceprovider(v=vs.110).aspx">RSACryptoServiceProvider</a> to verify the signature offline.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">key</span> <span class="p">=</span> <span class="n">JsonConvert</span><span class="p">.</span><span class="n">DeserializeObject</span><span class="p">&lt;</span><span class="n">JsonWebKey</span><span class="p">&gt;(</span><span class="n">jsonWebKey</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">rsa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSACryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">p</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSAParameters</span><span class="p">()</span> <span class="p">{</span> <span class="n">Modulus</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">N</span><span class="p">,</span> <span class="n">Exponent</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">E</span> <span class="p">};</span>
+</span><span class='line'><span class="n">rsa</span><span class="p">.</span><span class="n">ImportParameters</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span><span class='line'><span class="n">isVerified</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">VerifyHash</span><span class="p">(</span><span class="n">digest</span><span class="p">,</span> <span class="s">&quot;Sha256&quot;</span><span class="p">,</span> <span class="n">signedResult</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The signature verification succeeds if the message and the signature were not tampered. If either of message or signature were  modified then the signature validation fails.</p>
+
+<p>You can get the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/VerifySignatureOffline">here</a>. Hope this helps you to implement Digital Signatures using Key Vault.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Managing Azure Key Vault using Azure Resource Manager (ARM) Templates</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-azure-key-vault-over-the-rest-api/">Managing Azure Key Vault over the REST API</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/staying-in-the-learning-loop/" title="Previous Post: Staying in the Learning Loop">&laquo; Staying in the Learning Loop</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/';
+        var disqus_url = 'http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

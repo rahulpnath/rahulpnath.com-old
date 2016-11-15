@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-11-14T03:50:34+00:00</updated>
+  <updated>2016-11-15T03:50:20+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,86 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault: Digital Signatures and Offline Verification]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/"/>
+    <updated>2016-11-15T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification</id>
+    <content type="html"><![CDATA[<p>Digital Signature is a mechanism to ensure the validity of a digital document or message. Digital signatures use <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">asymmetric cryptography</a> - uses a public and private key pair.</p>
+
+<blockquote><p><em>A valid <a href="https://en.wikipedia.org/wiki/Digital_signature">digital signature</a> gives a recipient reason to believe that the message was created by a known sender (authentication), that the sender cannot deny having sent the message (non-repudiation), and that the message was not altered in transit (integrity)</em></p></blockquote>
+
+<p>The below diagram shows the overview of the different steps involved in the Digital Signature process. We generate a hash of the data that we need to protect and encrypt the hash value using a private key pair. This signed hash is sent along with the original data. The receiver generates a hash of the data received and also decrypts the attached signature using the public key. If both the hashes are same, the signature is valid, and the document has not been tampered with.</p>
+
+<p><a href="https://commons.wikimedia.org/wiki/File:Digital_Signature_diagram.svg"><img class="center" alt="Azure Key Vault - Verify Signature Offline" src="http://rahulpnath.com/images/signing_verification.png"/></a></p>
+
+<p>Azure Key Vault supports sign and verify operations and can be used to implement Digital Signatures. In this post, we will explore how to sign and verify a message using Key Vault. Verifying the hash locally is the recommended approach as per the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903623.aspx#BKMK_KeyOperations">documentation</a> and we will explore how this can be achieved.</p>
+
+<blockquote><p><em>Verification of signed hashes is supported as a convenience operation for applications that may not have access to [public] key material; it is recommended that, for best application performance, verify operations are performed locally.</em></p></blockquote>
+
+<h3>Signing Data</h3>
+
+<p>Sign and Verify operations on Key Vault are allowed only on hashed data. So the application calling these API methods should locally hash the data before invoking the method. The algorithm property value passed to the Key Vault Client API depends on the hashing algorithm used to hash the data. Below are the <a href="https://msdn.microsoft.com/library/en-us/Mt149357.aspx">supported algorithms</a>.</p>
+
+<ul>
+<li><em>RS256: RSASSA-PKCS-v1_5 using SHA-256. The application supplied digest value must be computed using SHA-256 and must be 32 bytes in length.</em></li>
+<li><em>RS384: RSASSA-PKCS-v1_5 using SHA-384. The application supplied digest value must be computed using SHA-384 and must be 48 bytes in length.</em></li>
+<li><em>RS512: RSASSA-PKCS-v1_5 using SHA-512. The application supplied digest value must be computed using SHA-512 and must be 64 bytes in length.</em></li>
+<li><em>RSNULL: See [RFC2437], a specialized use-case to enable certain TLS scenarios.</em></li>
+</ul>
+
+
+<p>The below code sample uses SHA-256 hashing algorithm to hash and sign the data.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">textToEncrypt</span> <span class="p">=</span> <span class="s">&quot;This is a test message&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SHA256CryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">digest</span> <span class="p">=</span> <span class="n">hasher</span><span class="p">.</span><span class="n">ComputeHash</span><span class="p">(</span><span class="n">byteData</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">signedResult</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultClient</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SignAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="n">JsonWebKeySignatureAlgorithm</span><span class="p">.</span><span class="n">RS256</span><span class="p">,</span> <span class="n">digest</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Verify Online</h3>
+
+<p>To verify a signature online, the keyVaultClient supports a <a href="https://msdn.microsoft.com/en-us/library/microsoft.azure.keyvault.keyvaultclient.verifyasync.aspx">Verify method</a>. It takes the key identifier, algorithm, digest and signature to verify if the signature is valid for the given digest.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">isVerified</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultClient</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">VerifyAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="n">JsonWebKeySignatureAlgorithm</span><span class="p">.</span><span class="n">RS256</span><span class="p">,</span> <span class="n">digest</span><span class="p">,</span> <span class="n">signedResult</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Verify Offline</h3>
+
+<p>To Verify offline, we need access to the public portion of the key used to sign the data. The client application that needs to verify signatures can connect to the vault and get the key details or use a public key shared out of band. The <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application used to authenticate</a> with the key vault should have Get access for retrieving the public key from the vault. Get access can be set using the PermissionToKeys switch when registering the AD application with the key vault. Assuming we have access to the public key as a JSON string, we can use the <a href="https://msdn.microsoft.com/en-us/library/system.security.cryptography.rsacryptoserviceprovider(v=vs.110).aspx">RSACryptoServiceProvider</a> to verify the signature offline.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">key</span> <span class="p">=</span> <span class="n">JsonConvert</span><span class="p">.</span><span class="n">DeserializeObject</span><span class="p">&lt;</span><span class="n">JsonWebKey</span><span class="p">&gt;(</span><span class="n">jsonWebKey</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">rsa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSACryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">p</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSAParameters</span><span class="p">()</span> <span class="p">{</span> <span class="n">Modulus</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">N</span><span class="p">,</span> <span class="n">Exponent</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">E</span> <span class="p">};</span>
+</span><span class='line'><span class="n">rsa</span><span class="p">.</span><span class="n">ImportParameters</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span><span class='line'><span class="n">isVerified</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">VerifyHash</span><span class="p">(</span><span class="n">digest</span><span class="p">,</span> <span class="s">&quot;Sha256&quot;</span><span class="p">,</span> <span class="n">signedResult</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The signature verification succeeds if the message and the signature were not tampered. If either of message or signature were  modified then the signature validation fails.</p>
+
+<p>You can get the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/VerifySignatureOffline">here</a>. Hope this helps you to implement Digital Signatures using Key Vault.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Staying in the Learning Loop]]></title>
@@ -1887,80 +1967,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
 <blockquote><p><em>&ldquo;A blog is neither a diary nor a journal. Many people think of blogging in relation to those two things, confessional or practical. It is neither but includes elements of both.&rdquo; - Lemn Sissay</em></p></blockquote>
 
 <p><a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">Every &lsquo;professional&rsquo; should have a blog</a>, and if you don&rsquo;t yet, now is a good time to start one. Sound off in the comments on what you feel about blogging in general, especially if you bought a domain and set up your blog after reading this. It will prove a point for this post!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Could Not Load Assembly msshrtmi.dll?]]></title>
-    <link href="http://rahulpnath.com/blog/could-not-load-assembly-msshrtmi-dll/"/>
-    <updated>2016-06-19T17:38:37+00:00</updated>
-    <id>http://rahulpnath.com/blog/could-not-load-assembly-msshrtmi-dll</id>
-    <content type="html"><![CDATA[<p>While migrating a few Azure Cloud Services to Web Jobs, we started facing the error, <span style='color: red;'><em>Could not load assembly &hellip; /msshrtmi.dll</em></span>,for just one of the projects. The error provides the exact path from where it is trying to load the DLL and is the same path from which the process is running. But the location does have the <em>msshrtmi.dll</em>, which for some reason the process is not able to load.</p>
-
-<p><img class="center" src="http://rahulpnath.com/images/msshrtmi_load_error.png" alt="msshrtmi dll load error" /></p>
-
-<div class="alert alert-info" role="alert">
-<strong>TL;DR</strong> This error occurred due to an attribute - <i>&lt;Prefer32Bit&gt;false&lt;/Prefer32Bit&gt;</i> - in the csproj file, while the referred msshrtmi dll was 32-bit version. This might not be applicable to you, but since it has happened once it&#8217;s very likely to happen again.
-</div>
-
-
-<p>To our surprise, this was happening only with a specific worker, while all others (around 8) were working fine. All of the workers are generated by the same build process on a server. For some reason (I am still investigating into this) the msshrtmi.dll is added as an external reference in the project and referred from there in all the project files. This was done mainly because we had a few external dependencies that were dependent on specific Azure SDK version (2.2). But this explicit reference should not have caused any issues as all, as the other processes were working fine and only a specific one was failing.</p>
-
-<p>One useful tool to help diagnose why the .NET framework cannot locate assemblies is <a href="https://msdn.microsoft.com/en-us/library/e74a18c4(v=vs.110).aspx">Assembly Binding Log Viewer(Fuslogvw.exe)</a>. The viewer displays an entry for each failed assembly bind. For each failure, the viewer describes the application that initiated the bind; the assembly the bind is for, including name, version, culture and public key; and the date and time of the failure.</p>
-
-<blockquote><p><em>Fuslogvw.exe is automatically installed with Visual Studio. To run the tool, use the Developer Command Prompt with administrator credentials.</em></p></blockquote>
-
-<p>Running <em>fuslogvw</em> with the application shows the assembly binding error, double clicking which gives a details error information, as shown below. This error message gives more details and tells us that the assembly platform or ContentType is invalid.</p>
-
-<p><img class="center" src="http://rahulpnath.com/images/msshrtmi_fuslogvw.png" alt="LOG: Assembly Name is: msshrtmi, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
-ERR: Invalid assembly platform or ContentType in file (hr = 0x8007000b).
-ERR: Run-from-source setup phase failed with hr = 0x8007000b.
-ERR: Failed to complete setup of assembly (hr = 0x8007000b). Probing terminated." /></p>
-
-<p>In the Task Manager, the worker with the assembly loading error (last <em>worker</em> in the image below) shows as a 64-bit process, while the others as 32-bit. Since the referred msshrtmi DLL is 32-bit, it explains why it was unable to find the correct platform matching msshrtmi assembly.</p>
-
-<p><img class="center" src="http://rahulpnath.com/images/msshrtmi_task_manager.png" alt="msshrtmi task manager" /></p>
-
-<p><a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx">CorFlags.exe</a> is used to determine whether an .exe file or .dll file is meant to run only on a specific platform or under WOW64. Running the <em>corflags</em> on all the workers produces the below two results:</p>
-
-<p><mark>corflags Problematic_Worker.exe</mark> <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x1  <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark>32BITPREF : 0</mark><br/>
-Signed    : 0</p>
-
-<p><mark>corflags Worker.exe</mark>    <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x20003 <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark> 32BITPREF : 1</mark>  <br/>
-Signed    : 0</p>
-
-<p>The <em>32BITPREF</em> flag is &lsquo;0&rsquo; for the worker that shows the error, whereas for the rest shows 1. The <a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx"><em>32BITPREF</em></a> flag indicates that the application runs as a 32 bit process even on 64-bit platforms. This explains why the problematic worker was running as 64-bit process since the flag is turned off.</p>
-
-<blockquote><p><em><a href="http://blogs.microsoft.co.il/sasha/2012/04/04/what-anycpu-really-means-as-of-net-45-and-visual-studio-11/">From .NET 4.5 and Visual Studio 11</a>, the default for most .NET projects is again AnyCPU, but there is more than one meaning to AnyCPU now. There is an additional sub-type of AnyCPU, “Any CPU 32-bit preferred”, which is the new default (overall, there are now five options for the /platform C# compiler switch: x86, Itanium, x64, anycpu, and anycpu32bitpreferred). When using that flavor of AnyCPU, the semantics are the following:</em></p>
-
-<ul>
-<li><em>If the process runs on a 32-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on a 64-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on an ARM Windows system, it runs as a 32-bit process. IL is compiled to ARM machine code.</em></li>
-</ul>
-</blockquote>
-
-<p>All the projects are getting built using the same build scripts, and we are not explicitly turning off/on this compiler option. So the next possible place where any setting for this flag is specified is the <em>csproj</em> file. On the properties of the worker project file (the one that shows error), I see that &lsquo;<em>Prefer 32-bit</em>&rsquo; option is not checked and the csproj file has it explicitly set to false (as shown below). For other projects, this option is checked in Visual Studio and has no entry in the csproj file, which means the flag defaults to true.</p>
-
-<p><img class="center" src="http://rahulpnath.com/images/msshrtmi_prefer32bit.png" alt="msshrtmi prefer 32bit csproj" /></p>
-
-<p><strong><em>Deleting the Prefer32Bit attribute from the csproj and building fixed the assembly loading issue of msshrtmi!</em></strong></p>
-
-<p>Though this ended up being a minor fix (in terms of code change), I learned a lot of different tools that can be used to debug assembly loading issues. It was using these right tools that helped me identify this extra attribute on the csproj file and help solve the issue. So the next time you see such an error , either with mssrhtmi or another DLL, hope this helps to find your way through!</p>
 ]]></content>
   </entry>
   
