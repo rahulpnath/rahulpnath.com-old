@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Accessing Azure Key Vault From Azure Runbook - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="A quick walk-through on using Key Vault from Azure Automation Runbook." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Accessing Azure Key Vault From Azure Runbook" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/" />
+<meta property="og:description" content="A quick walk-through on using Key Vault from Azure Automation Runbook." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/runbook_create.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook" />
+<meta property="twitter:title" content="Accessing Azure Key Vault From Azure Runbook" />
+<meta property="twitter:description" content="A quick walk-through on using Key Vault from Azure Automation Runbook." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/runbook_create.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 21<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Accessing Azure Key Vault From Azure Runbook
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
+
+<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
+
+<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
+
+<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
+
+<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
+
+<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
+
+<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
+
+<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
+
+<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
+
+<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$connectionName</span> <span class="p">=</span> <span class="s2">&quot;AzureRunAsConnection&quot;</span>
+</span><span class='line'><span class="k">try</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c"># Get the connection &quot;AzureRunAsConnection &quot;</span>
+</span><span class='line'>    <span class="nv">$servicePrincipalConnection</span><span class="p">=</span><span class="nb">Get-AutomationConnection</span> <span class="n">-Name</span> <span class="nv">$connectionName</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Logging in to Azure...&quot;</span>
+</span><span class='line'>    <span class="nb">Add-AzureRmAccount</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-ServicePrincipal</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-TenantId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">TenantId</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-ApplicationId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-CertificateThumbprint</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">CertificateThumbprint</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">catch</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="nv">$servicePrincipalConnection</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$ErrorMessage</span> <span class="p">=</span> <span class="s2">&quot;Connection $connectionName not found.&quot;</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="nv">$ErrorMessage</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span><span class="p">{</span>
+</span><span class='line'>        <span class="nb">Write-Error</span> <span class="n">-Message</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-digital-signatures-and-offline-verification/">Azure Key Vault: Digital Signatures and Offline Verification</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Managing Azure Key Vault using Azure Resource Manager (ARM) Templates</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/azure-key-vault-digital-signatures-and-offline-verification/" title="Previous Post: Azure Key Vault: Digital Signatures and Offline Verification">&laquo; Azure Key Vault: Digital Signatures and Offline Verification</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/';
+        var disqus_url = 'http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-11-20T03:50:28+00:00</updated>
+  <updated>2016-11-21T03:51:40+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,67 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Accessing Azure Key Vault From Azure Runbook]]></title>
+    <link href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/"/>
+    <updated>2016-11-21T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook</id>
+    <content type="html"><![CDATA[<p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
+
+<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
+
+<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
+
+<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
+
+<pre><code class="powershell">Get-AzureKeyVaultKey -VaultName YoutubeVault
+</code></pre>
+
+<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
+
+<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
+
+<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
+
+<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
+
+<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
+
+<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
+
+<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
+
+<pre><code class="powershell">$connectionName = "AzureRunAsConnection"
+try
+{
+    # Get the connection "AzureRunAsConnection "
+    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName         
+
+    "Logging in to Azure..."
+    Add-AzureRmAccount `
+        -ServicePrincipal `
+        -TenantId $servicePrincipalConnection.TenantId `
+        -ApplicationId $servicePrincipalConnection.ApplicationId `
+        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch {
+    if (!$servicePrincipalConnection)
+    {
+        $ErrorMessage = "Connection $connectionName not found."
+        throw $ErrorMessage
+    } else{
+        Write-Error -Message $_.Exception
+        throw $_.Exception
+    }
+}
+
+Get-AzureKeyVaultKey -VaultName YoutubeVault
+</code></pre>
+
+<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault: Digital Signatures and Offline Verification]]></title>
@@ -323,121 +384,6 @@ New-AzureRmResourceGroupDeployment -ResourceGroupName SharedGroup -TemplateFile 
 </code></pre>
 
 <p><a href="http://armviz.io/#">ARM Template Visualizer</a> (ArmViz) is a visual way of editing and managing ARM templates and can be useful when dealing with a large number of resource deployments in a template. Also check out some <a href="https://azure.microsoft.com/en-us/documentation/articles/best-practices-resource-manager-design-templates/">Good practices for designing templates</a>. Most of the template code above is <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/">based off this example here</a>. <strike>I will try to push this template into the <a href="https://github.com/Azure/azure-quickstart-templates">Azure Quickstart Templates</a> but meanwhile it is <a href="https://github.com/rahulpnath/Blog/tree/master/KeyVault%20ARM%20Template">available here</a>.</strike> The ARM template is available with the <a href="https://azure.microsoft.com/en-us/documentation/templates/201-key-vault-secret-create/">Azure Quickstart Templates</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing Azure Key Vault over the REST API]]></title>
-    <link href="http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/"/>
-    <updated>2016-05-25T06:23:39+00:00</updated>
-    <id>http://rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api</id>
-    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vaults-using-azure-resource-manager-arm-templates/">ARM templates</a>. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
-
-<h3>Azure Resource Manager API</h3>
-
-<p>The <a href="https://msdn.microsoft.com/en-AU/library/azure/dn790568.aspx">Azure Resource Manager API</a> provides programmatic access to manage Azure services that support <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Resource Manager</a>. Since Key Vault supports Resource Manager, we will be using it. Any requests to the API must be authenticated and can be done using an Azure AD application. Most of the steps to create an AD application are same as we saw when creating an AD application to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with Azure Key Vault</a>. From the &lsquo;<em>permissions to other applications</em>&rsquo; tab in portal (as shown below), we can give the application access to Management API&rsquo;s.</p>
-
-<p>To get the token to access the Management API resource (<em><a href="https://management.azure.com">https://management.azure.com</a> </em>), I use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory">ADAL library</a> with the required data. All the information that needs to be passed to the ADAL library is available under the AD application in the azure portal (as shown below).</p>
-
-<pre><code class="csharp">string token = await GetAccessToken(
-                "https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-                "https://management.azure.com/",
-                string.Empty);
- ...
-
-private async Task&lt;string&gt; GetAccessToken(string authority, string resource, string scope)
-{
-    var adCredential = new ClientCredential(APPLICATION_ID, APPLICATION_SECRET);
-    var authenticationContext = new AuthenticationContext(authority);
-    return (await authenticationContext.AcquireTokenAsync(resource, adCredential)).AccessToken;
-}
-</code></pre>
-
-<blockquote><p><em>Earlier authentication requests were served from <a href="https://login.windows.net">https://login.windows.net</a> (authority URL) which is <a href="https://blogs.technet.microsoft.com/ad/2015/03/06/simplifying-our-azure-ad-authentication-flows/">now updated</a> to <a href="https://login.microsoftonline.com">https://login.microsoftonline.com</a> .</em></p></blockquote>
-
-<p><img src="/images\service_management_adAccess.png" class="center" alt="AD Application access to Azure Service Management API"></p>
-
-<h3>Key Vault Management Client</h3>
-
-<p>The <a href="https://www.nuget.org/packages/Microsoft.Azure.Management.KeyVault/">Microsoft.Azure.Management.KeyVault</a> NuGet package, provides capabilities to connect to the Management API&rsquo;s and manage the Vaults. With the NuGet reference added I can use the <em><a href="https://github.com/Azure/azure-sdk-for-net/blob/master/src/ResourceManagement/KeyVaultManagement/KeyVaultManagement/Generated/KeyVaultManagementClient.cs">KeyVaultManagementClient</a></em>.</p>
-
-<blockquote><p><em>Much of the SDK code is generated  using <a href="https://github.com/azure/autorest">Autorest</a>, from the REST API&rsquo;s metadata spec&rsquo;s in Swagger format.</em></p></blockquote>
-
-<p>With the Azure Subscription Id and the token from the previous step a TokenCloudCredentials is created that is used to connect the Key Vault Management Client.</p>
-
-<pre><code class="csharp">string token = await GetAccessToken(
-    "https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
-    "https://management.azure.com/",
-    string.Empty);
-var tokenCredentials = new TokenCloudCredentials(SUBSCRIPTION_ID, token);
-var keyVaultManagementClient = new KeyVaultManagementClient(tokenCredentials);
-</code></pre>
-
-<p>Key Vaults exists under a Resource Group and for it to be accessible using the AD application authenticated token, we need to grant permission to the application. Just like we managed <a href="http://www.rahulpnath.com/blog/managing-user-permissions-for-key-vault/">User Permissions for Key Vault</a> we can give the AD application access to the Resource Group. We can do this from the new portal (as shown in the other post) or using the <em>New-AzureRmRoleAssignment</em> PowerShell cmdlet. <em>Get-AzureRmADServicePrincipal</em> is used o get the ObjectId of an existing application passing the application name as SearchString. I have yet not found a better way to find the application ObjectId. Please drop a comment if you know of any.</p>
-
-<pre><code class="powershell">Get-AzureRmADServicePrincipal  -SearchString 'AD Application Name'
-New-AzureRmRoleAssignment -ObjectId &lt;AD Application Object Id&gt;
-     -RoleDefinitionName Reader -ResourceGroupName SharedGroup
-</code></pre>
-
-<h3>Creating New Key Vault</h3>
-
-<p>We have all the required permissions setup, to create a key vault using the KeyVaultManagament client library. Using this is straightforward as shown below.
-The <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#sku">Sku</a></em> is used to specify <a href="https://azure.microsoft.com/en-us/pricing/details/key-vault/">Key vault service tier</a> - &lsquo;Standard&rsquo; or &lsquo;Premium&rsquo;. For HSM backed keys it is Premium. Family on Sku object takes in a hardcoded value of &lsquo;A&rsquo;. <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspolicies-object">AccessPolicies</a></em> specify the AD object identifier of user or application that can access the vault. In this case, I am adding the current AD application with full (<a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspoliciespermissions-object"><em>all</em></a>) access to Keys and Secrets. Adding an access policy in same as using the <a href="https://msdn.microsoft.com/en-us/library/mt603625.aspx"><em>Set-AzureRmKeyVaultAccessPolicy</em></a>.</p>
-
-<pre><code class="csharp">var parameters = new VaultCreateOrUpdateParameters()
-{
-    Location = "southeast asia",
-    Properties = new VaultProperties()
-    {
-        Sku = new Sku { Family = "A", Name = "Standard" },
-        TenantId = Guid.Parse(TENANT_ID),
-        AccessPolicies = new List&lt;AccessPolicyEntry&gt;() {
-            new AccessPolicyEntry
-                    {
-                        TenantId = Guid.Parse(TENANT_ID),
-                        ObjectId = Guid.Parse(AD_OBJECT_ID),
-                        PermissionsToKeys = new string[] { "all" },
-                        PermissionsToSecrets = new string[] { "all" }
-                    }
-        }
-    }
-};
-
-var vaultFromCode = await keyVaultManagementClient.Vaults
-        .CreateOrUpdateAsync("SharedGroup", "VaultFromCode", parameters);
-</code></pre>
-
-<h3>Managing Existing Key Vaults</h3>
-
-<p><strong>Update a Key Vault</strong></p>
-
-<p>When updating an existing Key Vault, the full state (<em>VaultCreateOrUpdateParameters</em>) must be passed back and not just the update. To add a new <em>AccessPolicyEntry</em>, the existing policy entry values must also be passed back. In the code below, I get the existing state of the Key Vault using the <em>Get</em> and use the current vault properties to add in the new AccessPolicyEntry.</p>
-
-<pre><code class="csharp">var keyVault = (await keyVaultManagementClient.Vaults
-   .GetAsync("SharedGroup", "VaultFromCode")).Vault;
-            parameters = new VaultCreateOrUpdateParameters();
-            parameters.Location = keyVault.Location;
-            parameters.Properties = keyVault.Properties;
-            parameters.Properties.AccessPolicies.Add(
-
-   new AccessPolicyEntry
-   {
-       TenantId = Guid.Parse(TENANT_ID),
-       ObjectId = Guid.Parse("AD Object IDentifier"),
-       PermissionsToKeys = new string[] { "get" },
-       PermissionsToSecrets = new string[] { "get" }
-   }
-            );
-await keyVaultManagementClient.Vaults.CreateOrUpdateAsync("SharedGroup", "VaultFromCode", parameters);
-</code></pre>
-
-<p><strong>Delete a Key Vault</strong>
-<code>csharp
-await keyVaultManagementClient.Vaults.DeleteAsync("SharedGroup", "VaultFromCode");
-</code></p>
-
-<p>Hope this helps you manage Azure Key Vault using the REST API.</p>
 ]]></content>
   </entry>
   
