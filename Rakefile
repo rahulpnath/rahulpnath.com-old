@@ -149,8 +149,25 @@ task :new_draft, :title do |t, args|
     post.puts "primaryImage: "
     post.puts "---"
   end
+  task(:todoist_template).invoke(title)
 end
 
+# usage rake todoist_template
+desc "Create a todoist template for the new post"
+task :todoist_template, :title do |t, args|
+  if args.title
+    title = args.title
+  else
+    title = get_stdin("Enter a title for your post: ")
+  end
+ source = "todoist template.csv"
+ dest = "todoistTemplates/#{title}.csv"
+ File.open(source) { |source_file|
+      contents = source_file.read
+      contents.gsub!("BlogTopic", "#{title}")
+      File.open(dest, "w+") { |f| f.write(contents) }
+    }
+end
 
 # usage rake publish_draft
 desc "Select a draft to publish from #{source_dir}/#{drafts_dir} on the current date."
