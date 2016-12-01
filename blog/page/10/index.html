@@ -163,6 +163,375 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-07-26T05:21:51+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 26<sup>th</sup>, 2013</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/mvvm-a-windows-phone-scenario/" itemprop="url">MVVM – A Windows phone scenario</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>With multiple platforms/devices, embracing the same technology, common architectural patterns become more popular as they provide us with what we want the most – <strong>Reusability. </strong>MVVM has turned out to be a must use architectural pattern while developing for Windows phone/Windows 8 store apps. I had blogged on this, <a href="http://rahulpnath.com/blog/mvvm-does-it-really-matter/">Why MVVM matters</a>.</p>
+
+<p>In this post will take a quick look into the scenarios that would come across while we develop a windows phone app and how that could possibly(as there could be many other ways/approaches too) be implemented using MVVM. I would be covering shorter scenarios in this same post, and those that would be better off in a different one would be linked here . <a href="http://mvvmlight.codeplex.com/">MVVM Light</a> is a very popular toolkit that assists in getting started with MVVM quickly and we would also be using the same. This can be easily added in as a <a href="http://nuget.org/packages/mvvmLight">nuget package</a>
+MVVM Light does come with a ViewModelBase class, that all your View Models are to inherit so that you do not have to worry about implementing the <a href="http://msdn.microsoft.com/en-in/library/system.componentmodel.inotifypropertychanged.aspx">INotifyPropertyChanged</a> interface. I would still think of having a intermediate view model base class specific to our app and have all the reusable piece of code that you want across your ViewModels.</p>
+
+<p>Common MVVM scenarios that we come across while developing and probable approaches are discussed below. There might be different ways of achieving the same, and at times we might go off the ‘purist’  MVVM implementation,  i.e.  of not having a code behind at all. As for me I am ok to have code behind at a minimum if it is really required and does not affect the original intent of MVVM(separations of concerns, testability and reusability)</p>
+
+<p><strong>Scenarios</strong></p>
+
+<ol>
+<li><p>Binding the View – ViewModel</p></li>
+<li><p>ViewModel and Model</p></li>
+<li><p>Basic Commanding</p></li>
+<li><p>Advanced Commanding</p></li>
+<li><p>Page Navigations and Parameters</p></li>
+<li><p>Page Events</p></li>
+<li><p>Application Bar<strong> </strong></p></li>
+</ol>
+
+
+<p>We will discuss each on in details and the sample that we would be using is that of a photo browser, for <a href="http://500px.com/">500px</a>. You can get the api access <a href="http://developers.500px.com/">here</a></p>
+
+<p><strong>1. Binding the View-ViewModel</strong></p>
+
+<p>MVVM Light comes default with a ViewModelLocator(<strong>VML</strong>) class that will help you with the binding of the ViewModels(<strong>VM’s</strong>) with the corresponding View. The VML will have public properties for the different view models that you have. You can either have different public properties for each of your view model here, or have a property for MainViewModel and then that would in turn have other ViewModel properties. The VML uses a SimpleIOC container to resolve type instances. In simple terms, with an IoC container all we are trying to solve is to minimize the dependency between different types/classes, so that we would never have to instantiate one class(complex type) in another. So whenever a instance of a class is required, the IoC container would generate it for us , and all we would be concerned would be of the interface that we require. For IoC to resolve types for us we need to register the interface and the original class that implements the interface.
+Below you see how we are registering for the interface IDataService and setting its implementation class to DataService. Similarly we can also register classes, which would be how we would be registering our VM’s.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">SimpleIoc</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">IDataService</span><span class="p">,</span> <span class="n">DataService</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="n">SimpleIoc</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">MainViewModel</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When installing the nuget package itself an instance of the VML is added into the app.xaml class, which can be used in all the View classes to data-bind to the VM.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Application.Resources&gt;</span>
+</span><span class='line'>       <span class="nt">&lt;ResourceDictionary&gt;</span>
+</span><span class='line'>           <span class="c">&lt;!--Global View Model Locator--&gt;</span>
+</span><span class='line'>           <span class="nt">&lt;vm:ViewModelLocator</span> <span class="na">x:Key=</span><span class="s">&quot;Locator&quot;</span>
+</span><span class='line'>               <span class="na">d:IsDataSource=</span><span class="s">&quot;True&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'> .....
+</span><span class='line'><span class="nt">&lt;Application.Resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This instance is used in all the view classes as below  in the xaml.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding Main, Source={StaticResource Locator}}&quot;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The Main property returns the View model that should be bound with the view. The ‘ServiceLocator.Current’, returns the default instance of the SimpleIoc. The GetInstance always returns the same instance of the ViewModel as if it would have for a Singleton. If you need a new instance then you would need to pass a specific key(any identifier value) to get a different instance.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">MainViewModel</span> <span class="n">Main</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">get</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ServiceLocator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">&lt;</span><span class="n">MainViewModel</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>What about the other Views and View Models?</strong></p>
+
+<p>Mostly the main VM would be the one that would be like a hub page, from which the user be able to navigate onto other pages and detailed views., say from a list of friends to a friend, a list of photos to a specific photo. One common thing that we do wrong is to think of View – ViewModel as a one-to-one relationship, meaning one view will have only one ViewModel bound to it.  In our sample app we have a list of photos that needs to be displayed on the main page and on selecting one of the photo, we should be taken to the photo’s detail page. So the mistake to do here would be to have an observable list of Photos in the MainViewModel. We should rather have a list of PhotoViewModel , that would be bound to the list control in the main page. So the MainViewModel would have a property SelectedPhoto, which would be of PhotoViewModel type, that would become the data context of the PhotoDetail page.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding Main.SelectedPhoto, Source={StaticResource Locator}}&quot;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For views that are not at all related to each other, we can have separate properties in the VML, like say for Settings, About page.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>DataContext=&quot;{Binding About, Source={StaticResource Locator}}&quot;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">AboutViewModel</span> <span class="n">About</span>
+</span><span class='line'> <span class="p">{</span>
+</span><span class='line'>    <span class="k">get</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">ServiceLocator</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">&lt;</span><span class="n">AboutViewModel</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So whenever you have hierarchical pages, it would mostly be that your parent/callee will have the ViewModel property that you would bind to like SelectedPhoto in MainViewModel and for cases you have separate navigations you can have a property exposed in VML like About, Main.</p>
+
+<p><strong>2. ViewModel and Model</strong></p>
+
+<p>Like I mentioned above, one common mistake that we make is to think of View-ViewModel as a one-to-one relationship and normally end up binding the UI to models and not VM’s. We soon tend to hit into problems, such as adding custom properties into models, not finding ways to trigger property changed etc. So it is always best to wrap your models in the VMs. In cases where you are sure you would never want to change/format the data format then you can directly bind to a model. In  cases where you would want to format the data (like say you have a First Name &amp; Last Name property on the model and you want to display Full Name)  you would rather wrap the data into a VM and bind that. You could always use <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter.aspx">ValueConverters</a>, to format the data specific to the UI, but that always comes with a price, especially on a phone device. Phone’s come with lesser hardware resource and you would want to make the maximum use of it. So it is better to have properties exposed on VM itself rather than having converters all over the UI to format the data. But still you would be in positions where you would absolutely want to use a converter where you should. That is a wise decision that one should make for yourself. (a <a href="https://groups.google.com/forum/?fromgroups#!topic/wpf-disciples/P-JwzRB_GE8">thread</a> that discusses on this )</p>
+
+<p><strong>3. Basic Commanding</strong></p>
+
+<p>It’s not just the data that gets displayed needs to be separated out cleanly. User actions and actions taken should also be cleanly separated from the UI. Commands is what would help us here. Commanding support is currently only for elements that inherit from <a href="http://msdn.microsoft.com/en-us/library/system.windows.controls.primitives.buttonbase.aspx">ButtonBase</a>. As in any mvvm implementation, mvvmlight also has a wrapper that implements <a href="http://msdn.microsoft.com/en-us/library/system.windows.input.icommand.aspx">ICommand</a> interface for us, which is RelayCommand. An instance of this can be directly bound to the Command property, for those elements that inherits from ButtonBase. Below is how you would wire up the command to a button on a page</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Button</span> <span class="na">Content=</span><span class="s">&quot;My Command&quot;</span> <span class="na">Command=</span><span class="s">&quot;{Binding MyCommand}&quot;</span>
+</span><span class='line'>    <span class="na">VerticalAlignment=</span><span class="s">&quot;Center&quot;</span> <span class="na">HorizontalAlignment=</span><span class="s">&quot;Center&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">MyCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">(</span><span class="n">OnMyCommand</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span> <span class="n">MyCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnMyCommand</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="n">MessageBox</span><span class="p">.</span><span class="n">Show</span><span class="p">(</span><span class="s">&quot;You clicked me :)&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>4. Advanced Commanding</strong></p>
+
+<p>It’s not just UI elements that inherit from Buttonbase that we would be using, and hence we definitely need alternatives to bind events of such elements. ListBox SelectionChanged, Page loaded etc are very common events that one would be interested in while developing phone apps. There are a couple of approaches that one could follow here</p>
+
+<ul>
+<li><strong>Wire-up the command from code behind</strong></li>
+</ul>
+
+
+<p>We could  easily wire up all such events from the code-behind class, and have it invoked on the view model. Some might argue here that we are going off the MVVM pattern, which says ‘no code behind’. I don’t this it ever said that in the first place. It is just about decoupling the UI from the code and this is still done. Even binding/commanding is still going to generate code and do the wiring of commands. As long as there is a clear separation of logics and concerns we are good. So I think this this is very well acceptable and the easiest in fact of all the approaches.</p>
+
+<p>Code Behind:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">MainViewModel</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnNavigatedTo</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="n">Windows</span><span class="p">.</span><span class="n">Navigation</span><span class="p">.</span><span class="n">NavigationEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="k">base</span><span class="p">.</span><span class="n">OnNavigatedTo</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
+</span><span class='line'><span class="n">viewModel</span><span class="p">.</span><span class="n">OnnavigatedToCommand</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="n">NavigationContext</span><span class="p">.</span><span class="n">QueryString</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>View Model</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">OnnavigatedToCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">&lt;</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;&gt;(</span><span class="n">OnNavigatedTo</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span><span class="p">&lt;</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;&gt;</span> <span class="n">OnnavigatedToCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnNavigatedTo</span><span class="p">(</span><span class="n">IDictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameters</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="c1">// do whatever you want to here</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li> <strong>EventToCommand Behavior</strong></li>
+</ul>
+
+
+<p>With the EventToCommand behavior introduced for Blend, can be used to bind an ICommand from the UI elements. Though it was introduced for Blend, it can be used independently. You would need to add a reference to System.Windows.Interactivity.dll, which is were all these behaviors are implemented. There is a detailed <a href="http://geekswithblogs.net/lbugnion/archive/2009/11/05/mvvm-light-toolkit-v3-alpha-2-eventtocommand-behavior.aspx">post</a> out here on to how to use EventToCommand to trigger commands directly from the UI.</p>
+
+<p>Just to keep a sample here, below would be how it would look like</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>xmlns:i=&quot;clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity&quot;
+</span><span class='line'>xmlns:command=&quot;clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Extras.WP71&quot;
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;ListBox&gt;</span>
+</span><span class='line'><span class="nt">&lt;i:Interaction.Triggers&gt;</span>
+</span><span class='line'><span class="nt">&lt;i:EventTrigger</span> <span class="na">EventName=</span><span class="s">&quot;SelectionChanged&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;command:EventToCommand</span> <span class="na">Command=</span><span class="s">&quot;{Binding SelectionChangedCommand}&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/i:EventTrigger&gt;</span>
+</span><span class='line'><span class="nt">&lt;/i:Interaction.Triggers&gt;</span>
+</span><span class='line'><span class="nt">&lt;ListBox.Items&gt;</span>
+</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item1<span class="nt">&lt;/ListBoxItem&gt;</span>
+</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item2<span class="nt">&lt;/ListBoxItem&gt;</span>
+</span><span class='line'><span class="nt">&lt;ListBoxItem&gt;</span>Item3<span class="nt">&lt;/ListBoxItem&gt;</span>
+</span><span class='line'><span class="nt">&lt;/ListBox.Items&gt;</span>
+</span><span class='line'><span class="nt">&lt;/ListBox&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">SelectionChangedCommand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RelayCommand</span><span class="p">(</span><span class="n">OnSelectionChangedCommand</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">public</span> <span class="n">RelayCommand</span> <span class="n">SelectionChangedCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnSelectionChangedCommand</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="c1">// do whatever you want to here</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Messenger</strong></li>
+</ul>
+
+
+<p>We could also use a messenger service, to propogate UI events to VM’s. MVVMLight  has a built in messenger service that can be used for this. In simple terms a messenger is nothing but a decoupled eventing system, something of a publisher-subscriber model. In the messenger one entity  would send a message and there would be another entity that listens for this message and acts upon it.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Selector_OnSelectionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">SelectionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Messenger</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Send</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">NotificationMessage</span><span class="p">(</span><span class="s">&quot;You could have your own items here by using a generic NotificationMessage&lt;&gt;&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="err">…</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">MessengerInstance</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">,</span> <span class="n">OnSelectionChanged</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">OnSelectionChanged</span><span class="p">(</span><span class="n">NotificationMessage</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="c1">// do whatever you want to here</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you see above, in the code behind we send a Notification message indicating a click has happened. In the VM we register for the notification message and act upon it. We could send generic objects via the notification message and also create our own messages by inheriting from MessageBase of mvvmlight. This <a href="http://msdn.microsoft.com/en-us/magazine/jj694937.aspx">article</a> gives more information and scenarios around this</p>
+
+<p>We are still left with a lot more scenarios to cover here and I would be covering them in a separate post to keep this one &lsquo;short&rsquo; :)</p>
+
+<p><strong>Edit</strong>: Check out <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario-part-2/">MVVM – A Windows Phone Scenario – Part 2</a> for the rest of the scenarios</p>
+
+<p> </p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-04-17T11:04:01+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2013</time>
         
 
@@ -1993,69 +2362,6 @@ This should help you get started on with ASP.NET web api.There are a lot more fe
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-07-07T10:16:57+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 7<sup>th</sup>, 2012</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/asp-dot-net/'>asp.net</a>, <a class='category' href='/blog/category/wcf/'>wcf</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/wcf-to-asp-net-web-api/" itemprop="url">WCF to ASP.NET Web API</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Windows Communication Foundation(WCF) brought around a unified programming model for building service oriented application.All the previous technologies that was used to build services like MSMQ, remoting, ASMX Web Services,all came under one umbrella.</p>
-
-<p>WCF had embraced SOAP,moving away from the <a href="http://rahulpnath.wordpress.com/2011/06/11/rest-after-a-long-time/">restful web</a> giving all sorts of flexibility and configurability.Everyone was happy for sometime thinking about the power that actually WCF gave by just changing a set of configurations and embraced it entirely.But then most of this configuration did not apply to many of the user scenario,and just went unused,coming with the extra ‘baggage’ that SOAP had to carry around.</p>
-
-<p>I found Scott’s summary the best,as in this <a href="http://www.hanselminutes.com/264/this-is-not-your-fathers-wcf-all-about-the-webapi-with-glenn-block">podcast</a>,when he speaks of WCF</p>
-
-<blockquote><p>”<em>If you are giving me an api whose strong point is it can talk over multi transport and has abstracted me away from the details that i actually need in the name of flexibility that i am not going to use,then that is just baggage</em>”</p></blockquote>
-
-<p>WCF had its own way of being restful,so came WCF WebHTTP,WCF Rest Starter Kit and even a WCF Web Api.Apparently ASP.NET MVC,which is inherently restful,was also having getting capabilities to build basic web Api’s.</p>
-
-<p>With <a href="http://www.asp.net/mvc/mvc4">ASP.NET MVC 4</a> , both the paths that REST had taken merges as <a href="http://www.asp.net/web-api">ASP.NET Web API</a>.     <br/>
-So yes this is the ideal platform for building Restful services on the .NET Framework.    <br/>
-Web API is nothing but services exposed over http,providing reach to various devices and platforms without doubt,as http is supported across platforms and devices.SOAP did use http,but it used it more as a transport than an application protocol,by sending message packets over http.But with Web Api the ‘contract’ is the actions of HTTP –GET ,PUT ,POST ,DELETE etc..</p>
-
-<p>All said WCF still holds good in cases where SOAP is necessary,where it was actually intended to be used.It’s just the REST’ful part take a new form.</p>
-
-<p>Can’t wait to get you hands dirty!!!! Jump in with <a href="http://channel9.msdn.com/Events/TechEd/NorthAmerica/2012/DEV309">this</a>.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2079,6 +2385,8 @@ Web API is nothing but services exposed over http,providing reach to various dev
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/">Expiry Notification for Azure Key Vault Keys and Secrets</a>
+    
     <a class="list-group-item " href="/blog/accessing-azure-key-vault-from-azure-runbook/">Accessing Azure Key Vault From Azure Runbook</a>
     
     <a class="list-group-item " href="/blog/azure-key-vault-digital-signatures-and-offline-verification/">Azure Key Vault: Digital Signatures and Offline Verification</a>
@@ -2086,8 +2394,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
     <a class="list-group-item " href="/blog/staying-in-the-learning-loop/">Staying in the Learning Loop</a>
     
     <a class="list-group-item " href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
-    
-    <a class="list-group-item " href="/blog/maintaining-a-blogging-schedule/">Maintaining a Blogging Schedule</a>
     
   </div>
 </section>

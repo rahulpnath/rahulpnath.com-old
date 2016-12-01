@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-11-30T03:50:42+00:00</updated>
+  <updated>2016-12-01T03:50:54+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,235 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Expiry Notification for Azure Key Vault Keys and Secrets]]></title>
+    <link href="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/"/>
+    <updated>2016-12-01T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets</id>
+    <content type="html"><![CDATA[<p>I came across this <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/90d4b814-f025-42a0-acac-b8c8bf9d8cf8/alert-or-event-on-secret-expiry?forum=AzureKeyVault">question</a> in Azure Key Vault forums looking for options to get notified when Key or Secrets in vault nears expiry. It&rsquo;s useful to know when Object&rsquo;s (Keys/Secrets) near expiry, to take necessary action. I decided to explore on my proposed solution of having a scheduled custom PowerShell script to notify when a key is about to expire. In this post, we will see how to get all objects nearing expiry and scheduling this using Azure Runbook to run daily.</p>
+
+<h3>Getting Expiring Objects</h3>
+
+<p>Both Keys and Secrets can be set with an Expiry date. The expiry date can be set when creating the Object or can be set on an existing Object. This can be set from the UI or using PowerShell scripts (setting the <a href="https://msdn.microsoft.com/en-us/library/dn868045.aspx">-Expires attribute</a>).</p>
+
+<p><img class="center" alt="Azure Key Vault - Set Key Expiry" src="http://rahulpnath.com/images/vaultexpiry_key.png"/></p>
+
+<p>Key Vault (at the time of writing) throws an <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/c0d8953a-c117-4ca4-ad3d-e5d2b1868f9e/get-operation-not-permitted-for-some-of-the-secret-in-my-vault?forum=AzureKeyVault">exception</a> when an expired key is accessed over the API. Also, it does not provide any notification whenever a key/secret is about to expire. The last thing you want is your application go down because of an expired object in the vault. With the Get and List access on the vault, we can retrieve all the keys and secrets in the vault and loop through the elements to see objects that are nearing expiry.</p>
+
+<p>The PowerShell script takes the Vault Name, number of days before with alert should be raised and flags to indicate whether all versions of keys/secrets should be checked for expiry. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$VaultName</span> <span class="p">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'><span class="nv">$IncludeAllKeyVersions</span> <span class="p">=</span> <span class="nv">$true</span>
+</span><span class='line'><span class="nv">$IncludeAllSecretVersions</span> <span class="p">=</span> <span class="nv">$true</span>
+</span><span class='line'><span class="nv">$AlertBeforeDays</span> <span class="p">=</span> <span class="n">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All keys and secrets are converted into a common object model, which contains just the Identifier, Name, Version and the Expiry Date if it has one.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Function</span> <span class="nb">New-KeyVaultObject</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">param</span>
+</span><span class='line'>    <span class="p">(</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Id</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Name</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Version</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[System.Nullable[DateTime]]</span><span class="nv">$Expires</span>
+</span><span class='line'>    <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">PSObject</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Id</span> <span class="n">-Value</span> <span class="nv">$Id</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Name</span> <span class="n">-Value</span> <span class="nv">$Name</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Version</span> <span class="n">-Value</span> <span class="nv">$Version</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Expires</span> <span class="n">-Value</span> <span class="nv">$Expires</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$server</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Depending on the flag set for retrieving all key/secret version, it fetches objects from the vault and returns in the common object model above.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectKeys</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">param</span>
+</span><span class='line'>  <span class="p">(</span>
+</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
+</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'>  <span class="nv">$allKeys</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
+</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allKeys</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
+</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span>
+</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
+</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectSecrets</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">param</span>
+</span><span class='line'>  <span class="p">(</span>
+</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
+</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'>  <span class="nv">$allSecrets</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
+</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecrets</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
+</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span>
+</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
+</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have all the keys and secrets we want to check for expiry all we need to know is if there are any keys that are expiring in the upcoming days.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$allKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectKeys</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllKeyVersions</span><span class="p">))</span>
+</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectSecrets</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllSecretVersions</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Get expired Objects</span>
+</span><span class='line'><span class="nv">$today</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-Date</span><span class="p">).</span><span class="n">Date</span>
+</span><span class='line'><span class="nv">$expiredKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'><span class="k">foreach</span><span class="p">(</span><span class="nv">$vaultObject</span> <span class="k">in</span> <span class="nv">$allKeyVaultObjects</span><span class="p">){</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span> <span class="o">-and</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="nv">$AlertBeforeDays</span><span class="p">).</span><span class="n">Date</span> <span class="o">-lt</span> <span class="nv">$today</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c"># add to expiry list</span>
+</span><span class='line'>  <span class="nv">$expiredKeyVaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+</span><span class='line'>  <span class="nb">Write-Output</span> <span class="s2">&quot;Expiring&quot;</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Pass to Alerter $expiredKeyVaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Scheduling Expiry Notification using Azure Runbook</h3>
+
+<p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
+
+<p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Accessing Azure Key Vault From Azure Runbook]]></title>
@@ -1890,110 +2119,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
 
 
 <p>Since there are different systems with different line endings and also applications with different line ending settings and issues of its own, there does not seem to be a &lsquo;one fix for all&rsquo; cases. The best I can think of in these cases is it protect us with such unit tests. It fails fast and brings it immediately to out notice. Have you ever had to deal with an issue with line endings and found better ways to handle them?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception]]></title>
-    <link href="http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/"/>
-    <updated>2016-07-01T00:45:05+00:00</updated>
-    <id>http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies</id>
-    <content type="html"><![CDATA[<p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
-
-<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
-
-<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
-
-<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
-
-<h3>Using AsmSpy to find conflicting assemblies</h3>
-
-<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>asmspy WebApplication1\bin\ nonsystem
-</span><span class='line'>
-</span><span class='line'>Detailing only conflicting assembly references.
-</span><span class='line'>Reference: Newtonsoft.Json
-</span><span class='line'>   7.0.0.0 by SharedLibrary
-</span><span class='line'>   6.0.0.0 by WebApplication1
-</span><span class='line'>   4.5.0.0 by WebGrease
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
-
-<h3>Using MsBuild Structured Log to find conflicting writes</h3>
-
-<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
-
-<p><img src="http://rahulpnath.com/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
-
-<p><img class="left" src="http://rahulpnath.com/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
-
-<h3>Building Web application in Visual Studio</h3>
-
-<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
-
-<figure>
-    <img src="http://rahulpnath.com/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
-    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
-</figure>
-
-
-<p></p>
-
-<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
-
-<p>I confirmed with other team members on the repro steps for this issue</p>
-
-<ul>
-<li>Get the latest code and do a full rebuild from VS</li>
-<li>Launch Web app works fine</li>
-<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
-<li>Launch Web app throws the error!</li>
-</ul>
-
-
-<p>It was a consistent repro with the above steps.</p>
-
-<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
-
-<h3>The Sample Application</h3>
-
-<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
-
-<ul>
-<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
-<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
-<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WebApplication1</span> <span class="n">-Version</span> <span class="n">6</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
-</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">SharedLibrary</span> <span class="n">-Version</span> <span class="n">7</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
-</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WpfApplication1</span> <span class="n">-Version</span> <span class="n">8</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">3</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
-
-<p>Hope this helps in case you come across a similar issue!</p>
 ]]></content>
   </entry>
   

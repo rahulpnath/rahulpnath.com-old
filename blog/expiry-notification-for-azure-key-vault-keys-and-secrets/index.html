@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Expiry Notification for Azure Key Vault Keys and Secrets - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Explores into setting up a daily task to trigger keys/secrets in Key Vault that are nearing expiry." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Expiry Notification for Azure Key Vault Keys and Secrets" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/" />
+<meta property="og:description" content="Explores into setting up a daily task to trigger keys/secrets in Key Vault that are nearing expiry." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/vaultexpiry_key.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets" />
+<meta property="twitter:title" content="Expiry Notification for Azure Key Vault Keys and Secrets" />
+<meta property="twitter:description" content="Explores into setting up a daily task to trigger keys/secrets in Key Vault that are nearing expiry." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/vaultexpiry_key.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-01T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 1<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Expiry Notification for Azure Key Vault Keys and Secrets
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>I came across this <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/90d4b814-f025-42a0-acac-b8c8bf9d8cf8/alert-or-event-on-secret-expiry?forum=AzureKeyVault">question</a> in Azure Key Vault forums looking for options to get notified when Key or Secrets in vault nears expiry. It&rsquo;s useful to know when Object&rsquo;s (Keys/Secrets) near expiry, to take necessary action. I decided to explore on my proposed solution of having a scheduled custom PowerShell script to notify when a key is about to expire. In this post, we will see how to get all objects nearing expiry and scheduling this using Azure Runbook to run daily.</p>
+
+<h3>Getting Expiring Objects</h3>
+
+<p>Both Keys and Secrets can be set with an Expiry date. The expiry date can be set when creating the Object or can be set on an existing Object. This can be set from the UI or using PowerShell scripts (setting the <a href="https://msdn.microsoft.com/en-us/library/dn868045.aspx">-Expires attribute</a>).</p>
+
+<p><img class="center" alt="Azure Key Vault - Set Key Expiry" src="/images/vaultexpiry_key.png"/></p>
+
+<p>Key Vault (at the time of writing) throws an <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/c0d8953a-c117-4ca4-ad3d-e5d2b1868f9e/get-operation-not-permitted-for-some-of-the-secret-in-my-vault?forum=AzureKeyVault">exception</a> when an expired key is accessed over the API. Also, it does not provide any notification whenever a key/secret is about to expire. The last thing you want is your application go down because of an expired object in the vault. With the Get and List access on the vault, we can retrieve all the keys and secrets in the vault and loop through the elements to see objects that are nearing expiry.</p>
+
+<p>The PowerShell script takes the Vault Name, number of days before with alert should be raised and flags to indicate whether all versions of keys/secrets should be checked for expiry. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$VaultName</span> <span class="p">=</span> <span class="s1">&#39;&#39;</span>
+</span><span class='line'><span class="nv">$IncludeAllKeyVersions</span> <span class="p">=</span> <span class="nv">$true</span>
+</span><span class='line'><span class="nv">$IncludeAllSecretVersions</span> <span class="p">=</span> <span class="nv">$true</span>
+</span><span class='line'><span class="nv">$AlertBeforeDays</span> <span class="p">=</span> <span class="n">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All keys and secrets are converted into a common object model, which contains just the Identifier, Name, Version and the Expiry Date if it has one.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Function</span> <span class="nb">New-KeyVaultObject</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">param</span>
+</span><span class='line'>    <span class="p">(</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Id</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Name</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Version</span><span class="p">,</span>
+</span><span class='line'>        <span class="no">[System.Nullable[DateTime]]</span><span class="nv">$Expires</span>
+</span><span class='line'>    <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">PSObject</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Id</span> <span class="n">-Value</span> <span class="nv">$Id</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Name</span> <span class="n">-Value</span> <span class="nv">$Name</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Version</span> <span class="n">-Value</span> <span class="nv">$Version</span>
+</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Expires</span> <span class="n">-Value</span> <span class="nv">$Expires</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nv">$server</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Depending on the flag set for retrieving all key/secret version, it fetches objects from the vault and returns in the common object model above.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectKeys</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">param</span>
+</span><span class='line'>  <span class="p">(</span>
+</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
+</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'>  <span class="nv">$allKeys</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
+</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allKeys</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
+</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span>
+</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
+</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectSecrets</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">param</span>
+</span><span class='line'>  <span class="p">(</span>
+</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
+</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
+</span><span class='line'>  <span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'>  <span class="nv">$allSecrets</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
+</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecrets</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
+</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span>
+</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
+</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>     <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
+</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have all the keys and secrets we want to check for expiry all we need to know is if there are any keys that are expiring in the upcoming days.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$allKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectKeys</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllKeyVersions</span><span class="p">))</span>
+</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectSecrets</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllSecretVersions</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Get expired Objects</span>
+</span><span class='line'><span class="nv">$today</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-Date</span><span class="p">).</span><span class="n">Date</span>
+</span><span class='line'><span class="nv">$expiredKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
+</span><span class='line'><span class="k">foreach</span><span class="p">(</span><span class="nv">$vaultObject</span> <span class="k">in</span> <span class="nv">$allKeyVaultObjects</span><span class="p">){</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span> <span class="o">-and</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="nv">$AlertBeforeDays</span><span class="p">).</span><span class="n">Date</span> <span class="o">-lt</span> <span class="nv">$today</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c"># add to expiry list</span>
+</span><span class='line'>  <span class="nv">$expiredKeyVaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+</span><span class='line'>  <span class="nb">Write-Output</span> <span class="s2">&quot;Expiring&quot;</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Pass to Alerter $expiredKeyVaultObjects</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Scheduling Expiry Notification using Azure Runbook</h3>
+
+<p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
+
+<p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/accessing-azure-key-vault-from-azure-runbook/">Accessing Azure Key Vault From Azure Runbook</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-digital-signatures-and-offline-verification/">Azure Key Vault: Digital Signatures and Offline Verification</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-key-vault-through-azure-portal/">Managing Key Vault Through Azure Portal</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/accessing-azure-key-vault-from-azure-runbook/" title="Previous Post: Accessing Azure Key Vault From Azure Runbook">&laquo; Accessing Azure Key Vault From Azure Runbook</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/';
+        var disqus_url = 'http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-11-30T03:50:42+00:00</updated>
+  <updated>2016-12-01T03:50:54+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,138 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Expiry Notification for Azure Key Vault Keys and Secrets]]></title>
+    <link href="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/"/>
+    <updated>2016-12-01T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets</id>
+    <content type="html"><![CDATA[<p>I came across this <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/90d4b814-f025-42a0-acac-b8c8bf9d8cf8/alert-or-event-on-secret-expiry?forum=AzureKeyVault">question</a> in Azure Key Vault forums looking for options to get notified when Key or Secrets in vault nears expiry. It&rsquo;s useful to know when Object&rsquo;s (Keys/Secrets) near expiry, to take necessary action. I decided to explore on my proposed solution of having a scheduled custom PowerShell script to notify when a key is about to expire. In this post, we will see how to get all objects nearing expiry and scheduling this using Azure Runbook to run daily.</p>
+
+<h3>Getting Expiring Objects</h3>
+
+<p>Both Keys and Secrets can be set with an Expiry date. The expiry date can be set when creating the Object or can be set on an existing Object. This can be set from the UI or using PowerShell scripts (setting the <a href="https://msdn.microsoft.com/en-us/library/dn868045.aspx">-Expires attribute</a>).</p>
+
+<p><img class="center" alt="Azure Key Vault - Set Key Expiry" src="/images/vaultexpiry_key.png"/></p>
+
+<p>Key Vault (at the time of writing) throws an <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/c0d8953a-c117-4ca4-ad3d-e5d2b1868f9e/get-operation-not-permitted-for-some-of-the-secret-in-my-vault?forum=AzureKeyVault">exception</a> when an expired key is accessed over the API. Also, it does not provide any notification whenever a key/secret is about to expire. The last thing you want is your application go down because of an expired object in the vault. With the Get and List access on the vault, we can retrieve all the keys and secrets in the vault and loop through the elements to see objects that are nearing expiry.</p>
+
+<p>The PowerShell script takes the Vault Name, number of days before with alert should be raised and flags to indicate whether all versions of keys/secrets should be checked for expiry. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+
+<pre><code class="powershell">$VaultName = ''
+$IncludeAllKeyVersions = $true
+$IncludeAllSecretVersions = $true
+$AlertBeforeDays = 3
+</code></pre>
+
+<p>All keys and secrets are converted into a common object model, which contains just the Identifier, Name, Version and the Expiry Date if it has one.</p>
+
+<pre><code class="powershell">Function New-KeyVaultObject
+{
+    param
+    (
+        [string]$Id,
+        [string]$Name,
+        [string]$Version,
+        [System.Nullable[DateTime]]$Expires
+    )
+
+    $server = New-Object -TypeName PSObject
+    $server | Add-Member -MemberType NoteProperty -Name Id -Value $Id
+    $server | Add-Member -MemberType NoteProperty -Name Name -Value $Name
+    $server | Add-Member -MemberType NoteProperty -Name Version -Value $Version
+    $server | Add-Member -MemberType NoteProperty -Name Expires -Value $Expires
+
+    return $server
+}
+</code></pre>
+
+<p>Depending on the flag set for retrieving all key/secret version, it fetches objects from the vault and returns in the common object model above.</p>
+
+<pre><code class="powershell">function Get-AzureKeyVaultObjectKeys
+{
+  param
+  (
+   [string]$VaultName,
+   [bool]$IncludeAllVersions
+  )
+
+  $vaultObjects = [System.Collections.ArrayList]@()
+  $allKeys = Get-AzureKeyVaultKey -VaultName $VaultName
+  foreach ($key in $allKeys) {
+    if($IncludeAllVersions){
+     $allSecretVersion = Get-AzureKeyVaultKey -VaultName $VaultName -IncludeVersions -Name $key.Name
+     foreach($key in $allSecretVersion){
+         $vaultObject = New-KeyVaultObject -Id $key.Id -Name $key.Name -Version $key.Version -Expires $key.Expires
+         $vaultObjects.Add($vaultObject)
+     }
+
+    } else {
+      $vaultObject = New-KeyVaultObject -Id $key.Id -Name $key.Name -Version $key.Version -Expires $key.Expires
+      $vaultObjects.Add($vaultObject)
+    }
+  }
+
+  return $vaultObjects
+}
+
+function Get-AzureKeyVaultObjectSecrets
+{
+  param
+  (
+   [string]$VaultName,
+   [bool]$IncludeAllVersions
+  )
+
+  $vaultObjects = [System.Collections.ArrayList]@()
+  $allSecrets = Get-AzureKeyVaultSecret -VaultName $VaultName
+  foreach ($secret in $allSecrets) {
+    if($IncludeAllVersions){
+     $allSecretVersion = Get-AzureKeyVaultSecret -VaultName $VaultName -IncludeVersions -Name $secret.Name
+     foreach($secret in $allSecretVersion){
+         $vaultObject = New-KeyVaultObject -Id $secret.Id -Name $secret.Name -Version $secret.Version -Expires $secret.Expires
+         $vaultObjects.Add($vaultObject)
+     }
+
+    } else {
+      $vaultObject = New-KeyVaultObject -Id $secret.Id -Name $secret.Name -Version $secret.Version -Expires $secret.Expires
+      $vaultObjects.Add($vaultObject)
+    }
+  }
+
+  return $vaultObjects
+}
+</code></pre>
+
+<p>Now that we have all the keys and secrets we want to check for expiry all we need to know is if there are any keys that are expiring in the upcoming days.</p>
+
+<pre><code class="powershell">$allKeyVaultObjects = [System.Collections.ArrayList]@()
+$allKeyVaultObjects.AddRange((Get-AzureKeyVaultObjectKeys -VaultName $VaultName -IncludeAllVersions $IncludeAllKeyVersions))
+$allKeyVaultObjects.AddRange((Get-AzureKeyVaultObjectSecrets -VaultName $VaultName -IncludeAllVersions $IncludeAllSecretVersions))
+
+# Get expired Objects
+$today = (Get-Date).Date
+$expiredKeyVaultObjects = [System.Collections.ArrayList]@()
+foreach($vaultObject in $allKeyVaultObjects){
+if($vaultObject.Expires -and $vaultObject.Expires.AddDays(-$AlertBeforeDays).Date -lt $today)
+{
+  # add to expiry list
+  $expiredKeyVaultObjects.Add($vaultObject) | Out-Null
+  Write-Output "Expiring" $vaultObject.Id
+
+}
+
+# Pass to Alerter $expiredKeyVaultObjects
+}
+</code></pre>
+
+<h3>Scheduling Expiry Notification using Azure Runbook</h3>
+
+<p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
+
+<p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Accessing Azure Key Vault From Azure Runbook]]></title>
@@ -218,172 +350,6 @@ isVerified = rsa.VerifyHash(digest, "Sha256", signedResult.Result);
 <p>If you are using the &lsquo;client secret&rsquo; to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">Key Vault</a> is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application.</p>
 
 <p>These are some approaches to keep sensitive information out of source control. What approach do you use? Irrespective of the approach you use, make sure that you don’t check them in!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing Azure Key Vault using Azure Resource Manager (ARM) Templates]]></title>
-    <link href="http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/"/>
-    <updated>2016-06-05T06:15:31+00:00</updated>
-    <id>http://rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates</id>
-    <content type="html"><![CDATA[<p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or ARM templates. In this post, we will look into how we can use <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/">Azure Resource Manager</a> (ARM) templates to create and manage a Key Vault.</p>
-
-<h3>Azure Resource Manager and Templates</h3>
-
-<p>Simply put, the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Azure Resource Manager</a>(ARM) allows to group different resources in your solution that form a logical unit and manage them together. It allows to spin up all the resources required for your system and deploy them as and when required. You can achieve this using custom PowerShell scripts or creating a template (in JSON format) - Azure Resource Manager Template.</p>
-
-<blockquote><p><em>Within the ARM template, you define the infrastructure for your app, how to configure that infrastructure, and how to publish your app code to that infrastructure.</em></p></blockquote>
-
-<p>You can <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-export-template/">export a template from existing resources</a> for a starting point and then work off that. But in this post, I will start with an empty template as it helps to understand all the template parts. A template is nothing but a JSON file with a specific <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">schema</a>. All templates have the below format where a few of the elements are not mandatory. If you are not familiar with the template format and the different elements that make it, I&rsquo;ll wait while you read more about the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#template-format">Template format</a></p>
-
-<pre><code class="json">{
-   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-   "contentVersion": "",
-   "parameters": {  },
-   "variables": {  },
-   "resources": [  ],
-   "outputs": {  }
-}
-</code></pre>
-
-<h3>Key Vault ARM Template</h3>
-
-<p>The <a href="https://github.com/Azure/azure-resource-manager-schemas/blob/c301d6ed1d8876cad60af1f81d420e9249a80594/schemas/2015-06-01/Microsoft.KeyVault.json">Key Vault schema</a> is authored here and is part of the root schema URL that we had <a href="http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#">seen above</a>. Though it might not be able to fully understand the schema details, it helps to understand at a high level what are the different parameters that are allowed when defining a Key Vault. At present, the schema allows only creating <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">Secrets</a> within a Key Vault and <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Keys have to be created separately</a>.</p>
-
-<p>Like we did using the <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>, with this ARM template I want to create or update a Key Vault with a specified set of properties (like Vault Name, tenant etc), the access policies to specify the AD objects (applications/users) that have access to the Vault and create a few secrets.</p>
-
-<p>Create a new JSON file with any name you like (<em>azuredeploy.json</em>) and copy the above template structure into it. For the content version, you can use any value that you like for e.g. 1.0.0. Next, we need to define the parameters that we need, that are specific to each Key Vault deployment. Without parameters, we will be always deploying the resources with the same name and properties, so it is a good practice to externalize it and use it as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#parameters">Parameters</a> have a defined structure and allows to have basic validation for the input values. All parameters that does not have a <em>defaultValue</em> needs to be passed in while using the template.</p>
-
-<h4><strong>Parameters</strong></h4>
-
-<p>Let&rsquo;s see a few of the different parameter types that we use in this template. The <em>keyVaultName</em> parameter is a simple string value and is required to be passed in as it does not have a default value specified, where as the <em>enableVaultForVolumeEncryption</em> is an optional parameter and defaults to false. The parameters <em>accessPolicies</em> and <em>secrets</em> are of type <em>array</em> and takes in any valid JSON array. But in this specific case, I want it to be in a specific format but I am yet not sure if I can specify a format structure for the JSON input. Sound off in the comments if you know of a way.</p>
-
-<pre><code>"parameters": {
-    "keyVaultName": {
-        "type": "string",
-        "metadata": {
-            "description": "Name of the Key Vault"
-        }
-    },
-    "accessPolicies": {
-        "type": "array",
-        "defaultValue": "{}",
-        "metadata": {
-            "description": "Access policies object {"tenantId":"","objectId":"",
-                    "permissions":{"keys":[""],"secrets":[""]}}"
-        }
-    },
-    "enableVaultForVolumeEncryption": {
-        "type": "bool",
-        "defaultValue": false,
-        "metadata": {
-            "description": "Specifies if the vault is enabled for volume encryption"
-        }
-    },
-    "secrets": {
-        "type": "array",
-        "defaultValue": "{}",
-        "metadata": {
-            "description": "all secrets {"secretName":"","secretValue":""}"
-        }
-    }
-    ...
-}
-</code></pre>
-
-<h4><strong>Resources</strong></h4>
-
-<p>The Resources section of the template defines the resources to be deployed or updated and takes in an array of values. Resource manager supports two modes of deployment - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#incremental-and-complete-deployments">Incremental and Complete deployment</a> - and the way you define the resources here will affect what and how things get deployed. The template supports the use of certain <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-authoring-templates/#expressions-and-functions">Expressions and Functions</a>, to enable dynamic creation of values. Expressions are enclosed in square brackets ([]) and can appear anywhere is a JSON string value and evaluated when the template is deployed. To use a literal string that starts with a bracket [, use two brackets [[.</p>
-
-<p>The <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-functions/#parameters">parameter function</a> is used to get the value of a parameter that is passed in. I use this to access the Vault name, accessPolicies and other parameters that we had defined earlier. Since accessPolicies in the template expects an array I pass in the parameter object as is to it.</p>
-
-<p>Secrets are defined as nested resources within the Key Vault and can be defined as a nested property within the Key Vault resource as shown in the <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/#examples">example here</a>. Since here we are interested in dynamically generating the Secrets based on the array value passed in as <em>secrets</em> parameter, I use the <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-create-multiple/#copy-copyindex-and-length">copy, copyIndex and length function</a></em> to iterate through the array and generate the required template. The <em>copy</em> function iterates and produces the same template structure with different values as specified by the parameter values.</p>
-
-<p>Since the Secret is defined as a separate resource, <em>name</em> property needs to indicate that it is a nested resource, hence we are concatenating the Vault Name with it. Without that I was getting the error :</p>
-
-<p><span style='color: red;'><em>A nested resource type must have an identical number of segments as its resource name. A root resource type must have segment length one greater than its resource name.</em></span>.</p>
-
-<p>The <em><a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-define-dependencies/#dependson">dependsOn</a></em> element specifies that the Secret resource is dependent on the Key Vault resource.</p>
-
-<pre><code class="json"> "resources": [
-    {
-        "type": "Microsoft.KeyVault/vaults",
-        "name": "[parameters('keyVaultName')]",
-        "accessPolicies": "[parameters('accessPolicies')]",
-        ...
-    },
-    {
-        "type": "Microsoft.KeyVault/vaults/secrets",
-        "name": "[concat(parameters('keyVaultName'), '/', parameters('secrets')[copyIndex()].secretName)]",
-        "properties": {
-            "value": "[parameters('secrets')[copyIndex()].secretValue]"
-        },
-        "dependsOn": [
-            "[concat('Microsoft.KeyVault/vaults/', parameters('keyVaultName'))]"
-        ],
-        "copy": {
-            "name": "secretsCopy",
-            "count": "[length(parameters('secrets'))]"
-        }
-    }
-]
-</code></pre>
-
-<h3>Deploying with ARM Templates</h3>
-
-<p>To deploy the ARM template we need to pass in the required parameters and run the template.</p>
-
-<h4><strong>Parameter File</strong></h4>
-
-<p>Parameters can be passed in individually or as a <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/#parameter-file">Parameter File</a>. Parameter file (<em>azuredeploy.parameters.json</em>) is a JSON file with a specific format. Below is a sample parameter file for our Key Vault ARM template. We can have different such templates for each of our deployment environments with values specific for the environment.</p>
-
-<pre><code class="json">    {
-        "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
-        "contentVersion": "1.0.0.0",
-        "parameters": {
-            "keyVaultName": {
-                "value": "NewARMVaultP"
-            },
-            "tenantId": {
-                "value": ""
-            },
-            "accessPolicies": {
-                "value": [
-                    {
-                        "tenantId": "&lt;TENANT ID&gt;",
-                        "objectId": "&lt;AD OBJECT ID&gt;",
-                        "permissions": {
-                            "keys": ["all"],
-                            "secrets": ["all"]
-                        }
-                    },
-                    { ... }
-                ]
-            },
-            "secrets": {
-                "value": [
-                    {
-                        "secretName": "ConnectionString",
-                        "secretValue": "SecureString1"
-                    },
-                    { ... }
-                ]
-            }
-        }
-    }
-</code></pre>
-
-<h4><strong>Deployment</strong></h4>
-
-<p>The ARM template along with the parameter file can be deployed in different ways - <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-template-deploy/">PowerShell, Azure CLI, REST API, Visual Studio or from Azure Portal</a>. Using PowerShell we can deploy as below. The <em><a href="https://msdn.microsoft.com/en-us/library/mt679014.aspx">Test-AzureRmResourceGroupDeployment</a></em> cmdlet tests if the template file and parameter file are in correct format. This is mostly useful when authoring the template. <em><a href="https://msdn.microsoft.com/en-us/library/mt603823.aspx">New-AzureRmResourceGroupDeployment</a></em> deploys using the given template file and parameters.</p>
-
-<pre><code class="powershell">Test-AzureRmResourceGroupDeployment -ResourceGroupName SharedGroup -TemplateFile .\azuredeploy.json 
-        -TemplateParameterFile .\azuredeploy.parameters.json -Verbose
-New-AzureRmResourceGroupDeployment -ResourceGroupName SharedGroup -TemplateFile .\azuredeploy.json
-         -TemplateParameterFile .\azuredeploy.parameters.json -Verbose
-</code></pre>
-
-<p><a href="http://armviz.io/#">ARM Template Visualizer</a> (ArmViz) is a visual way of editing and managing ARM templates and can be useful when dealing with a large number of resource deployments in a template. Also check out some <a href="https://azure.microsoft.com/en-us/documentation/articles/best-practices-resource-manager-design-templates/">Good practices for designing templates</a>. Most of the template code above is <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-manager-template-keyvault/">based off this example here</a>. <strike>I will try to push this template into the <a href="https://github.com/Azure/azure-quickstart-templates">Azure Quickstart Templates</a> but meanwhile it is <a href="https://github.com/rahulpnath/Blog/tree/master/KeyVault%20ARM%20Template">available here</a>.</strike> The ARM template is available with the <a href="https://azure.microsoft.com/en-us/documentation/templates/201-key-vault-secret-create/">Azure Quickstart Templates</a></p>
 ]]></content>
   </entry>
   
