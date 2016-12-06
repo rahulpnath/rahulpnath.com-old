@@ -4,7 +4,7 @@
   <title><![CDATA[Category: thoughts | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/thoughts/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-12-05T23:16:52+00:00</updated>
+  <updated>2016-12-06T00:01:55+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,66 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Solve the Business Problem, Don't Mimic The Process]]></title>
+    <link href="http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process/"/>
+    <updated>2016-12-06T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process</id>
+    <content type="html"><![CDATA[<p><a href="http://www.dhc-gmbh.com/en/kompetenzen/business-process-management/"><img class="center" alt="Business" src="/images/business_problem_automation.jpg"/></a></p>
+
+<p>While working with clients I often get into conversations with the domain experts and people involved directly with the business. The discussions usually happen around what the process they are currently doing and how to automate those. Knowing the business process is helpful but getting influenced by that to design the solution is often not effective. Recently our team was in a conversation with a domain expert for a new feature request.</p>
+
+<div class="alert alert-warning">
+The series of events mentioned below were modified to fit into the conversational style used in the post.
+</div>
+
+
+<blockquote><p><em><strong>Domain Expert</strong> We need to charge customers a processing fee if they pay using an electronic payment method. Depending on the type of card (mastercard, visa etc) the processing charge percentage differs. The processing fees are always charged in the subsequent billing period after their current payment. For e.g. if a customer pays 1000$ for the month of November, then his December bill will have 2% card processing charge in the December invoice</em></p>
+
+<p><em><strong>Team</strong> That sounds easy, think we have enough details to get started on this. Thank you.</em></p>
+
+<p><em><strong>Domain Expert</strong> Perfect. Ahhh&hellip; Before you go, I think this can be a <a href="http://hangfire.io/">hangfire job</a> that runs on 29 every month, a few days before the billing date, 3rd, and generate these charges for the client. This is what we do manually at present. (And walks off)</em></p>
+
+<p><em><strong>Team</strong> Discussing amongst themselves the team agreed that creating a recurring job is the way to go. Based on the assumption that this job will be run only once a month, the job was to read all the invoices from 29th of the previous month till 28th of the current month and charge the clients. The meeting was dismissed and off went everyone busy to get the new feature out</em></p></blockquote>
+
+<h3>Business has Exceptions</h3>
+
+<p>Problems started coming up the immediate month of feature deployment. Below is the sequence of events that happened.</p>
+
+<ul>
+<li><strong>29th</strong> : Nice work, team! The processing charges have been applied as expected.</li>
+<li><strong>30th</strong> : Some of the invoices have wrong data. We have deleted them. Can you run the job?</li>
+<li><strong>2nd</strong> : A few of our clients (as usual) paid late and we need to charge their processing fees. Can you run the job?</li>
+<li><strong>15th</strong> : One of our clients is ending tomorrow, so we need to send them an invoice and it should include the processing fees for their last payment. Can you run the job?</li>
+</ul>
+
+
+<p>But wait! We had decided that we will run this job only once a month and that is the only time we need to process the charges. We cannot run that job over and over again.</p>
+
+<blockquote><p><em>What I’ve noticed over the years is that our users find very creative ways to achieve their business objectives despite the limitations of the system that they’re working with. We developers ultimately see these as requirements, but they are better interpreted as <strong>workarounds</strong>.</em></p>
+
+<p><strong><em>- <a href="http://udidahan.com/2013/04/28/queries-patterns-and-search-food-for-thought/">Udi Dahan</a></em></strong></p></blockquote>
+
+<p>The business was right when it said that <em>&lsquo;This is what we do manually at present.</em> What they did not say though is that there were always exceptions. And in these cases, they did the same process, but just for those exceptions. Business process mostly will be around the majority of the cases and the exceptions always get handled ad-hoc. So for the business it&rsquo;s always that which takes a good part of their time that matters more.</p>
+
+<h3>Finding the Way Out</h3>
+
+<p>The problem, in this case, was that the team modeled the solution exactly as the business did manually. Think kind of a solution is most likely to fail in case of exceptions. The human brain can easily deal with these exceptions. But for a program to solve it that way it needs to be told so, which implies that there need to be alternate flow paths defined. So with the improved understanding of these exception cases, the team does another analysis through the problem. After some discussion the team re-defines their original problem statement - *We need to be able to run the job any number of times and it should have the same effect.</p>
+
+<blockquote><p><em>A payment should get </em>one and only one<em> processing charge associated, no matter however times it is seen by the job.</em></p></blockquote>
+
+<p>With the new implementation, we decided to maintain a list of payments (a strong identifier that does not change) we have seen and processed. So every time a payment is seen, it is matched to see if it is already processed. If a charge is not already applied, a charge is applied and added to the list of processed payments. This ensures that they can run the job anytime. The team added in capability to specify the time range to look for invoices. By default, this ranged from 29th - 28th. The team also added in a way to void out payment charges applied, so that whenever the invoices changed then can just clear that off and re-run the job. These changes gave the flexibility to meet the businesses exception cases.</p>
+
+<h3>Idempotent</h3>
+
+<blockquote><p><em>The term <a href="http://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">idempotent</a> is used in mathematics to describe a function that produces the same result if it is applied to itself, i.e. f(x) = f(f(x)). In Messaging this concept translates into a message that has the same effect whether it is received once or multiple times. This means that a message can safely be re-sent without causing any problems even if the receiver receives duplicates of the same message.</em></p></blockquote>
+
+<p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
+
+<p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Staying in the Learning Loop]]></title>
@@ -312,67 +372,6 @@ Most commonly asked for documents are</p>
 <blockquote><p><em>&ldquo;A blog is neither a diary nor a journal. Many people think of blogging in relation to those two things, confessional or practical. It is neither but includes elements of both.&rdquo; - Lemn Sissay</em></p></blockquote>
 
 <p><a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">Every &lsquo;professional&rsquo; should have a blog</a>, and if you don&rsquo;t yet, now is a good time to start one. Sound off in the comments on what you feel about blogging in general, especially if you bought a domain and set up your blog after reading this. It will prove a point for this post!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Life Learnings After Being a Parent]]></title>
-    <link href="http://rahulpnath.com/blog/life-learnings-after-being-a-parent/"/>
-    <updated>2016-06-14T16:48:25+00:00</updated>
-    <id>http://rahulpnath.com/blog/life-learnings-after-being-a-parent</id>
-    <content type="html"><![CDATA[<blockquote><p><em>His father asked Ethan in a raspy voice, &ldquo;You spend time with your son?&rdquo;</em></p>
-
-<p><em>&ldquo;Much as I can,&rdquo; he’d answered, but his father had caught the lie in his eyes.</em></p>
-
-<p><em>&ldquo;It’ll be your loss, Ethan. Day&rsquo;ll come, when he’s grown and it’s too late, that you&rsquo;d give a kingdom to go back and spend a single hour with your son as a boy. To hold him.Read a book to him. Throw a ball with a person in whose eyes you can do no wrong. He doesn&rsquo;t see your failings yet. He looks at you with pure love and it won&rsquo;t last, so you revel in it while it&rsquo;s here.&rdquo;</em></p>
-
-<p><em>Ethan thinks often of that conversation, mostly when he&rsquo;s lying awake in bed at night and everyone else is asleep, and his life screaming past at the speed of light—the weight of bills and the future and his prior failings and all these moments he&rsquo;s missing—all the lost joy—perched like a boulder on his chest.</em></p>
-
-<p>- <strong> <em><a href="http://amzn.to/1YdxuYm">Pines (The Wayward Pines Trilogy, Book 1)</a></em> </strong></p></blockquote>
-
-<p>Every second that I spent with Gautham is a pure joy and I enjoy it to the most. It&rsquo;s true that I have very less time to spend for myself, but then it also made me realized I have not been using all the time I did have before he was born. I have re-arranged all my schedules so that whenever I am home and he is awake, I do nothing else, but be with him! There has been a lot of learnings and realizations that I have had since the last 20 months.</p>
-
-<p><img class="center" alt="Command Line Application Launcher" src="/images/gautham.jpg" /></p>
-
-<h4><strong>Curiosity is what keeps us going</strong></h4>
-
-<p>Each day is a new day and he learns at least one new thing. Though to us (the &lsquo;grown-ups&rsquo;), it feels that he is doing the same thing over and over again, for him, it&rsquo;s the same thing in a new perspective. He is curious about everything that he sees and happens around. I often felt that my job was boring, mundane and repetitive and often ended up being the same thing every day. But then I understood that it is not about what you do but how you see what you are doing, that matters. Having at least one new thing to learn from whatever you do daily is a good way to stay motivated.</p>
-
-<blockquote><p><em>Always try to understand one level below your current level of abstraction - happiness lies there!</em></p></blockquote>
-
-<h4><strong>Making the Complex Simple</strong></h4>
-
-<p>Often when playing with him I realize how overwhelming things are in the world and all that he is yet to learn. But that&rsquo;s just me putting my perspective through his eyes. For him, it&rsquo;s always &lsquo;try try and try again&rsquo;. He tries the best he can do something now and improve on it over the days or months.</p>
-
-<blockquote><p><em>How do you eat an elephant? One bite at a time.</em></p></blockquote>
-
-<p>I often get overwhelmed when dealing with something new - learning a new language, buying a car or even planning a vacation. There are innumerable options for everything these days and all that information is available at our fingertips. But then the way to approach these is to break it down into smaller chunks of work and target that individually. Just like writing this blog post is overwhelming for me for all the things that I think I need to write, but then I write section by section or even line by line. Forming <a href="http://amzn.to/1toWtyy">habits</a> to break anything <a href="http://amzn.to/1Xg6biH">complex into smaller pieces</a> and tackling that is a good way to approach tasks.</p>
-
-<h4><strong>Learning to Disconnect</strong></h4>
-
-<p>I certainly do not want Gautham to be entertained with a smartphone, iPad or laptop while I get to do something else. Though it is very much plausible, that&rsquo;s just setting him up the wrong path. It&rsquo;s easy for us to get distracted into all these and not do what matters to us the most - just like all of us hooked into the social media.</p>
-
-<blockquote><p><em><a href="https://medium.com/life-learning/how-to-live-a-life-of-balance-and-high-productivity-bd5434a61c79#.26mh9yvec">Social media is best as planned entertainment rather than unplanned distraction.</a></em></p></blockquote>
-
-<p>The more you stay offline from these &lsquo;addictive&rsquo; social networks the less you will feel the need to check it. Like I do not want my kid to be addicted to these, I do not want it to get in the way of me using that time for something more useful. Staying disconnected from the internet and social network is a good way to get a lot of time for yourself.</p>
-
-<h4><strong>Less is More</strong></h4>
-
-<p>Gautham is happy just with a bottle cap, or a small thread of a shirt and can spend a lot of time playing with it. It&rsquo;s not in what you have but how you see things that you have matters. I was always attracted to the latest and coolest gadgets and often bought them too. Happiness then was directly related to the things I had in possession and how current I was. I have learned to get over that minimize my expense to what matters most. Though it&rsquo;s a bit late , the saying &lsquo;<em>Do not save what is left after spending but spend what is left after saving</em>&rsquo;, starts making a lot of sense. The fact that there is someone who is completely dependent on me(/wife) brings in a lot of responsibility to life which was missing earlier and puts savings in front of expenses.</p>
-
-<h4><strong>Time is Valuable</strong></h4>
-
-<p>One of the most precious things that I have is time. I used to while away time earlier but now I have very limited of it for myself that I try to spend it usefully. Having your <a href="http://zenhabits.net/purpose-your-day-most-important-task/">Most Important Task</a> (MIT) defined is important and helps prioritize your tasks for the day. If you feel a lot of time is getting lost, while sitting down to work (on a laptop for me) use monitoring tools like <a href="https://www.rescuetime.com/">Rescue Time</a> to understand your daily habits and improve on it.</p>
-
-<blockquote><p><em><a href="http://quoteinvestigator.com/2013/10/30/inspire-nine/">Someone once asked</a> Somerset Maugham if he wrote on a schedule or only when struck by inspiration. “I write only when inspiration strikes,” he replied. “Fortunately, it strikes every morning at nine o’clock sharp.”</em></p></blockquote>
-
-<p>Habits decide what we do every day so it&rsquo;s very important that we form good ones. Though it takes effort, it is possible to <a href="http://charlesduhigg.com/how-habits-work/">rewire any of your habits</a> just by giving attention to it.</p>
-
-<h4><strong>Learning from Mistakes</strong></h4>
-
-<p>When you try, you fail and you fail again and again until you succeed. When you don&rsquo;t try you fail - you fail to succeed! <a href="http://www.psychologyinaction.org/2012/11/22/infants-learn-to-walk-by-learning-to-fall/">Infants learn to walk by learning to fall</a>. It&rsquo;s easy to get into a comfort zone and stay there be it in your jobs or elsewhere. Intentionally putting yourself into a position to learn and grow is important. I spent a large part of my time at the workplace. So I try to own up a lot more unfamiliar things and get exposed more - It&rsquo;s Ok to fail!</p>
-
-<p>Parenting is hard but it&rsquo;s also real fun. You get to learn a lot yourself while on the journey and <strong><em>they give back the initial years of your life</em></strong>. Let me wrap this up quickly as he is about to wake up and the last thing I want is to have all the keys pulled off my keyboard!</p>
 ]]></content>
   </entry>
   

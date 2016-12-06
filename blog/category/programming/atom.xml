@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-12-05T23:16:52+00:00</updated>
+  <updated>2016-12-06T00:01:55+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,66 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Solve the Business Problem, Don't Mimic The Process]]></title>
+    <link href="http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process/"/>
+    <updated>2016-12-06T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process</id>
+    <content type="html"><![CDATA[<p><a href="http://www.dhc-gmbh.com/en/kompetenzen/business-process-management/"><img class="center" alt="Business" src="/images/business_problem_automation.jpg"/></a></p>
+
+<p>While working with clients I often get into conversations with the domain experts and people involved directly with the business. The discussions usually happen around what the process they are currently doing and how to automate those. Knowing the business process is helpful but getting influenced by that to design the solution is often not effective. Recently our team was in a conversation with a domain expert for a new feature request.</p>
+
+<div class="alert alert-warning">
+The series of events mentioned below were modified to fit into the conversational style used in the post.
+</div>
+
+
+<blockquote><p><em><strong>Domain Expert</strong> We need to charge customers a processing fee if they pay using an electronic payment method. Depending on the type of card (mastercard, visa etc) the processing charge percentage differs. The processing fees are always charged in the subsequent billing period after their current payment. For e.g. if a customer pays 1000$ for the month of November, then his December bill will have 2% card processing charge in the December invoice</em></p>
+
+<p><em><strong>Team</strong> That sounds easy, think we have enough details to get started on this. Thank you.</em></p>
+
+<p><em><strong>Domain Expert</strong> Perfect. Ahhh&hellip; Before you go, I think this can be a <a href="http://hangfire.io/">hangfire job</a> that runs on 29 every month, a few days before the billing date, 3rd, and generate these charges for the client. This is what we do manually at present. (And walks off)</em></p>
+
+<p><em><strong>Team</strong> Discussing amongst themselves the team agreed that creating a recurring job is the way to go. Based on the assumption that this job will be run only once a month, the job was to read all the invoices from 29th of the previous month till 28th of the current month and charge the clients. The meeting was dismissed and off went everyone busy to get the new feature out</em></p></blockquote>
+
+<h3>Business has Exceptions</h3>
+
+<p>Problems started coming up the immediate month of feature deployment. Below is the sequence of events that happened.</p>
+
+<ul>
+<li><strong>29th</strong> : Nice work, team! The processing charges have been applied as expected.</li>
+<li><strong>30th</strong> : Some of the invoices have wrong data. We have deleted them. Can you run the job?</li>
+<li><strong>2nd</strong> : A few of our clients (as usual) paid late and we need to charge their processing fees. Can you run the job?</li>
+<li><strong>15th</strong> : One of our clients is ending tomorrow, so we need to send them an invoice and it should include the processing fees for their last payment. Can you run the job?</li>
+</ul>
+
+
+<p>But wait! We had decided that we will run this job only once a month and that is the only time we need to process the charges. We cannot run that job over and over again.</p>
+
+<blockquote><p><em>What I’ve noticed over the years is that our users find very creative ways to achieve their business objectives despite the limitations of the system that they’re working with. We developers ultimately see these as requirements, but they are better interpreted as <strong>workarounds</strong>.</em></p>
+
+<p><strong><em>- <a href="http://udidahan.com/2013/04/28/queries-patterns-and-search-food-for-thought/">Udi Dahan</a></em></strong></p></blockquote>
+
+<p>The business was right when it said that <em>&lsquo;This is what we do manually at present.</em> What they did not say though is that there were always exceptions. And in these cases, they did the same process, but just for those exceptions. Business process mostly will be around the majority of the cases and the exceptions always get handled ad-hoc. So for the business it&rsquo;s always that which takes a good part of their time that matters more.</p>
+
+<h3>Finding the Way Out</h3>
+
+<p>The problem, in this case, was that the team modeled the solution exactly as the business did manually. Think kind of a solution is most likely to fail in case of exceptions. The human brain can easily deal with these exceptions. But for a program to solve it that way it needs to be told so, which implies that there need to be alternate flow paths defined. So with the improved understanding of these exception cases, the team does another analysis through the problem. After some discussion the team re-defines their original problem statement - *We need to be able to run the job any number of times and it should have the same effect.</p>
+
+<blockquote><p><em>A payment should get </em>one and only one<em> processing charge associated, no matter however times it is seen by the job.</em></p></blockquote>
+
+<p>With the new implementation, we decided to maintain a list of payments (a strong identifier that does not change) we have seen and processed. So every time a payment is seen, it is matched to see if it is already processed. If a charge is not already applied, a charge is applied and added to the list of processed payments. This ensures that they can run the job anytime. The team added in capability to specify the time range to look for invoices. By default, this ranged from 29th - 28th. The team also added in a way to void out payment charges applied, so that whenever the invoices changed then can just clear that off and re-run the job. These changes gave the flexibility to meet the businesses exception cases.</p>
+
+<h3>Idempotent</h3>
+
+<blockquote><p><em>The term <a href="http://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">idempotent</a> is used in mathematics to describe a function that produces the same result if it is applied to itself, i.e. f(x) = f(f(x)). In Messaging this concept translates into a message that has the same effect whether it is received once or multiple times. This means that a message can safely be re-sent without causing any problems even if the receiver receives duplicates of the same message.</em></p></blockquote>
+
+<p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
+
+<p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introducing Code Formatting into a Large Code Base]]></title>
@@ -294,199 +354,6 @@ fi
 <p>It&rsquo;s confirmed that <a href="https://twitter.com/samnewman/status/761402917798555648">NDC Sydney is coming back next year</a>. If you are in town during that time, make sure you reserve a seat.  Look out for the early bird tickets, those are cheap, and the conference is worth it. Thanks to Readify for sponsoring my tickets and it&rsquo;s <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">one of the good things about working with Readify</a>.</p>
 
 <p>See you at NDC Sydney next year!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/"/>
-    <updated>2016-07-18T04:52:35+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics</id>
-    <content type="html"><![CDATA[<p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
-
-<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
-
-<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
-keeping the abstraction level consistent.</em></p></blockquote>
-
-<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
-
-<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
-<img class="center" src="/images/readable_code.jpg" alt="Code should be readable" />
-</a></p>
-
-<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
-
-<pre><code class="csharp">public class Subscription
-{
-    public List&lt;SubscriptionTerm&gt; Terms { get; set; }
-}
-
-public class SubscriptionTerm
-{
-    public int Id { get; set; }
-    public double Price { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime? EndDate { get; set; }
-}
-</code></pre>
-
-<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
-
-<pre><code class="csharp">public bool Validate(Subscription subscription)
-{
-    var hasOverlappingItems = false;
-    foreach (var term in subscription.Terms)
-    {
-        var otherTerms = subscription.Terms.Where(a =&gt; a.Price != term.Price);
-        if (otherTerms.Any())
-        {
-            if (
-                (!term.EndDate.HasValue &amp;&amp; otherTerms.Any(a =&gt; term.StartDate &lt; a.EndDate)) ||
-                (otherTerms.Where(a =&gt; !a.EndDate.HasValue).Any(a =&gt; a.StartDate &lt; term.EndDate)) ||
-                (otherTerms.Any(a =&gt; term.StartDate &lt;= a.EndDate &amp;&amp; a.StartDate &lt;= term.EndDate))
-            )
-            {
-                hasOverlappingItems = true;
-                break;
-            }
-        }
-    }
-
-    return hasOverlappingItems;
-}
-</code></pre>
-
-<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
-
-<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
-
-<h3>Creating the Safety Net</h3>
-
-<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
-
-<pre><code class="csharp">[InlineData("10-Jan-2016", "10-Feb-2016", 1, "11-Feb-2016", "10-Dec-2016", 2, false)]
-[InlineData("10-Jan-2015", "10-Feb-2015", 1, "20-Jan-2015", "1-Feb-2016", 2, true)]
-public void ValidateReturnsExpected(
-    string startDate1, string endDate1, double price1,
-    string startDate2, string endDate2, double price2,
-    bool expected )
-{
-    // Fixture setup
-    var subscription = new Subscription();
-    var term1 = createTerm(startDate1, endDate1, price1);
-    var term2 = createTerm(startDate2, endDate2, price2);
-    subscription.Terms.Add(term1);
-    subscription.Terms.Add(term2);
-    // Exercise system
-    var sut = new OverlappingSubscriptionTermWithConflictingPriceValidator();
-    var actual = sut.Validate(subscription);
-    // Verify outcome
-    Assert.Equal(expected, actual);
-    // Teardown
-}
-</code></pre>
-
-<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
-
-<h3>Refactoring for Readability</h3>
-
-<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
-
-<pre><code class="csharp">public class DateRange
-{
-    public DateTime StartDate { get; private set; }
-
-    public DateTime? EndDate { get; private set; }
-
-    public DateRange(DateTime startDate, DateTime? endDate)
-    {
-        if (endDate.HasValue &amp;&amp; endDate.Value &lt; startDate)
-            throw new ArgumentException("End date cannot be less than start Date");
-
-        StartDate = startDate;
-        EndDate = endDate;
-    }
-}
-</code></pre>
-
-<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
-
-<pre><code class="csharp">public DateRange TermPeriod
-{
-    get
-    {
-        return new DateRange(StartDate, EndDate);
-    }
-}
-</code></pre>
-
-<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
-
-<pre><code class="csharp Tests for IsOverlapping">[InlineData("10-Jan-2016", "10-Feb-2016", "11-Feb-2016", "10-Dec-2016", false)]
-[InlineData("10-Jan-2015", "10-Feb-2015", "20-Jan-2015", "1-Feb-2016", true)]
-[InlineData("10-Jan-2015", null, "20-Jan-2016", null,  true)]
-[InlineData("28-Jan-16", "10-Mar-16", "10-Mar-16", null, true)]
-public void OverlappingDatesReturnsExpected(
-    string startDateTime1,
-    string endDateTime1,
-    string startDateTime2,
-    string endDateTime2,
-    bool expected)
-{
-    // Fixture setup
-    var range1 = CreateDateRange(startDateTime1, endDateTime1);
-    var range2 = CreateDateRange(startDateTime2, endDateTime2);
-    // Exercise system
-    var actual = range1.IsOverlapping(range2);
-    // Verify outcome
-    Assert.Equal(expected, actual);
-    // Teardown
-}
-</code></pre>
-
-<pre><code class="csharp IsOverlapping in DateRange">public bool IsOverlapping(DateRange dateRange)
-{
-    if (!EndDate.HasValue &amp;&amp; !dateRange.EndDate.HasValue)
-        return true;
-
-    if (!EndDate.HasValue)
-        return StartDate &lt;= dateRange.EndDate;
-
-    if (!dateRange.EndDate.HasValue)
-        return dateRange.StartDate &lt;= EndDate;
-
-    return StartDate &lt;= dateRange.EndDate
-        &amp;&amp; dateRange.StartDate &lt;= EndDate;
-}
-</code></pre>
-
-<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
-
-<pre><code class="csharp IsOverlapping in SubscriptionTerm">public bool IsOverlapping(SubscriptionTerm term)
-{
-    return TermPeriod.IsOverlapping(term.TermPeriod);
-}
-</code></pre>
-
-<pre><code class="csharp Validator after Refactoring">public bool Validate(Subscription subscription)
-{
-    foreach (var term in subscription.Terms)
-    {
-        var termsWithDifferentPrice = subscription.Terms.Where(a =&gt; a.Price != term.Price);
-        return termsWithDifferentPrice
-            .Any(a =&gt; a.IsOverlapping(term));
-    }
-
-    return false;
-}
-</code></pre>
-
-<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
-
-<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
-
-<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
 ]]></content>
   </entry>
   
