@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2016-12-11T18:21:20+00:00</updated>
+  <updated>2016-12-12T00:04:31+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,115 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Make Your Code Contracts Stronger]]></title>
+    <link href="http://rahulpnath.com/blog/stronger-code-contracts/"/>
+    <updated>2016-12-12T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/stronger-code-contracts</id>
+    <content type="html"><![CDATA[<p>How often have you gone into a class to see the implementation when consuming the class or an interface? I do this almost every other day and it&rsquo;s mostly to check how the code handles boundary conditions. What does it do when there is no value to return, does it need all parameters etc. Reading code is hard and time-consuming, even if it&rsquo;s a code that you yourself have written a few minutes back. Imagine every developer having to go into the implementation detail anytime they consume a class?    Bertrand Meyer in connection with his design of the Eiffel programming language coined the term <a href="https://en.wikipedia.org/wiki/Design_by_contract">Design By Contract</a>, an approach for designing software. The central idea of Design By Contract is to improve the contracts shared between different components in the code base. In this post, we will see how we can improve our C# code and avoid unnecessary guard statements across out code base.</p>
+
+<p><a href="http://nebula.wsimg.com/6e7b8057c7f32b90d4f144424c8a7ae1?AccessKeyId=00F174C5B1CCF865161D&disposition=0&alloworigin=1">
+<img style="box-shadow:none;" class="center" alt="Stronger Code Contracts" src="http://rahulpnath.com/images/strong_code_contracts.jpg"/>
+</a></p>
+
+<h3>Leaky Abstraction</h3>
+
+<p>These days in programming we tend to abstract a lot more than what we really need. <a href="http://www.rahulpnath.com/blog/category/dependency-injection/">Dependency Injection</a> and use of IOC containers have started forcing ourselves to think that everything needs to be an interface. But essentially this is not the case. But the bigger problem lies not in the abstraction, but on depending on the implementation details after abstracting. A <a href="https://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a> is an abstraction that exposes details and limitations of its underlying implementation to its users that should ideally be hidden away.</p>
+
+<blockquote><p><em>Consuming abstractions assuming a certain implementation is bad practice</em></p></blockquote>
+
+<p>Recently I came across the below code during a code review. Even though an empty string was not a valid configuration value that was not being checked here as the repository implementation returns a null when there is no entry.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">config</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a common practice and I have myself fallen for this a lot of times. The fact that the repository returns only a null value is an abstraction detail and is not clear from the contract that it exposes. Anyone could change the repository to start returning an empty string. This will then start failing this code. When taken in isolation the code that uses &lsquo;config&rsquo; must check for null and empty to avoid invalid values. The abstraction contracts (function signatures) must convey whether it always returns a value, whether it can be empty or null. This helps remove unnecessary guarding code or makes guarding mandatory across the code base and also indicates a clear intent.</p>
+
+<p>The <a href="https://en.wikipedia.org/wiki/Robustness_principle">Robustness Principle</a> is a general design guideline for software</p>
+
+<blockquote><p><em>Be conservative in what you do, be liberal in what you accept from others (often reworded as &ldquo;Be conservative in what you send, be liberal in what you accept&rdquo;).</em></p></blockquote>
+
+<p>Applying this principle in this context, we must be conservative in what we return from our function (be it a class or interface) contract. The contract should be as explicit as possible to indicate the nature of values that it returns.</p>
+
+<h3>Stronger Return Types</h3>
+
+<p>A repository returning a string is a weak contract, as it does not clearly express the nature of value it returns. It can return either of these three values - null, an empty string or a valid configuration string. In our application, assuming that null and empty string are invalid we should be having a single representation for this state in the application. C# by its very design encourages us to use this pattern as it embraces the concept of null&rsquo;s - <a href="https://www.linkedin.com/pulse/20141126171912-7082046-tony-hoare-invention-of-the-null-reference-a-billion-dollar-mistake">the billion dollar mistake</a>. But this does not mean we are restricted by it. We can bring in concepts from other languages to help us solve this problem. In F# for example, the Option type represents presence or absence of a value. This is similar to the <a href="https://msdn.microsoft.com/en-us/library/1t3y8s4s.aspx">Nullable type in C#</a>, but not just restricted to value types. <a href="http://fsharpforfunandprofit.com/posts/the-option-type/">Option type</a> is defined as union type with two cases : Some and None. Whenever consuming an option type the compiler forces us to handle both the cases</p>
+
+<blockquote><p><em>In pure F#, <a href="https://fsharpforfunandprofit.com/posts/correctness-exhaustive-pattern-matching/">nulls cannot exist accidentally</a>. A string or object must always be assigned to something at creation, and is immutable thereafter</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='fsharp'><span class='line'><span class="k">let</span> <span class="nv">config</span> <span class="o">=</span> <span class="n">getConfig</span>
+</span><span class='line'><span class="k">match</span> <span class="n">config</span> <span class="k">with</span>
+</span><span class='line'><span class="o">|</span> <span class="n">None</span> <span class="o">-&gt;</span> <span class="n">printfn</span> <span class="s">&quot;Invalid config&quot;</span>
+</span><span class='line'><span class="o">|</span> <span class="n">Some</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="n">printgn</span> <span class="s">&quot;Valid config&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Though C# does not have anything out of the box to define optional values, we can define one of our own. The <a href="https://github.com/ploeh/Booking/blob/master/BookingDomainModel/Maybe.cs">Maybe</a> class is one such implementation of an optional concept. The name is influenced by the option type in Haskell, <a href="https://wiki.haskell.org/Maybe">Maybe</a>. There are also other implementations of Maybe but the concept remains the same - we can represent an optional type in C#.  The code contracts are stronger using Maybe as a return type. If a function always returns a value, say a string, the function contract should remain as a string. If a function cannot return a value always and can return null/empty (assuming that these are invalid values) then it returns a <em>Maybe<string></em>. This makes it clearer for consuming code on whether they should check for null/empty values.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Maybe</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="n">config</span><span class="p">.</span><span class="n">Do</span><span class="p">(</span><span class="k">value</span> <span class="p">=&gt;</span> <span class="n">LoadFromFile</span><span class="p">(</span><span class="k">value</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can write different extension methods on the Maybe class, depending on how you want to process the value. In the above example, I have a Do extension method that calls on to a function with the configuration value if any exists. By explicitly stating that a value may or may not be present we have more clarity in code. No longer do we need any unnecessary null checks in the case where a value is always present. This is best achieved when agreed upon as a convention by the development team and enforced through tooling (like code analysis).</p>
+
+<h3>Value Objects</h3>
+
+<p>One of the root problem for having a lot of null/empty checks scattered across the code is <a href="http://blog.ploeh.dk/2015/01/19/from-primitive-obsession-to-domain-modelling/">Primitive Obsession</a>. Just because you can represent a value as a string, it doesn&rsquo;t mean that you always should. Enforcing structural restrictions imposed by the business is best done by encapsulating these constraints within a class, also known as a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. This leads to classes for representing various non-nullable values for e.g. Name, configuration, Age etc. You can use this in conjunction with <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null Object</a> pattern if required. A value object is a class whose equality is based on the value that it holds. So two class instances with same values will be treated equally. In F# you get this by default but in C# you need to override Equals and GetHashCode functions to enforce this equality.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Configuration</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Configuration</span><span class="p">(</span><span class="kt">string</span> <span class="n">configuration</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">configuration</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">configuration</span><span class="p">),</span> <span class="s">&quot;Configuration value cannot be null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">configuration</span> <span class="p">=</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// override Equals and GetHashCode</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Modeling concepts in the domain as classes helps you to contain the domain/business constraints in a single place. This prevents the need to have null checks elsewhere in the code. Value objects being immutable helps enforce class invariants.</p>
+
+<p>The above two methods help create a stronger contract in code. As with any conventions, this is useful only when followed by the whole team. Conventions are best followed if enforced through tooling. You can create custom code analysis rules to enforce return type to be of type if any method is returning null. Even if you are introducing this into a large existing code base you can do this incrementally, by starting to enforce them on commits (if you are using git) like when <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing styling into an existing project</a>. What other contracts do you find helpful to make the code more expressive?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Solve the Business Problem, Don't Mimic The Process]]></title>
@@ -1754,337 +1863,6 @@ Most commonly asked for documents are</p>
 <p><img class="center" alt="View from my office, Sydney" src="http://rahulpnath.com/images/sydney_work.jpg" title="View from my office" /></p>
 
 <p>I moved over to Sydney last year around the same time. It was difficult to adjust in during the initial days, but soon it all started to fall into the rhythm. It&rsquo;s been a year with Readify and at my client and I am enjoying the new experiences.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/"/>
-    <updated>2016-07-18T04:52:35+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics</id>
-    <content type="html"><![CDATA[<p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
-
-<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
-
-<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
-keeping the abstraction level consistent.</em></p></blockquote>
-
-<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
-
-<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
-<img class="center" src="http://rahulpnath.com/images/readable_code.jpg" alt="Code should be readable" />
-</a></p>
-
-<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Subscription</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">SubscriptionTerm</span><span class="p">&gt;</span> <span class="n">Terms</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SubscriptionTerm</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">double</span> <span class="n">Price</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">otherTerms</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span>
-</span><span class='line'>                <span class="p">(!</span><span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
-</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">).</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
-</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">&amp;&amp;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span>
-</span><span class='line'>            <span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">hasOverlappingItems</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
-
-<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
-
-<h3>Creating the Safety Net</h3>
-
-<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, 1, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, 2, false)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, 1, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, 2, true)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ValidateReturnsExpected</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate1</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate2</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate2</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Fixture setup</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">subscription</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Subscription</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">term1</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate1</span><span class="p">,</span> <span class="n">endDate1</span><span class="p">,</span> <span class="n">price1</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">term2</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate2</span><span class="p">,</span> <span class="n">endDate2</span><span class="p">,</span> <span class="n">price2</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term1</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Exercise system</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">OverlappingSubscriptionTermWithConflictingPriceValidator</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">subscription</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Verify outcome</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Teardown</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
-
-<h3>Refactoring for Readability</h3>
-
-<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">endDate</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">endDate</span><span class="p">.</span><span class="n">Value</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End date cannot be less than start Date&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">DateRange</span> <span class="n">TermPeriod</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">get</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">EndDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
-
-<figure class='code'><figcaption><span>Tests for IsOverlapping</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, false)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, true)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, null, &quot;20-Jan-2016&quot;, null,  true)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;28-Jan-16&quot;, &quot;10-Mar-16&quot;, &quot;10-Mar-16&quot;, null, true)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OverlappingDatesReturnsExpected</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Fixture setup</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">range1</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime1</span><span class="p">,</span> <span class="n">endDateTime1</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">range2</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime2</span><span class="p">,</span> <span class="n">endDateTime2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Exercise system</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">range1</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">range2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Verify outcome</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Teardown</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>IsOverlapping in DateRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">DateRange</span> <span class="n">dateRange</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span>
-</span><span class='line'>        <span class="p">&amp;&amp;</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
-
-<figure class='code'><figcaption><span>IsOverlapping in SubscriptionTerm</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">SubscriptionTerm</span> <span class="n">term</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">TermPeriod</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">TermPeriod</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Validator after Refactoring</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">termsWithDifferentPrice</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">termsWithDifferentPrice</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
-
-<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
-
-<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
 ]]></content>
   </entry>
   

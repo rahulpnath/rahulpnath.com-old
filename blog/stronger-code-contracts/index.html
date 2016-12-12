@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Make Your Code Contracts Stronger - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="In this post, we will see how we can improve the Code contracts in C# and avoid unnecessary Guard statements across our code base." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/stronger-code-contracts">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Make Your Code Contracts Stronger" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/stronger-code-contracts/" />
+<meta property="og:description" content="In this post, we will see how we can improve the Code contracts in C# and avoid unnecessary Guard statements across our code base." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/strong_code_contracts.jpg" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/stronger-code-contracts" />
+<meta property="twitter:title" content="Make Your Code Contracts Stronger" />
+<meta property="twitter:description" content="In this post, we will see how we can improve the Code contracts in C# and avoid unnecessary Guard statements across our code base." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/strong_code_contracts.jpg" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 12<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Make Your Code Contracts Stronger
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>How often have you gone into a class to see the implementation when consuming the class or an interface? I do this almost every other day and it&rsquo;s mostly to check how the code handles boundary conditions. What does it do when there is no value to return, does it need all parameters etc. Reading code is hard and time-consuming, even if it&rsquo;s a code that you yourself have written a few minutes back. Imagine every developer having to go into the implementation detail anytime they consume a class?    Bertrand Meyer in connection with his design of the Eiffel programming language coined the term <a href="https://en.wikipedia.org/wiki/Design_by_contract">Design By Contract</a>, an approach for designing software. The central idea of Design By Contract is to improve the contracts shared between different components in the code base. In this post, we will see how we can improve our C# code and avoid unnecessary guard statements across out code base.</p>
+
+<p><a href="http://nebula.wsimg.com/6e7b8057c7f32b90d4f144424c8a7ae1?AccessKeyId=00F174C5B1CCF865161D&disposition=0&alloworigin=1">
+<img style="box-shadow:none;" class="center" alt="Stronger Code Contracts" src="/images/strong_code_contracts.jpg"/>
+</a></p>
+
+<h3>Leaky Abstraction</h3>
+
+<p>These days in programming we tend to abstract a lot more than what we really need. <a href="http://www.rahulpnath.com/blog/category/dependency-injection/">Dependency Injection</a> and use of IOC containers have started forcing ourselves to think that everything needs to be an interface. But essentially this is not the case. But the bigger problem lies not in the abstraction, but on depending on the implementation details after abstracting. A <a href="https://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a> is an abstraction that exposes details and limitations of its underlying implementation to its users that should ideally be hidden away.</p>
+
+<blockquote><p><em>Consuming abstractions assuming a certain implementation is bad practice</em></p></blockquote>
+
+<p>Recently I came across the below code during a code review. Even though an empty string was not a valid configuration value that was not being checked here as the repository implementation returns a null when there is no entry.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">config</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a common practice and I have myself fallen for this a lot of times. The fact that the repository returns only a null value is an abstraction detail and is not clear from the contract that it exposes. Anyone could change the repository to start returning an empty string. This will then start failing this code. When taken in isolation the code that uses &lsquo;config&rsquo; must check for null and empty to avoid invalid values. The abstraction contracts (function signatures) must convey whether it always returns a value, whether it can be empty or null. This helps remove unnecessary guarding code or makes guarding mandatory across the code base and also indicates a clear intent.</p>
+
+<p>The <a href="https://en.wikipedia.org/wiki/Robustness_principle">Robustness Principle</a> is a general design guideline for software</p>
+
+<blockquote><p><em>Be conservative in what you do, be liberal in what you accept from others (often reworded as &ldquo;Be conservative in what you send, be liberal in what you accept&rdquo;).</em></p></blockquote>
+
+<p>Applying this principle in this context, we must be conservative in what we return from our function (be it a class or interface) contract. The contract should be as explicit as possible to indicate the nature of values that it returns.</p>
+
+<h3>Stronger Return Types</h3>
+
+<p>A repository returning a string is a weak contract, as it does not clearly express the nature of value it returns. It can return either of these three values - null, an empty string or a valid configuration string. In our application, assuming that null and empty string are invalid we should be having a single representation for this state in the application. C# by its very design encourages us to use this pattern as it embraces the concept of null&rsquo;s - <a href="https://www.linkedin.com/pulse/20141126171912-7082046-tony-hoare-invention-of-the-null-reference-a-billion-dollar-mistake">the billion dollar mistake</a>. But this does not mean we are restricted by it. We can bring in concepts from other languages to help us solve this problem. In F# for example, the Option type represents presence or absence of a value. This is similar to the <a href="https://msdn.microsoft.com/en-us/library/1t3y8s4s.aspx">Nullable type in C#</a>, but not just restricted to value types. <a href="http://fsharpforfunandprofit.com/posts/the-option-type/">Option type</a> is defined as union type with two cases : Some and None. Whenever consuming an option type the compiler forces us to handle both the cases</p>
+
+<blockquote><p><em>In pure F#, <a href="https://fsharpforfunandprofit.com/posts/correctness-exhaustive-pattern-matching/">nulls cannot exist accidentally</a>. A string or object must always be assigned to something at creation, and is immutable thereafter</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='fsharp'><span class='line'><span class="k">let</span> <span class="nv">config</span> <span class="o">=</span> <span class="n">getConfig</span>
+</span><span class='line'><span class="k">match</span> <span class="n">config</span> <span class="k">with</span>
+</span><span class='line'><span class="o">|</span> <span class="n">None</span> <span class="o">-&gt;</span> <span class="n">printfn</span> <span class="s">&quot;Invalid config&quot;</span>
+</span><span class='line'><span class="o">|</span> <span class="n">Some</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="n">printgn</span> <span class="s">&quot;Valid config&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Though C# does not have anything out of the box to define optional values, we can define one of our own. The <a href="https://github.com/ploeh/Booking/blob/master/BookingDomainModel/Maybe.cs">Maybe</a> class is one such implementation of an optional concept. The name is influenced by the option type in Haskell, <a href="https://wiki.haskell.org/Maybe">Maybe</a>. There are also other implementations of Maybe but the concept remains the same - we can represent an optional type in C#.  The code contracts are stronger using Maybe as a return type. If a function always returns a value, say a string, the function contract should remain as a string. If a function cannot return a value always and can return null/empty (assuming that these are invalid values) then it returns a <em>Maybe<string></em>. This makes it clearer for consuming code on whether they should check for null/empty values.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Maybe</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="n">config</span><span class="p">.</span><span class="n">Do</span><span class="p">(</span><span class="k">value</span> <span class="p">=&gt;</span> <span class="n">LoadFromFile</span><span class="p">(</span><span class="k">value</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can write different extension methods on the Maybe class, depending on how you want to process the value. In the above example, I have a Do extension method that calls on to a function with the configuration value if any exists. By explicitly stating that a value may or may not be present we have more clarity in code. No longer do we need any unnecessary null checks in the case where a value is always present. This is best achieved when agreed upon as a convention by the development team and enforced through tooling (like code analysis).</p>
+
+<h3>Value Objects</h3>
+
+<p>One of the root problem for having a lot of null/empty checks scattered across the code is <a href="http://blog.ploeh.dk/2015/01/19/from-primitive-obsession-to-domain-modelling/">Primitive Obsession</a>. Just because you can represent a value as a string, it doesn&rsquo;t mean that you always should. Enforcing structural restrictions imposed by the business is best done by encapsulating these constraints within a class, also known as a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. This leads to classes for representing various non-nullable values for e.g. Name, configuration, Age etc. You can use this in conjunction with <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null Object</a> pattern if required. A value object is a class whose equality is based on the value that it holds. So two class instances with same values will be treated equally. In F# you get this by default but in C# you need to override Equals and GetHashCode functions to enforce this equality.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Configuration</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Configuration</span><span class="p">(</span><span class="kt">string</span> <span class="n">configuration</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">configuration</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">configuration</span><span class="p">),</span> <span class="s">&quot;Configuration value cannot be null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">configuration</span> <span class="p">=</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// override Equals and GetHashCode</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Modeling concepts in the domain as classes helps you to contain the domain/business constraints in a single place. This prevents the need to have null checks elsewhere in the code. Value objects being immutable helps enforce class invariants.</p>
+
+<p>The above two methods help create a stronger contract in code. As with any conventions, this is useful only when followed by the whole team. Conventions are best followed if enforced through tooling. You can create custom code analysis rules to enforce return type to be of type if any method is returning null. Even if you are introducing this into a large existing code base you can do this incrementally, by starting to enforce them on commits (if you are using git) like when <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing styling into an existing project</a>. What other contracts do you find helpful to make the code more expressive?</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/solve-the-business-problem-dont-mimic-the-process/">Solve the Business Problem, Don't Mimic The Process</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/introducing-code-formatting-into-a-large-codebase/">Introducing Code Formatting into a Large Code Base</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/">Keeping Sensitive Configuration Data Out of Source Control</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/data_hotfix/">Data Hotfix : Things to Remember</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/stronger-code-contracts/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/stronger-code-contracts/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/solve-the-business-problem-dont-mimic-the-process/" title="Previous Post: Solve the Business Problem, Don't Mimic The Process">&laquo; Solve the Business Problem, Don't Mimic The Process</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2016 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/stronger-code-contracts/';
+        var disqus_url = 'http://rahulpnath.com/blog/stronger-code-contracts/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
