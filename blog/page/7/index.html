@@ -163,6 +163,190 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-03-06T11:40:25+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 6<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/authenticating-a-client-application-with-azure-key-vault/" itemprop="url">Authenticating a Client Application with Azure Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Azure Key Vault provides an easy way for managing cryptographic keys and secrets (like connection strings or passwords) in a secure and distributed manner as opposed to having them in the configuration file or a database. If you are new to Azure Key Vault check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> on how to setup the vault and add keys and use that from a console application.</p>
+
+<p>In this post we will explore into the ways of authenticating a client application with a key vault. For an application to use the key vault it must authenticate using a token from the Azure Active Directory (AD). For this an application needs to be registered in the Azure AD and this application needs to be authorized to access key or secret in the vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> that comes as part of the <a href="https://gallery.technet.microsoft.com/scriptcenter/Azure-Key-Vault-Powershell-1349b091">key vault powershell scripts</a>.</p>
+
+<blockquote><p>As of today, the keyvault will be created in the Default AD associated to the azure subscription and there is no way that it can be created in a different directory. But maybe this will be <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/21d0dcaa-791c-4f96-8f9d-738b6b0076b2/create-a-new-key-vault-in-a-different-directory?forum=AzureKeyVault">supported in future</a>.</p></blockquote>
+
+<p>So for a client to access the key vault, it needs to obtain the token from the Azure AD application, which can be done using 2 ways:</p>
+
+<ul>
+<li>Using ClientId and secret</li>
+<li>Using ClientId and certificate</li>
+</ul>
+
+
+<h4><strong>Using ClientId and Secret</strong></h4>
+
+<p>Creating an application that can be authenticated using clientid and secret can be done using the management portal. In the azure management portal, we need to create to the application under the default AD. To find the default AD you can check under the settings in the portal</p>
+
+<p><img class="center" alt="Default Active Directory under Settings" src="/images/default_ad_settings.PNG" /></p>
+
+<p>To add an application in the default, under Active Directory select the default AD and the applications tab and select &lsquo;<em>Add an application</em>&rsquo;.</p>
+
+<p><img class="center" alt="Create an Application under default" src="/images/default_ad.PNG" /></p>
+
+<p>From the pop-up select &lsquo;<em>Add an application my organization is developing</em>&rsquo; and give a name of your choice and of type &lsquo;<em>Web Application AND/OR WEB API</em>&rsquo;. In the App properties window it asks for the &lsquo;<em>Sign-On Url</em>&rsquo; and &lsquo;<em>App ID Uri</em>&rsquo;, for which you can give two unique values and is not mandatory that it should exists. On confirming these values the AD application would be created and you would be presented with the application properties. Under the &lsquo;<em>Configure</em>&rsquo; tab, you can see the Client ID and below that there is an option to create the &lsquo;<em>keys</em>&rsquo; which will be the secret.</p>
+
+<p><img class="center" alt="AD Application Configure" src="/images/ad_application_configure.PNG" /></p>
+
+<p>In the drop-down under the keys select the duration and choose a duration of your choice and save. On saving the secret will be generated. Copy this secret and keep for reference to use in the client application.</p>
+
+<p><img class="center" alt="AD Application Secret Generation" src="/images/ad_application_keys.PNG" /></p>
+
+<p>Now that we have created the application and have the clientid and the secret we need to authorize the application to access the key vault. For this we use the <em>Set-AzureKeyVaultAccessPolicy</em> from the powershell and provide the client id of the application that we have just created. The <em>PermissionToKeys</em> parameter determines the permission that the application would have on the keys in the vault which can take multiple comma separated values (all, backup, create, decrypt, delete, encrypt, import, get, list, restore, sign, wrapkey, unwrapkey, update and verify). Similarly for access to secrets in the keyvault you need to set <em>PermissionToSecrets</em> which can all take multiple values (all, delete, get, list and set).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestVaultRahul&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="s1">&#39;01c74fc1-4fb3-455e-8612-d5ad05a7fe2a&#39;</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now using the clientid and the secret we can authenticate from the client application using it as below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">clientid</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Using ClientId and Certificate</strong></h4>
+
+<p>Creating an application that can be authenticated using the clientid and the certificate is only possible using powershell scripts, and these are again available with the key vault powershell scripts. For this we first need to create a certificate or if your organization already has provided one use that. Since this is for demo I would be creating a test certificate as <a href="https://msdn.microsoft.com/en-in/library/ff699202.aspx">explained here</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">makecert</span> <span class="p">-</span><span class="n">sv</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">n</span> <span class="s">&quot;cn=AD Test Vault Application&quot;</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">b</span> <span class="m">03</span><span class="p">/</span><span class="m">03</span><span class="p">/</span><span class="m">2014</span> <span class="p">-</span><span class="n">e</span> <span class="m">06</span><span class="p">/</span><span class="m">05</span><span class="p">/</span><span class="m">2016</span> <span class="p">-</span><span class="n">r</span>
+</span><span class='line'><span class="n">pvk2pfx</span> <span class="p">-</span><span class="n">pvk</span> <span class="n">mykey</span><span class="p">.</span><span class="n">pvk</span> <span class="p">-</span><span class="n">spc</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span> <span class="p">-</span><span class="n">pfx</span> <span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">pfx</span> <span class="p">-</span><span class="n">po</span> <span class="n">test</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once we have the certificate, we can create a new AD application and specify certificate authentication for the application as shown below. Make sure that you give the full path to the certificate as below (mine was located under C:\cert)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Connect-AzureAD</span> <span class="n">-DomainName</span> <span class="s1">&#39;&lt;domainname&gt;&#39;</span>
+</span><span class='line'><span class="nv">$newADApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s1">&#39;TestVaultApplication&#39;</span>
+</span><span class='line'><span class="nb">Add-AzureADApplicationCredential</span> <span class="n">-ObjectId</span> <span class="nv">$newADApplication</span><span class="p">.</span><span class="n">objectId</span> <span class="n">-FilePath</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">cert</span><span class="p">\</span><span class="n">ADTestVaultApplication</span><span class="p">.</span><span class="n">cer</span>
+</span><span class='line'><span class="nv">$newADApplication</span><span class="p">.</span><span class="n">appId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the application is created, we need to perform the same authorization steps as above to give the application access to the key vault, after which we can use the clientid (that would be output to the powershell console) and the certificate to authenticate the application. Make sure that the certificate is installed into the store so that it can be used by the application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="s">&quot;E2F3EAE0A131EE0CF1FF1995A6ABA9F9462A0C03&quot;</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">finally</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You could use either ways to authenticate an application to Azure Key Vault. Using the certificate way would be more secure as you can also password protect your certificate so that it cannot be installed without having that. If using the client secret anybody having access to the configuration would be able to access the vault. Also make sure that you give the application&rsquo;s only necessary permissions for accessing keys and secrets while registering the application. You could use the sample used in the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a> <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a>. The code in there uses clientId and secret, you could change it with the above code to use certificate authentication.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-25T18:22:06+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 25<sup>th</sup>, 2015</time>
         
 
@@ -1807,232 +1991,6 @@ When you have conflicting interface names , probably from two different assembli
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-09-10T19:29:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 10<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/asp-dot-net/'>asp.net</a>, <a class='category' href='/blog/category/web-api/'>web api</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/" itemprop="url">ASP.NET Web API and External Login - Authenticating with Social Networks</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>The ASP.NET Web API project created from the default template in Visual Studio 2013 comes with an option to choose the Authentication method. The &lsquo;Individual User Accounts&rsquo; option of authorization will allow users of your API to authenticate using exisitng their exisitng social networks(Facebook, Twitter, Google or Microsoft). This is a very useful feature and also speeds up the signing process, as there is little or no input required from the user and also one less password less to remember. All these social logins uses <a href="http://oauth.net/">OAuth</a> to provide authorized access to their services, and there are exisitng Owin adapters for these social networks. You could very well write a custom owin adapter to plug new authorization providers.</p>
-
-<blockquote><p>In this post we will see how we can enable Facebook login for your API when <strong><em>the client and api are hosted on seperate domains</em></strong>.</p></blockquote>
-
-<p>We will start off with the default template for the Web API, created by Visual Studio 2013 for Web API(File->New Project->ASP.NET Web Application->Web API with Authentication set to Individual User Accounts)</p>
-
-<p><img src="/images/web_api_authentication_vs_template.png" alt="Visual Studio 2013 Web Api Template" /></p>
-
-<p>The Account Controller has all the methods that is required for a client to authenticate with the api and get the token to access protected resources. We will go through the calls that the client app would need to perform a successful authentication. I have updated the owin nuget packages to use the latest Owin 3.0.0 packages.</p>
-
-<p><strong>1. Getting the supported Authentication providers</strong></p>
-
-<p>The client in it login screen would be showing the allowed authorization providers along with the normal username/password login option. The <em>ExternalLogins</em> endpoint returns all the supported external authentication providers. The supported list of providers can be added in <em>Startup.Auth.cs</em></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">appId</span><span class="p">:</span> <span class="s">&quot;APPID&quot;</span><span class="p">,</span> <span class="n">appSecret</span><span class="p">:</span> <span class="s">&quot;APPSECRET&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p> <br/>
-The application id and secret can be obtained by registering for an application with the corresponding provider. For facebook you can do that <a href="https://developers.facebook.com/">here</a>. You would also need to configure the web api endpoint as a website platform when obtaining the api keys. Now on querying the endoint the client will get back the endpoint that it needs to hit when an authentication with Facebook is required. A redirect url is to be passsed along with the request, to which the api will redirect to after succesfull authentication with the token. By default email is not received from facebook, but you can override this behaviour by providing some extra options when registering the provider as shown below. The OnAuthenticated method on the FacebookProvider gets called once the user is authenticated with facebook. At this point you can get the Email details explicitly and add it to the claims.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">facebookProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationProvider</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">OnAuthenticated</span> <span class="p">=</span> <span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="c1">// Add the email id to the claim</span>
-</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">AddClaim</span><span class="p">(</span><span class="k">new</span> <span class="n">Claim</span><span class="p">(</span><span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">,</span> <span class="n">context</span><span class="p">.</span><span class="n">Email</span><span class="p">));</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="m">0</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationOptions</span><span class="p">()</span>
-</span><span class='line'>              <span class="p">{</span>
-</span><span class='line'>                  <span class="n">AppId</span> <span class="p">=</span> <span class="s">&quot;AppId&quot;</span><span class="p">,</span>
-</span><span class='line'>                  <span class="n">AppSecret</span> <span class="p">=</span> <span class="s">&quot;AppSecret&quot;</span><span class="p">,</span>
-</span><span class='line'>                  <span class="n">Provider</span> <span class="p">=</span> <span class="n">facebookProvider</span>
-</span><span class='line'>              <span class="p">};</span>
-</span><span class='line'><span class="n">options</span><span class="p">.</span><span class="n">Scope</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">options</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>You can also get the facebook token if required from the context and which can be used in the database to update information to facebook on behalf of the user.</p>
-
-<p><strong>2. Making a request to an Authentication provider</strong></p>
-
-<p>Now that we have got the list of supported list of providers, we can make the request to the required provider from the client. This is simply done by navigating to the url obtained for the corresponding provider in the previous request, i.e to the <em>ExternalLogin</em> endpoint. If the user is already authenticated (detected via cookie), then the user is redirected to the redirect url provided in above step. If the user is not authenticated then the login page of the corresponding provider will be shown and after a successfull login the redirection will happen. The token that is received here is the custom token that gets generated by the web-api and should not be mistaken for the authorization server&rsquo;s(facebook) token itself.</p>
-
-<p>The owin middleware abstracts away the interaction with the authorization server, Facebook in our case here. On successfull login in facebook, it redirects to &lsquo;<em><a href="https://katanaproject.codeplex.com/SourceControl/latest#src/Microsoft.Owin.Security.Facebook/FacebookAuthenticationOptions.cs">/signin-facebook</a></em> along with the facebook token. We can get the username or email from the claims provided by the authentication server that can then be passed back to the client for registering the user in the next step. The <em>ExternalLoginData</em> class get the data from the claims. I have modified this to use the new Email property that we have added. To return this email address to the client, we need to override the method as shown below in ApplicationOAuthProvider</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="n">Task</span> <span class="nf">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">OAuthAuthorizationEndpointResponseContext</span> <span class="n">context</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">//  Add the claims to the return url</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">claim</span> <span class="k">in</span> <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">Claims</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimsIdentity</span><span class="p">.</span><span class="n">DefaultNameClaimType</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The above method adds in the additional response parameters that gets embedded in the redirect url to the client.</p>
-
-<p><strong>3. Register user</strong></p>
-
-<p>Now that the user is successfully authenticated with  the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">registerUser</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
-</span><span class='line'>        <span class="nx">url</span><span class="o">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s1">&#39;api/Account/RegisterExternal&#39;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;Email&#39;</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span> <span class="s1">&#39;Name&#39;</span> <span class="o">:</span> <span class="nx">email</span><span class="p">},</span>
-</span><span class='line'>        <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;POST&#39;</span><span class="p">,</span>
-</span><span class='line'>        <span class="nx">xhrFields</span><span class="o">:</span> <span class="p">{</span>
-</span><span class='line'>            <span class="nx">withCredentials</span><span class="o">:</span> <span class="kc">true</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span><span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">token</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="c1">// Navigate to the user page</span>
-</span><span class='line'>            <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#user&quot;</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">},</span>
-</span><span class='line'>        <span class="nx">failure</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>            <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration failed&#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">userInfoUrl</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s2">&quot;api/Account/UserInfo&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
-</span><span class='line'>    <span class="nx">url</span><span class="o">:</span> <span class="nx">userInfoUrl</span><span class="p">,</span>
-</span><span class='line'>    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span> <span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">config</span><span class="p">.</span><span class="nx">token</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2056,6 +2014,8 @@ The application id and secret can be obtained by registering for an application 
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2016-recap/">2016: What Went Well, What Didn&#8217;t and Goals</a>
+    
     <a class="list-group-item " href="/blog/stronger-code-contracts/">Make Your Code Contracts Stronger</a>
     
     <a class="list-group-item " href="/blog/solve-the-business-problem-dont-mimic-the-process/">Solve the Business Problem, Don&#8217;t Mimic The Process</a>
@@ -2063,8 +2023,6 @@ The application id and secret can be obtained by registering for an application 
     <a class="list-group-item " href="/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/">Expiry Notification for Azure Key Vault Keys and Secrets</a>
     
     <a class="list-group-item " href="/blog/accessing-azure-key-vault-from-azure-runbook/">Accessing Azure Key Vault From Azure Runbook</a>
-    
-    <a class="list-group-item " href="/blog/azure-key-vault-digital-signatures-and-offline-verification/">Azure Key Vault: Digital Signatures and Offline Verification</a>
     
   </div>
 </section>
