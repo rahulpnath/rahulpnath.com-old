@@ -152,6 +152,38 @@ task :new_draft, :title do |t, args|
   task(:todoist_template).invoke(title)
 end
 
+# usage rake new_draft_tip[my-new-draft] or rake new_draft_tip['my new draft']
+desc "Begin a new draft in #{source_dir}/#{drafts_dir}"
+task :new_draft_tip, :title do |t, args|
+  if args.title
+    title = args.title
+  else
+    title = get_stdin("Enter a title for your post: ")
+  end
+  raise "### You haven't set anything up yet. First run `rake install` to set up an Octopress theme." unless File.directory?(source_dir)
+  mkdir_p "#{source_dir}/#{drafts_dir}"
+  filename = "#{source_dir}/#{drafts_dir}/#{title.to_url}.#{new_post_ext}"
+  if File.exist?(filename)
+    abort("rake aborted!") if ask("#{filename} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
+  end
+  puts "Creating new draft: #{filename}"
+  open(filename, 'w') do |post|
+    post.puts "---"
+    post.puts "layout: post"
+    post.puts "title: \"Tip of the Week: #{title.gsub(/&/,'&amp;')}\""
+    post.puts "comments: true"
+    post.puts "categories: "
+    post.puts "- TipOW"
+    post.puts "tags: "
+    post.puts "thisIsStillADraft:"
+    post.puts "keywords: "
+    post.puts "description: "
+    post.puts "primaryImage: "
+    post.puts "---"
+  end
+  task(:todoist_template).invoke(title)
+end
+
 # usage rake todoist_template
 desc "Create a todoist template for the new post"
 task :todoist_template, :title do |t, args|
