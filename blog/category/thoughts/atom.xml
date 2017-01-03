@@ -4,7 +4,7 @@
   <title><![CDATA[Category: thoughts | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/thoughts/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-01-02T00:01:47+00:00</updated>
+  <updated>2017-01-03T00:01:58+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,87 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Making Code Reviews Effective]]></title>
+    <link href="http://rahulpnath.com/blog/code-review/"/>
+    <updated>2017-01-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/code-review</id>
+    <content type="html"><![CDATA[<p>Code review is an essential practice of the development life cycle. It helps improve the code quality, unify team practices, share knowledge, mentoring etc. over a longer period of time. It helps find mistakes that are overlooked while development and helps improve the overall quality of the software. This helps accelerate the deployment process as changes are more likely to pass through testing.</p>
+
+<blockquote><p><em>Peer review—an activity in which people other than the author of a software deliverable examine it for defects and improvement opportunities—is one of the most powerful software quality tools available. Peer review methods include inspections, walkthroughs, peer desk checks, and other similar activities.</em></p>
+
+<p>-<a href="http://www.processimpact.com/articles/humanizing_reviews.html"><strong> Karl E. Wiegers</strong></a></p></blockquote>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/codereview_friendly.png"/></p>
+
+<p>Below are some of my thoughts on the various aspects involved in a Code Review.</p>
+
+<h3>Sending a Review</h3>
+
+<p>Before sending for a code review make sure that only the necessary files for the change are added in the review. Often it happens that when we write code there are remains of things that we tried and discarded, like new files, packages, changes to project metadata files etc. Double check and make sure that the changes are what are just required. Ensure that the code builds successfully. If there are any build scripts that your team uses, make sure that those are run and passes successfully. When submitting a code review make sure that you reference the associated work item - be it a bug, story, task etc. Add <a href="http://www.rahulpnath.com/blog/category/testing/">tests</a>. Add in a description detailing the change and any reasoning behind it to add in more context. This will help the reviewer understand the code much faster. Add in relevant people for the review and submit a request. Check out <a href="http://blog.ploeh.dk/2015/01/15/10-tips-for-better-pull-requests/">some great tips for a better-looking review request</a>.</p>
+
+<h3>Handling Review Comments</h3>
+
+<p>One of the key things in a code review and one that&rsquo;s often missed and drives people frustrated is that they try to take it all in.</p>
+
+<blockquote><p><em>Not all comments in a review needs to be addressed</em></p></blockquote>
+
+<p>If a review comment points out a mistake in logic or business functionality or conflict with other code you need to fix them, unless you think the reviewer is wrong. But for suggestions on how better to structure your code or refactor into a more readable code, naming, style formatting etc needs addressing only if you feel they are adding value. But make sure to communicate well with the reviewer and reach an agreement.</p>
+
+<p>Look at comments as a way to improve your code and help the team and business. Go in with a positive attitude. When seen as an overhead or an extra ritual, code reviews can be really painful and depressing. Make a note of commonly occurring comments or mistakes you are making and try to handle them at the time of development. Rather than mechanically going through the code review and making changes to the code, internalize on the change and try to see the benefits of a change. This helps to incorporate such suggestions in future reviews as well.</p>
+
+<h3>Responding to a Code Review</h3>
+
+<p>I usually find myself following the below three variations when coming to replying to a code review request</p>
+
+<ul>
+<li><p><strong>Comment and Wait</strong>
+I leave comments on the review but do not approve. This means that I would like to have those comments actioned and a new pull request be raised for that. This often falls into those cases where there are logic or business issues.</p></li>
+<li><p><strong>Comment and Approve</strong>
+I leave comments (if any) but also approve the code review. This means that the code <em>Looks Good To Me</em> (LGTM), but would be better with the comments addressed. These comments generally relate to better formatting, improved on naming or refactoring readability.</p></li>
+<li><p><strong>Add Relevant People</strong>
+Add in reviewers that I feel are missed and relevant for the part of the code that is changed.  This I do irrespective of the above two options if I feel someone else needs to take a look. In these cases, if it was my review that gets added in an extra reviewer I would wait to get a sign off from that person too.</p></li>
+</ul>
+
+
+<h4><strong>Business Aspect</strong></h4>
+
+<p>When reviewing code look first for the functionality that the code change addresses. It is possible that we get carried away just by the technical aspect of code and ignore the business aspect altogether. If you have <a href="https://www.leadingagile.com/2014/09/acceptance-criteria/">Acceptance Criteria</a> defined for tasks then it&rsquo;s worth reading it before doing the code review to get more context.</p>
+
+<h4><strong>Technical aspect</strong></h4>
+
+<p>Once the business aspect is covered have a look at the technical aspect of the change. Whether the code is decoupled, has the correct abstractions, follows team conventions (best if automated). Check for commonly occurring problems like improper usage of dispose pattern, magic numbers, large methods, all code flow paths not handled etc. See if the new code fits into the overall architecture of the application. Look for tests and ensure the validity of the test data. Look out for <a href="https://en.wikipedia.org/wiki/Overengineering">overengineering</a> or <a href="https://en.wikipedia.org/wiki/Not_invented_here">not invented here syndrome</a>.</p>
+
+<h4><strong>Aesthetic</strong></h4>
+
+<p>Code formatting is as important as the code itself. Code is read more often than written, so we should try and optimize code for reading. I would prefer to automate this as far as possible so that people don&rsquo;t need to look for these in reviews. I feel that is often time not well spent and also tends to lead to longer discussions (<a href="https://blog.codinghorror.com/death-to-the-space-infidels/">tabs vs Spaces</a>). When it is part of the build and automated people seldom complain about it and in a very short period of time, the formatting rules become second nature to them. If you currently do not have automated checks you can gradually <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introduce formatting checks into your builds for a large code base</a>.</p>
+
+<blockquote><p><em>Don&rsquo;t go by &lsquo;It&rsquo;s done like that everywhere so I will keep it the same&rsquo;</em></p></blockquote>
+
+<p>There might be a lot of practices that is being followed over the period of time. But if you find any of the practices making it harder on a day-to-day functioning of the team, take a step towards changing the practice. I am not a fan of &lsquo;<em>clean it all at once</em>&rsquo; style of approach. I prefer to gradually introduce the change for two reasons</p>
+
+<ul>
+<li>No need to stop or allocate people to repeatedly do the same task of cleaning it everywhere. (Unless there is a very strong business justification to it)</li>
+<li>You get gradually introduced to the new way of doing things. This gives time to reflect and compare with the old way. You have time to correct yourself if the new approach is not fitting well either or causing more trouble than previous.</li>
+</ul>
+
+
+<h3>Handling Conflicts</h3>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/codereview_wtf.png"/></p>
+
+<p>Foster environments where you don&rsquo;t curb discussions or other people&rsquo;s ideas but encourage everyone to actively participate and throw around even the stupidest of an idea.</p>
+
+<blockquote><p><em>Psychological safety is a “shared belief, held by members of a team, that the group is a safe place for taking risks.” It is “a sense of confidence that the team will not embarrass, reject, or punish someone for speaking up,” Edmondson wrote in a 1999 paper. “It describes a team climate characterized by interpersonal trust and mutual respect in which people are comfortable being themselves.</em></p>
+
+<p><a href="http://www.nytimes.com/2016/02/28/magazine/what-google-learned-from-its-quest-to-build-the-perfect-team.html?_r=0"><strong>- Charles Duhigg</strong>, <em>What Google Learned From Its Quest to Build the Perfect Team</em></a></p></blockquote>
+
+<p>Code reviews should also be seen as a way to incorporate better practices from fellow developers and as a learning mechanism. Don&rsquo;t take comments personal, but look at it for what they are. When you have a conflicting opinion you can reply to the comment with your thoughts and cross check with the reviewer. Rarely it can happen that you have conflicting opinions on code review comments and you are not able to solve it among the people involved.  Walk up to the person (if you are co-located) or have a conversation over your teams messaging application. But make sure that it stays healthy. In case the discussion is not going the intended way you can involve senior team members or other fellow team members to seek their opinions too. If such kinds of conflicts are happening more often then the team needs to analyze the nature of review comments that these occur on, if it&rsquo;s between specific groups of people or any visible patterns and try to address them.</p>
+
+<p>When taken in isolation any practices that a team does take time. So disregard any activity just because it adds more time to your process. When seen as part of the overall development cycle and the benefits it brings to the business, Code Reviews proves to be an essential practice. Different teams tend to have different guidelines and checklists for the reviews. Follow what works best for your team. Do you do code reviews as part of your development cycle? What do you feel important in a Code Review? Sound off in the comments!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Self-help Books]]></title>
@@ -361,145 +442,6 @@ The series of events mentioned below were modified to fit into the conversationa
 <p>With new technologies and frameworks coming up every other day it is hard to keep up with all of them. It is not necessary to understand everything that is out there. What is important is that you should be able to learn quickly when the need arises. Also keep yourself aware of the changes in the industry and technologies you use. It does not matter if you do not know all the latest technologies. What matters is how fast you can learn a new concept. Have a learning plan! What do you find the most effective way to learn? Sound off in the comments</p>
 
 <p><strong>Edit:</strong> Came across this interesting <a href="http://hanselminutes.com/543/becoming-a-more-social-developer-with-daphne-chong">podcast on Hanselminutes</a> where Scott talks to Daphne.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[My Morning Routine]]></title>
-    <link href="http://rahulpnath.com/blog/morning_routine/"/>
-    <updated>2016-08-16T05:00:35+00:00</updated>
-    <id>http://rahulpnath.com/blog/morning_routine</id>
-    <content type="html"><![CDATA[<p>Humans are <a href="https://www.youtube.com/watch?v=zdGbHY9VKVM">creatures of habit</a> and things work well if made as a routine. It&rsquo;s what you build as your daily plan that defines what you end up achieving in the day and in turn with life.</p>
-
-<blockquote><p><em>If you are a late night person, you can read &lsquo;morning&rsquo; as &lsquo;late night&rsquo; - the focus here is routine!</em></p></blockquote>
-
-<p><a href="https://www.pexels.com/photo/coffee-cup-notebook-pen-64775/">
-<img  alt="Win your day, create a morning routine" src="/images/morning_routine.jpg"/>
-</a></p>
-
-<p>A morning routine is nothing but a sequence of actions regularly followed. I have tried switching my routine too, to late in the night a few times but found that mornings work better for me. But this could be different for you, so stick to the time of day that works for you. Before going to how my morning routine looks like (which I just started a week back), I will explain how I made the plan for the routine.</p>
-
-<h3>Brain Dump</h3>
-
-<p>At any point in time, there are a lot of things in my mind and things that I kept committing to myself and others. It is not possible to keep up with everything that I wish to do. So the very first thing to do is to dump everything out onto to paper and then decide what needs attention. The <a href="http://gettingthingsdone.com/wp-content/uploads/2014/10/Mind_Sweep_Trigger_List.pdf">Incompletion Trigger List</a> assists to get everything out of your mind onto paper. It&rsquo;s a good idea to block some time of yours to perform this exercise and give it all the attention it needs. At times it helps to <strong><em>Slow Down to Go Fast</em></strong>.</p>
-
-<p><img  alt="Slow down, to go faster" src="/images/morningroutine_slow_down.jpg"/></p>
-
-<h3>Most Important Task (MIT)</h3>
-
-<p>If you are following along, hope the brain dump helped to flush out all that was there in your mind. This exercise needs to be occasionally done (maybe every 2-3 months) to stay clear and stay on top of things. I was sure that I could not do everything on that list after the brain dump. Now comes the hard part of choosing what matters to you and choosing those that aligns well with your goals. For the morning routine, I stuck to items from the brain dump that fall under &lsquo;Personal Projects&rsquo; category (as highlighted in the below image).</p>
-
-<p><img  alt="Choosing tasks for morning routine" src="/images/morning_routine_MIT.png"/></p>
-
-<p>These are the items that matter to me and aligns to the short-long term goals that I have. Below is a part of my list.</p>
-
-<pre><code class="text">Start Youtube channel
-Become Pluralsight Author
-Blogging
-Learn Functional Programming
-Learn Ruby
-Open Source Contribution
-Improving Writing Skills and Language
-</code></pre>
-
-<blockquote><p><em>The key is not to prioritize what’s on your schedule, but to schedule your priorities.</em></p>
-
-<p><em>– <strong>Stephen Covey</strong></em></p></blockquote>
-
-<p>Progressing towards all of these items on the list at the same time is not possible, as time available each day for achieving them is limited. I usually get around 2-3 hours a day of &lsquo;me time&rsquo;, provided I wake up at 4 in the morning (more on this shortly). The number of hours you have might differ, and you could choose those many items as you think you can fit in. But 3 is a good number to choose, as that helps to mix in a few different goals and gives the flexibility to shuffle around with them on a day. For me, it also means I roughly get around 40-60 minutes daily, for each item.</p>
-
-<p>Currently, the ones that I have in my morning routine are:</p>
-
-<ul>
-<li>Blogging</li>
-<li>Learn Functional Programming</li>
-<li>Open Source Contribution</li>
-</ul>
-
-
-<h3>MITs to Mini Habits</h3>
-
-<p>Having high-level short-long term goals is good, but does not provide anything actionable on a daily basis. It feels overwhelming to approach them because it does not give any sense of direction. So it&rsquo;s important that I have small actionable items that I can work on and progress towards achieving the goal.</p>
-
-<blockquote><p><em>Break your goal into the smallest possible task that you can think of so that you don&rsquo;t feel to skip it</em></p></blockquote>
-
-<p>For me, the mini habits look like this</p>
-
-<ul>
-<li>Write at least one sentence for the blog</li>
-<li>Read at least one line about Functional Programming</li>
-<li>Read at least one line of code of an Open Source Project</li>
-</ul>
-
-
-<p>The idea behind keeping it so small is just to start. It&rsquo;s very rare that I have stopped writing after writing a sentence or stopped reading after a line. The trouble is only with getting started - once done you can easily carry on for at least 20-30 minutes. Even if I make 2 out of the 3 of the above tasks, I take it as a success, which gives me some flexibility each day.</p>
-
-<h3>Waking up Tricks</h3>
-
-<p>There are days when <a href="https://en.wikipedia.org/wiki/Resistance_(creativity)">Resistance</a> beats me to it, and I don&rsquo;t get up to the routine. But I feel low on those days for not able to progress on my goals. So I try hard to have less of such days.</p>
-
-<ul>
-<li><p><strong>Alarm Phone Inside Pillow:</strong> I use <a href="http://www.bitspin.ch/">Timely</a> on a spare phone to set alarms.  Till a while back I used to keep the phone at the bedside while sleeping. But I noticed that I often ended up snoozing the alarm, at times even without full consciousness. So to make I <a href="http://www.rahulpnath.com/blog/waking-up-early-is-all-about-waking-up-to-an-alarm/">wake up to the alarm</a>, I now keep the phone buried inside my pillow with just the vibration. The vibration forces me to wake up and also removes the need for any alarm sound - my kid and wife does not get disturbed.</p></li>
-<li><p><strong>Wear a Sweater:</strong> During winter, at times the cold beat me to it. It&rsquo;s hard to leave all the blankets and wake up to the cold. I started sleeping with the sweater, and I don&rsquo;t feel that cold when I wake up.</p></li>
-<li><p><strong>Rationalize Against Resistance:</strong> However hard I try not to rationalize on getting up when the alarm sounds off, looking at the snooze button I end up rationalizing. Often I have found that when I try to use the tasks that I can achieve if I wake up, to motivate myself, I end up justifying that it can wait for tomorrow. Because there is no hard deadlines or accountability to anyone - it&rsquo;s just me!. Now I try just the opposite - Think about the resistance that is trying to force me to the bed and reassure myself that I should not fall to it. The &lsquo;me&rsquo; waking up after sleeping in is not going to like it then. So wake up!</p></li>
-</ul>
-
-
-<h3>My Routine</h3>
-
-<ol>
-<li><em>Wake at 4 am</em></li>
-<li><em>Brush</em></li>
-<li><em>Drink Water</em></li>
-<li><em>Stretching</em></li>
-<li><em>Review the tasks for the day (<a href="https://en.todoist.com/">Todoist</a>)</em></li>
-<li><em>Mini Habits (2 or 3)</em></li>
-<li><em>Wake up wife at 5:45 am</em></li>
-<li><em>Continue Mini Habits (2 or 3)</em></li>
-<li><em>Tea</em></li>
-<li><em>Wake up Gautham at 7 am</em></li>
-</ol>
-
-
-<p>Having a morning routine has helped me focus more on things that matter and not wander from one task to another. It has also helped set a sense of direction to what I do every day and spent less time in thinking what to do. I find my days starting in gradually and not rushing into it, setting up the pace for the day. Hope this helps you too!</p>
-
-<h4><strong>References</strong></h4>
-
-<div>
-      <div class="row">
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://amzn.to/2a3wpUc">
-            <img src="http://rahulpnath.com/images/books_powerofhabit.jpg" data-holder-rendered="true" style="display: block;" >
-             </a>
-          </div>
-        </div>
-       <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-          <a href="http://amzn.to/2ahrOcr" >
-            <img src="http://rahulpnath.com/images/books_gtd.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://amzn.to/2aek2R5" >
-            <img src="http://rahulpnath.com/images/books_warofart.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-          </div>
-        </div>
-     <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://zenhabits.net/" >
-            <img src="http://rahulpnath.com/images/books_zenhabits.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-          </div>
-        </div>
-       </div>
-       </div>
-
-
-
 ]]></content>
   </entry>
   
