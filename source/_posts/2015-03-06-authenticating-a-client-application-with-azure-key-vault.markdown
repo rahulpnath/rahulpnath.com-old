@@ -59,6 +59,8 @@ var keyClient = new KeyVaultClient((authority, resource, scope) =>
 });
 ```
 
+<iframe class="center" width="560" height="315" src="https://www.youtube.com/embed/51Qmk3TQJ44" frameborder="0" allowfullscreen></iframe>
+
 #### **Using ClientId and Certificate** ####
 Creating an application that can be authenticated using the clientid and the certificate is only possible using powershell scripts, and these are again available with the key vault powershell scripts. For this we first need to create a certificate or if your organization already has provided one use that. Since this is for demo I would be creating a test certificate as [explained here](https://msdn.microsoft.com/en-in/library/ff699202.aspx). 
 ```
@@ -104,5 +106,7 @@ var keyClient = new KeyVaultClient((authority, resource, scope) =>
     return result.AccessToken;
 });
 ```
+
+<iframe class="center" width="560" height="315" src="https://www.youtube.com/embed/JbshGF4ZwGE" frameborder="0" allowfullscreen></iframe>
 
 You could use either ways to authenticate an application to Azure Key Vault. Using the certificate way would be more secure as you can also password protect your certificate so that it cannot be installed without having that. If using the client secret anybody having access to the configuration would be able to access the vault. Also make sure that you give the application's only necessary permissions for accessing keys and secrets while registering the application. You could use the sample used in the [Getting Started with Azure Key Vault](http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/) [sample](https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault). The code in there uses clientId and secret, you could change it with the above code to use certificate authentication. 
