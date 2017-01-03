@@ -13,7 +13,7 @@ description: This post highlights on some learning and practices involved in Cod
 primaryImage: codereview_friendly.png
 ---
 
-Code review is an essential practice of the development life cycle. It helps improve the code quality, unify team practices, share knowledge, mentoring etc. over a longer period of time. It helps find mistakes that are overlooked while development and helps improve the overall quality of the software. This helps accelerate the deployment process as changes are more likely to pass through testing. 
+Code review is an essential practice of the development life cycle. It helps improve the code quality, unify team practices, share knowledge, mentoring etc. over a longer period of time. It helps find mistakes that are overlooked while developing and helps improve the overall quality of the software. This helps accelerate the deployment process as changes are more likely to pass through testing. 
 
 > *Peer review—an activity in which people other than the author of a software deliverable examine it for defects and improvement opportunities—is one of the most powerful software quality tools available. Peer review methods include inspections, walkthroughs, peer desk checks, and other similar activities.*
 
@@ -74,7 +74,7 @@ Foster environments where you don't curb discussions or other people's ideas but
 
 >*Psychological safety is a “shared belief, held by members of a team, that the group is a safe place for taking risks.” It is “a sense of confidence that the team will not embarrass, reject, or punish someone for speaking up,” Edmondson wrote in a 1999 paper. “It describes a team climate characterized by interpersonal trust and mutual respect in which people are comfortable being themselves.*
 
-> [**- Charles Duhigg**, *What Google Learned From Its Quest to Build the Perfect Team*](http://www.nytimes.com/2016/02/28/magazine/what-google-learned-from-its-quest-to-build-the-perfect-team.html?_r=0)
+> [**- Charles Duhigg**, *What Google Learned From Its Quest to Build the Perfect Team*](https://www.linkedin.com/pulse/what-google-learned-from-its-quest-build-perfect-team-charles-duhigg)
 
 Code reviews should also be seen as a way to incorporate better practices from fellow developers and as a learning mechanism. Don't take comments personal, but look at it for what they are. When you have a conflicting opinion you can reply to the comment with your thoughts and cross check with the reviewer. Rarely it can happen that you have conflicting opinions on code review comments and you are not able to solve it among the people involved.  Walk up to the person (if you are co-located) or have a conversation over your teams messaging application. But make sure that it stays healthy. In case the discussion is not going the intended way you can involve senior team members or other fellow team members to seek their opinions too. If such kinds of conflicts are happening more often then the team needs to analyze the nature of review comments that these occur on, if it's between specific groups of people or any visible patterns and try to address them. 
 
