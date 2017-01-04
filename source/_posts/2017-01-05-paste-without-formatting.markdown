@@ -12,7 +12,7 @@ keywords:
 description: Copy-Paste text without the formatting
 primaryImage: paste_without_formatting.png
 ---
-I share a lot of information copying and pasting from websites. Most of the times it is not desirable to have the text formatting but keep only the text. To remove any text formatting, I copy it into Notepad and then onto the destination. Yesterday I found that using **Ctrl + Shift + V** to paste (instead of *Ctrl + V*) removes all text formatting. 
+I share a lot of information copying and pasting from websites. Most of the times I want to share just the text and not any formatting. To remove any text formatting, I copy it into Notepad and then onto the destination. Yesterday I found that using **Ctrl + Shift + V** to paste (instead of *Ctrl + V*) removes all text formatting.
 
 As shown, when using Ctrl + V the text gets copied along with the formatting as shown below.
 
