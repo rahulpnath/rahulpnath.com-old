@@ -22,3 +22,5 @@ When using Ctrl + Shift + V, only the text gets copied and the formatting is ign
 <img alt="Paste Without Formatting" src="{{ site.images_root}}/paste_without_formatting.png" />
 
 Using this shortcut saves time as I no longer need to open Notepad for this!
+
+PS: As one of my readers rightly pointed out (below in the comments), this might not work on all applications. I have tried this on Chrome Browser and Lync For Business and worked fine. 
