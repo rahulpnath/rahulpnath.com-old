@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Tip of the Week: Paste Without Formatting - Rahul Nath</title>
+  <title>Simulating delays in HTTP Calls For Manual Tests - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Copy-Paste text without the formatting" />
+<meta name="description" content="This post shows how to simulate delays in HTTP calls using Fiddler." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/paste-without-formatting">
+  <link rel="canonical" href="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="Tip of the Week: Paste Without Formatting" />
+<meta property="og:title" content="Simulating delays in HTTP Calls For Manual Tests" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/paste-without-formatting/" />
-<meta property="og:description" content="Copy-Paste text without the formatting" />
+<meta property="og:url" content="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/" />
+<meta property="og:description" content="This post shows how to simulate delays in HTTP calls using Fiddler." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-<meta property="og:image" content="http://www.rahulpnath.com/images/paste_without_formatting.png" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/fiddler_delay.png" />
 
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/paste-without-formatting" />
-<meta property="twitter:title" content="Tip of the Week: Paste Without Formatting" />
-<meta property="twitter:description" content="Copy-Paste text without the formatting" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests" />
+<meta property="twitter:title" content="Simulating delays in HTTP Calls For Manual Tests" />
+<meta property="twitter:description" content="This post shows how to simulate delays in HTTP calls using Fiddler." />
 <meta property="twitter:creator" content="rahulpnath" />
-<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/paste_without_formatting.png" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/fiddler_delay.png" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-05T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 5<sup>th</sup>, 2017</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 9<sup>th</sup>, 2017</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+    <a class='category' href='/blog/category/testing/'>testing</a>
   
 </span>
 
@@ -175,25 +175,46 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Tip of the Week: Paste Without Formatting
+        Simulating delays in HTTP Calls For Manual Tests
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>I share a lot of information copying and pasting from websites. Most of the times I want to share just the text and not any formatting. To remove any text formatting, I copy it into Notepad and then onto the destination. Yesterday I found that using <strong>Ctrl + Shift + V</strong> to paste (instead of <em>Ctrl + V</em>) removes all text formatting.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>At one of my clients, we were facing an issue of missing some part of a form data when processing a <em>Submit</em> request on the form. As per the current design, the form autosaves data to the database as and when user types in. When the user finally submits the form to be processed the Controller gets all the relevant data from the database and sends for processing. But we noticed that the processing requests missed parts of data in the request send for processing even though the database had those values. This was a clear case where the forms submit request got processed even before all the forms data was saved. The UI was enabling the Submit button right after all the UI validations were made and asynchronously firing off saves to the database.</p>
 
-<p>As shown, when using Ctrl + V the text gets copied along with the formatting as shown below.</p>
+<p>Let&rsquo;s not go into the design discussion of whether the UI should be sending in all the data to be processed as part of the Submit request as opposed to just sending a reference id and have the controller get all the data from the database (which it is currently doing). The quick fix for this problem was to enable the submit button only after all the asynchronous save requests (the ones for autosave) came back with a success response. The fix was simple but testing this was a challenge.</p>
 
-<p><img alt="Paste With Formatting" src="/images/paste_with_formatting.png" /></p>
+<blockquote><p><em>We wanted to delay a few HTTP requests to check how the UI behaved</em></p></blockquote>
 
-<p>When using Ctrl + Shift + V, only the text gets copied and the formatting is ignored.
-<img alt="Paste Without Formatting" src="/images/paste_without_formatting.png" /></p>
+<p>When using automated tests there are a lot of frameworks that can help delay requests. But in this case, we were relying on manual tests.</p>
 
-<p>Using this shortcut saves time as I no longer need to open Notepad for this!</p>
+<h3>Using Fiddler to Delay Requests</h3>
 
-<p>PS: As one of my readers rightly pointed out (below in the comments), this might not work on all applications. I have tried this on Chrome Browser and Lync For Business and worked fine.</p>
+<p><a href="http://www.telerik.com/fiddler">Fiddler</a> is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost every other day</a>. In Fiddler, we can create rules on web requests and modify how they are handled and responded. Most of the functionality is available under the <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">AutoResponder</a> tab. We had seen earlier how to <a href="http://www.rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/">compose web requests and also simulate error conditions in Fiddler</a>. Here we will see how to use Fiddler to delay request/response time. In Fiddler, we can either delay the request itself being sent to the server or delay the handover of response back to the calling application once it is received from the server.</p>
+
+<h4><strong>Delay</strong></h4>
+
+<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#delay">delay</a> on a request we can specify the time to delay sending the request to the server. The value is specified in milliseconds. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set (in this case an EXACT match with a URL) fiddler delays sending this request to the server by the set amount of time.</p>
+
+<blockquote><p><em>Delay sending request to the server by #### of milliseconds</em></p></blockquote>
+
+<p>Drag&#8217;n Drop the request the URL (1) into the AutoResponder tab (2) and from the dropdown (3) under the Rule Editor choose delay and set the delay time. Click Save (4). Make sure that the request and rules are enabled (5 &amp; 6).</p>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_delay.png"/></p>
+
+<h4><strong>Latency</strong></h4>
+
+<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">latency</a> on a request we can specify the delay before a response is received. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set fiddler sends the requests to the server immediately. Once the response is received it delays passing the response back to the calling application by the set delay time in milliseconds.</p>
+
+<blockquote><p><em>Induce a delay (latency) before a response is returned.</em></p></blockquote>
+
+<p>Drag&#8217;n Drop the request URL (1) into the AutoResponder tab (2). Right click on the URL and select &lsquo;Set Latency&rsquo; (3). Enter the latency time in milliseconds and OK. Make sure that rules and latency options are enabled (4 &amp; 5)</p>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_latency.png"/></p>
+
+<p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
 </div>
 
 
@@ -226,25 +247,25 @@
   
     <li>
     	<p>
-      		<a href="/blog/staying-in-the-learning-loop/">Staying in the Learning Loop</a>
+      		<a href="/blog/introduce-tests-when-fixing-bugs/">Introduce Tests when Fixing Bugs</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/maintaining-a-blogging-schedule/">Maintaining a Blogging Schedule</a>
+      		<a href="/blog/refactoring-to-improve-testability-extracting-dependencies/">Refactoring to Improve Testability: Extracting Dependencies</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/review-six-months-and-counting-logitech-mx-master/">Review: Six Months and Counting - Logitech MX Master</a>
+      		<a href="/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/staying-productive-offline/">Staying Productive Offline</a>
+      		<a href="/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Refactoring to Improve Testability: Removing Unnecessary Dependencies</a>
   		</p>
     </li>
   
@@ -256,7 +277,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/paste-without-formatting/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/paste-without-formatting/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/" >Tweet</a>
   
   
   
@@ -268,10 +289,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/code-review/" title="Previous Post: Making Code Reviews Effective">&laquo; Making Code Reviews Effective</a></li>
+            <li class="previous"><a href="/blog/paste-without-formatting/" title="Previous Post: Tip of the Week: Paste Without Formatting">&laquo; Tip of the Week: Paste Without Formatting</a></li>
             
-            
-            <li class="next"><a href="/blog/simulating-delays-in-http-calls-for-manual-tests/" title="Next Post: Simulating delays in HTTP Calls For Manual Tests">Simulating delays in HTTP Calls For Manual Tests &raquo;</a></li>
             
           </ul>
         
@@ -316,8 +335,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/paste-without-formatting/';
-        var disqus_url = 'http://rahulpnath.com/blog/paste-without-formatting/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/';
+        var disqus_url = 'http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/';
         var disqus_script = 'embed.js';
       
     (function () {

@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-01-08T00:01:33+00:00</updated>
+  <updated>2017-01-09T00:01:50+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,47 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Simulating delays in HTTP Calls For Manual Tests]]></title>
+    <link href="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/"/>
+    <updated>2017-01-09T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests</id>
+    <content type="html"><![CDATA[<p>At one of my clients, we were facing an issue of missing some part of a form data when processing a <em>Submit</em> request on the form. As per the current design, the form autosaves data to the database as and when user types in. When the user finally submits the form to be processed the Controller gets all the relevant data from the database and sends for processing. But we noticed that the processing requests missed parts of data in the request send for processing even though the database had those values. This was a clear case where the forms submit request got processed even before all the forms data was saved. The UI was enabling the Submit button right after all the UI validations were made and asynchronously firing off saves to the database.</p>
+
+<p>Let&rsquo;s not go into the design discussion of whether the UI should be sending in all the data to be processed as part of the Submit request as opposed to just sending a reference id and have the controller get all the data from the database (which it is currently doing). The quick fix for this problem was to enable the submit button only after all the asynchronous save requests (the ones for autosave) came back with a success response. The fix was simple but testing this was a challenge.</p>
+
+<blockquote><p><em>We wanted to delay a few HTTP requests to check how the UI behaved</em></p></blockquote>
+
+<p>When using automated tests there are a lot of frameworks that can help delay requests. But in this case, we were relying on manual tests.</p>
+
+<h3>Using Fiddler to Delay Requests</h3>
+
+<p><a href="http://www.telerik.com/fiddler">Fiddler</a> is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost every other day</a>. In Fiddler, we can create rules on web requests and modify how they are handled and responded. Most of the functionality is available under the <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">AutoResponder</a> tab. We had seen earlier how to <a href="http://www.rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/">compose web requests and also simulate error conditions in Fiddler</a>. Here we will see how to use Fiddler to delay request/response time. In Fiddler, we can either delay the request itself being sent to the server or delay the handover of response back to the calling application once it is received from the server.</p>
+
+<h4><strong>Delay</strong></h4>
+
+<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#delay">delay</a> on a request we can specify the time to delay sending the request to the server. The value is specified in milliseconds. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set (in this case an EXACT match with a URL) fiddler delays sending this request to the server by the set amount of time.</p>
+
+<blockquote><p><em>Delay sending request to the server by #### of milliseconds</em></p></blockquote>
+
+<p>Drag&#8217;n Drop the request the URL (1) into the AutoResponder tab (2) and from the dropdown (3) under the Rule Editor choose delay and set the delay time. Click Save (4). Make sure that the request and rules are enabled (5 &amp; 6).</p>
+
+<p><img class="center" alt="Posts per month - 2016" src="http://rahulpnath.com/images/fiddler_delay.png"/></p>
+
+<h4><strong>Latency</strong></h4>
+
+<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">latency</a> on a request we can specify the delay before a response is received. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set fiddler sends the requests to the server immediately. Once the response is received it delays passing the response back to the calling application by the set delay time in milliseconds.</p>
+
+<blockquote><p><em>Induce a delay (latency) before a response is returned.</em></p></blockquote>
+
+<p>Drag&#8217;n Drop the request URL (1) into the AutoResponder tab (2). Right click on the URL and select &lsquo;Set Latency&rsquo; (3). Enter the latency time in milliseconds and OK. Make sure that rules and latency options are enabled (4 &amp; 5)</p>
+
+<p><img class="center" alt="Posts per month - 2016" src="http://rahulpnath.com/images/fiddler_latency.png"/></p>
+
+<p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Paste Without Formatting]]></title>
@@ -1785,64 +1826,6 @@ Since I am not that worried about the time zone of the post, I decided to remove
 
 
 <p>With the automated deployment, I have one less thing to take care of when writing posts. The whole process might feel a bit complicated, but it is not. It is just that I have been tweaking few things to ease blogging. And since I am a programmer, I like hacking things. If you are new to blogging you do not need them and don&rsquo;t get overwhelmed (if at all you are). All you need to make sure is to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">have a blog</a> and you <a href="http://www.rahulpnath.com/blog/own-your-urls/">own the URL</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Data Hotfix : Things to Remember]]></title>
-    <link href="http://rahulpnath.com/blog/data_hotfix/"/>
-    <updated>2016-08-25T04:27:32+00:00</updated>
-    <id>http://rahulpnath.com/blog/data_hotfix</id>
-    <content type="html"><![CDATA[<p>Yesterday I was late to leave office as I had to data fix some of the systems that we are currently building. We had just migrated few hundred clients onto the new platform. Invoices generated for the clients had wrong invoice amounts due to some mismatching data used when migrating. We had the expected invoice from the old system which made finding the problem easy. We ran a few scripts to correct the data in different systems and fixed the issue.</p>
-
-<p><a href="http://static1.squarespace.com/static/54652521e4b0045935420a6c/t/548dee03e4b0f1b25cb560d5/1418587652009/Data.jpg?format=1500w">
-    <img class="center" alt="Data Hotfix" src="http://rahulpnath.com/images/data_hotfix.jpg" />
-</a></p>
-
-<div class="alert alert-warning">
-<strong>WARNING!</strong> Normally I do not recommend making any changes directly in production server. In this case, there was a business urgency and was forced to do the data fix the same night, for smooth functioning the day after. We still managed to get in some testing in the development environment before running it in production.
-</div>
-
-
-<h3>It All Starts with a Few</h3>
-
-<p>I have seen it repeatedly happen that this kind of data fixes starts with a few in the beginning. Within a short span of time the affected data size grows drastically and manual updates might not be a good solution.</p>
-
-<blockquote><p><em>If you get a second thought of whether to script the fix or not, then you should script it.</em></p></blockquote>
-
-<p> Yesterday it started with data fix for 30 clients and the fix was relatively small. It could either be through UI or API. Fix through the UI took around 45 seconds each, and there were two of us. So it was just a matter of 12-15 minutes to fix it. While fixing, one of us found an extra scenario where the same fix needs to be applied. Re-running the query to find such clients bombarded the number to 379. At this moment, I stood up and said <em>I am going to script this. There is no way  I am doing this manually.</em> Manually fixing this would take five man hours, but will finish in two and half hours, as there were two of us. Even writing the script is going to take around an hour but that&rsquo;s just one man hour.</p>
-
-<blockquote><p><em>There is happiness you get when you script the fix and not manually plow through the UI fixing each of them</em></p></blockquote>
-
-<p>The script was in C#, written as a test case, invoked from a test runner (which I don&rsquo;t feel great about now) updating the systems with the data fix. It did its job and fixed all the cases it was supposed to. But I was not happy with the approach that I had chosen to make the fix. Correcting production data through a unit test script does not sound a robust solution. The reason to choose tests was that the test project had all the code required to access the other systems. It was just about changing the configuration values to point to the production system. It was the shortest path to having at least one client updated and verified.</p>
-
-<p>Having it as a test script restricted me from scaling the update process (though I could have done some fancy things to <a href="https://xunit.github.io/docs/running-tests-in-parallel.html">run tests in parallel</a>). It also forced me to hard-code the input data.Logging was harder  and I used <a href="https://msdn.microsoft.com/en-us/library/system.diagnostics.debug.writeline(v=vs.110).aspx">Debug.WriteLine</a> to the VS output window. All those were the aftermath of choosing the wrong execution method - running it as a test script!</p>
-
-<p>In retrospective, here are a few things that I should have done different and should be doing if ever I am in a similar situation again.</p>
-
-<h4><strong>Create Stand-alone Executable</strong></h4>
-
-<p>Having a stand-alone executable running the script provides the capability to scale the number of processes as I wanted. Input can be passed as a file or as an argument to the application allowing to break the large data set into smaller subsets.</p>
-
-<h4><strong>Log Error and Success</strong></h4>
-
-<p>It&rsquo;s very much possible that the &lsquo;fix-to-fix errors&rsquo; can go wrong or throw exceptions. So handle for errors and log appropriate message to take any corrective actions. It&rsquo;s better to log to a file or other durable storage as that is more foolproof. Logging to the output window (Debug.Writeline/Console.Writeline) is not recommended, as there is a risk of accidentally losing it (with another test run or closing VS).</p>
-
-<p> Logging successes are equally important to keep track of fixed records. It helps in cases where the process terminates suddenly while processing a set of data. It gives a track of all data sets that were successfully processed and exclude from following runs.</p>
-
-<h4><strong>Test</strong></h4>
-
-<p>It is very likely that the script has bugs and does not handle all possible cases. So as with any code, testing the data fix script is also mandatory. Preferably, test in a development/test environment, if not try for a small subset of input in the production. In my case, I was able to test in the development environment and then in production. But still, I ran a small subset in production first and ended up finding an issue that I could not find in development.</p>
-
-<h4><strong>Parallelize if Possible</strong></h4>
-
-<p>In cases where the data fixes are independent of each other (which likely is when dealing with large data fixes), each of the updates can be in parallel. Also using nonblocking calls when updating across the network helps speed up the process, by reducing the idle time and improves the overall processing time.</p>
-
-<h4><strong>Parameterize Input</strong></h4>
-
-<p>Parameterizing of input to the script (console) application helps when you want to scale the application. In my case updating each of the clients took around 8-10 seconds as it involved calling multiple geographically distributed systems. (Updating a system in the US from Australia does take a while!). Having a parameterized application enables to have multiple applications running with different input sets updating the data and speeds up the overall processing time.</p>
-
-<p>It&rsquo;s hard to come up with a solid plan for critical data fixes. It might not be possible to follow all of the points above. Also, there might be a lot other things to be done other than these. These are just a few things for reference so that I can stop, take a look and move on when a similar need arises.  Hope this helps someone else too! Drop in a comment if you have any tips for the &lsquo;eleventh hour&rsquo; fix!</p>
 ]]></content>
   </entry>
   
