@@ -163,6 +163,165 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-06-27T19:13:48+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 27<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/managing-azure-ad-application-for-key-vault/" itemprop="url">Managing Azure AD Application for Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
+
+<h4><strong>Creating AD application</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/dn986794.aspx">New-AzureADApplication</a></em> cmdlet is used to create a new Azure AD application. It also provides an option to specify the certificate details used to authenticate with the AD application at the time of creation itself. This can be done as a separate step if required, which is shown later in the post.</p>
+
+<p>First we need a certificate that is to be used for authenticating against the AD application, for which I use the below commands to generate a test certificate</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>makecert -sv mykey.pvk -n &quot;cn=AD Test Vault Application&quot; ADTestVaultApplication.cer -b 03/03/2014 -e 06/05/2017 -r -len 2048
+</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po test
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This certificate is then used to create the AD application using the below script.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
+</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;KeyVaultADApplication&quot;</span>
+</span><span class='line'>  <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.rahulpnath.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.rahulpnath.com&quot;</span>
+</span><span class='line'>  <span class="n">-KeyValue</span>  <span class="nv">$credential</span> <span class="n">-KeyType</span> <span class="s2">&quot;AsymmetricX509Cert&quot;</span> <span class="n">-KeyUsage</span> <span class="s2">&quot;Verify&quot;</span>
+</span><span class='line'>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To associate the application created with the Key Vault, we need to create a service principal using <a href="https://msdn.microsoft.com/en-us/library/dn986799.aspx">New-AzureADServicePrincipal</a> and then associate that with the Vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
+</span><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;KeyVaultRahul&#39;</span> <span class="n">-ObjectId</span>  <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">Id</span> <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span><span class='line'><span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="c">#Outputs the ServicePrincipalName/AppPrincipalId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Adding a Certificate</strong></h4>
+
+<p>The <em><a href="https://msdn.microsoft.com/en-us/library/azure/dn194106.aspx">New-MsolServicePrincipalCredential</a></em> cmdlet is used to add a new credential to a service principal or to an application. The service principal is identified by supplying one of the following: object ID, appPrincipalID, service principal name (SPN).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$msolCredentials</span> <span class="p">=</span> <span class="nb">get-credential</span>
+</span><span class='line'><span class="nb">connect-msolservice</span> <span class="n">-credential</span> <span class="nv">$msolCredentials</span>
+</span><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplicationNew.cer&quot;</span>
+</span><span class='line'><span class="nv">$x509Certificate2</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertData</span> <span class="p">=</span> <span class="nv">$x509Certificate2</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credentialValue</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nb">New-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-Type</span> <span class="n">Asymmetric</span> <span class="n">-Value</span> <span class="nv">$credentialValue</span> <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span>   <span class="nv">$endDate</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Removing a Certificate</strong></h4>
+
+<p>Whenever a credential gets compromised or as part of regular credential refresh, administrators would want to remove an old certificate and replace with a new one. The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194125.aspx">Remove-MsolServicePrincipalCredential</a> cmdlet is used to remove a credential key from a service principal by specifying the key ID for the credential and the objectID/applicationID/ServicePrincipalName to identify the service principal. To get the key ID of an existing credential, <a href="https://msdn.microsoft.com/en-us/library/azure/dn194091.aspx">Get-MsolServicePrincipalCredential</a> cmdlet can be used, which returns the list of credentials associated with a service principal. The below script just removes the first credential, you could loop through and remove all.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$servicePrincipalCredential</span> <span class="p">=</span> <span class="nb">Get-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-ReturnKeyValues</span> <span class="n">0</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipalCredential</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$ServicePrincipal</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="n">-KeyIds</span> <span class="nv">$servicePrincipalCredential</span><span class="p">[</span><span class="n">0</span><span class="p">].</span><span class="n">KeyId</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Delete an application</strong></h4>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194113.aspx">Remove-MsolServicePrincipal</a> cmdlet removes a service principal from Microsoft Azure Active Directory, by specifying objectID/applicationID/ServicePrincipalName to identify the service principal.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ObjectId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
+</span><span class='line'><span class="n">Or</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-AppPrincipalId</span> <span class="p">&lt;</span><span class="n">Guid</span><span class="p">&gt;</span>
+</span><span class='line'><span class="n">Or</span>
+</span><span class='line'><span class="nb">Remove-MsolServicePrincipal</span> <span class="n">-ServicePrincipalName</span> <span class="p">&lt;</span><span class="n">string</span><span class="p">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Managing the AD application is a very important and necessary process in the life cycle of a Key Vault, as the access to the Vault is controlled using that. Certificates securing the AD applciation should be rolled/updated frequently and application permissions should be reviewed often to make sure that all applications have only the required permissions.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-05-03T22:43:55+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 3<sup>rd</sup>, 2015</time>
         
 
@@ -1304,170 +1463,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-03T18:03:17+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/dependency-injection/'>dependency injection</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/ioc-registration-by-convention/" itemprop="url">IoC Registration by Convention</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Sometime back we had seen, how to <a href="http://www.rahulpnath.com/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/">configure the unity container using code/config file</a> and I was using a mix of this in one of my projects. This approach soon became an overhead, as the manual wiring up of registrations is really cumbersome and also error prone. Mostly there were missing registrations only to be found out, when doing test runs or deployments. We soon were forced to move out of the manual registration and find a new way to register dependencies.</p>
-
-<p>The below image by <a href="https://twitter.com/ploeh">Mark Seemann</a> sums it all up on when and how to use a Dependency Injection(DI) container and we were right at the bottom, where the whole purpose of a DI becomes pointless.</p>
-
-<p><a href="http://bit.ly/1zLiq6p" class="center" title="Image By Mark Seemann, from http://bit.ly/1zLiq6p"><img src="/images/ioc_usefulness.png" class="center" alt="Image By Mark Seemann, from http://bit.ly/1zLiq6p"></a></p>
-
-<h4>Convention Over Configuration</h4>
-
-<p><a href="http://en.wikipedia.org/wiki/Convention_over_configuration">Convention over configuration</a>, is very popular today and there are already many frameworks that have adopted it e.g. MVC, Web Api. Following the same approach would make life much simpler and registration less painful as dependencies would get auto registered, if the convention is followed. Conventions could vary across projects/teams, so it is up to the team to decide on the conventions that are to be followed and have all the developers follow them religiously.</p>
-
-<p>Currently our registration process picks up all the assemblies from the base path and iterates through all the classes that are under the project/application namespace and gets the interfaces out of them and registers them. For interfaces that have multiple definitions we perform named registration based on the class name or name from an attribute on the class or both.</p>
-
-<p>We are using Unity as the IoC container and it does support <a href="http://msdn.microsoft.com/en-us/library/dn507479(v=pandp.30).aspx">convention based registrations</a> out of the box. You can either use the RegisterTypes method or the RegistrationConvention class to specify the conventions. The parameters in both of these approaches enable you to specify the types to register, the mappings to create, the name to use and lifetime. Since in our registration we wanted to use the named convention only in cases where there where multiple registrations for the same interface and the other interfaces were to be registered without any name this default convention had to be modified. Also we did not want to get tightly bound to the IoC container (just in case we want to swap out the container provider) and hence thought of having the convention logics in a separate class and have them registered to the container of choice.</p>
-
-<p>The <em>GetClassesFromAssemblies</em> function iterates over the assemblies from the base application path(bin folder) to get all the dll&rsquo;s used and gets the classes that belong to the namespaces that we want to register. Alternatively you could also pass a list of assemblies if required to be used for the convention. If you want other namespaces too you can filter those in here.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetClassesFromAssemblies</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Assembly</span><span class="p">&gt;</span> <span class="n">assemblies</span> <span class="p">=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">allClasses</span> <span class="p">=</span> <span class="n">assemblies</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssemblies</span><span class="p">(</span><span class="n">assemblies</span><span class="p">)</span> <span class="p">:</span> <span class="n">AllClasses</span><span class="p">.</span><span class="n">FromAssembliesInBasePath</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">return</span>
-</span><span class='line'>        <span class="n">allClasses</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span>
-</span><span class='line'>            <span class="n">n</span> <span class="p">=&gt;</span>
-</span><span class='line'>                <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span> <span class="p">!=</span> <span class="k">null</span>
-</span><span class='line'>                <span class="p">&amp;&amp;</span> <span class="n">n</span><span class="p">.</span><span class="n">Namespace</span><span class="p">.</span><span class="n">StartsWith</span><span class="p">(</span><span class="n">ApplicationNamespace</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>For each of the type that is returned from the above method we get the list of interfaces that are defined on the type and needs to be registered against the type. In the sample code, I have added a couple of variations of registrations.</p>
-
-<ul>
-<li><em>IFooBar</em>        : Has only one implementation</li>
-<li><em>IFoo</em>           : Has multiple implementations and should be resolved using <em>IFooFactory</em></li>
-<li><em>IFooCustom</em>     : Has multiple implementations and needs to have a custom name (maybe for some reason you do not want the context information to be part of the class name). This is to be resolved using IFooCustomFactory.</li>
-<li><em>IFooGeneric<T></em> : This is a generic implementation and the type can be decided at runtime.</li>
-</ul>
-
-
-<p>The <em>GetInterfacesToBeRegistered</em> function gets the interfaces that are to be registered for a given type. For this convention I want to <a href="http://stackoverflow.com/questions/5318685/get-only-direct-interface-instead-of-all">get only the direct interfaces</a> that are on the given type and not all the interfaces. The check below for <em>isGenericType</em> on an interface is for <em>IFooGeneric</em> as for generic interfaces the <a href="http://stackoverflow.com/questions/3117090/getinterfaces-returns-generic-interface-type-with-fullname-null">GetInterfaces does not return the full information required</a> and we need to use the <em>GetGenericTypeDefinition</em> method instead.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Type</span><span class="p">&gt;</span> <span class="n">GetInterfacesToBeRegistered</span><span class="p">(</span><span class="n">Type</span> <span class="n">type</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">allInterfacesOnType</span> <span class="p">=</span> <span class="n">type</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">IsGenericType</span> <span class="p">?</span> <span class="n">i</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span> <span class="p">:</span> <span class="n">i</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">Except</span><span class="p">(</span><span class="n">allInterfacesOnType</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">i</span> <span class="p">=&gt;</span> <span class="n">i</span><span class="p">.</span><span class="n">GetInterfaces</span><span class="p">())).</span><span class="n">ToList</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Once we have the interfaces for the type, we add them to an internal mapping list to register it all into the unity container. The internal mapping is against the interface type definition and has the list of classes that implements the interface.Now that we have all the types and interfaces to be registered, we need to register them into the container. For any interface that has only one type implementing it, we register it with default name else we get the name from the class name or the attribute that decorates the class if any.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">RegisterConventions</span><span class="p">(</span><span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">typeMapping</span> <span class="k">in</span> <span class="n">internalTypeMapping</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">1</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">type</span> <span class="p">=</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">First</span><span class="p">();</span>
-</span><span class='line'>            <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="k">else</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">type</span> <span class="k">in</span> <span class="n">typeMapping</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="n">typeMapping</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">GetNameForRegsitration</span><span class="p">(</span><span class="n">type</span><span class="p">));</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The dependency with UnityContainer with the IoCConveniton class, can be easily removed by having an adapter interface into any container. To keep things simple I am having the direct dependency on the container in the sample. From the console application we can create a new container and use the convention class to register the dependencies. The factory implementations have the expected class conventions inside them that would be used to resolve the dependencies. Since the factory is part of the composition root I am using a <a href="http://blog.ploeh.dk/2012/03/15/ImplementinganAbstractFactory/">container based factory</a>, to resolve the dependencies.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
-</span><span class='line'><span class="n">IoCConvention</span><span class="p">.</span><span class="n">RegisterByConvention</span><span class="p">(</span><span class="n">unityContainer</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This has really taken off a lot of work for all the developers in the team and registrations of dependencies works seamlessly. You can find the sample convention implementation <a href="https://github.com/rahulpnath/Blog/tree/master/IocConventionRegistration">here</a>. Are you using convention registrations in your applications? If not you should start using them.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1491,6 +1486,8 @@ Before we do you might ask, Are we not building a web-site for the customer so w
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/productivity-noise-with-noisli/">Tip of the Week: Productivity Noise with Noisli</a>
+    
     <a class="list-group-item " href="/blog/simulating-delays-in-http-calls-for-manual-tests/">Simulating delays in HTTP Calls For Manual Tests</a>
     
     <a class="list-group-item " href="/blog/paste-without-formatting/">Tip of the Week: Paste Without Formatting</a>
@@ -1498,8 +1495,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <a class="list-group-item " href="/blog/code-review/">Making Code Reviews Effective</a>
     
     <a class="list-group-item " href="/blog/books/">Self-help Books</a>
-    
-    <a class="list-group-item " href="/blog/2016-recap/">2016: What Went Well, What Didn&#8217;t and Goals</a>
     
   </div>
 </section>

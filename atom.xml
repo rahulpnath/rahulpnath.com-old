@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-01-10T00:04:03+00:00</updated>
+  <updated>2017-01-11T00:05:48+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,26 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: Productivity Noise with Noisli]]></title>
+    <link href="http://rahulpnath.com/blog/productivity-noise-with-noisli/"/>
+    <updated>2017-01-11T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/productivity-noise-with-noisli</id>
+    <content type="html"><![CDATA[<p>If you are the kind of person that likes to listen to some music while working, then this one is for you. Music is proven to have significant effects on improving focus while working. But it is also quite possible to get fully immersed in the music and forget all about work. Different kinds of music contribute to improving concentration while not getting immersed in the music itself. I usually <a href="http://theheadphonesrule.com/">wear my headphones</a> at work while working and listen to music.</p>
+
+<blockquote><p><em>Music helps to minimize distractions and helps you reach a state of <a href="http://amzn.to/2jlYIgV">Flow</a>, which is ideal for improving productivity.</em></p></blockquote>
+
+<p>At times I like to hear to just some background noises simulating different environments. <a href="https://www.noisli.com/">Noisli</a> is an application that helps mix different sounds and create your perfect environment. The sounds could either be working in a restaurant or while it&rsquo;s raining with thunder, in a forest, by the side of the fire, etc. It helps create the mood that you want and helps recreate it with sound. Since the noises are of a fixed pattern, you soon get used to it and improves concentration at work.</p>
+
+<p><img class="center" alt="Noisli - Favorite Combos" src="http://rahulpnath.com/images/noisli_favorite.png" /></p>
+
+<p>Here are my favorite mixes in Noisli.
+<a href="https://www.noisli.com/get_combo_by_link/W5rvjLZXcoJbooq">Rain Mix</a>, <a href="https://www.noisli.com/get_combo_by_link/vjUpcG2OAXxKVSU">Jungle</a>, <a href="https://www.noisli.com/get_combo_by_link/uhRXMysAIcVEbHF">TRain</a>, <a href="https://www.noisli.com/get_combo_by_link/gFKhnETdoybxcmc">HotelRainFire</a></p>
+
+<p>Find out what works for you and leave a comment on your favorite combos.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Simulating delays in HTTP Calls For Manual Tests]]></title>
@@ -1731,101 +1751,6 @@ src="http://rahulpnath.com/images/codeformatting_functionparameters_alignzoom.pn
 <p>With the Automated publishing of posts and ability to schedule them, I can concentrate more on just the writing part. I no longer have to push out posts manually. I had never thought that I would be scheduling posts in the future. But now that it is happening it&rsquo;s a great feeling when there are posts for a few weeks ahead all ready to go.</p>
 
 <p><em><a href="http://www.rahulpnath.com/blog/morning_routine/">My Morning Routine</a> was the first posts to be deployed using the schedule.</em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Continuos Delivery of Octopress Blog Using TravisCI and Docker]]></title>
-    <link href="http://rahulpnath.com/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/"/>
-    <updated>2016-09-01T04:11:12+00:00</updated>
-    <id>http://rahulpnath.com/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker</id>
-    <content type="html"><![CDATA[<p>It&rsquo;s been a while since I have wanted to deploy my blog automatically whenever there is a new commit pushed into the associated <a href="https://github.com/rahulpnath/rahulpnath.com">git repository</a>. I use Octopress as my blog engine and have been <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">tweaking it to my blogging workflow</a>. Octopress is a static blog generator built over Jekyll. So anytime I make any updates to the blog, I need to build the blog with the accompanying rake tasks and push the generated output (HTML, JavaScript, and CSS) to an Azure Web App that hosts my blog. For this I use the <a href="https://azure.microsoft.com/en-us/documentation/articles/web-sites-deploy/#continuousdeployment">git deployment feature</a> of web apps, so just pushing the built output to a git repo (branch) deploys it to my website. As you see every time, I make a change I have to build the site and push it to the git repository and this can be automated. Since Octopress is in Ruby, I decided to use <a href="https://travis-ci.org/">Travis CI</a> for the build and deploy.</p>
-
-<h3>Local Build Environment with Docker</h3>
-
-<p>I am on an older repository fork of Octopress and have not updated to latest version. So it has hard dependencies with specific versions of gem packages that it needs and also on the Ruby and Jekyll version. So every time I change laptop it&rsquo;s difficult to set up the blog environment. In the past, I manually installed the dependencies whenever I got a new laptop. As changing laptop does not happen frequently, I had been delaying creating any script for this. But now since I had to setup the Travis build environment, I thought of also having a local build environment to test before pushing it up to Travis. Travis provides a Docker image that matches exactly their build environment.</p>
-
-<p>Setting up Docker is just a few steps:</p>
-
-<ol>
-<li><a href="https://docs.docker.com/docker-for-windows/">Install</a> the Docker components</li>
-<li>Load the <a href="https://quay.io/organization/travisci">Docker image</a></li>
-</ol>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>docker run -it -p 4000:4000 quay.io/travisci/travis-ruby /bin/bash
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Once in the container, you can run the same build scripts that you manually run yo deploy and check. I had a few issues with the gem packages and <a href="https://github.com/rahulpnath/rahulpnath.com/commit/abefbf58e3696384c7931d5a4918239a41700106#diff-8b7db4d5cc4b8f6dc8feb7030baa2478">fixed it by specifying hard package dependency</a>. To launch the site hosted in Docker from host system <a href="https://github.com/wsargent/docker-cheat-sheet#exposing-ports">I expose incoming ports through the host container</a>. Once I have the local server running in the docker container (in port 4000) I can access it via <em>localhost:4000</em> from my host computer.</p>
-
-<h3>Post Dates and TimeZones</h3>
-
-<p>When building from the container, I noticed that the dates of posts were off by 1. For posts that were on month start (like Aug 1), it started coming up in July, on the archive page. After a bit of investigation, I realized that Jekyll parses the date time from the post and converts them into local system time. The container was running in UTC and when generating the site it converted post DateTime to UTC. All the posts that I had written after coming to Sydney had an offset of +1000 (or +1100) and most were published early in the morning. So it converted those posts to the previous date.
-Since I am not that worried about the time zone of the post, I decided to remove it. I removed timezone information getting set for new posts in my Rake scripts. For the existing posts, <a href="https://github.com/rahulpnath/rahulpnath.com/commit/1d8902fa69a1aad9ad6615ee3c47e3474b6cd263">I removed all the timezone information from the <em>datetime</em> YAML header in the posts</a>. I set the config.yml to built in UTC irrespective of the system timezone that it is getting build.</p>
-
-<h3>Setting up TravisCI</h3>
-
-<p>Setting up automated build on Travis CI is smooth and easy process TDK. I just added a travis.yml with the &lsquo;<em>rake generate</em>. TDK The post build script does the following</p>
-
-<ul>
-<li>Clones the current statically generated code from my <em>blog</em> branch.</li>
-<li>Perform a rake deploy that updates the cloned code above with the latest site.I updated the existing rake deploy to use GitHub token in push URL. As I did not want the token to be logged on to the Travis console I redirect the output using <em><a href="http://askubuntu.com/questions/12098/what-does-outputting-to-dev-null-accomplish-in-bash-scripts">&amp;> /dev/null</a></em>.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">language</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ruby</span>
-</span><span class='line'><span class="l-Scalar-Plain">rvm</span><span class="p-Indicator">:</span>
-</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">1.9.3</span>
-</span><span class='line'><span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
-</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
-</span><span class='line'><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
-</span><span class='line'>  <span class="l-Scalar-Plain">bundle exec rake generate;</span>
-</span><span class='line'><span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
-</span><span class='line'>  <span class="no">if [ -n &quot;$GITHUB_PUSH_URL&quot; ]; then</span>
-</span><span class='line'>    <span class="no">cd &quot;$TRAVIS_BUILD_DIR&quot;</span>
-</span><span class='line'>    <span class="no">git clone -b blog --single-branch https://github.com/rahulpnath/rahulpnath.com.git _azure &amp;&gt; /dev/null</span>
-</span><span class='line'>    <span class="no">bundle exec rake gitdeploy[&quot;$GITHUB_PUSH_URL&quot;] &amp;&gt; /dev/null</span>
-</span><span class='line'>    <span class="no">echo &quot;Deployed!&quot;</span>
-</span><span class='line'>  <span class="no">fi</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Every time I make a commit to the GitHub master branch, the automated build triggers and deploys the latest generated site.</p>
-
-<h3>Current Blogging Workflow <a href="https://travis-ci.org/rahulpnath/rahulpnath.com"><img src="https://travis-ci.org/rahulpnath/rahulpnath.com.svg?branch=master" alt="Build Status" /></a></h3>
-
-<p><img class="center" alt="Continuos Delivery of Octopress Blog" src="http://rahulpnath.com/images/blog_ci.PNG" /></p>
-
-<ul>
-<li>Write posts on my phone or laptop. (<a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">Using Dropbox to sync posts across devices</a>)</li>
-<li>Publish and Push to Github from laptop</li>
-<li>Travis builds triggered by Github webhook</li>
-<li>Travis pushes back generated site into Github (<em><a href="https://github.com/rahulpnath/rahulpnath.com/tree/blog">blog branch</a></em>).</li>
-<li>Azure Web App triggers automated deployment from Github.</li>
-</ul>
-
-
-<p>With the automated deployment, I have one less thing to take care of when writing posts. The whole process might feel a bit complicated, but it is not. It is just that I have been tweaking few things to ease blogging. And since I am a programmer, I like hacking things. If you are new to blogging you do not need them and don&rsquo;t get overwhelmed (if at all you are). All you need to make sure is to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">have a blog</a> and you <a href="http://www.rahulpnath.com/blog/own-your-urls/">own the URL</a>.</p>
 ]]></content>
   </entry>
   
