@@ -24,4 +24,4 @@ At times I like to hear to just some background noises simulating different envi
 Here are my favorite mixes in Noisli. 
 [Rain Mix](https://www.noisli.com/get_combo_by_link/W5rvjLZXcoJbooq), [Jungle](https://www.noisli.com/get_combo_by_link/vjUpcG2OAXxKVSU), [TRain](https://www.noisli.com/get_combo_by_link/uhRXMysAIcVEbHF), [HotelRainFire](https://www.noisli.com/get_combo_by_link/gFKhnETdoybxcmc)
 
-Find out what works for you and leave a comment on your favorite combos.
+You can use Noisli directly from the [website](https://www.noisli.com/) or use any of their [Apps and Extensions](https://www.noisli.com/apps). Find out what works for you and leave a comment on your favorite combos.
