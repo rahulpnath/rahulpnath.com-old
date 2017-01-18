@@ -163,6 +163,148 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-01T00:45:05+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 1<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/tools/'>tools</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/" itemprop="url">Web Application Occasionally Throwing &#8216;Could not Load File or Assembly or one of its Dependencies&#8217; Exception</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
+
+<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
+
+<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
+
+<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
+
+<h3>Using AsmSpy to find conflicting assemblies</h3>
+
+<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>asmspy WebApplication1\bin\ nonsystem
+</span><span class='line'>
+</span><span class='line'>Detailing only conflicting assembly references.
+</span><span class='line'>Reference: Newtonsoft.Json
+</span><span class='line'>   7.0.0.0 by SharedLibrary
+</span><span class='line'>   6.0.0.0 by WebApplication1
+</span><span class='line'>   4.5.0.0 by WebGrease
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
+
+<h3>Using MsBuild Structured Log to find conflicting writes</h3>
+
+<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
+
+<p><img src="/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
+
+<p><img class="left" src="/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
+
+<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
+
+<h3>Building Web application in Visual Studio</h3>
+
+<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
+
+<figure>
+    <img src="/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
+    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
+</figure>
+
+
+<p></p>
+
+<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
+
+<p>I confirmed with other team members on the repro steps for this issue</p>
+
+<ul>
+<li>Get the latest code and do a full rebuild from VS</li>
+<li>Launch Web app works fine</li>
+<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
+<li>Launch Web app throws the error!</li>
+</ul>
+
+
+<p>It was a consistent repro with the above steps.</p>
+
+<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
+
+<h3>The Sample Application</h3>
+
+<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
+
+<ul>
+<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
+<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
+<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WebApplication1</span> <span class="n">-Version</span> <span class="n">6</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
+</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">SharedLibrary</span> <span class="n">-Version</span> <span class="n">7</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
+</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WpfApplication1</span> <span class="n">-Version</span> <span class="n">8</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
+
+<p>Hope this helps in case you come across a similar issue!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-27T05:07:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 27<sup>th</sup>, 2016</time>
         
 
@@ -1673,121 +1815,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-15T05:23:08+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 15<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/programming/'>programming</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/git-checkout-tfs/" itemprop="url">git checkout TFS</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>It&rsquo;s been a year since using <a href="https://git-scm.com/">Git</a> as my mainstream version control system and I am loving it! Before Git, I had used Team Foundation Version Control (TFVC) for a very long time and was so used to it that I found Git a bit complex and overwhelming in the beginning. Team Foundation Server (TFS) is the whole product suite from Microsoft that provides source code management. Until TFS 2013, it supported only TFVC which is when it introduced <a href="https://blogs.msdn.microsoft.com/mvpawardprogram/2013/11/13/git-for-tfs-2013/">Git in TFS</a>. Even today people use TFS and TFVC synonymously (like in the title of this post) though they are not the same.</p>
-
-<h3>Fundamental shift in thinking</h3>
-
-<p>By design, Git is a Distributed VCS, whereas TFS is centralized one. It takes quite a while to get your head around this and what it actually means. By definition</p>
-
-<blockquote><p><em><strong>TFVC</strong>: Uses a single, centralized server repository to track and version files. Local changes are always checked in to the central server where other developers can get the latest changes.</em></p>
-
-<p><em><strong>Git</strong>: Git is a distributed version control system. Each developer has a copy of the source repository on their dev machine. Developers can commit each set of changes on their dev machine and perform version control operations such as history and compare without a network connection.</em></p></blockquote>
-
-<p>You. may not see the real Distributed benefits if you are working off a central repository (hosted on a server like GitHub or Bitbucket) and using <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/centralized-workflow">TFS way of development</a> :</p>
-
-<p><em>Get latest code => Make your changes => Merge latest +> Check in (</em>Commit and push<em>)</em></p>
-
-<p>The real power of Git is better understood when you start working disconnected, use branches to keep unrelated development activities separate and merge those into the main trunk (<em>master</em>) once comfortable. You get a local copy of the project and lets you make changes independent of all the other changes in the project.</p>
-
-<blockquote><p><em>Git feels so lightweight and never gets in the way of doing things.</em></p></blockquote>
-
-<h3>Make command line your friend</h3>
-
-<p>If you are a UI savvy person then Git might a good starting point to start using the command line. At first, it definitely feels hard especially if you were TFS/Visual Studio users and might be tempted to use the GUI tools available (<a href="https://desktop.github.com/">GitHub Desktop</a> or <a href="https://www.sourcetreeapp.com/">SourceTree</a>)</p>
-
-<blockquote><p><em>Repetitive tasks become more evident when you use a command line and easily automatable.</em></p></blockquote>
-
-<p>I use Cmder (<a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favourite tools</a>) with Git and have <a href="https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/">set up SSH</a> to Bitbucket and Github (expected soon on TFS), secured by a paraphrase, so that I do not have to key in the credentials every time I interact with the repositories. I <a href="https://github.com/cmderdev/cmder/issues/193#issuecomment-63040989">start the ssh-agent the very first time I open Cmder</a>, which prompts for my paraphrase and continues to run in the background. Alternatively, you can also use <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows">Credential Manager</a> to store credentials, when working with HTTP enabled Git repository. For the common commands, I have set up aliases like below, to save a bit on the keystrokes.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>gl=git log --oneline --all --graph --decorate  $*
-</span><span class='line'>gs=git status
-</span><span class='line'>ga=git add -A
-</span><span class='line'>gp=git pull
-</span><span class='line'>gpp=git push
-</span><span class='line'>gc=git commit -m &quot;$*&quot;
-</span><span class='line'>gcc=git commit
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Different workflows</h3>
-
-<p>Git can be used in many ways and which makes it hard to get started. There are a few popular <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/">workflows</a> that one can use. Currently, I am using -  <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow">Feature Branch workflow</a> -
-which means that all work happen on independent feature branches and once completed gets merged into the main trunk (master branch). Code Reviews happens on the way it gets pulled into the main branch, which ensures code quality and familiarity.</p>
-
-<p><a href="https://www.atlassian.com/git/images/tutorials/collaborating/comparing-workflows/feature-branch-workflow/01.svg"><img class="center" alt="Git Feature Branch Workflow" src="/images/git_featurebranch_workflow.png" /></a></p>
-
-<h3>Not Just for Code</h3>
-
-<p>Git is a version control system and does not limit itself to storing code. You can use it for <a href="http://readwrite.com/2013/11/08/seven-ways-to-use-github-that-arent-coding/">version controlling any of your work</a>. For example, this blog is <a href="https://github.com/rahulpnath/rahulpnath.com">hosted on Github</a> and all the <a href="https://github.com/rahulpnath/rahulpnath.com/commits/master">changes are version controlled</a>, which gives me the flexibility to work and commit locally. Since the blog is <a href="http://www.rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">static generated</a> I can also preview all the changes locally. I use git whenever I work on any documents or <a href="https://github.com/rahulpnath/Speaking">presentations</a> so that I can avoid manual copy of files and renaming with suffixes like &lsquo;<em>Draft</em>, &rsquo;<em>Draft1</em>,<em>Final</em>,&ldquo;<em>FinalRevision</em>&lsquo; etc. (if that sounds any similar)</p>
-
-<h3>Managing Commits</h3>
-
-<p>When coming to commits, which are nothing but checkpoints of meaningful work done, people might have a different  definition for &lsquo;<em>meaningful</em>&rsquo; - for some it might be really granular, for others a bit coarse and for yet another it means all the work is done. I tend to commit quite often - even a rename of a variable leads to a commit so that I do not have to backtrack if at all something goes wrong immediately after that.</p>
-
-<p>if you really like the idea of committing often (locally), but want the pushes to remotes more coarse, you can &lsquo;<strong><a href="http://stackoverflow.com/questions/5189560/squash-my-last-x-commits-together-using-git">squash your commits</a></strong>&rsquo;, before pushing it to remote branch. This allows you to commit often locally and still push  meaningful commit in the main source history. Make sure that the <a href="http://chris.beams.io/posts/git-commit/">commit messages and clear and communicates the intent</a> and helps <a href="http://megakemp.com/2014/08/14/the-importance-of-a-good-looking-history/">keep a good looking history</a>.</p>
-
-<p>Git is one of the best things that happened to developers and hopes it stays long!</p>
-
-<p><strong>References</strong></p>
-
-<ul>
-<li><a href="http://gitref.org/index.html">Git Reference</a></li>
-<li><a href="https://git-scm.com/book/en/v2">Pro Git</a></li>
-</ul>
-
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1811,6 +1838,8 @@ which means that all work happen on independent feature branches and once comple
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/recording-my-first-screencast/">Recording My First Screencast</a>
+    
     <a class="list-group-item " href="/blog/finding-keyboard-shortcuts-on-websites/">Tip of the Week: Finding Keyboard Shortcuts on Websites</a>
     
     <a class="list-group-item " href="/blog/productivity-noise-with-noisli/">Tip of the Week: Productivity Noise with Noisli</a>
@@ -1818,8 +1847,6 @@ which means that all work happen on independent feature branches and once comple
     <a class="list-group-item " href="/blog/simulating-delays-in-http-calls-for-manual-tests/">Simulating delays in HTTP Calls For Manual Tests</a>
     
     <a class="list-group-item " href="/blog/paste-without-formatting/">Tip of the Week: Paste Without Formatting</a>
-    
-    <a class="list-group-item " href="/blog/code-review/">Making Code Reviews Effective</a>
     
   </div>
 </section>
