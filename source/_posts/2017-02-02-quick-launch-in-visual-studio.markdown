@@ -6,7 +6,7 @@ categories:
 - TipOW
 - Programming
 tags: 
-date: 2017-01-27
+date: 2017-02-02
 completedDate: 2017-01-23 13:11:01 +1100
 keywords: 
 description: Quickly navigate in Visual Studio using Quick Launch (Ctrl + Q)
