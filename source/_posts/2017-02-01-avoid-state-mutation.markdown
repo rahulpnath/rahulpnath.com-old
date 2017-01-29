@@ -14,6 +14,8 @@ primaryImage: coding.jpg
 
 How many times have you had to navigate down a long chain of function calls to find out that some code deep down was changing the value of an object passed to it? The change could either be setting the value to null or modifying the value in itself. When passing around reference types, it's easy to run into this situation very often.  This happens not just when debugging existing code, but also when looking at the code we have just finished writing. Maintaining state transitions and object state based on the order in which functions are invoked on them can soon become confusing and buggy. So the best way is to try and avoid them in the first place. 
 
+<img alt="Avoid State Mutation" src="{{ site.images_root}}/mutation.png" />
+
 ### What is state Mutation
 
 The process of changing the value of a variable or an object over time after creation is called mutation. In simpler terms when you are changing the value of an object, you are mutating the state. I am sure that everyone would have had some time getting their head around the below statement when starting off with programming (I did)
