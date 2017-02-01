@@ -163,6 +163,375 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-18T04:52:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 18<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/refactoring/'>refactoring</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/" itemprop="url">Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
+
+<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
+
+<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
+keeping the abstraction level consistent.</em></p></blockquote>
+
+<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
+
+<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
+<img class="center" src="/images/readable_code.jpg" alt="Code should be readable" />
+</a></p>
+
+<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Subscription</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">SubscriptionTerm</span><span class="p">&gt;</span> <span class="n">Terms</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SubscriptionTerm</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">double</span> <span class="n">Price</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">otherTerms</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span>
+</span><span class='line'>                <span class="p">(!</span><span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
+</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">).</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
+</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">&amp;&amp;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">hasOverlappingItems</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
+
+<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
+
+<h3>Creating the Safety Net</h3>
+
+<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, 1, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, 2, false)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, 1, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, 2, true)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ValidateReturnsExpected</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate1</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate2</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate2</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span> <span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscription</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Subscription</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">term1</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate1</span><span class="p">,</span> <span class="n">endDate1</span><span class="p">,</span> <span class="n">price1</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">term2</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate2</span><span class="p">,</span> <span class="n">endDate2</span><span class="p">,</span> <span class="n">price2</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term1</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">OverlappingSubscriptionTermWithConflictingPriceValidator</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">subscription</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
+
+<h3>Refactoring for Readability</h3>
+
+<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">endDate</span><span class="p">.</span><span class="n">Value</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End date cannot be less than start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">DateRange</span> <span class="n">TermPeriod</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">get</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">EndDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
+
+<figure class='code'><figcaption><span>Tests for IsOverlapping</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, false)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, true)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, null, &quot;20-Jan-2016&quot;, null,  true)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;28-Jan-16&quot;, &quot;10-Mar-16&quot;, &quot;10-Mar-16&quot;, null, true)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OverlappingDatesReturnsExpected</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">range1</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime1</span><span class="p">,</span> <span class="n">endDateTime1</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">range2</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime2</span><span class="p">,</span> <span class="n">endDateTime2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">range1</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">range2</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>IsOverlapping in DateRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">DateRange</span> <span class="n">dateRange</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span>
+</span><span class='line'>        <span class="p">&amp;&amp;</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
+
+<figure class='code'><figcaption><span>IsOverlapping in SubscriptionTerm</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">SubscriptionTerm</span> <span class="n">term</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">TermPeriod</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">TermPeriod</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Validator after Refactoring</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">termsWithDifferentPrice</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">termsWithDifferentPrice</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
+
+<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
+
+<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-11T05:45:31+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 11<sup>th</sup>, 2016</time>
         
 
@@ -1672,167 +2041,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-02T13:26:59+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 2<sup>nd</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/disable-nuget-package-restore-for-a-net-poject/" itemprop="url">Disable NuGet Package Restore for a .Net Poject</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>If you have decided on <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">Checking in Package Dependencies into Source Control</a> for an existing project that uses Nuget Packages then this post is for you</em></p>
-
-<p>When using NuGet package references that are not included in the source control, these packages gets restored during build time. There are <a href="https://docs.nuget.org/consume/package-restore">multiple ways that NuGet supports restore these dependencies at build time</a></p>
-
-<ul>
-<li>Automatic Package Restore is the current recommended approach (within Visual Studio), which is available from NuGet 2.7.</li>
-<li>Command-line package restore on build servers</li>
-<li>MSBuild-integrated package restore approach is the original Package Restore implementation and is still used in many projects.</li>
-</ul>
-
-
-<p>Depending on the type to of restore the project uses, NuGet has different configuration entries in the <em>csproj</em> files and <em>.nuget</em> folder in the solution root. So when choosing to check in package dependencies into the source control, it is a good idea to remove all these <a href="https://docs.nuget.org/consume/package-restore/migrating-to-automatic-package-restore">generated configurations</a> and files that are not required any more. The below script does this for you!</p>
-
-<div class="alert alert-warning">
-<strong>WARNING!</strong> The script deletes the <em>.nuget</em> folder (if it exists), updates the <em>.csproj</em> files. Please make sure that the project folder is under source control or you have a backup of the folder. After running the script make sure that all the changes that you see are expected as explained here and the project builds and runs as before.
-</div>
-
-
-<p>The PowerShell script does the below for a given solution directory folder (mandatory)</p>
-
-<ul>
-<li>For each of the <em>csproj</em> file in the given folder, the script removes the
-
-<ul>
-<li><em>RestorePackages</em> node</li>
-<li><em>NugetPackageImportStamp</em> node</li>
-<li><em>nuget target import</em> from the solution root .nuget folder</li>
-<li><em>EnsureNuGetPackageBuildImports</em> node</li>
-</ul>
-</li>
-<li>Removes <em>.nuget</em> folder from the solution root if it exists.</li>
-</ul>
-
-
-<p><em>The script leaves blank lines in the </em>csproj<em> files in place of the removed nodes.</em></p>
-
-<figure class='code'><figcaption><span>Remove NuGet Restore</span><a href='https://gist.github.com/rahulpnath/13d3b4f54cec51e22344876b1566b911#file-remove-nuget-restore-ps1'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$solutionDirectory</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'> <span class="nv">$importNugetTargetsTag</span><span class="p">=</span> <span class="no">[regex]</span><span class="p">::</span><span class="n">escape</span><span class="p">(</span><span class="sh">@&#39;</span>
-</span><span class='line'><span class="sh">&lt;Import Project=&quot;$(SolutionDir)\.nuget\NuGet.targets&quot; Condition=&quot;Exists(&#39;$(SolutionDir)\.nuget\NuGet.targets&#39;)&quot; /&gt;</span>
-</span><span class='line'><span class="sh">&#39;@</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$restorePackagesTag</span> <span class="p">=</span> <span class="s1">&#39;&lt;RestorePackages&gt;.*?&lt;/RestorePackages&gt;&#39;</span>
-</span><span class='line'><span class="nv">$nuGetPackageImportStamp</span> <span class="p">=</span> <span class="s1">&#39;&lt;NuGetPackageImportStamp&gt;.*?&lt;/NuGetPackageImportStamp&gt;&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span> <span class="p">=</span> <span class="s1">&#39;(?smi)&lt;Target Name=&quot;EnsureNuGetPackageBuildImports&quot;.*?&lt;/Target&gt;&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="nv">$f</span> <span class="k">in</span> <span class="nb">Get-ChildItem</span> <span class="n">-Recurse</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-Filter</span> <span class="p">*.</span><span class="n">csproj</span> <span class="p">|</span> <span class="nb">sort-object</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="nv">$text</span> <span class="p">=</span> <span class="nb">Get-Content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span> <span class="n">-Raw</span>
-</span><span class='line'>    <span class="nv">$text</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$importNugetTargetsTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$nuGetPackageImportStamp</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$restorePackagesTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="o">-replace</span> <span class="nv">$EnsureNuGetPackageBuildImportsTargetTag</span><span class="p">,</span> <span class="s2">&quot;&quot;</span> <span class="p">`</span>
-</span><span class='line'>        <span class="p">|</span> <span class="nb">set-content</span> <span class="nv">$f</span><span class="p">.</span><span class="n">FullName</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Get-ChildItem</span> <span class="n">-Path</span> <span class="nv">$solutionDirectory</span> <span class="n">-include</span> <span class="p">.</span><span class="n">nuget</span> <span class="n">-Recurse</span> <span class="p">|</span> <span class="k">foreach</span> <span class="p">(</span><span class="nv">$_</span><span class="p">)</span> <span class="p">{</span> <span class="nb">remove-item</span> <span class="nv">$_</span><span class="p">.</span><span class="n">fullname</span> <span class="n">-Force</span> <span class="n">-Recurse</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Any similarity with the scripts <a href="http://weblogs.asp.net/jongalloway/scripting-net-project-migration-to-automatic-nuget-package-restore">here</a> is intended as that was my starting place. To explicitly <a href="https://docs.nuget.org/consume/package-restore#opting-out">opt out of the Automatic Package Restore</a> on Visual Studio add a <em>Nuget.config</em> in the solution root.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;configuration&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;packageRestore&gt;</span>
-</span><span class='line'>    <span class="c">&lt;!-- Opts out of both Automatic Package Restore and MSBuild-Integrated Package Restore --&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;enabled&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c">&lt;!-- Opts out of Automatic Package Restore in Visual Studio --&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;automatic&quot;</span> <span class="na">value=</span><span class="s">&quot;False&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/packageRestore&gt;</span>
-</span><span class='line'><span class="nt">&lt;/configuration&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>Hope this helps you to move away from NuGet restore at build time.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1856,6 +2064,8 @@ This could range from how to easily navigate the code base, scripts to do some c
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/avoid-state-mutation/">Avoid State Mutation</a>
+    
     <a class="list-group-item " href="/blog/cmder-portable-console-emulator-for-windows/">Tip of the Week: Cmder - Portable Console Emulator for Windows</a>
     
     <a class="list-group-item " href="/blog/recording-my-first-screencast/">Recording My First Screencast</a>
@@ -1863,8 +2073,6 @@ This could range from how to easily navigate the code base, scripts to do some c
     <a class="list-group-item " href="/blog/finding-keyboard-shortcuts-on-websites/">Tip of the Week: Finding Keyboard Shortcuts on Websites</a>
     
     <a class="list-group-item " href="/blog/productivity-noise-with-noisli/">Tip of the Week: Productivity Noise with Noisli</a>
-    
-    <a class="list-group-item " href="/blog/simulating-delays-in-http-calls-for-manual-tests/">Simulating delays in HTTP Calls For Manual Tests</a>
     
   </div>
 </section>
