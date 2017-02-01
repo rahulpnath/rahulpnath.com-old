@@ -9,7 +9,7 @@ date: 2017-02-01
 completedDate: 2017-01-10 04:56:54 +1100
 keywords: 
 description: This post walks through the effects of mutation and shows how it can affect functionality in an undesirable way.
-primaryImage: coding.jpg
+primaryImage: mutation.png
 ---
 
 How many times have you had to navigate down a long chain of function calls to find out that some code deep down was changing the value of an object passed to it? The change could either be setting the value to null or modifying the value in itself. When passing around reference types, it's easy to run into this situation very often.  This happens not just when debugging existing code, but also when looking at the code we have just finished writing. Maintaining state transitions and object state based on the order in which functions are invoked on them can soon become confusing and buggy. So the best way is to try and avoid them in the first place. 
