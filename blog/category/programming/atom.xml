@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-01T02:10:58+00:00</updated>
+  <updated>2017-02-02T00:02:02+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,25 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: Quick Launch in Visual Studio]]></title>
+    <link href="http://rahulpnath.com/blog/quick-launch-in-visual-studio/"/>
+    <updated>2017-02-02T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/quick-launch-in-visual-studio</id>
+    <content type="html"><![CDATA[<p><img alt="Visual Studio Quick Launch" src="/images/visualstudio_quicklaunch.png" /></p>
+
+<p>As a .NET developer, I spent the majority of my time in Visual Studio. Knowing to navigate fast within the IDE or quickly find what I want is important. Many times finding specific settings or navigating to individual windows can take a while, especially if you are not familiar with it and don&rsquo;t know exactly where to look. Visual Studio has a quick launch toolbar that is designed exactly for this. Be it opening the Package Manager Console or changing the font style you can use the quick launch to search and navigate to it.</p>
+
+<blockquote><p><em>You can use <a href="https://msdn.microsoft.com/en-us/library/hh417697.aspx">Quick Launch</a> to quickly search and execute actions for IDE assets such as options, templates, menus. You can&rsquo;t use Quick Launch to search for code and symbols. The Quick Launch search box is located at the top-right corner of the menu bar and is accessible by choosing the <strong>Ctrl+Q</strong> keys.</em></p></blockquote>
+
+<p>The added advantage is that you can use the quick launch bar to <strong><em>learn new keyboard shortcuts</em></strong>. Searching for an item also shows the keyboard shortcut for it next to it. Over time you can remember the direct keyboard shortcut and avoid quick launch as well.</p>
+
+<p><img alt="Visual Studio Quick Launch learn keyboard shortcuts" src="/images/visualstudio_quicklaunch_keyboardShortcuts.png" /></p>
+
+<p>Knowing the tools that you use is an important part of development. Able to navigate fast within the IDE enables to remove any time wasted poking around the IDE. Use that time to read and write code.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Avoid State Mutation]]></title>
@@ -375,130 +394,6 @@ The series of events mentioned below were modified to fit into the conversationa
 <p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
 
 <p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Introducing Code Formatting into a Large Code Base]]></title>
-    <link href="http://rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/"/>
-    <updated>2016-10-03T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase</id>
-    <content type="html"><![CDATA[<p>Code Formatting is an important aspect of writing code. If followed well it helps keep the code more readable and easy to work with. Here are some of the different aspects of formatting code and my personal preferences. I then explore options to enforce code formatting and ways to introduce it into an existing code base.</p>
-
-<p>Below are some of the popular formatting rules and those that have a high value when enforced in a project.</p>
-
-<h4><strong>Tabs vs Spaces</strong></h4>
-
-<p>One of the most debated topic in code formatting is whether to use tabs or spaces to intend code. I never knew such a debate existed until my most recent project. It had developers from different parts of the world and with different preferences. I came across the below excerpt from Jeff Atwood, to which I completely agree.</p>
-
-<blockquote><p><em>Choose tabs, choose spaces, choose whatever layout conventions make sense to you and your team. It doesn&rsquo;t actually matter which coding styles you pick. What does matter is that you, and everyone else on your team, <strong>sticks with those conventions and uses them consistently.</strong></em></p>
-
-<p><em>That said, only a moron would use tabs to format their code.</em></p>
-
-<p><em>- <a href="https://blog.codinghorror.com/death-to-the-space-infidels/">Jeff Atwood</a></em></p></blockquote>
-
-<p>Settings for these are often available at the IDE level. In Visual Studio this is available under <a href="https://msdn.microsoft.com/en-us/library/7sffa753.aspx">Options, Text Editor, All Languages, Tabs</a>. Be aware of what you choose and make sure you have the same settings across your team members.</p>
-
-<h4><strong>Horizontal Alignment</strong></h4>
-
-<p>Avoid aligning by common separators (=;,) when they occur in adjacent lines. This kind of alignment falls out of order when we rename variables or properties. It happens when you chaange property names.</p>
-
-<pre><code class="csharp Not Refactoring friendly and needs extra effort to keep it formatted">var person = new Person()
-{
-    FirstName = "Rahul",
-    LastName  = "Nath",
-    Site      = "www.rahulpnath.com"
-};
-</code></pre>
-
-<pre><code class="csharp Refactoring friendly">var person = new Person()
-{
-    FirstName = "Rahul",
-    LastName = "Nath",
-    Site = "www.rahulpnath.com"
-};
-</code></pre>
-
-<h4><strong>Horizontal Formatting</strong></h4>
-
-<p><em>You should never have to scroll to the right</em> - I caught on with this recommendation from the book Clean Code (<a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>). It is also recommended that a function should fit on the screen, without needing to scroll up or down. This encourages to keep functions short and specific.</p>
-
-<blockquote><p><em>We should strive to keep our lines short. The old Hollerith limit of 80 is a bit arbitrary, and I’m not opposed to lines edging out to 100 or even 120. But beyond that is probably just careless</em></p>
-
-<p><em>- Uncle Bob</em></p></blockquote>
-
-<p>The <a href="https://visualstudiogallery.msdn.microsoft.com/d0d33361-18e2-46c0-8ff2-4adea1e34fef">Productivity Power Tools</a> extension for Visual Studio allows adding a Column Guide. A Column Guide reminds developers their full line of code or comments may not fit on a single screen.</p>
-
-<p><img class="center" alt="Code Formatting Maximum Width Column Guide in Visual Studio using Power Tools"
-src="/images/codeformatting_column_guide.png" /></p>
-
-<h4><strong>Aligning Function Parameters</strong></h4>
-
-<p>Always try to keep the number of parameters as less as possible. In cases where there are more parameters or longer function names, the team must choose a style. There are different styling formats followed when splitting parameters to a new line.</p>
-
-<p>Allowing parameters to take the <strong><em>natural flow of IDE</em></strong> (Visual Studio) is the simplest approach. This often leads to poor readability and code cluttering.</p>
-
-<p><img class="center" alt="Function Parameters taking natural flow of IDE"
-src="/images/codeformatting_functionparameters_naturalflowide.png" /></p>
-
-<p>Breaking parameters into separate lines is important for readability. Use the Column guide to decide when to break function parameters into different lines. There are different approaches followed when splitting parameters into new lines. Keeping the first parameter on the same line as the function and then having all other <strong><em>parameters on new line aligned with the first parameter</em></strong> is another approach. This works well when viewed in the same font and resolution used when writing. When you change font or resolution this kind of formatting falls out of place.</p>
-
-<p><img class="center" alt="Function Parameters on new line aligned with first parameter"
-src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
-
-<p>A better variant of the above style is to have the parameters in the new line aligned to the left. This ensures parameters stay in the same place when changing font or resolutions. The one that I prefer is to have all parameters in a new line. This formatting works well with different font sizes and resolutions.</p>
-
-<pre><code class="csharp">public int ThisIsALongFunctionNameWithLotsOfParameters(
-    int parameter1, 
-    string parameter2, 
-    int parameter3, 
-    string optionalParameter = "Test")
-{
-}
-</code></pre>
-
-<h4><strong>Visibility Based Ordering</strong></h4>
-
-<p>It is a good practice to maintain a specific order of items within a class. Have all properties declared first, then constructors, public methods, protected methods, private methods etc. This is up to the team to  determine the order, but sticking on to it makes the code more readable.</p>
-
-<h3>Code Analysis Tools</h3>
-
-<p>Checking for styling and formatting issues in a code review requests is a boring task. It’s best to automate style checks at build time (local and server builds). Making build throw errors for styling issues forces developers to fix them. Once developers get used to the rules, writing code without any formatting issues becomes second nature.  <a href="https://stylecop.codeplex.com">StyleCop</a> is an open source static code analysis tool from Microsoft that checks C# code for conformance to StyleCop&rsquo;s recommended coding styles and a subset of Microsoft&rsquo;s .NET Framework Design Guidelines. It has a Visual Studio plugin and also integrates well with <a href="https://stylecop.codeplex.com/wikipage?title=Setting%20Up%20StyleCop%20MSBuild%20Integration">MsBuild</a>.</p>
-
-<h4><strong>Cleaning up a Large Code Base</strong></h4>
-
-<p>Introducing StyleCop (or any code format enforcement) into a large pre-existing code base is challenging. Turning the tool on would immediately throw hundreds and thousands of errors. Trying to fix them in a stretch might impact the ongoing development process. This often causes us to delay the introduction of such enforcement&rsquo;s into the project and it continues to be a technical debt.</p>
-
-<p>Taking an incremental approach, fixing one by one as and when a file is changed seems a good idea. Teams can come with the <a href="http://programmer.97things.oreilly.com/wiki/index.php/The_Boy_Scout_Rule">Boy Scout Rule</a> - &lsquo;<em>Leave the file cleaner than you find</em>&rsquo;. Every time a file is touched for a fix, run StyleCop analysis and fix the errors. Over a period of time, this will make the project clean. The only problem with this approach is developers often tend to ignore/forget running the analysis and fix them.</p>
-
-<blockquote><p><em>Trivial things like code formatting is hard to mandate within a team unless it is enforced through tooling</em></p></blockquote>
-
-<h3>Source Control Hooks</h3>
-
-<p>We can plug into various hooks that source controls give to enforce code formatting on developer machines. In git, you can add a <a href="https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks">custom pre-commit hook</a> to run the StyleCop analysis on all the staged files. <a href="https://github.com/bbadjari/stylecopcli">StyleCopcli</a> is an open source application that wraps over the StyleCop DLLs and allows running the analysis from the command line. So in the hook, I use this CLI to run StyleCop analysis on all the staged files.</p>
-
-<pre><code class="bat">#!/bin/sh
-echo "Running Code Analysis"
-./stylecopcli/StyleCopCLI.exe -cs $(git diff --cached --name-only)
-if [ $? = 2 ]
-    then
-        echo Commit Failed! Fix StyleCop Errors
-        exit 1
-    else
-        echo No SyleCop Errors!
-        exit 0
-fi
-</code></pre>
-
-<p>If there are any StyleCop validation errors the commit is aborted, forcing the developer to fix it. The git hooks work fine when committing from a command line or UI tools like Source Tree. However, Visual Studio git plugin does not run the git hooks and fails to do the check.</p>
-
-<p><img class="center" alt="StyleCop git hook failing commit in console" src="/images/code_formatting_git_hook_console.png" /></p>
-
-<p><img class="center" alt="StyleCop git hook failing commit in Source Tree" src="/images/code_formatting_git_hook_sourcetree.png" /></p>
-
-<p>Over a period of time, most of the files will get cleaned and remaining can be done all at once with less effort. Once the entire code base passes all StyleCop rules, this can be enforced in the build server. This ensures that no more bad formatted code gets checked into the source control.</p>
-
-<p>Code is read more than written. So it is important to keep it readable and well-formatted. It also makes navigating code bases easier and faster. These are minor things that are often <a href="https://vimeo.com/97329157">overlooked by developers</a>, but have a high impact on productivity when followed. Do you enforce code formatting rules in your current project? What are the rules that you find important. Sound off in the comments below!</p>
 ]]></content>
   </entry>
   
