@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Defensive Coding - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Is defensive coding good or bad?" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/defensive-coding">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Defensive Coding" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/defensive-coding/" />
+<meta property="og:description" content="Is defensive coding good or bad?" />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/defensive_coding.jpg" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/defensive-coding" />
+<meta property="twitter:title" content="Defensive Coding" />
+<meta property="twitter:description" content="Is defensive coding good or bad?" />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/defensive_coding.jpg" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-02-07T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 7<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Defensive Coding
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Often when writing code or in code review discussions it comes up - &lsquo;<em>Should I be doing a null check here?</em>.&rsquo; and we start off long discussions. Like in most cases, there is no definite answer to this. In this post let us examine some of the pros and cons of having defensive checks and how and when we can avoid it to make the code more readable.</p>
+
+<p><img alt="Defensive Coding" src="/images/defensive_coding.jpg" /></p>
+
+<p>Let&rsquo;s see an example to explore more. The below code aggregated details from different repository classes and returns a combined model. I have kept this simple with just three dependencies.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{...};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you see, there are no null checks on any of the values returned from external dependencies. The code expects all calls to be successful with no exceptions - &lsquo;<a href="https://en.wikipedia.org/wiki/Happy_path">happy path</a>&rsquo; scenario.
+The problem is when an error happens; the exception stack trace will look like something below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>Object reference not set to an instance of an object.
+</span><span class='line'>at UserQuery.GetPersonDetails(Guid personId)
+</span><span class='line'>  at UserQuery.Main()
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We will not be able to tell which of the values was null, making it hard to debug the error. We have to manually go through the code checking how each of the dependencies retrieves values and check which one possibly was null. Debugging takes a lot of time and might be difficult depending on the complexity of the dependencies. The advantage of the above code though is that it is readable and there is <strong><em>noise</em></strong> in the code.</p>
+
+<h3>Extensive Defense</h3>
+
+<p>Let us now modify the above example to see how it would be to add defensive code and check for nulls.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Person is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Email is null for person &quot;</span> <span class="p">+</span> <span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">subscriptionPlan</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Subscription Plan is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">billingSummary</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;BillingSummary is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{</span> <span class="p">};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> The defensive checks added for guarding against invalid values makes the code harder to read. Defensive checks are there for incoming parameters as well and validate if they are null/default value (for Guid). However when an error happens the stack trace will mention the name of the property which was null. Debugging is fast and easy and makes the exception message useful. But we don&rsquo;t want our code filled with defensive checks like this.</p>
+
+<h3>Team Conventions and Practices</h3>
+
+<p>Let us dig a bit deeper into why we had to put in the defensive checks in the first place. We had to check for null on <em>person</em> since the repository decided to return a null when it could not find the person given an id. Does it even make sense or add any value in returning a null reference from the repository? Unless the business works in a way that there is a high possibility of something returning null this does not add any value. Even in cases like that, we should revert to other options which we will see in a while. When most of the time we expect a person to exists, it is better for the repository to throw an exception right away that the person does not exist. If the validations and the defensive checks are performed at the boundaries, then we do not need to do a null check anymore when getting a person or any similar functions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">Person</span> <span class="nf">GetPerson</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">DataContext</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">UserDoesNotExistsException</span><span class="p">(</span><span class="s">&quot;Person does not exists with id &quot;</span><span class="p">,</span> <span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">person</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For cases where there are possibilities of a value existing or not you can resort to <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">Stronger Code Contracts</a>. Using the Maybe type to indicate a value might or might not be present is a good way to force defensive checks. Maybe type ensures that any consumer of the code handles the case where the object does not exist. Readability of the code also improves in this case.</p>
+
+<p>If you have noticed in the above code when checking for null&rsquo;s, I checked the Email property for null as well. Setting up team conventions that properties cannot be null, help reduce defensive checks for it. You could use various techniques to ensure properties are not null like setting a default value for the property in the constructor, <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null object pattern</a>, checking for null&rsquo;s when setting property values or modeling the object in a way that optional parameters are not direct properties on the object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Person</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Email</span> <span class="n">email</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Person</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>       <span class="n">Email</span> <span class="p">=</span> <span class="n">Email</span><span class="p">.</span><span class="n">Empty</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Email</span> <span class="n">Email</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">email</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="k">set</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="k">value</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;email cannot be null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">email</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the updated repository code and the property changes, we can rewrite the original code much similar as it was before introducing the defensive checks. The guard clauses at the start of the function, checking for the parameters is still important. Validating for input parameters helps find the problems earlier in the code stack and follows the <a href="https://en.wikipedia.org/wiki/Fail-fast">fail fast</a> pattern. It helps us find exactly where the null was introduced and address the issue faster. The defensive code is at the beginning of the function and can be easily skipped over while reading. If you are not that keen to write this on all functions, you can also write some helper classes which Validates a list of parameters (<a href="https://msdn.microsoft.com/en-au/library/w5zay9db.aspx">params</a>). I prefer the explicit check and used to skipping over them when reading code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{...};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Value Objects and Defensive Coding</h3>
+
+<p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
+
+<p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/quick-launch-in-visual-studio/">Tip of the Week: Quick Launch in Visual Studio</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/avoid-state-mutation/">Avoid State Mutation</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/code-review/">Making Code Reviews Effective</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/stronger-code-contracts/">Make Your Code Contracts Stronger</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/defensive-coding/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/defensive-coding/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/how-i-lost-13-kilos-in-one-and-half-months/" title="Previous Post: How I Lost 13 Kilos in One and Half Months">&laquo; How I Lost 13 Kilos in One and Half Months</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2017 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/defensive-coding/';
+        var disqus_url = 'http://rahulpnath.com/blog/defensive-coding/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

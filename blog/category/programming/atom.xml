@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-06T00:03:06+00:00</updated>
+  <updated>2017-02-07T00:01:43+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Defensive Coding]]></title>
+    <link href="http://rahulpnath.com/blog/defensive-coding/"/>
+    <updated>2017-02-07T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/defensive-coding</id>
+    <content type="html"><![CDATA[<p>Often when writing code or in code review discussions it comes up - &lsquo;<em>Should I be doing a null check here?</em>.&rsquo; and we start off long discussions. Like in most cases, there is no definite answer to this. In this post let us examine some of the pros and cons of having defensive checks and how and when we can avoid it to make the code more readable.</p>
+
+<p><img alt="Defensive Coding" src="/images/defensive_coding.jpg" /></p>
+
+<p>Let&rsquo;s see an example to explore more. The below code aggregated details from different repository classes and returns a combined model. I have kept this simple with just three dependencies.</p>
+
+<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
+{
+    var person = personRepository.GetPerson(personId);
+    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
+    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
+
+    return new PersonDetails() {...};
+}
+</code></pre>
+
+<p>As you see, there are no null checks on any of the values returned from external dependencies. The code expects all calls to be successful with no exceptions - &lsquo;<a href="https://en.wikipedia.org/wiki/Happy_path">happy path</a>&rsquo; scenario.
+The problem is when an error happens; the exception stack trace will look like something below.</p>
+
+<pre><code class="text">Object reference not set to an instance of an object.
+at UserQuery.GetPersonDetails(Guid personId)
+  at UserQuery.Main()
+</code></pre>
+
+<p>We will not be able to tell which of the values was null, making it hard to debug the error. We have to manually go through the code checking how each of the dependencies retrieves values and check which one possibly was null. Debugging takes a lot of time and might be difficult depending on the complexity of the dependencies. The advantage of the above code though is that it is readable and there is <strong><em>noise</em></strong> in the code.</p>
+
+<h3>Extensive Defense</h3>
+
+<p>Let us now modify the above example to see how it would be to add defensive code and check for nulls.</p>
+
+<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
+{
+    if (personId == Guid.Empty)
+        throw new ArgumentNullException(nameof(personId);
+
+    var person = personRepository.GetPerson(personId);
+    if (person == null)
+        throw new Exception("Person is null");
+
+    if (person.Email == null)
+        throw new Exception("Email is null for person " + personId);
+
+    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
+    if (subscriptionPlan == null)
+        throw new Exception("Subscription Plan is null");
+
+    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
+    if (billingSummary == null)
+        throw new Exception("BillingSummary is null");
+
+    return new PersonDetails() { };
+}
+</code></pre>
+
+<p> The defensive checks added for guarding against invalid values makes the code harder to read. Defensive checks are there for incoming parameters as well and validate if they are null/default value (for Guid). However when an error happens the stack trace will mention the name of the property which was null. Debugging is fast and easy and makes the exception message useful. But we don&rsquo;t want our code filled with defensive checks like this.</p>
+
+<h3>Team Conventions and Practices</h3>
+
+<p>Let us dig a bit deeper into why we had to put in the defensive checks in the first place. We had to check for null on <em>person</em> since the repository decided to return a null when it could not find the person given an id. Does it even make sense or add any value in returning a null reference from the repository? Unless the business works in a way that there is a high possibility of something returning null this does not add any value. Even in cases like that, we should revert to other options which we will see in a while. When most of the time we expect a person to exists, it is better for the repository to throw an exception right away that the person does not exist. If the validations and the defensive checks are performed at the boundaries, then we do not need to do a null check anymore when getting a person or any similar functions.</p>
+
+<pre><code class="csharp">public Person GetPerson(Guid personId)
+{
+    if (personId == Guid.Empty)
+        throw new ArgumentNullException(nameof(personId));
+
+    var person = DataContext.Get(personId);
+    if (person == null)
+        throw new UserDoesNotExistsException("Person does not exists with id ", personId);
+
+    return person;
+} 
+</code></pre>
+
+<p>For cases where there are possibilities of a value existing or not you can resort to <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">Stronger Code Contracts</a>. Using the Maybe type to indicate a value might or might not be present is a good way to force defensive checks. Maybe type ensures that any consumer of the code handles the case where the object does not exist. Readability of the code also improves in this case.</p>
+
+<p>If you have noticed in the above code when checking for null&rsquo;s, I checked the Email property for null as well. Setting up team conventions that properties cannot be null, help reduce defensive checks for it. You could use various techniques to ensure properties are not null like setting a default value for the property in the constructor, <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null object pattern</a>, checking for null&rsquo;s when setting property values or modeling the object in a way that optional parameters are not direct properties on the object.</p>
+
+<pre><code class="csharp">public class Person
+{
+    private Email email;
+
+    public Person()
+    {
+       Email = Email.Empty;
+    }
+
+    public Email Email
+    {
+        get { return email; }
+        set
+        {
+            if (value == null)
+                throw new ArgumentNullException("email cannot be null");
+
+            email = value;
+        }
+    }
+}
+</code></pre>
+
+<p>With the updated repository code and the property changes, we can rewrite the original code much similar as it was before introducing the defensive checks. The guard clauses at the start of the function, checking for the parameters is still important. Validating for input parameters helps find the problems earlier in the code stack and follows the <a href="https://en.wikipedia.org/wiki/Fail-fast">fail fast</a> pattern. It helps us find exactly where the null was introduced and address the issue faster. The defensive code is at the beginning of the function and can be easily skipped over while reading. If you are not that keen to write this on all functions, you can also write some helper classes which Validates a list of parameters (<a href="https://msdn.microsoft.com/en-au/library/w5zay9db.aspx">params</a>). I prefer the explicit check and used to skipping over them when reading code.</p>
+
+<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
+{
+   if (personId == Guid.Empty)
+        throw new ArgumentNullException(nameof(personId);
+
+    var person = personRepository.GetPerson(personId);
+    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
+    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
+
+    return new PersonDetails() {...};
+}
+</code></pre>
+
+<h3>Value Objects and Defensive Coding</h3>
+
+<p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
+
+<p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Quick Launch in Visual Studio]]></title>
@@ -334,66 +462,6 @@ config.Do(value =&gt; LoadFromFile(value));
 <p>Modeling concepts in the domain as classes helps you to contain the domain/business constraints in a single place. This prevents the need to have null checks elsewhere in the code. Value objects being immutable helps enforce class invariants.</p>
 
 <p>The above two methods help create a stronger contract in code. As with any conventions, this is useful only when followed by the whole team. Conventions are best followed if enforced through tooling. You can create custom code analysis rules to enforce return type to be of type if any method is returning null. Even if you are introducing this into a large existing code base you can do this incrementally, by starting to enforce them on commits (if you are using git) like when <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing styling into an existing project</a>. What other contracts do you find helpful to make the code more expressive?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Solve the Business Problem, Don't Mimic The Process]]></title>
-    <link href="http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process/"/>
-    <updated>2016-12-06T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process</id>
-    <content type="html"><![CDATA[<p><a href="http://www.dhc-gmbh.com/en/kompetenzen/business-process-management/"><img class="center" alt="Business" src="/images/business_problem_automation.jpg"/></a></p>
-
-<p>While working with clients I often get into conversations with the domain experts and people involved directly with the business. The discussions usually happen around what the process they are currently doing and how to automate those. Knowing the business process is helpful but getting influenced by that to design the solution is often not effective. Recently our team was in a conversation with a domain expert for a new feature request.</p>
-
-<div class="alert alert-warning">
-The series of events mentioned below were modified to fit into the conversational style used in the post.
-</div>
-
-
-<blockquote><p><em><strong>Domain Expert</strong> We need to charge customers a processing fee if they pay using an electronic payment method. Depending on the type of card (mastercard, visa etc) the processing charge percentage differs. The processing fees are always charged in the subsequent billing period after their current payment. For e.g. if a customer pays 1000$ for the month of November, then his December bill will have 2% card processing charge in the December invoice</em></p>
-
-<p><em><strong>Team</strong> That sounds easy, think we have enough details to get started on this. Thank you.</em></p>
-
-<p><em><strong>Domain Expert</strong> Perfect. Ahhh&hellip; Before you go, I think this can be a <a href="http://hangfire.io/">hangfire job</a> that runs on 29 every month, a few days before the billing date, 3rd, and generate these charges for the client. This is what we do manually at present. (And walks off)</em></p>
-
-<p><em><strong>Team</strong> Discussing amongst themselves the team agreed that creating a recurring job is the way to go. Based on the assumption that this job will be run only once a month, the job was to read all the invoices from 29th of the previous month till 28th of the current month and charge the clients. The meeting was dismissed and off went everyone busy to get the new feature out</em></p></blockquote>
-
-<h3>Business has Exceptions</h3>
-
-<p>Problems started coming up the immediate month of feature deployment. Below is the sequence of events that happened.</p>
-
-<ul>
-<li><strong>29th</strong> : Nice work, team! The processing charges have been applied as expected.</li>
-<li><strong>30th</strong> : Some of the invoices have wrong data. We have deleted them. Can you run the job?</li>
-<li><strong>2nd</strong> : A few of our clients (as usual) paid late and we need to charge their processing fees. Can you run the job?</li>
-<li><strong>15th</strong> : One of our clients is ending tomorrow, so we need to send them an invoice and it should include the processing fees for their last payment. Can you run the job?</li>
-</ul>
-
-
-<p>But wait! We had decided that we will run this job only once a month and that is the only time we need to process the charges. We cannot run that job over and over again.</p>
-
-<blockquote><p><em>What I’ve noticed over the years is that our users find very creative ways to achieve their business objectives despite the limitations of the system that they’re working with. We developers ultimately see these as requirements, but they are better interpreted as <strong>workarounds</strong>.</em></p>
-
-<p><strong><em>- <a href="http://udidahan.com/2013/04/28/queries-patterns-and-search-food-for-thought/">Udi Dahan</a></em></strong></p></blockquote>
-
-<p>The business was right when it said that <em>&lsquo;This is what we do manually at present.</em> What they did not say though is that there were always exceptions. And in these cases, they did the same process, but just for those exceptions. Business process mostly will be around the majority of the cases and the exceptions always get handled ad-hoc. So for the business it&rsquo;s always that which takes a good part of their time that matters more.</p>
-
-<h3>Finding the Way Out</h3>
-
-<p>The problem, in this case, was that the team modeled the solution exactly as the business did manually. Think kind of a solution is most likely to fail in case of exceptions. The human brain can easily deal with these exceptions. But for a program to solve it that way it needs to be told so, which implies that there need to be alternate flow paths defined. So with the improved understanding of these exception cases, the team does another analysis through the problem. After some discussion the team re-defines their original problem statement - *We need to be able to run the job any number of times and it should have the same effect.</p>
-
-<blockquote><p><em>A payment should get </em>one and only one<em> processing charge associated, no matter however times it is seen by the job.</em></p></blockquote>
-
-<p>With the new implementation, we decided to maintain a list of payments (a strong identifier that does not change) we have seen and processed. So every time a payment is seen, it is matched to see if it is already processed. If a charge is not already applied, a charge is applied and added to the list of processed payments. This ensures that they can run the job anytime. The team added in capability to specify the time range to look for invoices. By default, this ranged from 29th - 28th. The team also added in a way to void out payment charges applied, so that whenever the invoices changed then can just clear that off and re-run the job. These changes gave the flexibility to meet the businesses exception cases.</p>
-
-<h3>Idempotent</h3>
-
-<blockquote><p><em>The term <a href="http://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">idempotent</a> is used in mathematics to describe a function that produces the same result if it is applied to itself, i.e. f(x) = f(f(x)). In Messaging this concept translates into a message that has the same effect whether it is received once or multiple times. This means that a message can safely be re-sent without causing any problems even if the receiver receives duplicates of the same message.</em></p></blockquote>
-
-<p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
-
-<p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
 ]]></content>
   </entry>
   

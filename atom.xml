@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-06T00:03:06+00:00</updated>
+  <updated>2017-02-07T00:01:43+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,216 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Defensive Coding]]></title>
+    <link href="http://rahulpnath.com/blog/defensive-coding/"/>
+    <updated>2017-02-07T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/defensive-coding</id>
+    <content type="html"><![CDATA[<p>Often when writing code or in code review discussions it comes up - &lsquo;<em>Should I be doing a null check here?</em>.&rsquo; and we start off long discussions. Like in most cases, there is no definite answer to this. In this post let us examine some of the pros and cons of having defensive checks and how and when we can avoid it to make the code more readable.</p>
+
+<p><img alt="Defensive Coding" src="http://rahulpnath.com/images/defensive_coding.jpg" /></p>
+
+<p>Let&rsquo;s see an example to explore more. The below code aggregated details from different repository classes and returns a combined model. I have kept this simple with just three dependencies.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{...};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you see, there are no null checks on any of the values returned from external dependencies. The code expects all calls to be successful with no exceptions - &lsquo;<a href="https://en.wikipedia.org/wiki/Happy_path">happy path</a>&rsquo; scenario.
+The problem is when an error happens; the exception stack trace will look like something below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>Object reference not set to an instance of an object.
+</span><span class='line'>at UserQuery.GetPersonDetails(Guid personId)
+</span><span class='line'>  at UserQuery.Main()
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We will not be able to tell which of the values was null, making it hard to debug the error. We have to manually go through the code checking how each of the dependencies retrieves values and check which one possibly was null. Debugging takes a lot of time and might be difficult depending on the complexity of the dependencies. The advantage of the above code though is that it is readable and there is <strong><em>noise</em></strong> in the code.</p>
+
+<h3>Extensive Defense</h3>
+
+<p>Let us now modify the above example to see how it would be to add defensive code and check for nulls.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Person is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Email is null for person &quot;</span> <span class="p">+</span> <span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">subscriptionPlan</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Subscription Plan is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">billingSummary</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;BillingSummary is null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{</span> <span class="p">};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> The defensive checks added for guarding against invalid values makes the code harder to read. Defensive checks are there for incoming parameters as well and validate if they are null/default value (for Guid). However when an error happens the stack trace will mention the name of the property which was null. Debugging is fast and easy and makes the exception message useful. But we don&rsquo;t want our code filled with defensive checks like this.</p>
+
+<h3>Team Conventions and Practices</h3>
+
+<p>Let us dig a bit deeper into why we had to put in the defensive checks in the first place. We had to check for null on <em>person</em> since the repository decided to return a null when it could not find the person given an id. Does it even make sense or add any value in returning a null reference from the repository? Unless the business works in a way that there is a high possibility of something returning null this does not add any value. Even in cases like that, we should revert to other options which we will see in a while. When most of the time we expect a person to exists, it is better for the repository to throw an exception right away that the person does not exist. If the validations and the defensive checks are performed at the boundaries, then we do not need to do a null check anymore when getting a person or any similar functions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">Person</span> <span class="nf">GetPerson</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">DataContext</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">person</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">UserDoesNotExistsException</span><span class="p">(</span><span class="s">&quot;Person does not exists with id &quot;</span><span class="p">,</span> <span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">person</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For cases where there are possibilities of a value existing or not you can resort to <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">Stronger Code Contracts</a>. Using the Maybe type to indicate a value might or might not be present is a good way to force defensive checks. Maybe type ensures that any consumer of the code handles the case where the object does not exist. Readability of the code also improves in this case.</p>
+
+<p>If you have noticed in the above code when checking for null&rsquo;s, I checked the Email property for null as well. Setting up team conventions that properties cannot be null, help reduce defensive checks for it. You could use various techniques to ensure properties are not null like setting a default value for the property in the constructor, <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null object pattern</a>, checking for null&rsquo;s when setting property values or modeling the object in a way that optional parameters are not direct properties on the object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Person</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Email</span> <span class="n">email</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Person</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>       <span class="n">Email</span> <span class="p">=</span> <span class="n">Email</span><span class="p">.</span><span class="n">Empty</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Email</span> <span class="n">Email</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">email</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="k">set</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="k">value</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;email cannot be null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">email</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the updated repository code and the property changes, we can rewrite the original code much similar as it was before introducing the defensive checks. The guard clauses at the start of the function, checking for the parameters is still important. Validating for input parameters helps find the problems earlier in the code stack and follows the <a href="https://en.wikipedia.org/wiki/Fail-fast">fail fast</a> pattern. It helps us find exactly where the null was introduced and address the issue faster. The defensive code is at the beginning of the function and can be easily skipped over while reading. If you are not that keen to write this on all functions, you can also write some helper classes which Validates a list of parameters (<a href="https://msdn.microsoft.com/en-au/library/w5zay9db.aspx">params</a>). I prefer the explicit check and used to skipping over them when reading code.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">PersonDetails</span> <span class="nf">GetPersonDetails</span><span class="p">(</span><span class="n">Guid</span> <span class="n">personId</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="k">if</span> <span class="p">(</span><span class="n">personId</span> <span class="p">==</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Empty</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="n">personRepository</span><span class="p">.</span><span class="n">GetPerson</span><span class="p">(</span><span class="n">personId</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">subscriptionPlan</span> <span class="p">=</span> <span class="n">subscriptionRepository</span><span class="p">.</span><span class="n">GetSubscriptionForPerson</span><span class="p">(</span><span class="n">person</span><span class="p">.</span><span class="n">Email</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">billingSummary</span> <span class="p">=</span> <span class="n">billingRepository</span><span class="p">.</span><span class="n">GetSummary</span><span class="p">(</span><span class="n">subscriptionPlan</span><span class="p">.</span><span class="n">Id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">PersonDetails</span><span class="p">()</span> <span class="p">{...};</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Value Objects and Defensive Coding</h3>
+
+<p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
+
+<p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[How I Lost 13 Kilos in One and Half Months]]></title>
@@ -1493,65 +1703,6 @@ The series of events mentioned below were modified to fit into the conversationa
 <p><img  alt="Access Policy set Secret Permissions" src="http://rahulpnath.com/images/keyvaultportal_keyvault.png"/></p>
 
 <p>The Azure Portal experience of Key Vault is good. It covers most of the functionalities needed when using a Key Vault. How do you find the new UI experience?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Maintaining a Blogging Schedule]]></title>
-    <link href="http://rahulpnath.com/blog/maintaining-a-blogging-schedule/"/>
-    <updated>2016-10-24T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/maintaining-a-blogging-schedule</id>
-    <content type="html"><![CDATA[<p>Consistency is important in blogging. It does not matter if you are bad at writing, have nothing to write or nobody reads your blog. What matters is whether you write on a predictable schedule - once a month, once a week, once a year, one per day etc. If you do not have a schedule you are more likely to fall off from sticking to blogging. I had <a href="http://www.rahulpnath.com/blog/own-your-urls/">written before</a>, I always struggled to write regularly. But since the start of this year, I have been blogging to a schedule (once a week) and have been successful with that. This post looks into some of the challenges that I faced and things that I have incorporated to stick to a schedule.</p>
-
-<p><a href="https://www.flickr.com/photos/12389767@N04/3097124543/">
-<img  alt="Make writing a habit - write daily" src="http://rahulpnath.com/images/bloggingSchedule_writedaily.jpg"/>
-</a></p>
-
-<h3>Make Writing a Habit</h3>
-
-<p>Writing posts was hard and I always procrastinated on it. It often took me more than a week to complete a post. There&rsquo;s a saying, <strong><em>If it hurts, do it more often</em></strong> - So to make writing easy I had to write more often.</p>
-
-<blockquote><p><em>I write only when inspiration strikes. Fortunately it strikes every morning at nine o&#8217;clock sharp.</em></p>
-
-<p><em>- <a href="http://www.goodreads.com/quotes/302963-i-write-only-when-inspiration-strikes-fortunately-it-strikes-every">Somerset Maugham</a></em></p></blockquote>
-
-<h4><strong>Generating Topics</strong></h4>
-
-<p>Till a year back I struggled to find topics to blog. I did not find any &lsquo;cool thing&rsquo; that was worth blogging. Not much has changed even now on doing &lsquo;cool things&rsquo;. The only thing that changed was that I decided to write every day - no matter what I do or don&rsquo;t do.</p>
-
-<blockquote><p><em>I have always struggled to find topics to blog, but then I realized all I need is to pay attention to things that I do daily</em></p></blockquote>
-
-<p>A year back I asked <a href="https://simpleprogrammer.com/about-simple-programmer/">John Somnez from SimpleProgrammer</a> the same question.</p>
-
-<p><img  alt="email to John Somnez (SimpleProgrammer) on finding a blogging schedule" src="http://rahulpnath.com/images/bloggingSchedule_john_email.png"/></p>
-
-<p>Though I did not get a reply from John, it kept me thinking. Late last year I started a Daily challenge of &lsquo;<em>Generating at least one blog topic a day</em>&rsquo; for a month. I did not have to write anything, just find a topic to blog and add it to a OneNote list. I did this for a month and found that I had enough topics to write on. Since the challenge did not have anything to do with writing, I did not restrict my thoughts. This is when I realized that it is not the lack of topics that I don&rsquo;t blog, but the fear of writing. That&rsquo;s when I started the &lsquo;Write Everyday&rsquo; daily challenge.</p>
-
-<h4><strong>Write Everyday</strong></h4>
-
-<p>This is one of the most important things that I found to be able to write posts regularly - <strong>Write Everyday</strong>. Yes every day, no matter what happens, I write at least one line towards a post. Since the goal is to <em>Write just one line for a blog post</em>, I hardly miss this goal. <a href="http://www.rahulpnath.com/blog/morning_routine/">Keeping the goal small and simple</a> is a trick that I picked from the book Mini Habits and find it useful. You can follow this for anything that you want to make a habit.</p>
-
-<h4><strong>Make it Visible</strong></h4>
-
-<p>Seeing something progressing to completion helps me to get it done faster. I used to write elsewhere and then copy it to my blog and publish it. This did not give me a sense of progression. I now have a <a href="http://rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">draft post workflow</a>, integrated with my blogging platform. I can preview this blog along with the draft posts on my laptop. This helps give a sense of progression and also makes the end goal visible.</p>
-
-<blockquote><p><em>Making your goal clear and visible helps you achieve it faster</em></p></blockquote>
-
-<p>I also use this to keep track of new post ideas. Whenever I find a topic to blog, I add it as a draft. I add bullet points to the post whenever I get more thoughts on that topic. Once there are enough points to write about, I work on that post.</p>
-
-<h3>Make Blogging All About Writing</h3>
-
-<p>The last thing that I want is to get stuck with mundane repetitive tasks of publishing a post to get in the way of writing. The more regular I became in writing, I started noticing a lot of repetitive tasks in my blogging workflow. When you do any activity repetitively you notice tasks that you do over and over again. I started modifying my blog engine for my needs and to reduce manual effort.</p>
-
-<h4><strong>Write in Advance</strong></h4>
-
-<p>Having posts ready to be published is helpful as it gives the flexibility to slack a bit when in need. It&rsquo;s a great feeling to have blog posts ready to be published (right now I have posts ready for a month). I modified my blogging engine to support <a href="http://rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress">publishing posts on future dates</a>. This helps me set publishing dates in the future for posts and it gets automatically deployed on the day. Automating the publishing helped make blogging more about writing. I can forget about it as soon as I complete a post by specifying the date I want it to be published and be rest assured that it will get published.</p>
-
-<h4><strong>Make Writing Accessible</strong></h4>
-
-<p>You never know when you have that free time and want to blog. Maybe it&rsquo;s while traveling, or waiting in a queue or at your work desk. You might be <a href="http://rahulpnath.com/blog/staying-productive-offline">offline or connected</a> Making it possible to write from irrespective of the kind of device (laptop, mobile, tablet) and connectivity was key for me. I have my draft posts synchronized through Dropbox and available on all my devices. This helps use all the pockets of time that I get for myself.</p>
-
-<p>These are the things that have helped me pick a schedule and follow it. I have been successful in publishing one post per week for the past 10 months and want to keep at it going forward. Now that I am able to publish regularly, I want to improve the speed at which I write posts. Though I reduced the time from over a week to days, I still find this too long and want to reduce it to a day. Modifying the way images are added, optimized and served is also something that I am trying to optimize currently. Do you <a href="http://www.rahulpnath.com/blog/own-your-urls/">have a blog</a>? If not start one and stick to a schedule that works for you!</p>
 ]]></content>
   </entry>
   

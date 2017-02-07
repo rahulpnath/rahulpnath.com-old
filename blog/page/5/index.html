@@ -163,6 +163,226 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-25T06:23:39+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 25<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/managing-azure-key-vault-over-the-rest-api/" itemprop="url">Managing Azure Key Vault over the REST API</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Creating and managing Azure Key Vault was mostly supported through PowerShell cmdlets <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">initially</a>, but there are multiple ways of achieving this now - REST API, <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">PowerShell</a>, CLI or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vaults-using-azure-resource-manager-arm-templates/">ARM templates</a>. In this post, we will look into how we can use the REST API to create and manage a Key Vault.</p>
+
+<h3>Azure Resource Manager API</h3>
+
+<p>The <a href="https://msdn.microsoft.com/en-AU/library/azure/dn790568.aspx">Azure Resource Manager API</a> provides programmatic access to manage Azure services that support <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/">Resource Manager</a>. Since Key Vault supports Resource Manager, we will be using it. Any requests to the API must be authenticated and can be done using an Azure AD application. Most of the steps to create an AD application are same as we saw when creating an AD application to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticate a Client Application with Azure Key Vault</a>. From the &lsquo;<em>permissions to other applications</em>&rsquo; tab in portal (as shown below), we can give the application access to Management API&rsquo;s.</p>
+
+<p>To get the token to access the Management API resource (<em><a href="https://management.azure.com">https://management.azure.com</a> </em>), I use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory">ADAL library</a> with the required data. All the information that needs to be passed to the ADAL library is available under the AD application in the azure portal (as shown below).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">token</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetAccessToken</span><span class="p">(</span>
+</span><span class='line'>                <span class="s">&quot;https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&quot;https://management.azure.com/&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+</span><span class='line'> <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">GetAccessToken</span><span class="p">(</span><span class="kt">string</span> <span class="n">authority</span><span class="p">,</span> <span class="kt">string</span> <span class="n">resource</span><span class="p">,</span> <span class="kt">string</span> <span class="n">scope</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">APPLICATION_ID</span><span class="p">,</span> <span class="n">APPLICATION_SECRET</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">)).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>Earlier authentication requests were served from <a href="https://login.windows.net">https://login.windows.net</a> (authority URL) which is <a href="https://blogs.technet.microsoft.com/ad/2015/03/06/simplifying-our-azure-ad-authentication-flows/">now updated</a> to <a href="https://login.microsoftonline.com">https://login.microsoftonline.com</a> .</em></p></blockquote>
+
+<p><img src="/images\service_management_adAccess.png" class="center" alt="AD Application access to Azure Service Management API"></p>
+
+<h3>Key Vault Management Client</h3>
+
+<p>The <a href="https://www.nuget.org/packages/Microsoft.Azure.Management.KeyVault/">Microsoft.Azure.Management.KeyVault</a> NuGet package, provides capabilities to connect to the Management API&rsquo;s and manage the Vaults. With the NuGet reference added I can use the <em><a href="https://github.com/Azure/azure-sdk-for-net/blob/master/src/ResourceManagement/KeyVaultManagement/KeyVaultManagement/Generated/KeyVaultManagementClient.cs">KeyVaultManagementClient</a></em>.</p>
+
+<blockquote><p><em>Much of the SDK code is generated  using <a href="https://github.com/azure/autorest">Autorest</a>, from the REST API&rsquo;s metadata spec&rsquo;s in Swagger format.</em></p></blockquote>
+
+<p>With the Azure Subscription Id and the token from the previous step a TokenCloudCredentials is created that is used to connect the Key Vault Management Client.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">token</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetAccessToken</span><span class="p">(</span>
+</span><span class='line'>    <span class="s">&quot;https://login.microsoftonline.com/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s">&quot;https://management.azure.com/&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">tokenCredentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">TokenCloudCredentials</span><span class="p">(</span><span class="n">SUBSCRIPTION_ID</span><span class="p">,</span> <span class="n">token</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">keyVaultManagementClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultManagementClient</span><span class="p">(</span><span class="n">tokenCredentials</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Key Vaults exists under a Resource Group and for it to be accessible using the AD application authenticated token, we need to grant permission to the application. Just like we managed <a href="http://www.rahulpnath.com/blog/managing-user-permissions-for-key-vault/">User Permissions for Key Vault</a> we can give the AD application access to the Resource Group. We can do this from the new portal (as shown in the other post) or using the <em>New-AzureRmRoleAssignment</em> PowerShell cmdlet. <em>Get-AzureRmADServicePrincipal</em> is used o get the ObjectId of an existing application passing the application name as SearchString. I have yet not found a better way to find the application ObjectId. Please drop a comment if you know of any.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureRmADServicePrincipal</span>  <span class="n">-SearchString</span> <span class="s1">&#39;AD Application Name&#39;</span>
+</span><span class='line'><span class="nb">New-AzureRmRoleAssignment</span> <span class="n">-ObjectId</span> <span class="p">&lt;</span><span class="n">AD</span> <span class="n">Application</span> <span class="n">Object</span> <span class="n">Id</span><span class="p">&gt;</span>
+</span><span class='line'>     <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h3>Creating New Key Vault</h3>
+
+<p>We have all the required permissions setup, to create a key vault using the KeyVaultManagament client library. Using this is straightforward as shown below.
+The <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#sku">Sku</a></em> is used to specify <a href="https://azure.microsoft.com/en-us/pricing/details/key-vault/">Key vault service tier</a> - &lsquo;Standard&rsquo; or &lsquo;Premium&rsquo;. For HSM backed keys it is Premium. Family on Sku object takes in a hardcoded value of &lsquo;A&rsquo;. <em><a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspolicies-object">AccessPolicies</a></em> specify the AD object identifier of user or application that can access the vault. In this case, I am adding the current AD application with full (<a href="https://github.com/Azure/azure-content/blob/master/articles/resource-manager-template-keyvault.md#propertiesaccesspoliciespermissions-object"><em>all</em></a>) access to Keys and Secrets. Adding an access policy in same as using the <a href="https://msdn.microsoft.com/en-us/library/mt603625.aspx"><em>Set-AzureRmKeyVaultAccessPolicy</em></a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">parameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultCreateOrUpdateParameters</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Location</span> <span class="p">=</span> <span class="s">&quot;southeast asia&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Properties</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultProperties</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Sku</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Sku</span> <span class="p">{</span> <span class="n">Family</span> <span class="p">=</span> <span class="s">&quot;A&quot;</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Standard&quot;</span> <span class="p">},</span>
+</span><span class='line'>        <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>        <span class="n">AccessPolicies</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">AccessPolicyEntry</span><span class="p">&gt;()</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">new</span> <span class="n">AccessPolicyEntry</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>                        <span class="n">ObjectId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">AD_OBJECT_ID</span><span class="p">),</span>
+</span><span class='line'>                        <span class="n">PermissionsToKeys</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;all&quot;</span> <span class="p">},</span>
+</span><span class='line'>                        <span class="n">PermissionsToSecrets</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;all&quot;</span> <span class="p">}</span>
+</span><span class='line'>                    <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">vaultFromCode</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">CreateOrUpdateAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Managing Existing Key Vaults</h3>
+
+<p><strong>Update a Key Vault</strong></p>
+
+<p>When updating an existing Key Vault, the full state (<em>VaultCreateOrUpdateParameters</em>) must be passed back and not just the update. To add a new <em>AccessPolicyEntry</em>, the existing policy entry values must also be passed back. In the code below, I get the existing state of the Key Vault using the <em>Get</em> and use the current vault properties to add in the new AccessPolicyEntry.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyVault</span> <span class="p">=</span> <span class="p">(</span><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span>
+</span><span class='line'>   <span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">)).</span><span class="n">Vault</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span> <span class="p">=</span> <span class="k">new</span> <span class="n">VaultCreateOrUpdateParameters</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Location</span> <span class="p">=</span> <span class="n">keyVault</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Properties</span> <span class="p">=</span> <span class="n">keyVault</span><span class="p">.</span><span class="n">Properties</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">parameters</span><span class="p">.</span><span class="n">Properties</span><span class="p">.</span><span class="n">AccessPolicies</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="k">new</span> <span class="n">AccessPolicyEntry</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>       <span class="n">TenantId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">TENANT_ID</span><span class="p">),</span>
+</span><span class='line'>       <span class="n">ObjectId</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="s">&quot;AD Object IDentifier&quot;</span><span class="p">),</span>
+</span><span class='line'>       <span class="n">PermissionsToKeys</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;get&quot;</span> <span class="p">},</span>
+</span><span class='line'>       <span class="n">PermissionsToSecrets</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;get&quot;</span> <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'>            <span class="p">);</span>
+</span><span class='line'><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span><span class="p">.</span><span class="n">CreateOrUpdateAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>Delete a Key Vault</strong></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">await</span> <span class="n">keyVaultManagementClient</span><span class="p">.</span><span class="n">Vaults</span><span class="p">.</span><span class="n">DeleteAsync</span><span class="p">(</span><span class="s">&quot;SharedGroup&quot;</span><span class="p">,</span> <span class="s">&quot;VaultFromCode&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you manage Azure Key Vault using the REST API.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-18T12:38:24+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 18<sup>th</sup>, 2016</time>
         
 
@@ -1777,262 +1997,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-25T06:41:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 25<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/being-explicit-about-time-when-handling-multiple-timezone/" itemprop="url">Being Explicit About Time when Handling Multiple Timezone</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This article is to put my thoughts together on a possible solution. Challenges of real world implementation are yet to be discovered.</em></p>
-
-<p>Handling date/time in application&rsquo;s that affect different time zones is tricky! The general recommendation is that all dates be saved in UTC time and convert them as required. This works well if developers make sure of converting all dates to UTC at application boundaries and keep it consistent throughout the application.</p>
-
-<p><a href="https://unsplash.com/photos/yBzrPGLjMQw" class="center" title="Image By Heather Zabriskie , from https://unsplash.com/photos/yBzrPGLjMQw"><img src="/images\timezone.jpg" class="center" alt="Timezone"></a></p>
-
-<p>At one of my clients, we are facing similar issues with date time, with an application that deals with different <a href="https://en.wikipedia.org/wiki/Time_zone">time zones</a>. The client sells office spaces across the globe and the application is for their employees to manage their clients. It integrates with various back-end systems and provides a single point of access for everything, aggregating data across those different  systems and itself. Some of the backend systems are in different locations and deal with times local to them. This increases the challenge when sending and retrieving data from them. The application has defined a set of locations, identified by, three-letter codes (<em>SYD, TRV, SEA</em>), and these locations fall under different time zones. Office spaces are at these locations and the application allows to manage those from anywhere.</p>
-
-<p>Across the domain, we use either <a href="https://msdn.microsoft.com/en-us/library/system.datetime(v=vs.110).aspx">DateTime</a> or <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset(v=vs.110).aspx">DateTimeOffset</a> to represent time - there is a good recommendation on when to use what - <a href="https://msdn.microsoft.com/en-us/library/bb384267(v=vs.110).aspx">Choosing Between DateTime, DateTimeOffset, TimeSpan, and TimeZoneInfo</a>. The problem with using either is that it does not play well with the domain concept to where time is related to - the location. We do have property name suffixes (not consistent though) indicating whether it is Coordinated Universal Time (UTC) or local - like <em>bookingDateUTC</em>, <em>paymentDateLocal</em> etc. But it so happens that these naming conventions gets broken somewhere along the different layers and leads to conversion between time zone at the application boundary layers.</p>
-
-<h3>Issues with Current Approach</h3>
-
-<p>DateTime and DateTimeOffset have by default time zones attached to it and it might go unnoticed till we face issues.</p>
-
-<ul>
-<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetime.kind(v=vs.110).aspx">Kind</a> property on DateTime indicates whether the time represents a <a href="https://msdn.microsoft.com/en-us/library/shx7s921(v=vs.110).aspx">local time, UTC or neither</a>.</li>
-<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset.offset(v=vs.110).aspx">Offset</a> property on DateTimeOffset indicates the time&rsquo;s offset from UTC</li>
-</ul>
-
-
-<p>A common scenario in the current application is user selects a date time in the UI using a date picker, which gets send to the server as a string. This value flows through the entire system and is used to populate external systems. The problem here is that the time zone of the date time is not clear. The developer might treat this as UTC time, system local time or even time local to the location in context. This gives different results to the end user and puts the system in an inconsistent state.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">GetAvailability</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTime</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>   <span class="c1">// Code to Get as on date</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Even worse this date time might get converted back and forth to different time zones, even by the same developer or other developers in the team. These conversions implicitly depend on the Kind property and goes unnoticed. One of the most common problems that we see as a result of this is that the dates might fall over to a day before or after or after, depending on where in the world the user, the server running the application is.</p>
-
-<h3>Being Explicit Using Value Objects</h3>
-
-<blockquote><p><em>The issue in dealing with time is about not being explicit. It&rsquo;s a good idea to tie your domain concept (location in this case) and time together</em></p></blockquote>
-
-<p>Since time is always tied to a location (<em>SYD, TRV, SEA</em>) it&rsquo;s better to keep these together. Though DateTimeOffset and DateTime already has a timezone information attached it does not fit well into the domain, it makes more sense to have a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> encapsulating time and location. Timezone by itself is less likely to fit into a domain unless time zones are a domain concept. Most likely the domain would be dealing with a location, place, airport, station etc which falls under a timezone. So it&rsquo;s a good idea to tie your domain concept and the time together. Only for the creation of the Value Object, we need the location after which it is the date time it represents that is relevant. But if by default you want to get back the date time for the same location it was created for, then location can be saved along with the Value Object. In our case, we always want to show the time at the location, so I am keeping it in the Value Object.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationDateTime</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">Location</span> <span class="n">Location</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">DateTimeInUTC</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="n">DateTimeAtLocation</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateTimeUTC</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Utc</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;Date Time not in UTC&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">Location</span> <span class="p">=</span> <span class="n">location</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">DateTimeInUTC</span> <span class="p">=</span> <span class="n">dateTimeUTC</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">DateTimeAtLocation</span> <span class="p">=</span> <span class="n">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">AtLocation</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">locationDateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">locationDateTime</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Unspecified</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;DateTimeKind should be unspecified&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">utcTime</span> <span class="p">=</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTimeToUtc</span><span class="p">(</span><span class="n">locationDateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">utcTime</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="nf">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTime</span><span class="p">((</span><span class="n">DateTimeOffset</span><span class="p">)</span><span class="n">DateTimeInUTC</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">objAsLocationDateTime</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="n">LocationDateTime</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="n">Object</span><span class="p">)</span><span class="n">objAsLocationDateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="n">objAsLocationDateTime</span><span class="p">.</span><span class="n">DateTimeInUTC</span> <span class="p">==</span> <span class="n">DateTimeInUTC</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">DateTimeInUTC</span><span class="p">.</span><span class="n">GetHashCode</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Value Object mandates that all date time gets tracked as UTC and allows conversion to time at different locations. The public constructor enforces this by checking the Kind property on DateTime.</p>
-
-<blockquote><p><em>The Value Object Equality is only on the UTC time it represents</em></p></blockquote>
-
-<p><a href="https://github.com/rahulpnath/Blog/blob/master/ExplicitAboutDateTime/ExplicitAboutDateTime/Location.cs">Location</a> is another Value Object, that encapsulates the code, name and the time zone it belongs to. There is a factory method that allows the creation of the value object at a location, which assumes any passed in DateTime as the time at location, and mandates the Kind property is Unspecified. You could update this to accept UTC/Local time depending on the passed in location&rsquo;s time zone, checking if both fall under the same time zone. You can also create an implicit operator to cast to DateTime or DateTimeOffset values and have it return the desired date time value that you want.</p>
-
-<p>All occurrences of datetime in model classes can now be replaced with custom datetime value object. This makes creating a date explicit and mandates developers to make a decision on the location of datetime.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTimeAtLocation</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">location</span> <span class="p">=</span> <span class="n">GetLocation</span><span class="p">(</span><span class="n">locationCode</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTimeAtLocation</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Code to Get as on date</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Even with the above code, you cannot restrict what gets passed into the API/application boundary method, but this has made it explicit to the application on how to start treating the date time. This forces the developer to think and be explicit on the time format expected at the boundary. This might lead to better naming of the variables at the boundary - instead of <em>dateTime</em> to <em>dateTimeAtLocation</em> - and being more explicit to the outside world too!</p>
-
-<h3>Custom Factories Using Extension Method</h3>
-
-<p>Depending on the use case there will be a lot of ways you want to create the value object and possibility of some being used over and over again is more. You can use factory methods to help you extract out this code duplication.</p>
-
-<p>As <a href="https://twitter.com/unclebobmartin">Uncle Bob</a> points out in <a href="http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">Agile Principles, Patterns, and Practices in C#</a>, interfaces should be closer to the client. <a href="http://blog.ploeh.dk/2014/12/24/placement-of-abstract-factories/">Factories are nothing but an interface</a>, so it should be defined closer to where it&rsquo;s consumed. Creating a LocationDateTime is always tied to a DateTime object. Using <a href="https://msdn.microsoft.com/en-AU/library/bb383977.aspx">Extension Methods</a> in C#, I have defined an extension on DateTime to create a LocationDateTime object.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">ToLocationDateTime</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">dateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">dateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now creating a LocationDateTime from a DateTime is easy. Similarly, extension methods can be defined on Location, LocationDateTime to provide custom capabilities as required by the consuming clients.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">dateTimeAtLocation</span><span class="p">.</span><span class="n">ToLocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>By using a Value Object to represent the DateTime within the application enforces developers to be more explicit on the date time at the boundaries, results in better naming of the variables at boundaries, ensures that it remains the same within the application. You can also override some of the most commonly used operators with DateTime like greater than, less than, equal to, so that it seamlessly fits into the application.</p>
-
-<p>Hoping this will work well in the application too, let me get on to fix it!</p>
-
-<p><em>Will update this post with more real life experiences once implemented!</em></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2056,6 +2020,8 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/defensive-coding/">Defensive Coding</a>
+    
     <a class="list-group-item " href="/blog/how-i-lost-13-kilos-in-one-and-half-months/">How I Lost 13 Kilos in One and Half Months</a>
     
     <a class="list-group-item " href="/blog/quick-launch-in-visual-studio/">Tip of the Week: Quick Launch in Visual Studio</a>
@@ -2063,8 +2029,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
     <a class="list-group-item " href="/blog/avoid-state-mutation/">Avoid State Mutation</a>
     
     <a class="list-group-item " href="/blog/cmder-portable-console-emulator-for-windows/">Tip of the Week: Cmder - Portable Console Emulator for Windows</a>
-    
-    <a class="list-group-item " href="/blog/recording-my-first-screencast/">Recording My First Screencast</a>
     
   </div>
 </section>
