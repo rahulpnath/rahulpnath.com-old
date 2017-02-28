@@ -15,6 +15,8 @@ primaryImage:
 
 First off I would like to thank you all who made for the talk on [Azure Key Vault at Alt.Net Sydney](https://www.meetup.com/Sydney-Alt-Net/events/236864792/). I enjoyed giving the session and hope you liked it as well.
 
+<img alt="Azure Key Vault session, Alt.Net Sydney - Pic by Richard Banks" src="{{site.images_root}}/altnet_sydney_azurekeyvault.jpg" />
+
 As a follow up to the talk, I thought of putting up a list of resources that will help you jump start with Azure Key Vault. 
 
 - If you don't have an Azure Subscription yet, get a [free Azure account with $200 credit](https://azure.microsoft.com/en-us/free/) or join the [Visual Studio Dev Essentials](https://www.visualstudio.com/dev-essentials/) to get monthly Azure credits and a lot more.
