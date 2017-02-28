@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-28T00:03:40+00:00</updated>
+  <updated>2017-02-28T08:34:50+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,32 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault Talk at Sydney Alt.Net]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-talk-at-sydney-alt-dot-net/"/>
+    <updated>2017-02-28T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-talk-at-sydney-alt-dot-net</id>
+    <content type="html"><![CDATA[<p>First off I would like to thank you all who made for the talk on <a href="https://www.meetup.com/Sydney-Alt-Net/events/236864792/">Azure Key Vault at Alt.Net Sydney</a>. I enjoyed giving the session and hope you liked it as well.</p>
+
+<p>As a follow up to the talk, I thought of putting up a list of resources that will help you jump start with Azure Key Vault.</p>
+
+<ul>
+<li>If you don&rsquo;t have an Azure Subscription yet, get a <a href="https://azure.microsoft.com/en-us/free/">free Azure account with $200 credit</a> or join the <a href="https://www.visualstudio.com/dev-essentials/">Visual Studio Dev Essentials</a> to get monthly Azure credits and a lot more.</li>
+<li>The official documentation for Azure Key Vault is <a href="https://docs.microsoft.com/en-au/azure/key-vault/">available here</a></li>
+<li>For a high-level overview and how to quickly get started with Key Vault, check out my <a href="https://msdn.microsoft.com/en-us/magazine/mt422585.aspx">MSDN Article</a>.</li>
+<li>Check out various aspects of Key Vault, Authentication, using from ARM templates, etc. <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">on this blog</a>.</li>
+<li><a href="https://azure.microsoft.com/en-us/resources/templates/?term=%22key+vault%22">Azure Resource Manager (ARM) Quickstart templates</a> for Azure Key Vault. Check out more about <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">Key Vault ARM templates</a>.</li>
+<li><a href="https://github.com/elize1979/AzureKeyVaultExplorer">Azure Key Vault Explorer</a> is an open source Windows standalone tool to manage secrets.</li>
+<li><a href="https://www.youtube.com/watch?v=5p2dQdTsUvE">TechEd talk</a> on Azure Key Vault by the Program Manager</li>
+<li><a href="https://www.youtube.com/user/rahulnathp/videos?sort=dd&amp;shelf_id=0&amp;view=0">Videos</a> on Key Vault</li>
+<li>Get the <a href="https://www.slideshare.net/rahulpnath/azure-key-vault">powerpoint presentation</a></li>
+</ul>
+
+
+<p>Thank you again for attending the talk. For any queries feel free to reach out to the <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/home?forum=AzureKeyVault">Azure Key Vault MSDN forum</a> or me. Hope this helps you to jump start on using Key Vault in applications you are building currently.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Todoist: Manage your To-Do List]]></title>
@@ -1328,235 +1354,6 @@ The series of events mentioned below were modified to fit into the conversationa
 <p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
 
 <p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Expiry Notification for Azure Key Vault Keys and Secrets]]></title>
-    <link href="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/"/>
-    <updated>2016-12-01T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets</id>
-    <content type="html"><![CDATA[<p>I came across this <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/90d4b814-f025-42a0-acac-b8c8bf9d8cf8/alert-or-event-on-secret-expiry?forum=AzureKeyVault">question</a> in Azure Key Vault forums looking for options to get notified when Key or Secrets in vault nears expiry. It&rsquo;s useful to know when Object&rsquo;s (Keys/Secrets) near expiry, to take necessary action. I decided to explore on my proposed solution of having a scheduled custom PowerShell script to notify when a key is about to expire. In this post, we will see how to get all objects nearing expiry and scheduling this using Azure Runbook to run daily.</p>
-
-<h3>Getting Expiring Objects</h3>
-
-<p>Both Keys and Secrets can be set with an Expiry date. The expiry date can be set when creating the Object or can be set on an existing Object. This can be set from the UI or using PowerShell scripts (setting the <a href="https://msdn.microsoft.com/en-us/library/dn868045.aspx">-Expires attribute</a>).</p>
-
-<p><img class="center" alt="Azure Key Vault - Set Key Expiry" src="http://rahulpnath.com/images/vaultexpiry_key.png"/></p>
-
-<p>Key Vault (at the time of writing) throws an <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/c0d8953a-c117-4ca4-ad3d-e5d2b1868f9e/get-operation-not-permitted-for-some-of-the-secret-in-my-vault?forum=AzureKeyVault">exception</a> when an expired key is accessed over the API. Also, it does not provide any notification whenever a key/secret is about to expire. The last thing you want is your application go down because of an expired object in the vault. With the Get and List access on the vault, we can retrieve all the keys and secrets in the vault and loop through the elements to see objects that are nearing expiry.</p>
-
-<p>The PowerShell script takes the Vault Name, number of days before with alert should be raised and flags to indicate whether all versions of keys/secrets should be checked for expiry. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$VaultName</span> <span class="p">=</span> <span class="s1">&#39;&#39;</span>
-</span><span class='line'><span class="nv">$IncludeAllKeyVersions</span> <span class="p">=</span> <span class="nv">$true</span>
-</span><span class='line'><span class="nv">$IncludeAllSecretVersions</span> <span class="p">=</span> <span class="nv">$true</span>
-</span><span class='line'><span class="nv">$AlertBeforeDays</span> <span class="p">=</span> <span class="n">3</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>All keys and secrets are converted into a common object model, which contains just the Identifier, Name, Version and the Expiry Date if it has one.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Function</span> <span class="nb">New-KeyVaultObject</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">param</span>
-</span><span class='line'>    <span class="p">(</span>
-</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Id</span><span class="p">,</span>
-</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Name</span><span class="p">,</span>
-</span><span class='line'>        <span class="no">[string]</span><span class="nv">$Version</span><span class="p">,</span>
-</span><span class='line'>        <span class="no">[System.Nullable[DateTime]]</span><span class="nv">$Expires</span>
-</span><span class='line'>    <span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nv">$server</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">PSObject</span>
-</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Id</span> <span class="n">-Value</span> <span class="nv">$Id</span>
-</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Name</span> <span class="n">-Value</span> <span class="nv">$Name</span>
-</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Version</span> <span class="n">-Value</span> <span class="nv">$Version</span>
-</span><span class='line'>    <span class="nv">$server</span> <span class="p">|</span> <span class="nb">Add-Member</span> <span class="n">-MemberType</span> <span class="n">NoteProperty</span> <span class="n">-Name</span> <span class="n">Expires</span> <span class="n">-Value</span> <span class="nv">$Expires</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="nv">$server</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Depending on the flag set for retrieving all key/secret version, it fetches objects from the vault and returns in the common object model above.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectKeys</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">param</span>
-</span><span class='line'>  <span class="p">(</span>
-</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
-</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
-</span><span class='line'>  <span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
-</span><span class='line'>  <span class="nv">$allKeys</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
-</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allKeys</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
-</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span>
-</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$key</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
-</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
-</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
-</span><span class='line'>     <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$key</span><span class="p">.</span><span class="n">Expires</span>
-</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">function</span> <span class="nb">Get-AzureKeyVaultObjectSecrets</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">param</span>
-</span><span class='line'>  <span class="p">(</span>
-</span><span class='line'>   <span class="no">[string]</span><span class="nv">$VaultName</span><span class="p">,</span>
-</span><span class='line'>   <span class="no">[bool]</span><span class="nv">$IncludeAllVersions</span>
-</span><span class='line'>  <span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nv">$vaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
-</span><span class='line'>  <span class="nv">$allSecrets</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span>
-</span><span class='line'>  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecrets</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span><span class="p">(</span><span class="nv">$IncludeAllVersions</span><span class="p">){</span>
-</span><span class='line'>     <span class="nv">$allSecretVersion</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeVersions</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span>
-</span><span class='line'>     <span class="k">foreach</span><span class="p">(</span><span class="nv">$secret</span> <span class="k">in</span> <span class="nv">$allSecretVersion</span><span class="p">){</span>
-</span><span class='line'>         <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
-</span><span class='line'>         <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
-</span><span class='line'>     <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-</span><span class='line'>      <span class="nv">$vaultObject</span> <span class="p">=</span> <span class="nb">New-KeyVaultObject</span> <span class="n">-Id</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Id</span> <span class="n">-Name</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Name</span> <span class="n">-Version</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Version</span> <span class="n">-Expires</span> <span class="nv">$secret</span><span class="p">.</span><span class="n">Expires</span>
-</span><span class='line'>      <span class="nv">$vaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">return</span> <span class="nv">$vaultObjects</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now that we have all the keys and secrets we want to check for expiry all we need to know is if there are any keys that are expiring in the upcoming days.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$allKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
-</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectKeys</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllKeyVersions</span><span class="p">))</span>
-</span><span class='line'><span class="nv">$allKeyVaultObjects</span><span class="p">.</span><span class="n">AddRange</span><span class="p">((</span><span class="nb">Get-AzureKeyVaultObjectSecrets</span> <span class="n">-VaultName</span> <span class="nv">$VaultName</span> <span class="n">-IncludeAllVersions</span> <span class="nv">$IncludeAllSecretVersions</span><span class="p">))</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Get expired Objects</span>
-</span><span class='line'><span class="nv">$today</span> <span class="p">=</span> <span class="p">(</span><span class="nb">Get-Date</span><span class="p">).</span><span class="n">Date</span>
-</span><span class='line'><span class="nv">$expiredKeyVaultObjects</span> <span class="p">=</span> <span class="no">[System.Collections.ArrayList]</span><span class="p">@()</span>
-</span><span class='line'><span class="k">foreach</span><span class="p">(</span><span class="nv">$vaultObject</span> <span class="k">in</span> <span class="nv">$allKeyVaultObjects</span><span class="p">){</span>
-</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span> <span class="o">-and</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Expires</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(-</span><span class="nv">$AlertBeforeDays</span><span class="p">).</span><span class="n">Date</span> <span class="o">-lt</span> <span class="nv">$today</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="c"># add to expiry list</span>
-</span><span class='line'>  <span class="nv">$expiredKeyVaultObjects</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="nv">$vaultObject</span><span class="p">)</span> <span class="p">|</span> <span class="nb">Out-Null</span>
-</span><span class='line'>  <span class="nb">Write-Output</span> <span class="s2">&quot;Expiring&quot;</span> <span class="nv">$vaultObject</span><span class="p">.</span><span class="n">Id</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c"># Pass to Alerter $expiredKeyVaultObjects</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Scheduling Expiry Notification using Azure Runbook</h3>
-
-<p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
-
-<p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
 ]]></content>
   </entry>
   
