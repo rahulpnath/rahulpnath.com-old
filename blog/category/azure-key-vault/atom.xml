@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-28T10:41:05+00:00</updated>
+  <updated>2017-03-01T01:20:44+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,70 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Manage Certificates in Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/manage-certificates-in-azure-key-vault/"/>
+    <updated>2017-03-01T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/manage-certificates-in-azure-key-vault</id>
+    <content type="html"><![CDATA[<p><a href="http://perspecsys.com/" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="/images\pfx_security.jpg" /></a></p>
+
+<p>Earlier in the <a href="http://www.rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/">PFX Certificate in Azure Key Vault</a>, we saw how to save PFX Certificate files in Key Vault as Secrets. Azure Key Vault now <a href="https://blogs.technet.microsoft.com/kv/2016/09/26/get-started-with-azure-key-vault-certificates/">supports certificates as a first class citizen</a>. This means one can manage certificates as a separate entity in KeyVault. At the time of writing, Key Vault supports managing certificates using Powershell. The <a href="http://www.rahulpnath.com/blog/managing-key-vault-through-azure-portal/">portal UI</a> is still to catch up on this feature. Using the Key Vault&rsquo;s certificate feature, we can create a new certificate: self-signed or signed by a supported certificate authority, import an existing certificate, retrieve the certificate with or without a private key part.</p>
+
+<h3>Setting up the Vault</h3>
+
+<p>With the introduction of the certificates feature, a new command line switch is added to <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/set-azurermkeyvaultaccesspolicy">Set-AzureRmKeyVaultAccessPolicy</a> cmdlet <em><a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/set-azurermkeyvaultaccesspolicy#PermissionsToCertificates">-PermissionToCertificates</a></em>. It supports the following values - <em>all, get, create, delete, import, list, update, deleteissuers, getissuers, listissuers, setissuers, managecontacts</em>. For a key vault created after the introduction of this feature, the property is set to <em>all</em> for the creator&rsquo;s access policy. For any vault created before the introduction of the feature, this property needs to be explicitly set to start using it.</p>
+
+<h3>Create Certificate</h3>
+
+<p>To create a new certificate in the vault use the <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/add-azurekeyvaultcertificate">Add-AzureKeyVaultCertificate</a> cmdlet. The cmdlet requires a Certificate Policy that specifies the subject name, issuer name, validity, etc.</p>
+
+<pre><code class="powershell">$certificatepolicy = New-AzureKeyVaultCertificatePolicy   -SubjectName "CN=www.rahulpnath.com"   -IssuerName Self   -ValidityInMonths 12
+Add-AzureKeyVaultCertificate -VaultName "VaultFromCode" -Name "TestCertificate" -CertificatePolicy $certificatepolicy 
+</code></pre>
+
+<p>Executing the above creates a certificate in the vault with the given name. To retrieve the certificates in the key vault use the. The certificate object identifier is similar to that of Keys and Secrets as shown below. This identifier is used to identify a certificate uniquely.</p>
+
+<pre><code class="text">https://vaultfromcode.vault.azure.net:443/certificates/TestCertificate
+</code></pre>
+
+<p>To retrieve all the certificates in a vault use the <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/get-azurekeyvaultcertificate">Get-AzureKeyVaultCertificate</a> cmdlet passing in the VaultName. To get details of a certificate pass in the Certificate Name as well.</p>
+
+<p><img class="center" alt="Azure Key Vault, GetAzureKeyVaultCertificate" src="/images\keyvault_getazurekeyvaultcertificate.png" /></p>
+
+<p>When creating a new certificate make sure that a Key or Secret does not exist with the same name in the vault. Azure adds in a key and secret with the same name as that of the certificate when creating a new certificate as shown in the above image. The key is required when for certificates created with non-exportable key (-<a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.1.0/new-azurekeyvaultcertificatepolicy#KeyNotExportable">KeyNotExportable</a>). Non-exportable certificates do not have the private portion contained in secret. Any certificate operation requiring the private part should use the key. For consistency, the key exists for exportable certificates as well.</p>
+
+<p>To import an existing certificate into the key vault, we can use <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.1.0/import-azurekeyvaultcertificate">Import-AzureKeyVaultCertificate</a> cmdlet. The certificate file should be either PFX or PEM format.</p>
+
+<h3>Recreate Certificate Locally from Key Vault</h3>
+
+<p>Often we will have to recreate the certificate on the machine where the application using it is running. To create the private portion of the certificate retrieve it from the Secret, load it into a certificate collection, export and save the file locally.</p>
+
+<pre><code class="powershell">$kvSecret = Get-AzureKeyVaultSecret -VaultName 'VaultFromCode' -Name 'TestCertificate'
+$kvSecretBytes = [System.Convert]::FromBase64String($kvSecret.SecretValueText)
+$certCollection = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2Collection
+$certCollection.Import($kvSecretBytes,$null,[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::Exportable)
+$protectedCertificateBytes = $certCollection.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pkcs12, 'test')
+$pfxPath = 'C:\cert\test.pfx'
+</code></pre>
+
+<p>Similarly to export the public portion of the certificate</p>
+
+<pre><code class="powershell">$cert = Get-AzureKeyVaultCertificate -VaultName 'VaultFromCode' -Name 'TestCertificate'
+$filePath ='C:\cert\TestCertificate.cer'
+$certBytes = $cert.Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Cert)
+</code></pre>
+
+<h3>Delete Certificate</h3>
+
+<p>To delete a certificate use the Remove-AzureKeyVaultCertificate cmdlet and pass in the vault name and certificate name.</p>
+
+<pre><code class="powershell">Remove-AzureKeyVaultCertificate -VaultName 'VaultFromCode' -Name 'TestCertificate'
+</code></pre>
+
+<p>Hope this helps you to get started with managing certificates in Azure Key Vault.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault Talk at Sydney Alt.Net]]></title>
@@ -295,43 +359,6 @@ isVerified = rsa.VerifyHash(digest, "Sha256", signedResult.Result);
 <p>The signature verification succeeds if the message and the signature were not tampered. If either of message or signature were  modified then the signature validation fails.</p>
 
 <p>You can get the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/VerifySignatureOffline">here</a>. Hope this helps you to implement Digital Signatures using Key Vault.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing Key Vault Through Azure Portal]]></title>
-    <link href="http://rahulpnath.com/blog/managing-key-vault-through-azure-portal/"/>
-    <updated>2016-11-01T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/managing-key-vault-through-azure-portal</id>
-    <content type="html"><![CDATA[<p>You can now manage Key Vault through the Azure portal. Prior to this the Key Vault&rsquo;s were managed either using <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Powershell</a>, <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-using-azure-resource-manager-arm-templates/">ARM Templates</a> or <a href="http://www.rahulpnath.com/blog/managing-azure-key-vault-over-the-rest-api/">REST API</a>. Managing key Vault is now easy and user-friendly for the nontechnical people. In this post, I will walk through the new features in Azure Portal to manage key vault.</p>
-
-<blockquote><p><em>If you find any difference between what you see in the portal versus those in the screenshots below, it&rsquo;s likely that the portal is updated</em></p></blockquote>
-
-<p>In the new Azure portal search for &lsquo;key vault&rsquo; to access this new feature. Or you can go to &lsquo;More Services&rsquo; and scroll down to &lsquo;Security + Identity&rsquo; section in the menu. Selecting Key Vault takes you to all the available Key Vaults under your subscription. You can further filter the Vault&rsquo;s list by the vault name using the filter box or based on your subscriptions.</p>
-
-<p><img  alt="Key Vault in Azure Portal" src="/images/keyvaultportal_menu_option.png"/></p>
-
-<h4><strong>Creating Key Vault</strong></h4>
-
-<p>To create a new Key Vault select the &lsquo;Create&rsquo; option. By entering the Vault Name, Subscription, Resource Group and Location you can create a new Key Vault.</p>
-
-<p><img  alt="Create Key Vault in Azure Portal" src="/images/keyvaultportal_create_key_vault.png"/></p>
-
-<p>The pricing tier defaults to Standard and it does not support HSM backed keys. This means you will be only able to create Software keys. You can select the  Premium pricing tier if you need HSM backed keys. By default the login with which you create the subscription with gets granted access to the vault and is added to the access policies. You can grant additional applications or users access and control the permissions. Below I am adding in an AD application.</p>
-
-<p><img  alt="Key Vault Add Access Policy" src="/images/keyvaultportal_access_policy.png"/></p>
-
-<p>You can specify the Key Permissions and the Secret Permissions that the ServicePrincipal.</p>
-
-<p><img  alt="Access Policy set Secret Permissions" src="/images/keyvaultportal_secretpermissions.png"/></p>
-
-<h4><strong>Keys and Secrets</strong></h4>
-
-<p>Once the Vault is created you can add in Keys and Secrets into the vault. This can be done by selecting the Vault that was just created from the Vaults list. From here you can manage different aspects of the Vault and also manage Keys and Secrets.</p>
-
-<p><img  alt="Access Policy set Secret Permissions" src="/images/keyvaultportal_keyvault.png"/></p>
-
-<p>The Azure Portal experience of Key Vault is good. It covers most of the functionalities needed when using a Key Vault. How do you find the new UI experience?</p>
 ]]></content>
   </entry>
   

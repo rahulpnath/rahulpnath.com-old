@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-02-28T10:41:05+00:00</updated>
+  <updated>2017-03-01T01:20:44+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,92 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Manage Certificates in Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/manage-certificates-in-azure-key-vault/"/>
+    <updated>2017-03-01T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/manage-certificates-in-azure-key-vault</id>
+    <content type="html"><![CDATA[<p><a href="http://perspecsys.com/" class="center" title="Image By Perspecsys Photos, from https://www.flickr.com/photos/111692634@N04/15855489588"><img class="center" alt="Security" src="http://rahulpnath.com/images\pfx_security.jpg" /></a></p>
+
+<p>Earlier in the <a href="http://www.rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/">PFX Certificate in Azure Key Vault</a>, we saw how to save PFX Certificate files in Key Vault as Secrets. Azure Key Vault now <a href="https://blogs.technet.microsoft.com/kv/2016/09/26/get-started-with-azure-key-vault-certificates/">supports certificates as a first class citizen</a>. This means one can manage certificates as a separate entity in KeyVault. At the time of writing, Key Vault supports managing certificates using Powershell. The <a href="http://www.rahulpnath.com/blog/managing-key-vault-through-azure-portal/">portal UI</a> is still to catch up on this feature. Using the Key Vault&rsquo;s certificate feature, we can create a new certificate: self-signed or signed by a supported certificate authority, import an existing certificate, retrieve the certificate with or without a private key part.</p>
+
+<h3>Setting up the Vault</h3>
+
+<p>With the introduction of the certificates feature, a new command line switch is added to <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/set-azurermkeyvaultaccesspolicy">Set-AzureRmKeyVaultAccessPolicy</a> cmdlet <em><a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/set-azurermkeyvaultaccesspolicy#PermissionsToCertificates">-PermissionToCertificates</a></em>. It supports the following values - <em>all, get, create, delete, import, list, update, deleteissuers, getissuers, listissuers, setissuers, managecontacts</em>. For a key vault created after the introduction of this feature, the property is set to <em>all</em> for the creator&rsquo;s access policy. For any vault created before the introduction of the feature, this property needs to be explicitly set to start using it.</p>
+
+<h3>Create Certificate</h3>
+
+<p>To create a new certificate in the vault use the <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/add-azurekeyvaultcertificate">Add-AzureKeyVaultCertificate</a> cmdlet. The cmdlet requires a Certificate Policy that specifies the subject name, issuer name, validity, etc.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificatepolicy</span> <span class="p">=</span> <span class="nb">New-AzureKeyVaultCertificatePolicy</span>   <span class="n">-SubjectName</span> <span class="s2">&quot;CN=www.rahulpnath.com&quot;</span>   <span class="n">-IssuerName</span> <span class="n">Self</span>   <span class="n">-ValidityInMonths</span> <span class="n">12</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultCertificate</span> <span class="n">-VaultName</span> <span class="s2">&quot;VaultFromCode&quot;</span> <span class="n">-Name</span> <span class="s2">&quot;TestCertificate&quot;</span> <span class="n">-CertificatePolicy</span> <span class="nv">$certificatepolicy</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Executing the above creates a certificate in the vault with the given name. To retrieve the certificates in the key vault use the. The certificate object identifier is similar to that of Keys and Secrets as shown below. This identifier is used to identify a certificate uniquely.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>https://vaultfromcode.vault.azure.net:443/certificates/TestCertificate
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To retrieve all the certificates in a vault use the <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.2.0/get-azurekeyvaultcertificate">Get-AzureKeyVaultCertificate</a> cmdlet passing in the VaultName. To get details of a certificate pass in the Certificate Name as well.</p>
+
+<p><img class="center" alt="Azure Key Vault, GetAzureKeyVaultCertificate" src="http://rahulpnath.com/images\keyvault_getazurekeyvaultcertificate.png" /></p>
+
+<p>When creating a new certificate make sure that a Key or Secret does not exist with the same name in the vault. Azure adds in a key and secret with the same name as that of the certificate when creating a new certificate as shown in the above image. The key is required when for certificates created with non-exportable key (-<a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.1.0/new-azurekeyvaultcertificatepolicy#KeyNotExportable">KeyNotExportable</a>). Non-exportable certificates do not have the private portion contained in secret. Any certificate operation requiring the private part should use the key. For consistency, the key exists for exportable certificates as well.</p>
+
+<p>To import an existing certificate into the key vault, we can use <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.keyvault/v2.1.0/import-azurekeyvaultcertificate">Import-AzureKeyVaultCertificate</a> cmdlet. The certificate file should be either PFX or PEM format.</p>
+
+<h3>Recreate Certificate Locally from Key Vault</h3>
+
+<p>Often we will have to recreate the certificate on the machine where the application using it is running. To create the private portion of the certificate retrieve it from the Secret, load it into a certificate collection, export and save the file locally.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$kvSecret</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultSecret</span> <span class="n">-VaultName</span> <span class="s1">&#39;VaultFromCode&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;TestCertificate&#39;</span>
+</span><span class='line'><span class="nv">$kvSecretBytes</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">FromBase64String</span><span class="p">(</span><span class="nv">$kvSecret</span><span class="p">.</span><span class="n">SecretValueText</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$certCollection</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2Collection</span>
+</span><span class='line'><span class="nv">$certCollection</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$kvSecretBytes</span><span class="p">,</span><span class="nv">$null</span><span class="p">,</span><span class="no">[System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]</span><span class="p">::</span><span class="n">Exportable</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$protectedCertificateBytes</span> <span class="p">=</span> <span class="nv">$certCollection</span><span class="p">.</span><span class="n">Export</span><span class="p">(</span><span class="no">[System.Security.Cryptography.X509Certificates.X509ContentType]</span><span class="p">::</span><span class="n">Pkcs12</span><span class="p">,</span> <span class="s1">&#39;test&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$pfxPath</span> <span class="p">=</span> <span class="s1">&#39;C:\cert\test.pfx&#39;</span>
+</span><span class='line'><span class="no">[System.IO.File]</span><span class="p">::</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="nv">$pfxPath</span><span class="p">,</span> <span class="nv">$protectedCertificateBytes</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Similarly to export the public portion of the certificate</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$cert</span> <span class="p">=</span> <span class="nb">Get-AzureKeyVaultCertificate</span> <span class="n">-VaultName</span> <span class="s1">&#39;VaultFromCode&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;TestCertificate&#39;</span>
+</span><span class='line'><span class="nv">$filePath</span> <span class="p">=</span><span class="s1">&#39;C:\cert\TestCertificate.cer&#39;</span>
+</span><span class='line'><span class="nv">$certBytes</span> <span class="p">=</span> <span class="nv">$cert</span><span class="p">.</span><span class="n">Certificate</span><span class="p">.</span><span class="n">Export</span><span class="p">(</span><span class="no">[System.Security.Cryptography.X509Certificates.X509ContentType]</span><span class="p">::</span><span class="n">Cert</span><span class="p">)</span>
+</span><span class='line'><span class="no">[System.IO.File]</span><span class="p">::</span><span class="n">WriteAllBytes</span><span class="p">(</span><span class="nv">$filePath</span><span class="p">,</span> <span class="nv">$certBytes</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Delete Certificate</h3>
+
+<p>To delete a certificate use the Remove-AzureKeyVaultCertificate cmdlet and pass in the vault name and certificate name.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Remove-AzureKeyVaultCertificate</span> <span class="n">-VaultName</span> <span class="s1">&#39;VaultFromCode&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;TestCertificate&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you to get started with managing certificates in Azure Key Vault.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault Talk at Sydney Alt.Net]]></title>
@@ -1296,66 +1382,6 @@ Add in reviewers that I feel are missed and relevant for the part of the code th
 <p>Modeling concepts in the domain as classes helps you to contain the domain/business constraints in a single place. This prevents the need to have null checks elsewhere in the code. Value objects being immutable helps enforce class invariants.</p>
 
 <p>The above two methods help create a stronger contract in code. As with any conventions, this is useful only when followed by the whole team. Conventions are best followed if enforced through tooling. You can create custom code analysis rules to enforce return type to be of type if any method is returning null. Even if you are introducing this into a large existing code base you can do this incrementally, by starting to enforce them on commits (if you are using git) like when <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing styling into an existing project</a>. What other contracts do you find helpful to make the code more expressive?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Solve the Business Problem, Don't Mimic The Process]]></title>
-    <link href="http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process/"/>
-    <updated>2016-12-06T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/solve-the-business-problem-dont-mimic-the-process</id>
-    <content type="html"><![CDATA[<p><a href="http://www.dhc-gmbh.com/en/kompetenzen/business-process-management/"><img class="center" alt="Business" src="http://rahulpnath.com/images/business_problem_automation.jpg"/></a></p>
-
-<p>While working with clients I often get into conversations with the domain experts and people involved directly with the business. The discussions usually happen around what the process they are currently doing and how to automate those. Knowing the business process is helpful but getting influenced by that to design the solution is often not effective. Recently our team was in a conversation with a domain expert for a new feature request.</p>
-
-<div class="alert alert-warning">
-The series of events mentioned below were modified to fit into the conversational style used in the post.
-</div>
-
-
-<blockquote><p><em><strong>Domain Expert</strong> We need to charge customers a processing fee if they pay using an electronic payment method. Depending on the type of card (mastercard, visa etc) the processing charge percentage differs. The processing fees are always charged in the subsequent billing period after their current payment. For e.g. if a customer pays 1000$ for the month of November, then his December bill will have 2% card processing charge in the December invoice</em></p>
-
-<p><em><strong>Team</strong> That sounds easy, think we have enough details to get started on this. Thank you.</em></p>
-
-<p><em><strong>Domain Expert</strong> Perfect. Ahhh&hellip; Before you go, I think this can be a <a href="http://hangfire.io/">hangfire job</a> that runs on 29 every month, a few days before the billing date, 3rd, and generate these charges for the client. This is what we do manually at present. (And walks off)</em></p>
-
-<p><em><strong>Team</strong> Discussing amongst themselves the team agreed that creating a recurring job is the way to go. Based on the assumption that this job will be run only once a month, the job was to read all the invoices from 29th of the previous month till 28th of the current month and charge the clients. The meeting was dismissed and off went everyone busy to get the new feature out</em></p></blockquote>
-
-<h3>Business has Exceptions</h3>
-
-<p>Problems started coming up the immediate month of feature deployment. Below is the sequence of events that happened.</p>
-
-<ul>
-<li><strong>29th</strong> : Nice work, team! The processing charges have been applied as expected.</li>
-<li><strong>30th</strong> : Some of the invoices have wrong data. We have deleted them. Can you run the job?</li>
-<li><strong>2nd</strong> : A few of our clients (as usual) paid late and we need to charge their processing fees. Can you run the job?</li>
-<li><strong>15th</strong> : One of our clients is ending tomorrow, so we need to send them an invoice and it should include the processing fees for their last payment. Can you run the job?</li>
-</ul>
-
-
-<p>But wait! We had decided that we will run this job only once a month and that is the only time we need to process the charges. We cannot run that job over and over again.</p>
-
-<blockquote><p><em>What I’ve noticed over the years is that our users find very creative ways to achieve their business objectives despite the limitations of the system that they’re working with. We developers ultimately see these as requirements, but they are better interpreted as <strong>workarounds</strong>.</em></p>
-
-<p><strong><em>- <a href="http://udidahan.com/2013/04/28/queries-patterns-and-search-food-for-thought/">Udi Dahan</a></em></strong></p></blockquote>
-
-<p>The business was right when it said that <em>&lsquo;This is what we do manually at present.</em> What they did not say though is that there were always exceptions. And in these cases, they did the same process, but just for those exceptions. Business process mostly will be around the majority of the cases and the exceptions always get handled ad-hoc. So for the business it&rsquo;s always that which takes a good part of their time that matters more.</p>
-
-<h3>Finding the Way Out</h3>
-
-<p>The problem, in this case, was that the team modeled the solution exactly as the business did manually. Think kind of a solution is most likely to fail in case of exceptions. The human brain can easily deal with these exceptions. But for a program to solve it that way it needs to be told so, which implies that there need to be alternate flow paths defined. So with the improved understanding of these exception cases, the team does another analysis through the problem. After some discussion the team re-defines their original problem statement - *We need to be able to run the job any number of times and it should have the same effect.</p>
-
-<blockquote><p><em>A payment should get </em>one and only one<em> processing charge associated, no matter however times it is seen by the job.</em></p></blockquote>
-
-<p>With the new implementation, we decided to maintain a list of payments (a strong identifier that does not change) we have seen and processed. So every time a payment is seen, it is matched to see if it is already processed. If a charge is not already applied, a charge is applied and added to the list of processed payments. This ensures that they can run the job anytime. The team added in capability to specify the time range to look for invoices. By default, this ranged from 29th - 28th. The team also added in a way to void out payment charges applied, so that whenever the invoices changed then can just clear that off and re-run the job. These changes gave the flexibility to meet the businesses exception cases.</p>
-
-<h3>Idempotent</h3>
-
-<blockquote><p><em>The term <a href="http://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">idempotent</a> is used in mathematics to describe a function that produces the same result if it is applied to itself, i.e. f(x) = f(f(x)). In Messaging this concept translates into a message that has the same effect whether it is received once or multiple times. This means that a message can safely be re-sent without causing any problems even if the receiver receives duplicates of the same message.</em></p></blockquote>
-
-<p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
-
-<p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
 ]]></content>
   </entry>
   
