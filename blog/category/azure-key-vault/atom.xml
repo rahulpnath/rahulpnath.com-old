@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-03-02T00:01:48+00:00</updated>
+  <updated>2017-03-02T02:51:07+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,29 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: Switching Subscriptions Under Same Azure Account to Access Key Vaults]]></title>
+    <link href="http://rahulpnath.com/blog/switching-between-subscriptions-under-same-azure-account-to-access-key-vault/"/>
+    <updated>2017-03-02T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/switching-between-subscriptions-under-same-azure-account-to-access-key-vault</id>
+    <content type="html"><![CDATA[<p><img class="center" alt="Azure Powershell Get-AzureRmContext" src="/images/powershell_azurermcontext.png" /></p>
+
+<p>When accessing Key Vault using Powershell it can be a bit tricky when you have multiple subscriptions under the same account. The Key Vault cmdlets being under the <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Resource Manager (RM) mode</a> depends on the current RM Subscription. The Key Vault cmdlets enable you to manage only the key vaults under the selected subscription. To access the key vaults in other subscriptions, you need to switch the selected RM subscription.</p>
+
+<blockquote><p><em>Use <strong>Select-AzureRmSubscription</strong> to switch the selected RM subscription</em></p></blockquote>
+
+<p> The <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.profile/v2.2.0/get-azurermcontext">Get-AzureRmContext</a> returns the metadata used for RM requests. The SubscriptionId/SubscriptionName property indicates the selected subscription. Any Key Vault cmdlets (or RM cmdlets) will work based off that selected subscription. To change the selected Azure RM subscription use the Select-AzureRmSubscription cmdlet. Pass in the SubscriptionId or the Subscription Name that you wish to switch to and the RM Subscription will be set to that. To get the SubscriptionId/SubscriptionName of the subscriptions under your account use <a href="https://msdn.microsoft.com/en-us/library/dn495302.aspx">Get-AzureSubscription</a> cmdlet.</p>
+
+<pre><code class="` powershell"> Get-AzureRmContext
+ Get-AzureRmSubscription
+ Select-AzureRmSubscription -SubscriptionName  "Your Subscription Name"
+ Select-AzureRmSubscription -SubscriptionId  a5287dad-d5a2-4060-81bc-4a06c7087e72
+</code></pre>
+
+<p> I struggled with this for some time, so hope it helps you!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Manage Certificates in Azure Key Vault]]></title>
@@ -295,70 +318,6 @@ Get-AzureKeyVaultKey -VaultName YoutubeVault
 </code></pre>
 
 <p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault: Digital Signatures and Offline Verification]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification/"/>
-    <updated>2016-11-15T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-digital-signatures-and-offline-verification</id>
-    <content type="html"><![CDATA[<p>Digital Signature is a mechanism to ensure the validity of a digital document or message. Digital signatures use <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">asymmetric cryptography</a> - uses a public and private key pair.</p>
-
-<blockquote><p><em>A valid <a href="https://en.wikipedia.org/wiki/Digital_signature">digital signature</a> gives a recipient reason to believe that the message was created by a known sender (authentication), that the sender cannot deny having sent the message (non-repudiation), and that the message was not altered in transit (integrity)</em></p></blockquote>
-
-<p>The below diagram shows the overview of the different steps involved in the Digital Signature process. We generate a hash of the data that we need to protect and encrypt the hash value using a private key pair. This signed hash is sent along with the original data. The receiver generates a hash of the data received and also decrypts the attached signature using the public key. If both the hashes are same, the signature is valid, and the document has not been tampered with.</p>
-
-<p><a href="https://commons.wikimedia.org/wiki/File:Digital_Signature_diagram.svg"><img class="center" alt="Azure Key Vault - Verify Signature Offline" src="/images/signing_verification.png"/></a></p>
-
-<p>Azure Key Vault supports sign and verify operations and can be used to implement Digital Signatures. In this post, we will explore how to sign and verify a message using Key Vault. Verifying the hash locally is the recommended approach as per the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903623.aspx#BKMK_KeyOperations">documentation</a> and we will explore how this can be achieved.</p>
-
-<blockquote><p><em>Verification of signed hashes is supported as a convenience operation for applications that may not have access to [public] key material; it is recommended that, for best application performance, verify operations are performed locally.</em></p></blockquote>
-
-<h3>Signing Data</h3>
-
-<p>Sign and Verify operations on Key Vault are allowed only on hashed data. So the application calling these API methods should locally hash the data before invoking the method. The algorithm property value passed to the Key Vault Client API depends on the hashing algorithm used to hash the data. Below are the <a href="https://msdn.microsoft.com/library/en-us/Mt149357.aspx">supported algorithms</a>.</p>
-
-<ul>
-<li><em>RS256: RSASSA-PKCS-v1_5 using SHA-256. The application supplied digest value must be computed using SHA-256 and must be 32 bytes in length.</em></li>
-<li><em>RS384: RSASSA-PKCS-v1_5 using SHA-384. The application supplied digest value must be computed using SHA-384 and must be 48 bytes in length.</em></li>
-<li><em>RS512: RSASSA-PKCS-v1_5 using SHA-512. The application supplied digest value must be computed using SHA-512 and must be 64 bytes in length.</em></li>
-<li><em>RSNULL: See [RFC2437], a specialized use-case to enable certain TLS scenarios.</em></li>
-</ul>
-
-
-<p>The below code sample uses SHA-256 hashing algorithm to hash and sign the data.</p>
-
-<pre><code class="csharp">var textToEncrypt = "This is a test message";
-var byteData = Encoding.Unicode.GetBytes(textToEncrypt);
-var hasher = new SHA256CryptoServiceProvider();
-var digest = hasher.ComputeHash(byteData);
-var signedResult = await keyVaultClient
-    .SignAsync(keyIdentifier, JsonWebKeySignatureAlgorithm.RS256, digest);
-</code></pre>
-
-<h3>Verify Online</h3>
-
-<p>To verify a signature online, the keyVaultClient supports a <a href="https://msdn.microsoft.com/en-us/library/microsoft.azure.keyvault.keyvaultclient.verifyasync.aspx">Verify method</a>. It takes the key identifier, algorithm, digest and signature to verify if the signature is valid for the given digest.</p>
-
-<pre><code class="csharp">var isVerified = await keyVaultClient
-    .VerifyAsync(keyIdentifier, JsonWebKeySignatureAlgorithm.RS256, digest, signedResult.Result);
-</code></pre>
-
-<h3>Verify Offline</h3>
-
-<p>To Verify offline, we need access to the public portion of the key used to sign the data. The client application that needs to verify signatures can connect to the vault and get the key details or use a public key shared out of band. The <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application used to authenticate</a> with the key vault should have Get access for retrieving the public key from the vault. Get access can be set using the PermissionToKeys switch when registering the AD application with the key vault. Assuming we have access to the public key as a JSON string, we can use the <a href="https://msdn.microsoft.com/en-us/library/system.security.cryptography.rsacryptoserviceprovider(v=vs.110).aspx">RSACryptoServiceProvider</a> to verify the signature offline.</p>
-
-<pre><code class="csharp">var key = JsonConvert.DeserializeObject&lt;JsonWebKey&gt;(jsonWebKey);
-var rsa = new RSACryptoServiceProvider();
-var p = new RSAParameters() { Modulus = key.N, Exponent = key.E };
-rsa.ImportParameters(p);
-isVerified = rsa.VerifyHash(digest, "Sha256", signedResult.Result);
-</code></pre>
-
-<p>The signature verification succeeds if the message and the signature were not tampered. If either of message or signature were  modified then the signature validation fails.</p>
-
-<p>You can get the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/VerifySignatureOffline">here</a>. Hope this helps you to implement Digital Signatures using Key Vault.</p>
 ]]></content>
   </entry>
   
