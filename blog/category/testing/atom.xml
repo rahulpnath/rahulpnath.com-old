@@ -4,7 +4,7 @@
   <title><![CDATA[Category: testing | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/testing/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-03-06T00:02:10+00:00</updated>
+  <updated>2017-03-07T00:02:04+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,234 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Populating Data for Tests]]></title>
+    <link href="http://rahulpnath.com/blog/populating-data-for-tests/"/>
+    <updated>2017-03-07T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/populating-data-for-tests</id>
+    <content type="html"><![CDATA[<p>Populating data for tests is the section of the test that usually ends up making tests more coupled with the code that it is testing. Coupling makes tests more fragile and refactoring code harder because of breaking tests. We should try to avoid coupling with the implementation details when writing tests. Let us see a few options that we have to populate test data and constructing object graphs (chain of objects branched off from the root object). I use <a href="https://xunit.github.io/">xUnit.net</a> as my test framework, but you can use these techniques in your choice of framework.</p>
+
+<p><a href="http://xunitpatterns.com/Data-Driven%20Test.html" class="center" title="Image from xUnit Test Patterns"><img class="center" alt="Populating Test Data" src="/images\test_data.gif" /></a></p>
+
+<p>Let&rsquo;s start with some simple tests on a Customer class shown below.</p>
+
+<pre><code class="csharp">public class Customer
+{
+    public Guid Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string FullName
+    {
+        get { return FirstName + " " + LastName; }
+    }
+
+    public Address Address { get; set; }
+}
+</code></pre>
+
+<p>Let&rsquo;s say we need to test that the FullName property returns as expected. We will use a <em>Theory</em> type tests for testing different combinations of first and last name. xUnit.net includes support for two different major types of unit tests: facts and theories</p>
+
+<blockquote><p><em>Facts are tests which are always true. They test invariant conditions.</em></p>
+
+<p><em>Theories are tests which are only true for a particular set of data.</em></p></blockquote>
+
+<p>Theories allow us to create parameterized tests with which we can run a given test with different parameter options. Like in this example we need to test the Customer class with different set of First and Last Name combinations. As you can see below the test is attributed with Theory Attribute, and we use the InlineData attribute to pass static values to the test. Using these parameters we are now able to test for different combinations of first and last names. The test populates only the required properties on Customer object for testing FullName.</p>
+
+<pre><code class="csharp">[Theory]
+[InlineData("Adobe", "Photoshop", "Adobe Photoshop")]
+[InlineData("Visual", "Studio", "Visual Studio")]
+[InlineData("Rode", "Podcaster", "Rode Podcaster")]
+public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected)
+{
+    // Fixture setup
+    var customer = new Customer() { FirstName = firstName, LastName = lastName };
+    // Exercise system
+    var actual = customer.FullName;
+    // Verify outcome
+    Assert.Equal(expected, actual);
+    // Teardown
+}
+</code></pre>
+
+<blockquote><p><em>Tests help refine the public API as they are the first consumers</em></p></blockquote>
+
+<p>The tests above acts as a clue indicating that the three properties - FirstName, LastName, FullName are related and go hand-in-hand. These tests are a strong indication that these properties can be grouped together into a class and possibly tested separately. We can extract these properties into a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> for e.g. Name. I will not go into the implementation details of that, and I hope you can do that you own.</p>
+
+<p>The above tests still have a high dependency on the code that it is testing - <strong><em>the constructor</em></strong>. Imagine if we had a lot of such tests that constructs the Consumer class inline in the setup phase. All tests will break if the class constructor changes. We saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring to remove constructor dependency</a> how to remove such dependencies and make the tests independent of the constructor dependencies.  We can introduce Object Mother or Test Data Builder pattern as mentioned in the article. Optimizing further we can also use <a href="https://github.com/AutoFixture/AutoFixture">AutoFixture</a> to generate test data. Moving into these patterns or AutoFixture brings in an added benefit as well; the rest of properties on the Customer class also gets populated by default.</p>
+
+<h3>Explicitly Setting Properties</h3>
+
+<p>By introducing AutoFixture, we no longer need to create the Customer object explicitly. We can use the Fixture class generate a Customer class for us. Using AutoFixture, this can be achieved in at least two ways (I am not sure if there are more ways of doing this).</p>
+
+<pre><code class="csharp Using Fixture class">[Theory]
+[InlineData("Adobe", "Photoshop", "Adobe Photoshop")]
+[InlineData("Visual", "Studio", "Visual Studio")]
+[InlineData("Rode", "Podcaster", "Rode Podcaster")]
+public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected)
+{
+    // Fixture setup
+    var fixture = new Fixture();
+    var customer = fixture.Build&lt;Customer&gt;()
+        .With(a =&gt; a.FirstName, firstName)
+        .With(a =&gt; a.LastName, lastName)
+        .Create();
+    // Exercise system
+    var actual = customer.FullName;
+    // Verify outcome
+    Assert.Equal(expected, actual);
+    // Teardown
+}
+</code></pre>
+
+<pre><code class="csharp Using Injected Object">[Theory]
+[InlineAutoData("Adobe", "Photoshop", "Adobe Photoshop")]
+[InlineAutoData("Visual", "Studio", "Visual Studio")]
+[InlineAutoData("Rode", "Podcaster", "Rode Podcaster")]
+public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected, Customer customer)
+{
+    // Fixture setup
+    customer.FirstName = firstName;
+    customer.LastName = lastName;
+    // Exercise system
+    var actual = customer.FullName;
+    // Verify outcome
+    Assert.Equal(expected, actual);
+    // Teardown
+}
+</code></pre>
+
+<p>In both cases, we explicitly set the required properties. The above test is similar to the previous test that we wrote without AutoFixture. But no longer are we dependent on the constructor. In the second way of using AutoFixture I used <em>InlineAutoData</em> attribute, that is part of <em>Ploeh.AutoFixture.Xunit2</em>. This attribute automatically does the fixture initialization and injects the Customer object for us. For all the values that it can match from the inline parameter list, it uses the provided values. It starts generating random values once all the parameters passed inline are used. In this case, only Customer object is created by AutoFixture.</p>
+
+<h3>AutoFixture and Immutable types</h3>
+
+<p>When using immutable types or properties with private setters, we cannot set the property value after it is created.</p>
+
+<blockquote><p><em>AutoFixture was originally build as a tool for Test-Driven Development (TDD), and TDD is all about feedback. In the spirit of GOOS, you should listen to your tests. If the tests are hard to write, you should consider your API design. AutoFixture tends to amplify that sort of feedback.</em></p>
+
+<p>-<em><a href="http://stackoverflow.com/a/20816487/1948745">Mark Seemann</a> (creator of AutoFixture)</em></p></blockquote>
+
+<p>In these cases, the suggested approach is something closer to the manual <a href="http://www.natpryce.com/articles/000714.html">Test Data Builder</a> we saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring example</a>. We can either have an explicit test data builder class or define extension methods on the immutable type such that it changes just the specified property and returns all other values same, as shown below.</p>
+
+<pre><code class="csharp">public class Name
+{
+    public readonly string FirstName;
+    public readonly string LastName;
+    public string FullName
+    {
+        get
+        {
+            return FirstName + " " + LastName;
+        }
+    }
+
+    public Name(string firstName, string lastName)
+    {
+        // Enforce parameter constraints
+        FirstName = firstName;
+        LastName = lastName;
+    }
+
+    public Name WithFirstName(string firstName)
+    {
+        return new Name(firstName, this.LastName);
+    }
+}
+</code></pre>
+
+<p>As shown the <em>WithFirstName</em> method returns a new Name class with just the first name changed. Again we do not need these <em>WithXXX</em> methods for all the properties. Only when there is a need to change any of the property values as part of the requirement do we need to introduce such methods and even test it. This again drives to the above point of using tests to guide the API design, from the feedback.</p>
+
+<h3>Customization</h3>
+
+<p>In cases where we have validations in constructor to hold the class constraints, we cannot rely on the random values generated by AutoFixture. For example.
+- The string should be at least ten characters in length for a Name class
+- Start date should be less than the End date for a date range class</p>
+
+<p>Without any custom code if we are to rely on AutoFixture to generate us, such classes, the tests will not be predictable. Depending on the random value that AutoFixture generates it might create a valid instance or throw an exception. To make this consistent, we can add Customization to ensure predictability.</p>
+
+<p>For the DateRange class below we can add the following Customization.</p>
+
+<pre><code class="csharp">public class DateRange
+{
+    public readonly DateTime EndDate;
+    public readonly DateTime StartDate;
+
+    public DateRange(DateTime startDate, DateTime endDate)
+    {
+        if (endDate &lt; startDate)
+            throw new Exception("End date cannot be less than the start date");
+
+        StartDate = startDate;
+        EndDate = endDate;
+    }
+}
+</code></pre>
+
+<pre><code class="csharp DateRange Customization">public class DateRangeCustomization : ICustomization
+{
+    public void Customize(IFixture fixture)
+    {
+        fixture.Customizations.Add(new DateRangeSpecimenBuilder());
+    }
+}
+
+public class DateRangeSpecimenBuilder : ISpecimenBuilder
+{
+    public object Create(object request, ISpecimenContext context)
+    {
+        var requestAsType = request as Type;
+        if (typeof(DateRange).Equals(requestAsType))
+        {
+            var times = context.CreateMany&lt;DateTime&gt;();
+            return new DateRange(times.Min(), times.Max());
+        }
+
+        return new NoSpecimen();
+    }
+}
+</code></pre>
+
+<p>The customization gets invoked every time a DateRange object is requested using the fixture. It then invokes this custom code that we have added in and creates a valid DateRange object. For the tests use the customization as part of the fixture either using a custom data attribute or explicitly adding the customization into the Fixture class.</p>
+
+<h3>Mocking behavior</h3>
+
+<p><a href="http://xunitpatterns.com/Mock%20Object.html">Mock Objects</a> is a popular way to unit test classes in isolation. For the external dependencies that a <a href="http://xunitpatterns.com/SUT.html">System Under Test</a> (SUT) has, the dependencies are mocked using a mocking framework. In these cases, we can setup the external dependencies to return different values as we expect for different tests and test the logic of the SUT and how it responds. Such tests are usually more coupled with the implementation as we have to setup the mocks prior. So we need to have an understanding of the return values expected from dependencies and the parameters expected by the dependencies. I use Moq framework for mocking, and AutoFixture has a library that helps integrate well with it.</p>
+
+<pre><code class="csharp">public HttpResponseMessage Get(Guid id)
+{
+    var customer = CustomerRepository.Get(id);
+
+    if (customer == null)
+        return Request.CreateResponse(HttpStatusCode.NotFound, "Customer not Found with id " + id);
+
+    return Request.CreateResponse(HttpStatusCode.OK, customer);
+}
+</code></pre>
+
+<pre><code class="csharp">[Theory]
+[InlineAutoMoqData]
+public void CustomerControllerGetWithNoCustomerReturnsNotFound(
+    Guid customerId,
+    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
+    CustomerController sut)
+{
+    // Fixture setup
+    customerRepository.Setup(a =&gt; a.Get(customerId)).Returns(null);
+    var expected = HttpStatusCode.NotFound;
+
+    // Exercise system
+    var actual = sut.Get(customerId).StatusCode;
+
+    // Verify outcome
+    Assert.Equal(expected, actual);
+}
+</code></pre>
+
+<p>The tests above uses <a href="http://blog.nikosbaxevanis.com/2012/07/31/autofixture-xunit-net-and-auto-mocking/">InlineAutoMoqData attribute</a> which is a customized xUnit data attribute that uses Moq framework to inject dependencies. The Mock<ICustomerRepository> represents a mocked interface implementation. Behavior is setup on the mock using the Setup method. By using <a href="http://blog.ploeh.dk/2010/03/17/AutoFixtureFreeze/">Frozen</a> attribute for the Mock parameter, we tell AutoFixture to create only one instance of the mocked object and then use the same instance for any future requests of that type. This forces the same instance of the repository to be injected into the CustomerController class as well when it asks for a ICustomerRepository to AutoFixture.</p>
+
+<p>Creating test data is an important aspect of any test. Making sure that you minimize the dependencies on the implementation detail is important to make your tests more robust. This allows the code to be refactored as long as some of the core contracts that we are testing remain the same. AutoFixture helps minimize the code in <a href="http://xunitpatterns.com/Four%20Phase%20Test.html">Fixture Setup phase</a>, which otherwise tends to grow bigger. Hope this helps you with your tests!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Simulating delays in HTTP Calls For Manual Tests]]></title>
@@ -526,86 +754,6 @@ public void PerformOperationsShouldReturnTrue(
 </code></pre>
 
 <p>The test code does not have any dependency on the constructor of the SUT and a change in constructor signature does not affect our tests at all. We can refactor <em>MyService</em> and use the same tests as long as the functionality served by the class remains the same. Constructors are implementation details and it&rsquo;s better to keep tests independent of it. This keeps our test code clean and more robust!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Testability: Removing Unnecessary Dependencies]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/"/>
-    <updated>2016-03-28T04:27:03+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies</id>
-    <content type="html"><![CDATA[<p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
-
-<p>Nowadays I am trying to stick to <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> (with the test first approach) and have found it to be of great help. One of the biggest reward doing TDD is that it helps me to <a href="https://vimeo.com/97419151">stay in the flow</a> and regain speed faster after a distraction. This post explains how to refactor code to remove unnecessary dependencies, which is easily found when writing tests.</p>
-
-<p>Unnecessary dependencies are those components which a <a href="http://xunitpatterns.com/SUT.html">SUT</a> depends on, but does not directly affect any of its functionalities. Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test Code Duplication</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>.</p>
-
-<blockquote><p><em>Cut-and-Paste code reuse for fixture setup happens often when there is an unnecessary dependency.</em></p></blockquote>
-
-<p>While looking for an example to write on, I came across a post from my friend <a href="https://twitter.com/zpbappi">Bappi</a>, where he explains <a href="http://zpbappi.com/testing-codes-with-configurationmanager-appsettings/">Testing Codes with ConfigurationManager</a>. It&rsquo;s a good read on how to remove the dependency with various Configuration Providers by creating an abstraction over it.</p>
-
-<h3>Testability Issues with Current Design</h3>
-
-<p>While abstracting the Configuration Manager by using an interface is a good idea, you should also be careful on how the application classes depend on it. Configurations live at the application root and it is a good idea to restrict dependencies with it at that level. Rest of the application must be dependent only on the configuration value and not the configuration itself. Inner components having dependency with the  configuration provider brings in unnecessary complexities and makes code fragile. Some common issues are</p>
-
-<ul>
-<li>Class needs to know of Configuration key</li>
-<li>Extra mocking while testing</li>
-</ul>
-
-
-<p>As you see below, the test case from the original post has to set up the Configuration provider mock to return values before testing the class. MyService (assuming that it is not a Factory class, which I confirmed from Bappi) is unnecessarily depending on IAppSettings and coupling itself with the configuration name, which really is not its concern. This leads to brittle code and tests!</p>
-
-<pre><code class="csharp">[Subject(typeof(MyService))]
-public class MyServiceTests
-{
-    Establish context = () =&gt;
-        {
-            otherDependency = Substitute.For&lt;IMyOtherDependency&gt;();
-
-            var appSettings = Substitute.For&lt;IAppSettings&gt;();
-            appSettings["app.name"].Returns("My Test Application");
-
-            myService = new MyService(otherDependency, appSettings);
-        };
-
-    Because of = () =&gt; result = myService.PerformOperations();
-
-    It should_call_my_dependency_utility_method_once = () =&gt; otherDependency.Received(1).UtilityMethod();
-    It should_execute_successfully = () =&gt; result.ShouldBeTrue();
-}
-</code></pre>
-
-<h3>Refactoring the Code</h3>
-
-<p>Refactoring such code is as easy as removing the dependency on IAppSettings and taking in the value of &lsquo;app.name&rsquo; as the dependency. This removes the interface dependency and requires only the string value to be passed in. Here I am passing in <a href="https://blogs.msdn.microsoft.com/ploeh/2008/11/17/anonymous-variables/">an anonymous Name</a>, as the value is not of concern for this test.</p>
-
-<pre><code class="csharp">[Subject(typeof(MyService))]
-public class MyServiceTests
-{
-    Establish context = () =&gt;
-        {
-            otherDependency = Substitute.For&lt;IMyOtherDependency&gt;();
-            var anonymousName = "Anonymous Name";
-            myService = new MyService(otherDependency, anonymousName);
-        };
-
-    Because of = () =&gt; result = myService.PerformOperations();
-
-    It should_call_my_dependency_utility_method_once = () =&gt; otherDependency.Received(1).UtilityMethod();
-    It should_execute_successfully = () =&gt; result.ShouldBeTrue();
-}
-</code></pre>
-
-<blockquote><p><em>When looked at isolation these are minor code changes that hardly removes a line or two. But it has a cumulative effect when applied to all the tests for the class and makes code more robust.</em></p></blockquote>
-
-<p>When looked at isolation, this is a seemingly minor change of not mocking an interface and is just one line of code, which you could live with. But you need to mock that for all tests of that class, which is when you start to see the real benefit. Also, you have made the tests more resilient by not taking an unnecessary dependency. Even if you decide to change the configuration name to &lsquo;<em>ApplicationName</em>&rsquo;, none of the tests break now, whereas with the original code all of them would have.</p>
-
-<p><em>One possible argument with this refactoring is, <strong> What if I need an extra value from the dependency (app.domain in the above case), I now have to update the class constructor</strong>.</em></p>
-
-<p>Agreed, but then this violates <a href="https://blog.8thlight.com/uncle-bob/2014/05/12/TheOpenClosedPrinciple.html">Open Closed Principle</a>, which states &lsquo;You should be able to extend a classes behaviour without modifying it.&rsquo; If you need a new configuration value, you are essentially changing the components functionality, so you should either extend current functionality or write a new component. This also opens up a hidden code smell with the existing code and an anti-pattern - <a href="http://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/">Service Locator</a>. So the refactoring still holds good!</p>
-
-<p>Hope this helps you find dependencies with unnecessary components and remove them.</p>
 ]]></content>
   </entry>
   

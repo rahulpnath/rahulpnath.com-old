@@ -163,6 +163,331 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-10-28T14:41:31+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 28<sup>th</sup>, 2012</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/rest/'>rest</a>, <a class='category' href='/blog/category/windows-8/'>windows 8</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-8-series-incremental-loading/" itemprop="url">Windows 8 Series - Incremental Loading</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Fast and fluid experience is one of the most important characteristics of a Windows 8 application. As the data becomes larger , it might not be always possible to get the entire data loaded before hand.We might want to have a incremental or sequential data loading so that the user has a better experience.
+While developing windows 8 this can be easily achieved by using <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">ISupportIncrementalLoading</a>
+interface which would load the data incrementally.The class that implements this should also implement the <a href="http://msdn.microsoft.com/en-us/library/system.collections.ilist.aspx">IList</a> and <a href="http://msdn.microsoft.com/en-us/library/system.collections.specialized.inotifycollectionchanged.aspx">INotifyColectionChanged</a>. A sample on how to implement this interface can be seen <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">here</a>.
+Implementing these over and over for different data sources that you would want to load incrementally might soon become tedious and repetitive.So why not make up some generic classes that you could abstract away the task of loading the data incrementally. That&rsquo;s exactly what we would be looking into here.</p>
+
+<p>First lets get the class that implements <a href="http://msdn.microsoft.com/en-us/library/windows/apps/Hh701916">ISupportIncrementalLoading</a>, IList and INotifyCollectionChanged. To keep things simple lets inherit from ObservableCollection,which in turn inherits the latter 2 interfaces</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IncrementalSource</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">ObservableCollection</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;,</span> <span class="n">ISupportIncrementalLoading</span>
+</span><span class='line'>    <span class="k">where</span> <span class="n">T</span><span class="p">:</span> <span class="k">class</span>
+</span><span class='line'><span class="err">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">Query</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">VirtualCount</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">CurrentPage</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IPagedSource</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span><span class="n">K</span><span class="p">&gt;</span> <span class="n">Source</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">rpp</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">IncrementalSource</span><span class="p">(</span><span class="kt">string</span> <span class="n">query</span><span class="p">,</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;&gt;</span> <span class="n">GetPagedResponse</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Source</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PagedSourceLoader</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="n">K</span><span class="p">&gt;(</span><span class="n">GetPagedResponse</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">VirtualCount</span> <span class="p">=</span> <span class="kt">int</span><span class="p">.</span><span class="n">MaxValue</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">CurrentPage</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Query</span> <span class="p">=</span> <span class="n">query</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#region ISupportIncrementalLoading</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">bool</span> <span class="n">HasMoreItems</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">VirtualCount</span> <span class="p">&gt;</span> <span class="k">this</span><span class="p">.</span><span class="n">CurrentPage</span> <span class="p">*</span> <span class="p">(</span><span class="n">rpp</span> <span class="p">==</span> <span class="m">0</span> <span class="p">?</span> <span class="m">10</span> <span class="p">:</span><span class="n">rpp</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IAsyncOperation</span><span class="p">&lt;</span><span class="n">LoadMoreItemsResult</span><span class="p">&gt;</span> <span class="n">LoadMoreItemsAsync</span><span class="p">(</span><span class="kt">uint</span> <span class="n">count</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">CoreDispatcher</span> <span class="n">dispatcher</span> <span class="p">=</span> <span class="n">Window</span><span class="p">.</span><span class="n">Current</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">Window</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">Dispatcher</span> <span class="p">:</span> <span class="n">Windows</span><span class="p">.</span><span class="n">ApplicationModel</span><span class="p">.</span><span class="n">Core</span><span class="p">.</span><span class="n">CoreApplication</span><span class="p">.</span><span class="n">MainView</span><span class="p">.</span><span class="n">CoreWindow</span><span class="p">.</span><span class="n">Dispatcher</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">count</span> <span class="p">&gt;</span> <span class="m">50</span> <span class="p">||</span> <span class="n">count</span> <span class="p">&lt;=</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// default load count to be set to 50</span>
+</span><span class='line'>            <span class="n">count</span> <span class="p">=</span> <span class="m">50</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">&lt;</span><span class="n">LoadMoreItemsResult</span><span class="p">&gt;(</span>
+</span><span class='line'>            <span class="k">async</span> <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">Source</span><span class="p">.</span><span class="n">GetPage</span><span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Query</span><span class="p">,</span><span class="n">count</span><span class="p">),</span> <span class="p">++</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentPage</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">count</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">this</span><span class="p">.</span><span class="n">VirtualCount</span> <span class="p">=</span> <span class="n">result</span><span class="p">.</span><span class="n">VirtualCount</span><span class="p">;</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="n">rpp</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">rpp</span> <span class="p">=</span> <span class="n">result</span><span class="p">.</span><span class="n">rpp</span><span class="p">;</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">await</span> <span class="n">dispatcher</span><span class="p">.</span><span class="n">RunAsync</span><span class="p">(</span>
+</span><span class='line'>                    <span class="n">CoreDispatcherPriority</span><span class="p">.</span><span class="n">Normal</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">()</span> <span class="p">=&gt;</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="k">foreach</span> <span class="p">(</span><span class="n">K</span> <span class="n">item</span> <span class="k">in</span> <span class="n">result</span><span class="p">.</span><span class="n">Items</span><span class="p">)</span>
+</span><span class='line'>                            <span class="k">this</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">item</span><span class="p">);</span>
+</span><span class='line'>                    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="nf">LoadMoreItemsResult</span><span class="p">()</span> <span class="p">{</span> <span class="n">Count</span> <span class="p">=</span> <span class="p">(</span><span class="kt">uint</span><span class="p">)</span><span class="n">result</span><span class="p">.</span><span class="n">Items</span><span class="p">.</span><span class="n">Count</span><span class="p">()</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="p">}).</span><span class="n">AsAsyncOperation</span><span class="p">&lt;</span><span class="n">LoadMoreItemsResult</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#endregion</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Before going into the details of the code, lets understand what this class is going to do for us. We need to load data in a paged fashion from a large datasource. So we would generally be dealing with two types of object – one the type of object(<strong><em>K</em></strong>) whose list we are trying to load incrementally. Another one the type of object(<strong><em>T</em></strong>) that represents each paged request result. This object would ideally contain a property to hold list of objects of type K, the total number of items that the datasource would give us,so that we know how many pages we need to request for and also a property indicating the current page. Each datasource might return us these required properties in different property names and types. So we have a class to hold these data together for us, PagedResponse which implements IPagedResponse</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">Items</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">VirtualCount</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">rpp</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span> <span class="c1">// rpp - requests per page</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">PagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">PagedResponse</span><span class="p">(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;</span> <span class="n">items</span><span class="p">,</span> <span class="kt">int</span> <span class="n">virtualCount</span><span class="p">,</span><span class="kt">int</span> <span class="n">itemsPerPage</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Items</span> <span class="p">=</span> <span class="n">items</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">VirtualCount</span> <span class="p">=</span> <span class="n">virtualCount</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">rpp</span> <span class="p">=</span> <span class="n">itemsPerPage</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">VirtualCount</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">rpp</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span>  <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;</span> <span class="n">Items</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>That said lets see the  <em>IncremetnalSource</em> class. It takes in the object type <strong><em>T </em></strong>and <strong><em>K.</em></strong>The constructor takes in the url where the datasource can be found.The Func&lt;T, IPagedResponse<K>> parameter represents a function that takes in the return type of the call to the url as a parameter and returns the PagedResponse type. In other words that function converts the paged request call type to the type that we use to represent it, IPagedResponse.See a sample below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">PagedResponse</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;</span> <span class="n">RootObjectResponse</span><span class="p">(</span><span class="n">RootObject</span> <span class="n">rootObject</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="n">PagedResponse</span><span class="p">&lt;</span><span class="n">Photo</span><span class="p">&gt;(</span><span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span><span class="p">,</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">total_items</span><span class="p">,</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">?</span> <span class="n">rootObject</span><span class="p">.</span><span class="n">photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">:</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to make the call to the datasource url. This might return us data in different formats, most popularly json or xml. So we would always want to abstract away the loading of data to another class so that we don’t get tied up with the data formats in <em>IncrementalSource.</em></p>
+
+<p>IPagedSource&lt;T,K> will do this for us. A sample implementation of this is <em>PagedSourceLoader </em>that handles for json return type is below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IPagedSource</span><span class="p">&lt;</span><span class="n">R</span><span class="p">,</span><span class="n">K</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Task</span><span class="p">&lt;</span><span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;&gt;</span> <span class="n">GetPage</span><span class="p">(</span><span class="kt">string</span> <span class="n">query</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageIndex</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageSize</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">PagedSourceLoader</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span><span class="n">K</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">IPagedSource</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span><span class="n">K</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">where</span> <span class="n">T</span><span class="p">:</span><span class="k">class</span>
+</span><span class='line'><span class="err">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;&gt;</span> <span class="n">getPagedResponse</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">PagedSourceLoader</span><span class="p">(</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;&gt;</span> <span class="n">GetPagedResponse</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">getPagedResponse</span> <span class="p">=</span> <span class="n">GetPagedResponse</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#region IPagedSource</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">IPagedResponse</span><span class="p">&lt;</span><span class="n">K</span><span class="p">&gt;&gt;</span> <span class="n">GetPage</span><span class="p">(</span><span class="kt">string</span> <span class="n">query</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageIndex</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageSize</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">query</span> <span class="p">+=</span> <span class="s">&quot;&amp;page=&quot;</span><span class="p">+</span><span class="n">pageIndex</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">HttpClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpClient</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">HttpResponseMessage</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">GetAsync</span><span class="p">(</span><span class="n">query</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">data</span> <span class="p">=</span> <span class="k">await</span> <span class="n">response</span><span class="p">.</span><span class="n">Content</span><span class="p">.</span><span class="n">ReadAsStreamAsync</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">DataContractJsonSerializer</span> <span class="n">json</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">T</span> <span class="n">dat</span> <span class="p">=</span> <span class="n">json</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">as</span> <span class="n">T</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">getPagedResponse</span><span class="p">(</span><span class="n">dat</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#endregion</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you see above the <em>PagedSourceLoader</em> gets the json from the datasource url and converts to the type that we are interested in . You could always replace this class to use any other data format as you would want. Mostly you would just want one implementation for <em>IPagedSource&lt;T,K>, </em>as your data source would always return you the same data format. In case not you could inject that too into the <em>IncrementalSource</em> class.</p>
+
+<p>I have a sample <a href="http://sdrv.ms/RdPtdL">here</a> that incrementally loads the photos from a photo site <a href="http://500px.com/flow">500px</a>. You would need to register for an to get the consumer key,which should hardly take some time <a href="http://500px.com/settings/applications?from=developers">here</a>.</p>
+
+<p><img src="/images/windows8_incremental_loading.png" alt="windows8 incremental loading" /></p>
+
+<p><a href="https://github.com/rahulpnath/Blog/tree/master/Windows8%20-%20IncrementalLoading">Download the sample source code</a></p>
+
+<p>Keep a sample of the source code for yourself in case you wanted this specific version. I might refine this to a more usable library with couple of default <em>PagedSourceLoader.</em></p>
+
+<p><strong>References:
+</strong><a href="http://www.silverlightplayground.org/post/2012/06/10/Metro-Incrementally-load-GridView-and-ListView-with-ISupportIncrementalLoading.aspx">Metro: Incrementally load GridView and ListView with ISupportIncrementalLoading</a></p>
+
+<p>Feel free to reuse it if you find it useful and drop a comment to refine it.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-10-05T12:00:27+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 5<sup>th</sup>, 2012</time>
         
 
@@ -1208,109 +1533,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-01-29T11:56:43+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 29<sup>th</sup>, 2011</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/wpf/'>wpf</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/datatemplate-vs-code-behind/" itemprop="url">DataTemplate Vs Code Behind</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Most of the people switching to WPF,got to understand the fact the WPF tries to target one major problem of the technologies that existed before, which was tight coupling of the design and the behaviour.WPF has a ‘<em>lookless control model</em>’,and that simply means that the look and feel of the control is completely separated from the behaviour of the  control.And that is where the whole concept of XAML comes in,which does its part of defining the visual representation.</p>
-
-<p>But still many people move on to WPF from older technologies fail to absorb this core approach.Mostly this happens when the look of something is to be dynamically generated.Say in the case of a Listbox bound to a itemssource.As far as the item is to be displayed in pure text everything goes fine.People figure out that the <em>DisplayMemberPath</em> has to be set to the property that they want to be displayed in the listbox.
- &#8220;` csharp
- private void Window_Loaded(object sender, RoutedEventArgs e)
-        {
-          listBox1.ItemsSource = PopulateEmployees();
-        }</p>
-
-<pre><code>    private static List&lt;Employee&gt; PopulateEmployees()
-    {
-        List&lt;Employee&gt; employees = new List&lt;Employee&gt;();
-        Employee emp;
-        for int i = 0; i &lt; 10; i++)
-        {
-            emp = new Employee()
-            {
-                FirstName = "Name",
-                LastName = i.ToString(),
-                Id = i
-            };
-            employees.Add(emp);
-        }
-        return employees;
-    }
-}
-
-class Employee
-{
-    public string FirstName { get; set; }
-
-   public string LastName { get; set; }
-
-    public int&lt;/span&gt; Id { get; set; }
-}
-```
-</code></pre>
-
-<p><img src="/images/binding_displaymemberpath.jpg" alt="binding displaymemberpath" /></p>
-
-<p>But the scenario changes when the item to be displayed has to be more informative.Say you need a image to come up with some text,or maybe a button/checkbox etc.Now people tend to shift to the older approaches of creating the listbox items display from code.As that’s how it had been done before and also that seems easier.</p>
-
-<p>The code changes to something similar to shown below.</p>
-
-<p><img src="/images/binding_code_behind.jpg" alt="binding code behind" /></p>
-
-<p>Or another approach might be slightly better than this one,by creating a user control to hold this data and then create the User control in the code behind and then add that to the listbox items.</p>
-
-<p>This is where people tend to loose focus of the real power of WPF ..<strong>Templating</strong>.</p>
-
-<p>All this code can be easily replaced and also clearly separate that UI details from the behaviour.The property that&rsquo;s the key here is <em>ItemTemplate,</em>and this would how the new code look like.</p>
-
-<p><img src="/images/binding_data_template.jpg" alt="binding data template" /></p>
-
-<p>And the code in the behind all vanishes,and is as simple in our first case,by just setting up the listbox1’s ItemsSource.</p>
-
-<p>That is the power of templating and clearly separates the UI aspect from code. Any ItemsControl will have the property ItemTemplate that is to be set to the way you want the data to be displayed.If the display is complex in itself then you can move those into a separate user control and create  that user control  as the ItemTemplate.Anytime you want to change the way your control looks you just need to change in the xaml,clearly bringing in the decoupling.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1334,6 +1556,8 @@ class Employee
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/populating-data-for-tests/">Populating Data for Tests</a>
+    
     <a class="list-group-item " href="/blog/switching-between-subscriptions-under-same-azure-account-to-access-key-vault/">Tip of the Week: Switching Subscriptions Under Same Azure Account to Access Key Vaults</a>
     
     <a class="list-group-item " href="/blog/manage-certificates-in-azure-key-vault/">Manage Certificates in Azure Key Vault</a>
@@ -1341,8 +1565,6 @@ class Employee
     <a class="list-group-item " href="/blog/azure-key-vault-talk-at-sydney-alt-dot-net/">Azure Key Vault Talk at Sydney Alt.Net</a>
     
     <a class="list-group-item " href="/blog/todoist-manage-your-todo-list/">Tip of the Week: Todoist: Manage your To-Do List</a>
-    
-    <a class="list-group-item " href="/blog/three-day-trip-to-coffs-harbour-from-sydney/">Three Day Trip to Coffs Harbour from Sydney</a>
     
   </div>
 </section>
