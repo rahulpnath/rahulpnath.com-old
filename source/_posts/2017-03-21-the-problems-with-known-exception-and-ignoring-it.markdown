@@ -6,7 +6,7 @@ categories:
 - Programming
 - Thoughts
 tags: 
-date: 2017-03-23
+date: 2017-03-21
 completedDate: 2017-03-10 12:53:01 +1100
 keywords: 
 description: Having known errors and exceptions in the applications we develop and maintain can have a larger impact than we think.
