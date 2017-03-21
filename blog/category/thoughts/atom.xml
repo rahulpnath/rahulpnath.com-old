@@ -4,7 +4,7 @@
   <title><![CDATA[Category: thoughts | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/thoughts/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-03-21T00:03:40+00:00</updated>
+  <updated>2017-03-21T04:21:56+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[The Problems with Known Exceptions and Ignoring It]]></title>
+    <link href="http://rahulpnath.com/blog/the-problems-with-known-exception-and-ignoring-it/"/>
+    <updated>2017-03-21T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/the-problems-with-known-exception-and-ignoring-it</id>
+    <content type="html"><![CDATA[<p>&ldquo;<em>Oh yes! That is an expected error. It is because…</em>&rdquo;.</p>
+
+<p>How many times have you given that explanation yourself or heard the other developer tell that? Known errors or exceptions are common in applications and us developers find ways to live with such errors. At times when the number of such errors grows it becomes a problem directly or indirectly to the business. These known errors could either be exceptions in application logs, failed messages (commands/events) in a <a href="https://en.wikipedia.org/wiki/Event-driven_architecture">message based architecture</a>, alert popups in Windows client applications, etc.</p>
+
+<p><img alt="Known Errors" src="/images/known_errors.png" /></p>
+
+<p>We should try and keep known errors and exception count close to zero. Below are some of the problems that can happen by ignoring it over a period.</p>
+
+<h4><strong>Business Value</strong></h4>
+
+<p>Since the errors are known to us, we train ourselves or even the users to ignore them. It is easy to justify that fixing them does not have any business value as there is no direct impact. This assumption need not be true. If a piece of code has no value then why is it there in the first place? Possibly it is not having any visible effects at present but might be having an impact at a later point in time. It could also be that it is not affecting the data consistency of your system, but is a problem for an external system. There can be business flows that are written at a later point of time not being aware of this known error. Some developer time gets lost when glancing over such errors or messages in the log which directly equates to money for the business.</p>
+
+<h4><strong>Important Errors Missed</strong></h4>
+
+<p>If there are a lot of such known errors, it is easy for new or important ones to get missed or ignored. Depending on the frequency of the known error, it can end up flooding the logs. The logs start to get overwhelming to monitor or trace for other issues with lots of such known errors. The natural tendency for people when they find something overwhelming is to ignore it. I worked on a system which had over 250 failed messages coming to the error queue daily. It was overwhelming to monitor them and was soon getting ignored. Important errors were getting missed and often ended up as support requests for the application. Such errors otherwise could have been proactively handled, giving the end user more confidence.</p>
+
+<h4><strong>Lower Perceived Stability</strong></h4>
+
+<p>The overall perceived stability of the system comes down as more and more such errors happen. It is applicable both for the users and developers. When errors no longer get monitored or tracked, critical errors gets ignored. Users have to resort to other means like support requests for the errors they face. For users who are new to the system, it might take a while to get used to the known errors. These errors decrease the trust they have in the system and soon starts suspecting everything as an issue or a problem.</p>
+
+<p>Seeing more and more of such errors does not leave a positive impact on the developers. It&rsquo;s possible that developers loose interest to work on an unstable system and start looking for a change. It is also a challenge when new members join the team. It takes time for them to get used to errors and exceptions and to learn to ignore them.</p>
+
+<h4><strong>Stereotyping Exceptions</strong></h4>
+
+<p>Errors of a particular type can get stereotyped together, and get ignored mistaking it for one that is already known. It is easy for different &lsquo;<em>object null reference exception</em>&rsquo; error messages to be treated as a particular error whereas it could be failing for various reasons. At one of my clients, we had a specific message type failing with the null reference error. We had identified the reason for one such message and found that it is not causing &lsquo;<em>any direct business impact</em>&rsquo; and can be ignored. The message was failing as one of the properties on the message was alphanumeric while the code expected numeric. The simple fix in the code would be to validate it, but since this was not causing any business impact it was ignored, and messages of that type kept piling up. Until later where we found that there were other message formats of the same message type failing which was for a different reason. And those messages were causing a loss of revenue to the business. But since we were stereotyping the error messages of the particular type to the one that we found invalid and not having a business impact all of such messages were ignored. The stereotyping resulted in the important message getting ignored.</p>
+
+<h4><strong>Maintaining a Known Bugs Database</strong></h4>
+
+<p>When having a large number of such errors, it is important to document a list of such errors.It forces us to a new document and also comes with the responsibility of maintaining it. For any new developers or users joining the system, they need to go through the documentation to verify if it is a known error or not. Internalizing these errors might take some time, and critical errors can get missed during this time. Any such document needs to be kept current and up to date as and when new errors are found or more details found for older ones. This is not the best of places where a developers time is spent.</p>
+
+<h4><strong>Count Keeps Increasing</strong></h4>
+
+<p>If the count of such errors is not monitored and not valued for the probability of the number of error messages increasing is higher. New errors getting introduced will not be noticed, and even when noticed it becomes acceptable. <em>We already have a lot of them, so it is fine.</em> It sets a wrong goal for the team and can soon become unmanageable.</p>
+
+<h4><strong>New Business Flow Assuming Exception</strong>s</h4>
+
+<p>Since the exceptions are so used to, it is highly possible that we set that as an expectation. New business flows come up expecting a certain kind of exception to be thrown or assuming a particular type of message will not get processed. Since we are so used to the fact that it happens, we take it for granted and start coding against it. It might be the last thing that happens on a project, but believe me, it happens!. Such code becomes harder to maintain and might not work once the actual exception gets fixed.</p>
+
+<p>Ignoring exceptions and getting around to live with it can be more costly over a longer period. The further we delay action on such errors the higher the cost involved. Even though there is no immediate or direct business value seen from fixing such errors, we saw that on a longer run it could have a great impact. So try not to live with such errors but instead prioritize them with the work your team is doing and get it fixed. A fix might not always be an extra null check or a conditional to avoid the error. It might seem the easier approach to reducing the errors but will soon become a different problem. Understand the business and explore into what is causing the error. Do you have any known exceptions in the application you are working? What are you doing about it?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Learnings from The Professional Scrum Master (PSM) Course]]></title>
@@ -419,69 +466,6 @@ Add in reviewers that I feel are missed and relevant for the part of the code th
 
 
 <p>Hope some of these helps you as well. Have a great year ahead!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[2016: What Went Well, What Didn't and Goals]]></title>
-    <link href="http://rahulpnath.com/blog/2016-recap/"/>
-    <updated>2016-12-20T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/2016-recap</id>
-    <content type="html"><![CDATA[<p><a href="http://www.oldlaundrytheatre.co.uk/happy-new-year-from-all-at-the-old-laundry/">
-<img class="center" alt="Posts per month - 2016" src="/images/2016_happy_new_year.png"/>
-</a></p>
-
-<p>2016 was a great year and I thought sharing some of the things that went well, those that didn&rsquo;t and setting goals for 2017.</p>
-
-<blockquote><p><strong>TLDR;</strong></p>
-
-<p><em>2016 was a great year and is the first one where I am writing a &lsquo;year in review&rsquo; post. Blogging, Videos, Open Source and Community contribution are some of the things that went well. FSharp, Reading, Travel, Photography and Exercise did not go that great. Looking forward to 2017 and planning to keep the goodness of 2016 and add some more to it</em></p></blockquote>
-
-<h3>What went well</h3>
-
-<h4><strong>Blogging</strong></h4>
-
-<p>This has been a great year with my blog. On an average, I published four blog posts a month. It started with a self-challenge from March to write every day. I was able to come up with eight posts that month, but then felt it was not something that I could stick with consistently. So I kept a target of four posts per month and stuck to it for the rest of the year. I automated a lot of mundane tasks in my blogging workflow right from <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">creating draft posts</a> to <a href="http://www.rahulpnath.com/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">deploying posts</a> and <a href="http://www.rahulpnath.com/blog/automatic_deployment_of_future_posts_with_octopress/">scheduling posts for future deployment</a>. This has saved a lot of time for me and helps me stick just with the writing part of blogging!</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="/images/2016_postspermonth.png"/></p>
-
-<p>Sticking with <a href="http://www.rahulpnath.com/blog/maintaining-a-blogging-schedule/">publishing posts on a regular interval</a> was more about deciding that I have to write every day. I set a &lsquo;mini habit&rsquo; to write every day - at least one line every day - and stuck to it. This helped me get over the initial inertia of starting to write a post. Having set this goal to myself I had to consistently come with topics to blog about. This very much changed the way that I approached <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">my day job</a>. I always involved in it with the need to find something to share, in a way that I can abstract it out from the business dependencies. Most of the decisions and issues that happened to us (the development team) are now documented here. This acts as a documentation for any new joiners and makes the <a href="http://www.rahulpnath.com/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/">ramp up to the project a bit easier</a>. More than anything it definitely helps me find the solution when I come across the same issue again. So if you still don&rsquo;t have a blog of your own, there is no better time than now. Make it a new year resolution. <a href="http://www.rahulpnath.com/blog/own-your-urls/">Get a URL</a> and start writing. I have also been successful in getting a couple of people (at least four that I personally know of) to blog. Getting started is the biggest hurdle, the rest will fall in the due course of time.</p>
-
-<h4><strong>Youtube Channel</strong></h4>
-
-<p>Starting a <a href="https://www.youtube.com/c/RahulNath">Youtube channel</a> had been something I wanted to do for a long time. I have just got started with it and posted one video. I now understand why people say recording is hard - there is a lot to it and it takes time to be good at it. The only way to get better if something is hard is to do more of it - <em><a href="http://martinfowler.com/bliki/FrequencyReducesDifficulty.html">Frequency Reduces Difficulty</a></em> I plan to start with one video per month and see how it goes. I have been procrastinating on the second video for a while, <strike>will see if I can get it out before this year!</strike> <a href="https://www.youtube.com/watch?v=JbshGF4ZwGE">Got it out just in time!</a></p>
-
-<h4><strong>Open Source and Forums</strong></h4>
-
-<p>Contributing to Open Source projects is a good way to learn. I have always struggled to find projects/issues to contribute to. But then I learned that it is again just a matter of deciding and committing to. <a href="http://www.firsttimersonly.com/">First Timers only</a> a good way to find issues and projects that one can possible jump right into. I decided to start looking at projects that I use more on a day to day basis - Asmspy and Autofixture were something that interested me. There were a couple of open issues in AsmSpy, that I picked up and <a href="http://mikehadlow.com/">Mike Hadlow</a> was more than happy to merge them in. I also decided to set up <a href="https://github.com/mikehadlow/AsmSpy/issues/14">Chocolatey package for AsmSpy</a>. On Mike&rsquo;s request, I now manage the <a href="https://chocolatey.org/packages/asmspy/">chocolatey package account</a> and am a contributor on AsmSpy project. I automated the <a href="http://www.rahulpnath.com/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/">deployment pipeline for AsmSpy</a> so that I do not have to worry about deploying the chocolatey package every time a change is made. Also got to <a href="https://github.com/AutoFixture/AutoFixture/issues?q=mentions:rahulpnath+is:closed">contribute to a few issues with AutoFixture</a> which is managed by <a href="http://blog.ploeh.dk/">Mark Seemann (ploeh)</a>. I was also lucky enough to meet him in person at <a href="http://www.rahulpnath.com/blog/ndc-sydney/">NDC Sydney</a>.</p>
-
-<p>I keep a look at the <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/home?forum=AzureKeyVault">Azure Key Vault MSDN forum</a> and try to help every time a question comes up. Answering questions on forums is also a <a href="http://www.rahulpnath.com/blog/staying-in-the-learning-loop/">good way to learn</a>, find interesting problems and <a href="http://www.rahulpnath.com/blog/stars-do-count/">at times rewarding</a>.</p>
-
-<h3>What didn&rsquo;t go well</h3>
-
-<ul>
-<li><p><strong>FSharp</strong>: Learning FSharp is something that I really want to, but it&rsquo;s not been happening that well. I am on and off with this and it keeps getting sidelined.</p></li>
-<li><p><strong>Reading</strong>: Compared to <a href="https://www.goodreads.com/user_challenges/3539650">2015</a> my reading has been a lot down in <a href="https://www.goodreads.com/user_challenges/5380726">2016</a>. Though I have been listening to a lot more podcasts, I think I have to get back on with reading in the coming year.</p></li>
-<li><p><strong>Travel &amp; Photography</strong>: There&rsquo;s not been much travel except for the long vacation back home and a few local places in Sydney. Though I have been clicking along I was lazy to process them. There are still lying on my camera waiting to be processed.</p></li>
-<li><p><strong>Exercise</strong>: Getting enough exercise is something that I have really lacked last year and I think I have also put up some weight because of it. Except for the walk up and down from home to station for the office commute, there&rsquo;s not been much of my body moving.</p></li>
-</ul>
-
-
-<h3>Goals for 2017</h3>
-
-<blockquote><p><em>In preparing for battle I have always found that plans are useless, but planning is indispensable.</em></p>
-
-<p>― Dwight D. Eisenhower</p></blockquote>
-
-<ul>
-<li><strong>Blogging</strong>: Stick to at least four posts per month. Try to see if I can get up to 6-8. I will have to improve the time that I take to write a post for this. Handling images for the blog needs to be automated as I spent some time converting and optimizing them.</li>
-<li><strong>Videos</strong>: Create a schedule for publishing videos and improve the quality and delivery of the videos.</li>
-<li><strong>Reading</strong>: Set up a reading plan and read at least 21 books (1 more than what I did in 2015).</li>
-<li><strong>FSharp</strong>: Learn, Contribute and Blog</li>
-<li><strong>Travel &amp; Photography</strong>: One trip at least once in 3 months and post photos</li>
-<li><strong>Exercise</strong>: Run/Bike at least once a week.</li>
-</ul>
-
 ]]></content>
   </entry>
   

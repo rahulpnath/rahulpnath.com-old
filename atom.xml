@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-03-21T00:03:40+00:00</updated>
+  <updated>2017-03-21T04:21:56+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[The Problems with Known Exceptions and Ignoring It]]></title>
+    <link href="http://rahulpnath.com/blog/the-problems-with-known-exception-and-ignoring-it/"/>
+    <updated>2017-03-21T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/the-problems-with-known-exception-and-ignoring-it</id>
+    <content type="html"><![CDATA[<p>&ldquo;<em>Oh yes! That is an expected error. It is because…</em>&rdquo;.</p>
+
+<p>How many times have you given that explanation yourself or heard the other developer tell that? Known errors or exceptions are common in applications and us developers find ways to live with such errors. At times when the number of such errors grows it becomes a problem directly or indirectly to the business. These known errors could either be exceptions in application logs, failed messages (commands/events) in a <a href="https://en.wikipedia.org/wiki/Event-driven_architecture">message based architecture</a>, alert popups in Windows client applications, etc.</p>
+
+<p><img alt="Known Errors" src="http://rahulpnath.com/images/known_errors.png" /></p>
+
+<p>We should try and keep known errors and exception count close to zero. Below are some of the problems that can happen by ignoring it over a period.</p>
+
+<h4><strong>Business Value</strong></h4>
+
+<p>Since the errors are known to us, we train ourselves or even the users to ignore them. It is easy to justify that fixing them does not have any business value as there is no direct impact. This assumption need not be true. If a piece of code has no value then why is it there in the first place? Possibly it is not having any visible effects at present but might be having an impact at a later point in time. It could also be that it is not affecting the data consistency of your system, but is a problem for an external system. There can be business flows that are written at a later point of time not being aware of this known error. Some developer time gets lost when glancing over such errors or messages in the log which directly equates to money for the business.</p>
+
+<h4><strong>Important Errors Missed</strong></h4>
+
+<p>If there are a lot of such known errors, it is easy for new or important ones to get missed or ignored. Depending on the frequency of the known error, it can end up flooding the logs. The logs start to get overwhelming to monitor or trace for other issues with lots of such known errors. The natural tendency for people when they find something overwhelming is to ignore it. I worked on a system which had over 250 failed messages coming to the error queue daily. It was overwhelming to monitor them and was soon getting ignored. Important errors were getting missed and often ended up as support requests for the application. Such errors otherwise could have been proactively handled, giving the end user more confidence.</p>
+
+<h4><strong>Lower Perceived Stability</strong></h4>
+
+<p>The overall perceived stability of the system comes down as more and more such errors happen. It is applicable both for the users and developers. When errors no longer get monitored or tracked, critical errors gets ignored. Users have to resort to other means like support requests for the errors they face. For users who are new to the system, it might take a while to get used to the known errors. These errors decrease the trust they have in the system and soon starts suspecting everything as an issue or a problem.</p>
+
+<p>Seeing more and more of such errors does not leave a positive impact on the developers. It&rsquo;s possible that developers loose interest to work on an unstable system and start looking for a change. It is also a challenge when new members join the team. It takes time for them to get used to errors and exceptions and to learn to ignore them.</p>
+
+<h4><strong>Stereotyping Exceptions</strong></h4>
+
+<p>Errors of a particular type can get stereotyped together, and get ignored mistaking it for one that is already known. It is easy for different &lsquo;<em>object null reference exception</em>&rsquo; error messages to be treated as a particular error whereas it could be failing for various reasons. At one of my clients, we had a specific message type failing with the null reference error. We had identified the reason for one such message and found that it is not causing &lsquo;<em>any direct business impact</em>&rsquo; and can be ignored. The message was failing as one of the properties on the message was alphanumeric while the code expected numeric. The simple fix in the code would be to validate it, but since this was not causing any business impact it was ignored, and messages of that type kept piling up. Until later where we found that there were other message formats of the same message type failing which was for a different reason. And those messages were causing a loss of revenue to the business. But since we were stereotyping the error messages of the particular type to the one that we found invalid and not having a business impact all of such messages were ignored. The stereotyping resulted in the important message getting ignored.</p>
+
+<h4><strong>Maintaining a Known Bugs Database</strong></h4>
+
+<p>When having a large number of such errors, it is important to document a list of such errors.It forces us to a new document and also comes with the responsibility of maintaining it. For any new developers or users joining the system, they need to go through the documentation to verify if it is a known error or not. Internalizing these errors might take some time, and critical errors can get missed during this time. Any such document needs to be kept current and up to date as and when new errors are found or more details found for older ones. This is not the best of places where a developers time is spent.</p>
+
+<h4><strong>Count Keeps Increasing</strong></h4>
+
+<p>If the count of such errors is not monitored and not valued for the probability of the number of error messages increasing is higher. New errors getting introduced will not be noticed, and even when noticed it becomes acceptable. <em>We already have a lot of them, so it is fine.</em> It sets a wrong goal for the team and can soon become unmanageable.</p>
+
+<h4><strong>New Business Flow Assuming Exception</strong>s</h4>
+
+<p>Since the exceptions are so used to, it is highly possible that we set that as an expectation. New business flows come up expecting a certain kind of exception to be thrown or assuming a particular type of message will not get processed. Since we are so used to the fact that it happens, we take it for granted and start coding against it. It might be the last thing that happens on a project, but believe me, it happens!. Such code becomes harder to maintain and might not work once the actual exception gets fixed.</p>
+
+<p>Ignoring exceptions and getting around to live with it can be more costly over a longer period. The further we delay action on such errors the higher the cost involved. Even though there is no immediate or direct business value seen from fixing such errors, we saw that on a longer run it could have a great impact. So try not to live with such errors but instead prioritize them with the work your team is doing and get it fixed. A fix might not always be an extra null check or a conditional to avoid the error. It might seem the easier approach to reducing the errors but will soon become a different problem. Understand the business and explore into what is causing the error. Do you have any known exceptions in the application you are working? What are you doing about it?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Tomighty - A Pomodoro Timer]]></title>
@@ -1425,47 +1472,6 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
 <a href="https://www.noisli.com/get_combo_by_link/W5rvjLZXcoJbooq">Rain Mix</a>, <a href="https://www.noisli.com/get_combo_by_link/vjUpcG2OAXxKVSU">Jungle</a>, <a href="https://www.noisli.com/get_combo_by_link/uhRXMysAIcVEbHF">TRain</a>, <a href="https://www.noisli.com/get_combo_by_link/gFKhnETdoybxcmc">HotelRainFire</a></p>
 
 <p>You can use Noisli directly from the <a href="https://www.noisli.com/">website</a> or use any of their <a href="https://www.noisli.com/apps">Apps and Extensions</a>. Find out what works for you and leave a comment on your favorite combos.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Simulating delays in HTTP Calls For Manual Tests]]></title>
-    <link href="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/"/>
-    <updated>2017-01-09T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests</id>
-    <content type="html"><![CDATA[<p>At one of my clients, we were facing an issue of missing some part of a form data when processing a <em>Submit</em> request on the form. As per the current design, the form autosaves data to the database as and when user types in. When the user finally submits the form to be processed the Controller gets all the relevant data from the database and sends for processing. But we noticed that the processing requests missed parts of data in the request send for processing even though the database had those values. This was a clear case where the forms submit request got processed even before all the forms data was saved. The UI was enabling the Submit button right after all the UI validations were made and asynchronously firing off saves to the database.</p>
-
-<p>Let&rsquo;s not go into the design discussion of whether the UI should be sending in all the data to be processed as part of the Submit request as opposed to just sending a reference id and have the controller get all the data from the database (which it is currently doing). The quick fix for this problem was to enable the submit button only after all the asynchronous save requests (the ones for autosave) came back with a success response. The fix was simple but testing this was a challenge.</p>
-
-<blockquote><p><em>We wanted to delay a few HTTP requests to check how the UI behaved</em></p></blockquote>
-
-<p>When using automated tests there are a lot of frameworks that can help delay requests. But in this case, we were relying on manual tests.</p>
-
-<h3>Using Fiddler to Delay Requests</h3>
-
-<p><a href="http://www.telerik.com/fiddler">Fiddler</a> is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost every other day</a>. In Fiddler, we can create rules on web requests and modify how they are handled and responded. Most of the functionality is available under the <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">AutoResponder</a> tab. We had seen earlier how to <a href="http://www.rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/">compose web requests and also simulate error conditions in Fiddler</a>. Here we will see how to use Fiddler to delay request/response time. In Fiddler, we can either delay the request itself being sent to the server or delay the handover of response back to the calling application once it is received from the server.</p>
-
-<h4><strong>Delay</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#delay">delay</a> on a request we can specify the time to delay sending the request to the server. The value is specified in milliseconds. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set (in this case an EXACT match with a URL) fiddler delays sending this request to the server by the set amount of time.</p>
-
-<blockquote><p><em>Delay sending request to the server by #### of milliseconds</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request the URL (1) into the AutoResponder tab (2) and from the dropdown (3) under the Rule Editor choose delay and set the delay time. Click Save (4). Make sure that the request and rules are enabled (5 &amp; 6).</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="http://rahulpnath.com/images/fiddler_delay.png"/></p>
-
-<h4><strong>Latency</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">latency</a> on a request we can specify the delay before a response is received. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set fiddler sends the requests to the server immediately. Once the response is received it delays passing the response back to the calling application by the set delay time in milliseconds.</p>
-
-<blockquote><p><em>Induce a delay (latency) before a response is returned.</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request URL (1) into the AutoResponder tab (2). Right click on the URL and select &lsquo;Set Latency&rsquo; (3). Enter the latency time in milliseconds and OK. Make sure that rules and latency options are enabled (4 &amp; 5)</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="http://rahulpnath.com/images/fiddler_latency.png"/></p>
-
-<p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
 ]]></content>
   </entry>
   
