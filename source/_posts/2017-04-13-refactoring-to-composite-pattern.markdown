@@ -6,7 +6,7 @@ categories:
 - Refactoring
 - Programming
 tags: 
-date: 2017-04-05
+date: 2017-04-13
 completedDate: 2017-03-18 05:10:13 +1100
 keywords: 
 description: Composite Pattern is a useful technique to keep code maintainable and readable.

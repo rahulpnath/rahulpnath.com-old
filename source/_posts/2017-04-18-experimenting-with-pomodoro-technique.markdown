@@ -5,7 +5,7 @@ comments: true
 categories: 
 - Productivity
 tags: 
-date: 2017-04-10
+date: 2017-04-18
 completedDate: 2017-03-23 05:38:57 +1100
 keywords: 
 description: Updates to my Morning Routine.

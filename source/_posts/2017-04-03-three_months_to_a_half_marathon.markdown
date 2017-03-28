@@ -1,12 +1,12 @@
 ---
 layout: post
-title: "How I Ran A Half Marathon in Three Months"
+title: "Couch to Half Marathon in Three Months"
 comments: true
 categories: 
 - Thoughts
 - Productivity
 tags: 
-date: 2017-04-19
+date: 2017-04-03
 completedDate: 2017-03-28 06:06:12 +1100
 keywords: 
 description: Update on how I have been going about my running.
