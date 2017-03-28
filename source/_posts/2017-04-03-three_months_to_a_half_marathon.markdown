@@ -39,7 +39,7 @@ The Garmin Forerunner 630 is a GPS SmartWatch with Advanced Running Metrics. It 
 
 <img alt="Runtastic Results" class="center" src="{{site.images_root}}/running_runtastic_results.png" />
 
-I am following a diet to lose weight, and I weigh now 80 (±1) kilos and has been on that for around one month. I was around 95 when I started out with the [running and diet](http://www.rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/).
+I am following a diet to lose weight, and I weigh now 78 (±1) kilos and has been on that for around one month. I was around 95 when I started out with the [running and diet](http://www.rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/).
 
 ### Training
 
