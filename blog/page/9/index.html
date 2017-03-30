@@ -163,6 +163,59 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-06T13:15:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 6<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/msdn-magazine-article-on-azure-key-vault/" itemprop="url">MSDN Magazine Article on Azure Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>My first article on MSDN Magazine is published in the September 2015 edition and is available for <a href="https://msdn.microsoft.com/magazine/mt422585">reading online</a>. The article titled, &lsquo;<em>Microsoft Azure - Protect Sensitive Information with Azure Key Vault</em>&rsquo;, discusses on common problems in storing sensitive information in applications, benefits of Azure Key Vault and how we can quickly setup and start using it.</p>
+
+<p>It was a great experience working with the MSDN magazine team, and got to learn a lot of things. Also special thanks to <a href="https://twitter.com/amitbapat">Amit Bapat</a> and <a href="https://twitter.com/sumedhbarde">Sumedh Barde</a> for doing the technical review and clarifying certain things for the article.</p>
+
+<p><img src="/images/msdn_magazine_sep_2015.jpg" style="height:500px;" alt=""></p>
+
+<p><em>If you are interested to <a href="http://blogs.msdn.com/b/msdnmagazine/archive/2009/12/24/9940803.aspx">write an article for the MSDN magazine</a></em></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-06-27T19:13:48+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 27<sup>th</sup>, 2015</time>
         
 
@@ -1300,169 +1353,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-10T10:24:15+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 10<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/testing/'>testing</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/testing-multiple-implementations-of-same-interface/" itemprop="url">Testing Multiple Implementations of same Interface</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often there are times when we need to test multiple implementations of the same interface. We would want to use the same test case against all the implementations so that we <a href="http://en.wikipedia.org/wiki/Don%27t_repeat_yourself">don&rsquo;t repeat ourselves</a>. In this post we will see how we can reuse the same test cases to test both the implementation, by running them against both the implementations.</p>
-
-<blockquote><p>If you are just interested in the approach - The same test project dll is run twice using vstest.console, by setting an environment variable. Inside the test, (either in the assembly initialize or test initialize) register the appropriate implementations into a IoC container, based on the environment variable value.</p></blockquote>
-
-<p>Interested in the full implementation, then read on!</p>
-
-<p>Since we are not much bothered about the actual interface and its implementation, I have a very simple interface as below, which calculates the length of the given string.There are two implementations for this that might have two different ways of calculating the length of the string given an input.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IFoo</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Implementation 1</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Count</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Implementation 2</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Foo</span> <span class="p">:</span> <span class="n">IFoo</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetLength</span><span class="p">(</span><span class="kt">string</span> <span class="n">input</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">input</span><span class="p">.</span><span class="n">Length</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Though the sample has a simple interface, this might not be the case in a real life project. So the sample mimics a real time implementation structure - we have one interface project and two other projects that have the corresponding implementation. The implementations could also be in the same assembly and this would be applicable for those scenarios too, and can be made to work with some few tweaks in one of the steps (which I will mention when we are there). The test case project that will have the appropriate test cases.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[TestMethod]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">TestThreeLetterLength</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">foo</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">&gt;();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">returnValue</span> <span class="p">=</span> <span class="n">foo</span><span class="p">.</span><span class="n">GetLength</span><span class="p">(</span><span class="s">&quot;Foo&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">IsTrue</span><span class="p">(</span><span class="n">returnValue</span> <span class="p">==</span> <span class="m">3</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The test case uses the IoC container to get the corresponding implementation of the interface, so it is not all about switching the registered implementation in the container. If this is only for the tests in this particular class then we could do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.testinitializeattribute.aspx">TestInitialize</a> method. But most likely you would have multiple tests and also multiple interfaces that we are using. So we can do this in the <a href="http://msdn.microsoft.com/en-us/library/microsoft.visualstudio.testtools.unittesting.assemblyinitializeattribute.aspx">AssemblyInitialze</a> for the assembly.</p>
-
-<figure class='code'><figcaption><span>Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">test</span> <span class="p">=</span> <span class="n">Environment</span><span class="p">.</span><span class="n">GetEnvironmentVariable</span><span class="p">(</span><span class="n">TestEnviromentVariable</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;1&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation1</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">test</span> <span class="p">==</span> <span class="s">&quot;2&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">container</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IFoo</span><span class="p">,</span> <span class="n">FooImplementation2</span><span class="p">.</span><span class="n">Foo</span><span class="p">&gt;();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The above implementation might work in cases where the number of interfaces are less and also in cases where we have fewer possibilities of implementations, but as soon as the number goes up we will again have to keep repeating  the registrations and the if/else code. This is an IoC registration issue and is best handled using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">IoC Registration by Convention</a>. We can have a configuration file matching the environment variable and have the assemblies that are to be loaded mentioned in that and pass only those assemblies to be explicitly registered into the convention registration logic. Even in cases where you have the implementations in the same assembly you can write your convention registration logics accordingly and decide what to register.</p>
-
-<p>We can now run these test dll&rsquo;s using batch files by setting different environment variables as below. The bat files can be integrated into your build</p>
-
-<figure class='code'><figcaption><span>FooTest.Implementation2.bat</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bat'><span class='line'><span class="k">set</span> <span class="nv">Foo</span>.tests<span class="o">=</span><span class="m">2</span>
-</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Testing for configuration 2&quot;</span>
-</span><span class='line'>msbuild TestingMultipleImplementations.sln
-</span><span class='line'>vstest.console FooTestImpl<span class="m">1</span>\bin\Debug\FooTestImpl<span class="m">1</span>.dll <span class="n">/logger:trx</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Hope this helps some one trying to reuse test cases for multiple implementations of the same interface. One another way to solve this issue would be to create multiple csproj files and have the same test case classes referred to both the project files, but have the reference assemblies specific to implementations. So in this case we would have multiple test dll&rsquo;s created, which can be run individually. The advantage of going via this approach is that we could have test cases specific to implementations too and also reuse test cases that are same across implementations by referring them as linked files. But currently we did not want this flexibility and did not want to add multiple project files and make it difficult for the team. You can find the sample implementation <a href="https://github.com/rahulpnath/Blog/tree/master/TestingMultipleImplementations">here</a>. Do you reuse test cases like this? Do drop in with a comment on your thoughts.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1486,6 +1376,8 @@ Before we do you might ask, Are we not building a web-site for the customer so w
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
+    
     <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
     
     <a class="list-group-item " href="/blog/the-problems-with-known-exception-and-ignoring-it/">The Problems with Known Exceptions and Ignoring It</a>
@@ -1493,8 +1385,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <a class="list-group-item " href="/blog/tomighty-a-pomodoro-timer/">Tip of the Week: Tomighty - A Pomodoro Timer</a>
     
     <a class="list-group-item " href="/blog/psm-learnings/">Learnings from The Professional Scrum Master (PSM) Course</a>
-    
-    <a class="list-group-item " href="/blog/track-current-file-in-visual-studio-solution-explorer/">Tip of the Week: Track Current File in Visual Studio Solution Explorer</a>
     
   </div>
 </section>

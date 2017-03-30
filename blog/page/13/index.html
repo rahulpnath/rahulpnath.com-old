@@ -163,6 +163,282 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-04-17T11:04:01+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2013</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>, <a class='category' href='/blog/category/wp7/'>wp7</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-mvvm-and-applicationbar/" itemprop="url">Windows Phone Series – MVVM and ApplicationBar</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>ApplicationBar on a windows phone, is to provide users of your app with quick access to the most commonly used tasks. For a mail app this would be refresh/new mail, for a photo app it might be like/unlike button, settings etc are common buttons that appear in an ApplicationBar . But then not always do we have them as static, and we would want to add/remove icons/menu items to that based on the applications current state.For example, you would want to add the like/unlike button only if the user is logged in, or even the settings icon would be only for logged in users. Whatever might be your scenario, if you are looking for to add/remove icons from the application bar from your code then this article is for you.</p>
+
+<p>In a normal app which uses code-behind, this can be easily done by accessing the ‘ApplicationBar’ in the code-behind class like below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(&lt;</span><span class="n">your</span> <span class="n">button</span><span class="p">&gt;);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When you are using MVVM you would want to do this from your ViewModel(VM). Below are the approaches that you could use to achieve the same</p>
+
+<p><strong>1. Mesenger Service</strong></p>
+
+<p>Whenever we need to communicate between VM’s or between your view model and View then we would want to do that in the most decoupled manner. When using <a href="http://www.galasoft.ch/mvvm/">MVVMLight</a>, we could use the Messenger class to achieve this. We would send a message indicating that we want to add a new appbar button from the ViewModel, and the View code behind, which already has registered for such an event would get notified and add the icon for us .</p>
+
+<p>Below is how the Code-behind would look like . We register for a NotificationMessage(you could also use your own notification class for this), and see what kind of button needs to be added and adds that to the ApplicationBar. On click of the appbar button, we wire up the click event to a command of the ViewModel. Though there is some code behind in here, we are not going away from MVVM here, as we still have clear separation of concerns and also testability is not affected.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">MainPage</span> <span class="p">:</span> <span class="n">PhoneApplicationPage</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">MainViewModel</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">ApplicationBarIconButton</span> <span class="n">settingsButton</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Constructor</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">MainPage</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">InitializeComponent</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">settingsButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBarIconButton</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Settings&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">IconUri</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="s">&quot;Images/appbar.feature.settings.rest.png&quot;</span><span class="p">,</span> <span class="n">UriKind</span><span class="p">.</span><span class="n">Relative</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="n">settingsButton</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="n">settingsButton_Click</span><span class="p">;</span>
+</span><span class='line'>        <span class="c1">// Register for the messenger </span>
+</span><span class='line'>        <span class="n">Messenger</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">NotificationMessage</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">,</span> <span class="n">OnNotificationMessage</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">void</span> <span class="nf">settingsButton_Click</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">viewModel</span><span class="p">.</span><span class="n">SettingsCommand</span><span class="p">.</span><span class="n">Execute</span><span class="p">(</span><span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">void</span> <span class="nf">OnNotificationMessage</span><span class="p">(</span><span class="n">NotificationMessage</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Check here for the notification</span>
+</span><span class='line'>        <span class="c1">// You can also build cutoms notification message here for this by inheriting from MessageBase</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">message</span><span class="p">.</span><span class="n">Notification</span> <span class="p">==</span> <span class="s">&quot;AddSettings&quot;</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">ApplicationBar</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">ApplicationBar</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBar</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">settingsButton</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<p><strong>2. ApplicationBar Service</strong></p>
+
+<p>Like we use <a href="http://www.geekchamp.com/articles/mvvm-in-real-life-windows-phone-applications-part2">NavigationService</a>, for navigating from VM’s we could also create a ApplicationBarService, that can be used to add application bar icons from ViewModels. For this I have created a base class, MyModelBase, for all my VM’s which inturn inherits from ViewModelBase of MVVMLight. This base class holds an interface for the ApplicationBarService.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MyModelBase</span><span class="p">:</span> <span class="n">ViewModelBase</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IApplicationBarService</span> <span class="n">ApplicationBar</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">MyModelBase</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">MyModelBase</span><span class="p">(</span><span class="n">IApplicationBarService</span> <span class="n">appBar</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">ApplicationBar</span> <span class="p">=</span> <span class="n">appBar</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The interface IApplicationBarService, would have the functions that we would want to Add/Remove icons from the application bar. For now I have just put in the AddButton. You could also add RemoveButton and any other things that you would want in there.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IApplicationBarService</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IApplicationBar</span> <span class="n">ApplicationBar</span> <span class="p">{</span> <span class="k">get</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">void</span> <span class="nf">AddButton</span><span class="p">(</span><span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="n">Uri</span> <span class="n">imageUrl</span><span class="p">,</span> <span class="n">Action</span> <span class="n">OnClick</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Implementation for this interface is as below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ApplicationBarService</span><span class="p">:</span> <span class="n">IApplicationBarService</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">AddButton</span><span class="p">(</span><span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="n">Uri</span> <span class="n">imageUrl</span><span class="p">,</span> <span class="n">Action</span> <span class="n">OnClick</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">ApplicationBarIconButton</span> <span class="n">newButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBarIconButton</span><span class="p">()</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">Text</span> <span class="p">=</span> <span class="n">title</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">IconUri</span> <span class="p">=</span> <span class="n">imageUrl</span><span class="p">,</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>        <span class="n">newButton</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">((</span><span class="n">sender</span><span class="p">,</span><span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span><span class="n">OnClick</span><span class="p">.</span><span class="n">Invoke</span><span class="p">();})</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">ApplicationBar</span><span class="p">.</span><span class="n">Buttons</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">newButton</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IApplicationBar</span> <span class="n">ApplicationBar</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">currentPage</span> <span class="p">=</span> <span class="p">((</span><span class="n">App</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">).</span><span class="n">RootFrame</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">PhoneApplicationPage</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ApplicationBar</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">currentPage</span><span class="p">.</span><span class="n">ApplicationBar</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The ApplicationBar property reads gets the current ApplicationBar from the current page. If it is not defined then it would simply create a new one. The Add function just adds a new button and wires up the click event of the button, to the function that is passed in by the VM. We could also use Commands here, for now I just wanted to keep it simple</p>
+
+<p>In cases where you don’t want to add buttons dynamically, but just have static buttons you could also use BindableApplicationBar implementations that are there. One such implementation is there along with the <a href="http://phone7.codeplex.com/">Phone7.Fx</a> library. There are also many other implementations for the same.</p>
+
+<p>Hope this helps you to decouple your application bar icons from the ViewModel.You can find a <a href="https://github.com/rahulpnath/Blog/tree/master/PhoneAppBarMvvm">sample</a> implementation for this. In the sample both these approaches are shown for adding icons. You could figure out the Remove pretty easily.</p>
+
+<p><img src="/images/wp_applicationbar_icon_mvvm.png" alt="windows phone applicationbar mvvm" /></p>
+
+<p>Hope it helps!!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-04-12T07:40:46+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 12<sup>th</sup>, 2013</time>
         
 
@@ -1780,120 +2056,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-01-27T21:32:54+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 27<sup>th</sup>, 2012</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/wpf/'>wpf</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/wpf-expander-trigger-on-isexpanded-to-change-the-header/" itemprop="url">WPF Expander trigger on IsExpanded to change the header</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Just a quick tip on how you could change the Expander header content when Expander is in expanded state.I have also modified the expander HeaderTemplate so that the text gets center aligned.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;Expander</span>  <span class="na">Height=</span><span class="s">&quot;100&quot;</span> <span class="na">HorizontalAlignment=</span><span class="s">&quot;Left&quot;</span> <span class="na">Margin=</span><span class="s">&quot;129,192,0,0&quot;</span>
-</span><span class='line'>           <span class="na">Name=</span><span class="s">&quot;expander1&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Top&quot;</span> <span class="na">Width=</span><span class="s">&quot;167&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;Expander.HeaderTemplate&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'>                    <span class="nt">&lt;Label</span> <span class="na">Name=</span><span class="s">&quot;headerlabel&quot;</span>
-</span><span class='line'>                        <span class="na">Content=</span><span class="s">&quot;{Binding RelativeSource={RelativeSource</span>
-</span><span class='line'><span class="s">                        Mode=FindAncestor,</span>
-</span><span class='line'><span class="s">                        AncestorType={x:Type Expander}},</span>
-</span><span class='line'><span class="s">                        Path=Header}&quot;</span>
-</span><span class='line'>                        <span class="na">HorizontalContentAlignment=</span><span class="s">&quot;Center&quot;</span>
-</span><span class='line'>                        <span class="na">Width=</span><span class="s">&quot;{Binding</span>
-</span><span class='line'><span class="s">                        RelativeSource={RelativeSource</span>
-</span><span class='line'><span class="s">                        Mode=FindAncestor,</span>
-</span><span class='line'><span class="s">                        AncestorType={x:Type Expander}},</span>
-</span><span class='line'><span class="s">                        Path=ActualWidth}&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/Expander.HeaderTemplate&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;Expander.Style&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;Style</span>  <span class="na">TargetType=</span><span class="s">&quot;Expander&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>                    <span class="nt">&lt;Setter</span> <span class="na">Property=</span><span class="s">&quot;Header&quot;</span> <span class="na">Value=</span><span class="s">&quot;Show&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>                    <span class="nt">&lt;Style.Triggers&gt;</span>
-</span><span class='line'>                        <span class="nt">&lt;Trigger</span> <span class="na">Property=</span><span class="s">&quot;IsExpanded&quot;</span> <span class="na">Value=</span><span class="s">&quot;True&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>                            <span class="nt">&lt;Setter</span> <span class="na">Property=</span><span class="s">&quot;Header&quot;</span> <span class="na">Value=</span><span class="s">&quot;Hide&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>                        <span class="nt">&lt;/Trigger&gt;</span>
-</span><span class='line'>                    <span class="nt">&lt;/Style.Triggers&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;/Style&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/Expander.Style&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;Grid</span> <span class="nt">&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;Label&gt;</span>Expander Content<span class="nt">&lt;/Label&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/Grid&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;/Expander&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We could also end up doing this using a converter or explicitly handling for the Expanded/Collapsed events.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1917,6 +2079,8 @@ Web API is nothing but services exposed over http,providing reach to various dev
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
+    
     <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
     
     <a class="list-group-item " href="/blog/the-problems-with-known-exception-and-ignoring-it/">The Problems with Known Exceptions and Ignoring It</a>
@@ -1924,8 +2088,6 @@ Web API is nothing but services exposed over http,providing reach to various dev
     <a class="list-group-item " href="/blog/tomighty-a-pomodoro-timer/">Tip of the Week: Tomighty - A Pomodoro Timer</a>
     
     <a class="list-group-item " href="/blog/psm-learnings/">Learnings from The Professional Scrum Master (PSM) Course</a>
-    
-    <a class="list-group-item " href="/blog/track-current-file-in-visual-studio-solution-explorer/">Tip of the Week: Track Current File in Visual Studio Solution Explorer</a>
     
   </div>
 </section>
