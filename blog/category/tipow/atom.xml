@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tipow | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tipow/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-05T18:23:33+00:00</updated>
+  <updated>2017-04-06T00:02:09+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,34 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: AutoFixture - Make Your Unit Tests Robust]]></title>
+    <link href="http://rahulpnath.com/blog/autofixture-make-your-unit-tests-robust/"/>
+    <updated>2017-04-06T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/autofixture-make-your-unit-tests-robust</id>
+    <content type="html"><![CDATA[<blockquote><p><em><a href="https://github.com/AutoFixture/AutoFixture">AutoFixture</a> is an open source library for .NET designed to minimize the &lsquo;<a href="http://wiki.c2.com/?ArrangeActAssert">Arrange</a>&rsquo; phase of your unit tests in order to maximize maintainability. Its primary goal is to allow developers to focus on what is being tested rather than how to setup the test scenario, by making it easier to create object graphs containing test data.</em></p></blockquote>
+
+<p><img alt ="AutoFixture" class = "center" src="/images/autofixture.jpg" /></p>
+
+<p>If you are on .NET platform and write tests (there is no reason you wouldn&rsquo;t) you should check out AutoFixture. AutoFixture makes test data setup easy. It is a generalization of the <a href="http://www.natpryce.com/articles/000714.html">Test Data Builder</a> pattern and helps make your tests more robust and maintainable. Below is a sample (as taken from the GitHub page) shows how minimal setup is required for testing. Check out the post, <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">Refactoring Test Code: Removing Constructor Dependency</a> to see in detail how AutoFixture can be used to make the tests more stable against changes.</p>
+
+<pre><code class="csharp">[Theory, AutoData]
+public void IntroductoryTest(
+    int expectedNumber, MyClass sut)
+{
+    int result = sut.Echo(expectedNumber);
+    Assert.Equal(expectedNumber, result);
+}
+</code></pre>
+
+<p>If you are new to AutoFixture, I highly recommend checking out the <a href="https://github.com/AutoFixture/AutoFixture/wiki/Cheat-Sheet">Cheat Sheet</a> to get started. Check out my post on <a href="http://www.rahulpnath.com/blog/populating-data-for-tests/">Populating Data for Tests</a> for some common patterns of using AutoFixture and how it can reduce setup code. Understanding the <a href="https://github.com/AutoFixture/AutoFixture/wiki/Internal-Architecture">Internal Architecture</a> of AutoFixture helps if you want to extend it for customization. AutoFixture integrates well with the different testing frameworks and support libraries that are popular. I mostly use it with <a href="https://xunit.github.io/">xUnit</a> and <a href="https://github.com/Moq/moq4/wiki/Quickstart">Moq</a>.</p>
+
+<p>Hope this helps with your testing!</p>
+
+<p><em>I am happy to have <a href="https://github.com/AutoFixture/AutoFixture/pulls?q=is:pr+is:closed+author:rahulpnath">contributed</a> (minor) to such a great library.</em></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Improved Code Navigation in Visual Studio 2017]]></title>
@@ -87,29 +115,6 @@
 <p>The setting to keep the items in sync is configurable in Visual Studio and is turned off by default. You can enable this by checking the &lsquo;<strong><em>Track Active Item in Solution Explorer</em></strong>&rsquo; under <em>Options -> Projects and Solutions -> General</em>. You can navigate there quickly using <a href="http://www.rahulpnath.com/blog/quick-launch-in-visual-studio/">Visual Studio Quick Launch (Ctrl + Q)</a>. Just type &lsquo;<em>Track active</em>&rsquo; and you will get the quick link to the setting. Keep it checked, and off you go, the solution explorer and the current file will be in sync.</p>
 
 <p>PS: Visual Studio 2017 is now available.<a href="https://www.visualstudio.com/downloads/">Get it</a> if you have not already!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Switching Subscriptions Under Same Azure Account to Access Key Vaults]]></title>
-    <link href="http://rahulpnath.com/blog/switching-between-subscriptions-under-same-azure-account-to-access-key-vault/"/>
-    <updated>2017-03-02T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/switching-between-subscriptions-under-same-azure-account-to-access-key-vault</id>
-    <content type="html"><![CDATA[<p><img class="center" alt="Azure Powershell Get-AzureRmContext" src="/images/powershell_azurermcontext.png" /></p>
-
-<p>When accessing Key Vault using Powershell it can be a bit tricky when you have multiple subscriptions under the same account. The Key Vault cmdlets being under the <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">Resource Manager (RM) mode</a> depends on the current RM Subscription. The Key Vault cmdlets enable you to manage only the key vaults under the selected subscription. To access the key vaults in other subscriptions, you need to switch the selected RM subscription.</p>
-
-<blockquote><p><em>Use <strong>Select-AzureRmSubscription</strong> to switch the selected RM subscription</em></p></blockquote>
-
-<p> The <a href="https://docs.microsoft.com/en-us/powershell/resourcemanager/azurerm.profile/v2.2.0/get-azurermcontext">Get-AzureRmContext</a> returns the metadata used for RM requests. The SubscriptionId/SubscriptionName property indicates the selected subscription. Any Key Vault cmdlets (or RM cmdlets) will work based off that selected subscription. To change the selected Azure RM subscription use the Select-AzureRmSubscription cmdlet. Pass in the SubscriptionId or the Subscription Name that you wish to switch to and the RM Subscription will be set to that. To get the SubscriptionId/SubscriptionName of the subscriptions under your account use <a href="https://msdn.microsoft.com/en-us/library/dn495302.aspx">Get-AzureSubscription</a> cmdlet.</p>
-
-<pre><code class="` powershell"> Get-AzureRmContext
- Get-AzureRmSubscription
- Select-AzureRmSubscription -SubscriptionName  "Your Subscription Name"
- Select-AzureRmSubscription -SubscriptionId  a5287dad-d5a2-4060-81bc-4a06c7087e72
-</code></pre>
-
-<p> I struggled with this for some time, so hope it helps you!</p>
 ]]></content>
   </entry>
   

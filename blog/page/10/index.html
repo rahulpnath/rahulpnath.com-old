@@ -163,6 +163,95 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-17T18:05:53+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 17<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-and-powershell-module-version/" itemprop="url">Azure Key Vault and Powershell Module Version</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>I was trying out the public preview of the  Azure Key Vault service that has been released recently. While following the steps as mentioned in their <a href="http://blogs.technet.com/b/kv/archive/2015/01/08/azure-key-vault-making-the-cloud-safer.aspx">blog</a>, came across the below error when trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command.</p>
+
+<blockquote><p>Please install Azure Powershell module version 0.8.13 or newer.</p></blockquote>
+
+<p>I did have the <a href="http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Install">latest powershell for azure</a> installed, but still this error is thrown.</p>
+
+<p><img class="center" alt="azure powershell installed version" src="/images/azure_powershell_installed.png" /></p>
+
+<p>Exploring the <a href="http://msdn.microsoft.com/library/dn868052.aspx">powershell scripts for key vault</a>, below is where the error is thrown from &lsquo;<em>Common.ps1</em>&rsquo;. The script looks for the <a href="http://msdn.microsoft.com/en-us/library/dn654592.aspx">AzureResourceManager</a>, which got introduced in poweshell version 0.8.0 and lets you manage resources in a completely different way.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Function</span> <span class="n">Azure-Version-Check</span><span class="p">{</span>
+</span><span class='line'>    <span class="nv">$expectedMinVersion</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">System</span><span class="p">.</span><span class="n">Version</span> <span class="n">-ArgumentList</span> <span class="s2">&quot;0.8.13&quot;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nv">$azureModule</span> <span class="p">=</span> <span class="nb">Get-Module</span> <span class="n">AzureResourceManager</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">((</span><span class="o">-not</span> <span class="nv">$azureModule</span><span class="p">)</span> <span class="o">-or</span> <span class="p">(</span><span class="nv">$azureModule</span><span class="p">.</span><span class="n">Version</span> <span class="o">-lt</span> <span class="nv">$expectedMinVersion</span><span class="p">))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">Throw</span> <span class="s1">&#39;Please install Azure Powershell module version 0.8.13 or newer.&#39;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>When you use the Azure PowerShell cmdlets, the Azure module is imported into the session by default. To remove the Azure module from the session and import the AzureResourceManager and AzureProfile modules, use the Switch-AzureMode cmdlet.</p></blockquote>
+
+<p>This is what is exactly causing the issue, we need to switch to use the azure resource manager. Running the below command and trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command works like a charm</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Switch</span><span class="n">-AzureMode</span> <span class="n">-Name</span> <span class="n">AzureResourceManager</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>You would face this issue only if you started trying out the steps as mentioned in the <a href="http://blogs.technet.com/b/kv/archive/2015/01/09/azure-key-vault-step-by-step.aspx">azure key vault blog</a>(as I did), since the steps in the <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/">documentation site</a></em> is updated with the above step.*</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-14T22:31:51+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 14<sup>th</sup>, 2015</time>
         
 
@@ -1843,119 +1932,6 @@ The application id and secret can be obtained by registering for an application 
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-08-27T21:34:12+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 27<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/" itemprop="url">Static Generator is All a Blog Needs - Moving to Octopress</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Wordpress is what that has been powering my blog for sometime and it definitely is a blogging engine to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">get started with</a> ease. But with time, I have been noticing that the load time is very high and there are a lot of plugins in the processing pipeline, even to do very small things. This definitely is not that great for a simple blog, where users(including me) expect fast page load times.</p>
-
-<blockquote><p>For blogging, Wordpress is just extra baggage that you keep along that never gets used. Except for discussions, a blog is just static content and that is all it requires.</p></blockquote>
-
-<p>There are a lot of <a href="https://www.staticgen.com/">static site generators</a> out there today and any of them should be just fine. I wanted to choose a platform that was not on Microsoft stack and Octorpess was just perfect, it being on Ruby.<a href="http://octopress.org/">Octopress</a>, which is <a href="http://jekyllrb.com/">Jekyll</a> based, provides almost all the features that a blog needs out of the box or via plugins. The <a href="http://octopress.org/docs/setup/">documentation</a> for Octopress is very good and takes you through setting it up with ease.</p>
-
-<p><strong>Migrating from Wordpress</strong></p>
-
-<p>The <a href="https://github.com/thomasf/exitwp">exitwp</a> tool is what I used to get all my posts from Wordpress into Markdown format, so that it can be imported into Octopress. The steps are direct and is detailed out in the readme. Code formatting was an issue after the migration. I had been mainly using <a href="http://alexgorbatchev.com/SyntaxHighlighter/">SyntaxHighlighter</a> for code formatting in Wordpress. Formatting this took a bit of time, as I had to go through each post and do the necessary modifications to use the <a href="http://octopress.org/docs/plugins/backtick-codeblock/">Backtick Code Blocks</a>.</p>
-
-<p><strong>Mapping the images</strong> from the wp_content folder to a new folder was one another task. I added a <a href="http://jekyllrb.com/docs/variables/">new variable in the config</a>, to track the images folder so that I can change this to something else too later(like a CDN) and used that to refer images. In cases where the images needs to be aligned to a specific side, I used the <a href="http://stackoverflow.com/questions/255170/markdown-and-image-alignment">image tag directly</a>.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>![Microsoft Community Contributor Award Certificate for Rahul P Nath](/images/mcca_rahulpnath.png)
-</span><span class='line'>
-</span><span class='line'>&lt;img class="left" src="/images/Outlook_folders_productivity.png" alt="Outlook_folders_productivity" /&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Also updated the <em>_config.yml</em> with the required details, permalink structure, google analytics, asides that are required and linked the social accounts. Linking social accounts is important for <a href="https://plus.google.com/authorship">Content Authorship</a>, and everybody should be doing that, irrespective of the blogging engine. Disqus commenting system is supported in Octopress, You can use <a href="https://wordpress.org/plugins/disqus-comment-system/">Disqus Wordpress plugin</a> to export the comments from the exiting blog to disqus.I have also added in some custom plugins that are listed out <a href="https://github.com/rahulpnath/rahulpnath.com/blob/master/MyPlugins.markdown">here</a>. Also setup a <a href="https://www.google.co.in/cse/">search</a> for your site that would help readers find what they want.</p>
-
-<p><strong>Deploy</strong></p>
-
-<p>The blog is deployed to github and pushed to azure from there using <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-publish-source-control/">coninuous integration</a>. This blogpost <a href="http://www.ewal.net/2012/08/28/octopress-plus-windows-azure-web-sites/">here</a> details out on how to set up rake_deploy to push the blog to azure. Basically, we have a folder named <em>_azure</em>, that is gitignored in the source branch of the blog and included in the one that gets deployed. This would contain only the generated static files required for the blog that gets generated with <em>rake generate</em></p>
-
-<p><strong>Tuning the blog for improving load time</strong></p>
-
-<p>Once everything is setup it is really good to run some tools to check how your site is performing. Here are a couple that I found really useful.</p>
-
-<ul>
-<li><a href="https://developer.yahoo.com/yslow/">YSlow</a></li>
-<li><a href="https://developers.google.com/speed/pagespeed/insights/">PageSpeed Insights</a></li>
-</ul>
-
-
-<p>Running one of these, would really set you back for sometime and provide you with some performance improvement suggestions.</p>
-
-<ul>
-<li>Caching: - To enable caching, I added the required configuration entries in the <a href="https://github.com/rahulpnath/rahulpnath.com/blob/blog/web.config">web.config</a>(as I am hosting in azure). Since the site is all static content you can safely set caching to all the items.</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;staticContent&gt;
-</span><span class='line'>  &lt;mimeMap fileExtension="woff" mimeType="application/font-woff" /&gt;
-</span><span class='line'>    &lt;clientCache httpExpires="Sun, 29 Mar 2020 00:00:00 GMT" cacheControlMode="UseExpires" /&gt;
-</span><span class='line'>&lt;/staticContent&gt;</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><p>Images: <a href="https://developers.google.com/speed/docs/insights/OptimizeImages">Optimizing images</a> includes multiple steps of getting the image sizes correct as required, removing out any unnecessary metadata to reduce size, reducing the pixels. Couple of tools like <a href="http://www.imagemagick.org/">ImageMagick</a>, <a href="http://pnggauntlet.com/">PngGauntlet</a> would definitely help in reducing and optimizing the images. This is a must do exercise and will definitely improve the load time.</p></li>
-<li><p>Favicon: With lots of devices, browsers and clients out there, a single favicon no more serves the purpose. <a href="http://realfavicongenerator.net/">Real Favicon Generator</a> is there to the resue, where you can upload a single image and it will give you all the required formats and sizes.</p></li>
-</ul>
-
-
-<p><strong>Finding Broken Links:</strong>
-This is a good time to find out any broken links in your blog that has been lying around since some time.Make sure that you run <a href="http://home.snafu.de/tilman/xenulink.html">Xenu&rsquo;s Link Sleuth</a>, to find and fix them.</p>
-
-<p><strong>Writing New Posts:</strong>
-I have been a great fan of <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows Live Writer</a> for blogging on Wordpress. But now that I can use Markdown to write posts, I am currently using <a href="http://markdownpad.com/">MarkdownPad</a>. For editing the blog settings, layout, config I use <a href="http://www.sublimetext.com/">Sublime Text</a>, which is a great light weight text editor. I am yet to find a good Markdown plugin for it on Windows, so that I can stick to just using this one super cool editor. (Please do let know if you know of any good plugins for Markdown on Sublime in Windows, that provides live preview feature too). Also since this is integrated into git, it really fits into the workflow and keeping backups is more easy.</p>
-
-<p>The blog is so light weight and loads faster as compared to Wordpress. After all the blog is composed of just static pages and it does not demand a database and lots of other processing that comes with Wordpress. So moving out to a static generated site is something that you should think of if you have not already or have you already moved out. What are your thoughts on this!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1979,6 +1955,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/autofixture-make-your-unit-tests-robust/">Tip of the Week: AutoFixture - Make Your Unit Tests Robust</a>
+    
     <a class="list-group-item " href="/blog/three_months_to_a_half_marathon/">Couch to Half Marathon in Three Months</a>
     
     <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
@@ -1986,8 +1964,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
     
     <a class="list-group-item " href="/blog/the-problems-with-known-exception-and-ignoring-it/">The Problems with Known Exceptions and Ignoring It</a>
-    
-    <a class="list-group-item " href="/blog/tomighty-a-pomodoro-timer/">Tip of the Week: Tomighty - A Pomodoro Timer</a>
     
   </div>
 </section>
