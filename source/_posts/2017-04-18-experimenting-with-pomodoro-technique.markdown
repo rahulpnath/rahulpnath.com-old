@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Experimenting with Scrum and Pomodoro Technique For Getting Things Done"
+title: "How I Included Scrum and Pomodoro Technique in My Morning Routine"
 comments: true
 categories: 
 - Productivity

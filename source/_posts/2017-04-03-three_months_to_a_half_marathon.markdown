@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Couch to Half Marathon in Three Months"
+title: "How I Went From Couch to Half Marathon in Twelve Weeks"
 comments: true
 categories: 
 - Thoughts
