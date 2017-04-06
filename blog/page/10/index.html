@@ -163,6 +163,172 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-25T18:22:06+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 25<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/getting-started-with-azure-key-vault/" itemprop="url">Getting Started with Azure Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Azure Key Vault service is a cloud hosted, HSM(Hardware Security Modules)-backed service for managing cryptographic keys and other secrets. With Azure Key Vault, the process of managing and controlling the keys required for an application or multiple applications for an enterprise can be handled at a centralized place. Also these sensitive information no longer needs to be exposed in the application&rsquo;s configuration file or in database. Keys can be created in the vault and accessed via url&rsquo;s by the required application. Operations against the Key Vault are authenticated and authorized using Azure Active Directory. So in short all that a developer would need to know are the URI&rsquo;s for the keys, the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903625.aspx">sdk/api</a> to access the vault features and also on the mechanism to authenticate against the AD application (an appId/client secret or appId/certificate).</p>
+
+<p><img class="center" alt="Azure Key Vault Overview" src="/images/azurekeyvault_overview.png" /></p>
+
+<h3>Key Types</h3>
+
+<p>The initial release of Azure Key Vault only supports RSA keys (asymmetric cryptography) - it supports both software and HSM processed keys, and are represented as JSON Web Key objects. In future there might be more support for the different key types that are there in cryptography. For those who are new to cryptography or needs a quick recap on cryptography algorithms:</p>
+
+<h5><strong>Symmetric Cryptography</strong></h5>
+
+<p>Symmetric cryptography, uses the same key to encrypt and decrypt the data. The keys are shared between the identities that require to transfer the encrypted data.</p>
+
+<p><img class="center" alt="Symmetric Encryption" src="/images/symmetric_encryption.png" /></p>
+
+<h5><strong>Asymmetric Cryptography</strong></h5>
+
+<p>Asymmetric cryptography, also known as public key cryptography uses two separate keys - a public key and private key. The public key can be used to encrypt the data or to verify a digital signature whereas the private key is used to decrypt the text or to digital sign.</p>
+
+<p><img class="center" alt="Asymmetric Encryption" src="/images/asymmetric_encryption.png" /></p>
+
+<p>To create a new key in the Azure Key Vault, first we need to create the vault, using powershell scripts. You would need to install <a href="http://www.rahulpnath.com/blog/azure-key-vault-and-powershell-module-version/">azure module version 0.8.13 version or higher</a> for the key vault scripts to execute. Detailed steps on creating the vault and keys is documented <a href="http://azure.microsoft.com/en-in/documentation/articles/key-vault-get-started/">here</a>. Once we have the key created we can get the attributes of the key, using <em>Get-AzureKeyVaultKey</em>. This is as per the <a href="https://tools.ietf.org/html/draft-ietf-jose-json-web-key-41#page-25">JSON Web Key(JWK) format</a>. The &lsquo;<em>n/e</em>&rsquo; values in the below key are for the RSA key type(<em>kty</em>), showing the public key information.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">PS</span> <span class="n">C</span><span class="err">:</span><span class="p">\&gt;</span> <span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-Name</span> <span class="n">rahulkey</span> <span class="n">-VaultName</span> <span class="n">testvaultrahul</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">Attributes</span> <span class="err">:</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Azure</span><span class="p">.</span><span class="n">Commands</span><span class="p">.</span><span class="n">KeyVault</span><span class="p">.</span><span class="n">Models</span><span class="p">.</span><span class="n">KeyAttributes</span>
+</span><span class='line'><span class="n">Key</span>        <span class="err">:</span> <span class="p">{</span><span class="s2">&quot;kid&quot;</span><span class="err">:</span><span class="s2">&quot;https://testvaultrahul.vault.azure.net/keys/rahulkey/0f653b06c1d94159bc7090596bbf7784&quot;</span><span class="p">,</span><span class="s2">&quot;kty&quot;</span><span class="err">:</span><span class="s2">&quot;RSA&quot;</span><span class="p">,</span><span class="s2">&quot;key_ops&quot;</span><span class="err">:</span><span class="p">[</span><span class="s2">&quot;encrypt&quot;</span><span class="p">,</span><span class="s2">&quot;decrypt&quot;</span><span class="p">,</span><span class="s2">&quot;sign&quot;</span><span class="p">,</span><span class="s2">&quot;verify&quot;</span><span class="p">,</span><span class="s2">&quot;w </span>
+</span><span class='line'><span class="s2">             rapKey&quot;</span><span class="p">,</span><span class="s2">&quot;unwrapKey&quot;</span><span class="p">],</span><span class="s2">&quot;n&quot;</span><span class="err">:</span><span class="s2">&quot;xAXdHg5IAiU44GLM41hrCgfbEf8vg414lwIXBRHwPH-GTdQo3x5hMyvEtT26udcWLeRDDYGQxquuQ03ChXmXaE1Z8rdDpuaciJVoTB8wA_icr4Ww4ld0zuk9Nf31sVP-T_ </span>
+</span><span class='line'><span class="s2">             UiYBpg_3MdwbDvO53udtknLWnXEa-Y-NXlCwUus6LOtfoG1_oVg5B5OFfcW993Zb44C3ZMoOESa-fW0eT6OefBJOgXwGG5gB-zAB2D7uzhStu3Cp4OiFELQSAS4gpt2GCUI76YkTfq8jnIJ7bi5cYzUb-Sv2 </span>
+</span><span class='line'><span class="s2">             9nkiwJV9I7hN6wuoz1gNRoJJVisBtidiFd8EYYuCGB3AH8OWbWS_sXEw&quot;</span><span class="p">,</span><span class="s2">&quot;e&quot;</span><span class="err">:</span><span class="s2">&quot;AQAB&quot;</span><span class="p">}</span>
+</span><span class='line'><span class="n">VaultName</span>  <span class="err">:</span> <span class="n">testvaultrahul</span>
+</span><span class='line'><span class="n">Name</span>       <span class="err">:</span> <span class="n">rahulkey</span>
+</span><span class='line'><span class="n">Version</span>    <span class="err">:</span> <span class="n">0f653b06c1d94159bc7090596bbf7784</span>
+</span><span class='line'><span class="n">Id</span>         <span class="err">:</span> <span class="n">https</span><span class="err">:</span><span class="p">//</span><span class="n">testvaultrahul</span><span class="p">.</span><span class="n">vault</span><span class="p">.</span><span class="n">azure</span><span class="p">.</span><span class="n">net</span><span class="p">/</span><span class="n">keys</span><span class="p">/</span><span class="n">rahulkey</span><span class="p">/</span><span class="n">0f653b06c1d94159bc7090596bbf7784</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Key Operations</h3>
+
+<p>Now that we have a key in the vault, we can use this to perform different operations allowed on the key, as provided in the <em>key_ops</em> field in the key details above. Typical operations that can be performed using the key are Encrypt, Decrypt, Sign, Verify, WrapKey and UnWrapKey. For an application to use the key vault keys, it needs to authenticate using a token from the Azure Active Directory. For this we first need to <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/#register">register an application with azure active directory</a> and then use the Application id and Authentication key(client secret) to authenticate against the AD application. Instead of using the  key/secret, this could also be through a certificate authentication, which might be a more preferred approach(For the simplicity of this demo will use the application id and the secret directly). To connect to the AD application we can use the <a href="https://www.nuget.org/packages/Microsoft.IdentityModel.Clients.ActiveDirectory/2.14.201151115">Active Directory Authentication Library</a> nuget package, the KeyVault libraries are availalble as part of the <a href="http://www.microsoft.com/en-us/download/details.aspx?id=45343">samples</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">((</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireToken</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Get the key details</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://testvaultrahul.vault.azure.net/keys/rahulkey/0f653b06c1d94159bc7090596bbf7784&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">key</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetKeyAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">publicKey</span> <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">ToBase64String</span><span class="p">(</span><span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">N</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The application first uses the AD application credentials to authenticate and obtain the token for further interacting with the key vault. Using the key identifier that is available we get the details of the key.For performing the get operation the &lsquo;<em>PermissionToKeys</em>&rsquo;, should be set appropriately when registering the AD application, using Set-AzureKeyVaultAccessPolicy, against the key vault. Since this is RSA asymmetric algorithm, we have the public key available to us, and we can use this to encrypt the data or to verify the signature, locally in the application itself, though the vault client provides this for convenience.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">rsa</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSACryptoServiceProvider</span><span class="p">())</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">p</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RSAParameters</span><span class="p">()</span> <span class="p">{</span> <span class="n">Modulus</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">N</span><span class="p">,</span> <span class="n">Exponent</span> <span class="p">=</span> <span class="n">key</span><span class="p">.</span><span class="n">Key</span><span class="p">.</span><span class="n">E</span> <span class="p">};</span>
+</span><span class='line'>    <span class="n">rsa</span><span class="p">.</span><span class="n">ImportParameters</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">byteData</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">textToEncrypt</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Encrypt and Decrypt</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">encryptedText</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">Encrypt</span><span class="p">(</span><span class="n">byteData</span><span class="p">,</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedData</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">DecryptDataAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RSA_OAEP&quot;</span><span class="p">,</span> <span class="n">encryptedText</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">decryptedText</span> <span class="p">=</span> <span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetString</span><span class="p">(</span><span class="n">decryptedData</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Sign and Verify</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">hasher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SHA256CryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">digest</span> <span class="p">=</span> <span class="n">hasher</span><span class="p">.</span><span class="n">ComputeHash</span><span class="p">(</span><span class="n">byteData</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">signature</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">SignAsync</span><span class="p">(</span><span class="n">keyIdentifier</span><span class="p">,</span> <span class="s">&quot;RS256&quot;</span><span class="p">,</span> <span class="n">digest</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">isVerified</span> <span class="p">=</span> <span class="n">rsa</span><span class="p">.</span><span class="n">VerifyHash</span><span class="p">(</span><span class="n">digest</span><span class="p">,</span> <span class="s">&quot;Sha256&quot;</span><span class="p">,</span> <span class="n">signature</span><span class="p">.</span><span class="n">Result</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As above, we use the public key available to create the <a href="https://msdn.microsoft.com/en-us/library/System.Security.Cryptography.RSACryptoServiceProvider(v=vs.110).aspx">RSACryptoServiceProvider</a> to encrypt the data and also to verify the signature locally. So in an application we can encrypt the data locally and use the vault to decrypt it when required. Decryption can happen only from the vault, as the private key is only available in the vault, and does not cross the vault boundary.</p>
+
+<p>With Azure Key Vault, managing keys and restricting application permission for keys can be easily managed and no information needs to be passed on to the developer or to any specific individual. Also the keys are secure behind the vault service and can also be protected using a HSM. You would need to update the application id and secret in the <a href="https://github.com/rahulpnath/Blog/tree/master/AzureKeyVault">sample</a> for it to work. Hope this helps in getting you started with Azure Key Vault.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-17T18:05:53+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 17<sup>th</sup>, 2015</time>
         
 
@@ -1867,71 +2033,6 @@ The application id and secret can be obtained by registering for an application 
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-08-31T18:47:05+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 31<sup>st</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/waking-up-early-is-all-about-waking-up-to-an-alarm/" itemprop="url">Waking up Early is All About Waking up to an Alarm</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>I have always been the &lsquo;<em>early to bed</em>&rsquo; type of person and my day mostly ends by ten thirty in the evening. But the &lsquo;<em>waking up early</em>&rsquo; part was not as &lsquo;strict&rsquo; as going to sleep part. I have always struggled to wake up at the sound of the alarm, which I always set without fail. It was either me hitting the dismiss button or it going completely unheard, only to be reminded about, at breakfast by my wife .</p>
-
-<p>I have noticed that it&rsquo;s not that waking up in the morning that is a problem. Waking up from bed at any time of the day is a problem and we all tend to lie down for a few more minutes. Further reading about these on the Internet I came up with some strategies to help me wake up to an alarm. I have been following this for couple of months and its been working out for me, most of the time.</p>
-
-<p><a href="http://flic.kr/p/6Zfgdp" class="center" title="Image By Guilherme Tavares, used under Creative Commons from http://flic.kr/p/6Zfgdp"><img src="/images/alarm.png" class="center" alt="Image By Guilherme Tavares, used under Creative Commons from http://flic.kr/p/6Zfgdp"></a></p>
-
-<ol>
-<li><p><strong>Plan:</strong> Plan your activities to be done after waking up, before going to sleep the day before. &lsquo;<em>Not having anything to do</em>&rsquo;, is one of the main reasons that keeps us from waking up. So plan ahead for it and find activities like reading, writing , working out, anything that you like. But have a plan!</p></li>
-<li><p><strong>Jump out:</strong> Don&rsquo;t let your brain rationalize on your plan at the sound of the alarm. The decision to wake up has already been made the night before and you have a plan at hand, so just jump out of bed. The more you think, the more likely it is to doze off.</p></li>
-<li><p><strong>Multiple alarms:</strong> At the early stages of trying this out, you can have multiple alarms set at very close intervals, as close as one or two minutes. Have a couple of them at one, two, five, ten minutes interval.(If somebody else shares the room with you make sure they don&rsquo;t mind this, for a couple of days till you find the rhythm.)</p></li>
-<li><p><strong>Alarm tone:</strong> Change the alarm tone frequently so that your brain does not get used to it and ignore it all together. You could also try having the same tone as that of your phone ringer, which would make you think you have a call and wake up immediately.</p></li>
-<li><p><strong>Early dinner:</strong> Have your dinner at least two to three hours before you sleep. Going to sleep with a full stomach makes you more tired in the morning and increases the chances of you having to hit the snooze button.</p></li>
-<li><p><strong>Daily alarms:</strong> Set your alarm daily and delete of all that recurrent alarms set for the entire week. This would ensure that you plan for your day when you set the alarm. No plan, No alarm!</p></li>
-<li><p><strong>Sleep Cycle:</strong> Over a period of time, listen to your body and understand how much sleep you require and adjust your timings accordingly. Too little or too much of sleep is bad.</p></li>
-<li><p><strong>Smart Alarms:</strong> There are mobile applications today that come up with puzzle based alarms, you would have to solve the puzzle to turn of the alarm. You could try one of those if needed(I had not used any though).</p></li>
-</ol>
-
-
-<p>These tips have really helped me to wake up to an alarm and be an early riser too. The feeling of starting the day as you wished for is great and stays throughout the day, helping you to do more and <a href="http://www.rahulpnath.com/blog/staying-organized-finding-a-system-to-manage-it-all/">staying organized</a>. Hope you find this useful and do let know if any other tricks has helped you to wake up to an alarm.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1955,6 +2056,8 @@ The application id and secret can be obtained by registering for an application 
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/how-to-setup-google-indic-keyboard-on-your-android-phone/">Type in Your Native Indian Language - Setting up Indic Keyboard on Your Android Phone</a>
+    
     <a class="list-group-item " href="/blog/autofixture-make-your-unit-tests-robust/">Tip of the Week: AutoFixture - Make Your Unit Tests Robust</a>
     
     <a class="list-group-item " href="/blog/three_months_to_a_half_marathon/">How I Went From Couch to Half Marathon in Twelve Weeks</a>
@@ -1962,8 +2065,6 @@ The application id and secret can be obtained by registering for an application 
     <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
     
     <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
-    
-    <a class="list-group-item " href="/blog/the-problems-with-known-exception-and-ignoring-it/">The Problems with Known Exceptions and Ignoring It</a>
     
   </div>
 </section>

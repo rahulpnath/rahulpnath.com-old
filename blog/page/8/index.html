@@ -163,6 +163,296 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-11T05:49:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 11<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/thinking-beyond-primitive-values-value-objects/" itemprop="url">Thinking Beyond Primitive Values: Value Objects</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>When modelling objects for our application, we use primitive values to represent their attributes or properties. By primitive values, I refer to all the primitive types (like Byte, Boolean, Int, Date) and the in-built types (String etc.) that the language supports. These are the most basic types of the programming language and are the building blocks to create custom types.</p>
+
+<h3>Primitive Types and Associated Problems</h3>
+
+<p>When modelling classes for the domain, one of the most common things we do is to fit domain concepts into primitive types. For example</p>
+
+<ul>
+<li><strong>String</strong> to represent Names (Employee name, Company Name, Product Name, Car Name etc.)</li>
+<li><strong>Int/Decimal/Double/Float</strong> to represent Numbers (Age, Quantity, Money, Temperature, Distance, Upload/Download sizes etc.)</li>
+</ul>
+
+
+<p>Those are just a few examples on how we &lsquo;usually&rsquo; fit domain concepts into primitive types. This kind of design tends to take us more towards procedural programming, as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">phoneNumber</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">isExtensionPhoneNumber</span> <span class="p">=</span> <span class="n">phoneNumber</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">phoneNumber</span><span class="p">.</span><span class="n">Length</span> <span class="p">&lt;=</span><span class="m">5</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The problem with this is that these constraints/logics tends to leak across the code-base and we run into problems either not handling this at certain places, handling them wrongly or any changes to these constraints ripples across the code.</p>
+
+<h3>Value Object</h3>
+
+<p>A common factor in all the above examples is that those domain concepts follow value equality and not reference equality. Just like two strings or integers compares with each other based on their value, two names, temperature, color all compare against each other based on their value. This is where a Value Object fits in well.</p>
+
+<blockquote><p><em><a href="http://martinfowler.com/bliki/ValueObject.html">Value Object</a> is an object whose equality is determined by the value it holds and are immutable.</em></p></blockquote>
+
+<p>Below is a Value Object implementation of &lsquo;UserName&rsquo; where we have the domain constraint that name should not be empty and at least be three characters (not a real world scenario, but just for an example). The Equals and GetHashCode methods below ensures that the equality comparison is based on the value that it holds. One could also <a href="https://msdn.microsoft.com/en-au/library/ms173147(v=vs.80">override the &lsquo;==&rsquo; and &lsquo;!=&rsquo; operator</a>.aspx) if you want to support those.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">UserName</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">private</span> <span class="kt">string</span> <span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="nf">UserName</span><span class="p">(</span><span class="kt">string</span> <span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;name&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">name</span><span class="p">.</span><span class="n">Length</span> <span class="p">&lt;</span> <span class="m">3</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;Name should be atleast 3 characters long&quot;</span><span class="p">,</span> <span class="s">&quot;name&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">internalName</span> <span class="p">=</span> <span class="n">name</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">objAsName</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="n">UserName</span><span class="p">;</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="n">Object</span><span class="p">)</span><span class="n">objAsName</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">return</span> <span class="n">internalName</span> <span class="p">==</span> <span class="n">objAsName</span><span class="p">.</span><span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">internalName</span><span class="p">.</span><span class="n">GetHashCode</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>There is no restriction on the number of parameters that a value object should be composed of. Equality and Hashcode should use all the values that it composes of. For immutability, we have made the <em>internalName</em> (in above case ) a private variable. You could also have it as public read-only property if you scenario demands, like in case of DateRange Value Object. Making the setters private and checking end date is not greater than the start date while construction, helps  protect the <a href="http://people.cs.aau.dk/~normark/oop-csharp/html/notes/contracts_themes-class-inv-sect.html">class invariants</a>. In addition to that, any update to start or end date should create a new DateRange object as WithEndDate does below.</p>
+
+<blockquote><p><em>A class invariant is an assertion that captures the properties and relationships, which remain stable throughout the life-time of instances of the class.</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Ignoring null checks</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End Date cannot be less than Start Date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateRange</span> <span class="nf">WithEndDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Rest of Value Object Code to override Equals and GetHashCode</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Thinking as Value Objects</h3>
+
+<p>In the beginning, it is hard to see Value Objects in your domain, but then there is an easy trick that you can follow.</p>
+
+<blockquote><p><em>Any time you use a primitive type (unless within a Value Object) think more about the choice.</em></p></blockquote>
+
+<p>Once you start using more and more Value Objects you will naturally get good at it and be able to start to see more of it in your domain.</p>
+
+<ul>
+<li>Look for co-existing properties, that always go together (like start date and end date, first name and last Name), and try to model them as Value Objects.</li>
+<li>Any property that has a unit of measurement associated needs the value and the measurement unit together (Money, Temperature, Distance, Upload/Download size etc.), and is likely a Value Object.</li>
+<li>Properties that have structural restrictions like Phone Number, Zip Code, email etc.</li>
+</ul>
+
+
+<p>Extracting these into Value Objects helps pull in a lot of &lsquo;<em>procedural code</em>&rsquo; into the Value Object, as shown below. Even if the extension numbers  format changes, we have a single place to contain this change and can avoid a rippling change. We can also have static factory methods to assist in creating these Value Object and helps make the code readable like the <em>CreateFromBytes</em> method below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">PhoneNumber</span> <span class="n">phoneNumber</span><span class="p">;</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">phoneNumber</span><span class="p">.</span><span class="n">IsAnExtension</span><span class="p">())</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">//Rest of code</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">decimal</span> <span class="n">downloadBytes</span><span class="p">;</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">downloadedData</span> <span class="p">=</span> <span class="n">UnitOfData</span><span class="p">.</span><span class="n">CreateFromBytes</span><span class="p">(</span><span class="n">downloadBytes</span><span class="p">);</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">// Lot of other code</span>
+</span><span class='line'><span class="n">downloadedData</span><span class="p">.</span><span class="n">GetSizeInMegabytes</span><span class="p">();</span>
+</span><span class='line'><span class="p">...</span> <span class="c1">//Rest of code</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<h3>Implicit and Explicit Conversions</h3>
+
+<p>Introducing a Value Object to an existing code base might seem challenging, as it might be all over the code and a hard task to replace all at once. In cases where the Value Object replaces a single property existing in a class like a string name, phoneNumber, location etc., we can take advantage of the <a href="https://msdn.microsoft.com/en-us/library/z5z9kes2.aspx">implicit conversion operators</a>, to introduce new Value Objects gradually. Let&rsquo;s say you have a Name field that is a string and you want to move this over to a Value Object &lsquo;UserName&rsquo;. We can declare an implicit operator to convert between string and UserName, which helps us gradually change over to the new ValueObject</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">implicit</span> <span class="k">operator</span> <span class="nf">UserName</span><span class="p">(</span><span class="kt">string</span> <span class="n">userName</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">UserName</span><span class="p">(</span><span class="n">userName</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">implicit</span> <span class="k">operator</span> <span class="nf">string</span><span class="p">(</span><span class="n">UserName</span> <span class="n">userName</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">userName</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="s">&quot;userName&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">userName</span><span class="p">.</span><span class="k">value</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="kt">string</span> <span class="nf">ToString</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">internalName</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The implicit operator enables us to use UserName and string side-by-side and it will automatically convert between them without any explicit casts. This enables us to start anywhere in the application and start replacing the Primitive Value types into Value Objects without breaking the application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">lastName</span> <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="n">UserName</span> <span class="n">firstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kt">string</span> <span class="n">fullNameString</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;{0} {1}&quot;</span><span class="p">,</span> <span class="n">firstName</span> <span class="p">,</span> <span class="n">lastName</span><span class="p">);</span>
+</span><span class='line'><span class="n">UserName</span> <span class="n">fullName</span> <span class="p">=</span> <span class="n">fullNameString</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>At the application boundaries, if the data is serialized into different formats (JSON/XML) or persisted into ORM&rsquo;s (Entity Framework/NHibernate) you need to add <a href="http://www.newtonsoft.com/json/help/html/T_Newtonsoft_Json_JsonConverter.htm">custom serialization formatters</a> or <a href="https://msdn.microsoft.com/en-au/data/jj591617.aspx">mapping configurations</a> to make sure that the Value Object gets serialized/persisted as expected.</p>
+
+<p>Value Objects helps model the domain better and keeps code more readable. It also helps you change domain constraints or rules more easily and keeps them contained. Consider introducing a value object the next time you see one!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-07T17:33:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 7<sup>th</sup>, 2016</time>
         
 
@@ -1466,116 +1756,6 @@ rd</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-12-25T23:30:07+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 25<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/typescript/'>typescript</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/learning-typescript-setting-up-the-environment/" itemprop="url">Learning TypeScript: Setting up the Environment</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>TypeScript is  superset of JavaScript and compiles to clean JavaScript output.</p></blockquote>
-
-<p><a href="http://www.typescriptlang.org/">TypeScript</a> has been around for some time and is gaining more traction these days with more and more projects embracing it. The latest addition to the list <a href="https://angular.io/">Angular 2</a>, which is a very popular JavaScript framework. TypeScript brings in more structure to the way JavaScript is written and maintained. Being a compiled language, errors will be found as the code is written and not waiting till run time. Ease of refactoring and rich tooling support makes TypeScript a perfect choice for large-scale projects. TypeScript also provides improved code readability and organizing capabilities. The official documentation is a good starting point to get started with TypeScript and get some hands-on experience using <a href="http://www.typescriptlang.org/Playground">Playground</a>, which shows the compiled JavaScript real-time in browser. If you are like me, who would prefer a similar experience, but in you favourite editor then this post explains how to set up the environment for playing around with TypeScript and seeing the real-time compiled JavaScript.</p>
-
-<ul>
-<li><p><strong>Create folder</strong> To start with lets first create a folder to work in. In this example I would be using npm(Node Package Manager) to get all the required packages. If you are new to Node, then head off to <a href="https://nodejs.org/en/">here</a> to get started and install the runtime before continuing on.</p></li>
-<li><p><strong>npm init</strong> Once done with the node setup, run the <a href="https://docs.npmjs.com/cli/init">init</a> command, within the project folder (created above), to initialize the node project. This prompts a series of questions and creates a <em>package.json</em> file with the entered options.</p></li>
-<li><strong>npm install -g typescript</strong> If you already have TypeScript installed (which comes in default with Visual Studio 2013 Update 2 onwards) then you can skip this step. If not, run &lsquo;npm install -g typescript&rsquo;, which will install it into the global scope.</li>
-<li><strong>Hello World from TypeScript</strong> With the compiler setup, we are good to write out first hello world, for which we create a file with .ts extension.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">HelloWorld</span><span class="p">(</span><span class="nx">name</span><span class="o">:</span> <span class="nx">string</span><span class="p">){</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Hello World &#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">HelloWorld</span><span class="p">(</span><span class="s2">&quot;TypeScript&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To compile this manually we need to run the TypeScript compiler (which we installed in the previous step). The below command will compile the TypeScript file into JavaScript and output into the same folder.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>tsc HelloWorld.ts
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">function</span> <span class="nx">HelloWorld</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Hello &#39;</span> <span class="o">+</span> <span class="nx">name</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nx">HelloWorld</span><span class="p">(</span><span class="s2">&quot;TypeScript&quot;</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li><strong>Automating the compilation</strong> To prevent running the above step every time we make a change to the typescript file, we can automate the build step. The tsc has a compiler switch to watch the file for changes and automatically compile every time a change happens. For this run the above command with a &lsquo;<em>&ndash;watch</em>&rsquo; command.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>tsc HelloWorld.ts --watch
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>
-<img class="center" alt="Visual Studio Code Coverage" src="/images/tsc_options.png" /></p>
-
-<p>The watch switch is only available in the later versions of the compiler. To check whether your version supports it, run tsc alone which will show all the supported commands. If you do not see the watch switch as shown above, you will need to update the TypeScript compiler version. For this check the environment variables to see the path to your current compiler. If this has a path to an older version (possibly to one that Visual Studio installed at <em>Program Files (x86)\Microsoft SDKs\TypeScript</em>), then remove it. Now do a fresh install using npm, to install the latest version.</p>
-
-<p>Open up both the TypeScript file and the generated JavaScript file in your favorite editor and you will see real-time updates to the JavaScript code, when you update the TypeScript code.<br/>
-<img class="center" alt="Visual Studio Code Coverage" src="/images/TypeScript.gif" /></p>
-
-<p>Hope this helps you with setting up the development environment to learn TypeScript!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1599,6 +1779,8 @@ rd</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/how-to-setup-google-indic-keyboard-on-your-android-phone/">Type in Your Native Indian Language - Setting up Indic Keyboard on Your Android Phone</a>
+    
     <a class="list-group-item " href="/blog/autofixture-make-your-unit-tests-robust/">Tip of the Week: AutoFixture - Make Your Unit Tests Robust</a>
     
     <a class="list-group-item " href="/blog/three_months_to_a_half_marathon/">How I Went From Couch to Half Marathon in Twelve Weeks</a>
@@ -1606,8 +1788,6 @@ rd</p>
     <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
     
     <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
-    
-    <a class="list-group-item " href="/blog/the-problems-with-known-exception-and-ignoring-it/">The Problems with Known Exceptions and Ignoring It</a>
     
   </div>
 </section>
