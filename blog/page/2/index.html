@@ -163,6 +163,432 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-03-07T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 7<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/populating-data-for-tests/" itemprop="url">Populating Data for Tests</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Populating data for tests is the section of the test that usually ends up making tests more coupled with the code that it is testing. Coupling makes tests more fragile and refactoring code harder because of breaking tests. We should try to avoid coupling with the implementation details when writing tests. Let us see a few options that we have to populate test data and constructing object graphs (chain of objects branched off from the root object). I use <a href="https://xunit.github.io/">xUnit.net</a> as my test framework, but you can use these techniques in your choice of framework.</p>
+
+<p><a href="http://xunitpatterns.com/Data-Driven%20Test.html" class="center" title="Image from xUnit Test Patterns"><img class="center" alt="Populating Test Data" src="/images\test_data.gif" /></a></p>
+
+<p>Let&rsquo;s start with some simple tests on a Customer class shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Customer</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Guid</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">FirstName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">LastName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">FullName</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">FirstName</span> <span class="p">+</span> <span class="s">&quot; &quot;</span> <span class="p">+</span> <span class="n">LastName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Address</span> <span class="n">Address</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s say we need to test that the FullName property returns as expected. We will use a <em>Theory</em> type tests for testing different combinations of first and last name. xUnit.net includes support for two different major types of unit tests: facts and theories</p>
+
+<blockquote><p><em>Facts are tests which are always true. They test invariant conditions.</em></p>
+
+<p><em>Theories are tests which are only true for a particular set of data.</em></p></blockquote>
+
+<p>Theories allow us to create parameterized tests with which we can run a given test with different parameter options. Like in this example we need to test the Customer class with different set of First and Last Name combinations. As you can see below the test is attributed with Theory Attribute, and we use the InlineData attribute to pass static values to the test. Using these parameters we are now able to test for different combinations of first and last names. The test populates only the required properties on Customer object for testing FullName.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Adobe&quot;, &quot;Photoshop&quot;, &quot;Adobe Photoshop&quot;)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Visual&quot;, &quot;Studio&quot;, &quot;Visual Studio&quot;)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Rode&quot;, &quot;Podcaster&quot;, &quot;Rode Podcaster&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">CustomerFullNameReturnsExpected</span><span class="p">(</span><span class="kt">string</span> <span class="n">firstName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">lastName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">customer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Customer</span><span class="p">()</span> <span class="p">{</span> <span class="n">FirstName</span> <span class="p">=</span> <span class="n">firstName</span><span class="p">,</span> <span class="n">LastName</span> <span class="p">=</span> <span class="n">lastName</span> <span class="p">};</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">customer</span><span class="p">.</span><span class="n">FullName</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>Tests help refine the public API as they are the first consumers</em></p></blockquote>
+
+<p>The tests above acts as a clue indicating that the three properties - FirstName, LastName, FullName are related and go hand-in-hand. These tests are a strong indication that these properties can be grouped together into a class and possibly tested separately. We can extract these properties into a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> for e.g. Name. I will not go into the implementation details of that, and I hope you can do that you own.</p>
+
+<p>The above tests still have a high dependency on the code that it is testing - <strong><em>the constructor</em></strong>. Imagine if we had a lot of such tests that constructs the Consumer class inline in the setup phase. All tests will break if the class constructor changes. We saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring to remove constructor dependency</a> how to remove such dependencies and make the tests independent of the constructor dependencies.  We can introduce Object Mother or Test Data Builder pattern as mentioned in the article. Optimizing further we can also use <a href="https://github.com/AutoFixture/AutoFixture">AutoFixture</a> to generate test data. Moving into these patterns or AutoFixture brings in an added benefit as well; the rest of properties on the Customer class also gets populated by default.</p>
+
+<h3>Explicitly Setting Properties</h3>
+
+<p>By introducing AutoFixture, we no longer need to create the Customer object explicitly. We can use the Fixture class generate a Customer class for us. Using AutoFixture, this can be achieved in at least two ways (I am not sure if there are more ways of doing this).</p>
+
+<figure class='code'><figcaption><span>Using Fixture class</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Adobe&quot;, &quot;Photoshop&quot;, &quot;Adobe Photoshop&quot;)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Visual&quot;, &quot;Studio&quot;, &quot;Visual Studio&quot;)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Rode&quot;, &quot;Podcaster&quot;, &quot;Rode Podcaster&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">CustomerFullNameReturnsExpected</span><span class="p">(</span><span class="kt">string</span> <span class="n">firstName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">lastName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">fixture</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Fixture</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">customer</span> <span class="p">=</span> <span class="n">fixture</span><span class="p">.</span><span class="n">Build</span><span class="p">&lt;</span><span class="n">Customer</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">With</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">FirstName</span><span class="p">,</span> <span class="n">firstName</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">With</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">LastName</span><span class="p">,</span> <span class="n">lastName</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Create</span><span class="p">();</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">customer</span><span class="p">.</span><span class="n">FullName</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Using Injected Object</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineAutoData(&quot;Adobe&quot;, &quot;Photoshop&quot;, &quot;Adobe Photoshop&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoData(&quot;Visual&quot;, &quot;Studio&quot;, &quot;Visual Studio&quot;)]</span>
+</span><span class='line'><span class="na">[InlineAutoData(&quot;Rode&quot;, &quot;Podcaster&quot;, &quot;Rode Podcaster&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">CustomerFullNameReturnsExpected</span><span class="p">(</span><span class="kt">string</span> <span class="n">firstName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">lastName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">expected</span><span class="p">,</span> <span class="n">Customer</span> <span class="n">customer</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="n">customer</span><span class="p">.</span><span class="n">FirstName</span> <span class="p">=</span> <span class="n">firstName</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">customer</span><span class="p">.</span><span class="n">LastName</span> <span class="p">=</span> <span class="n">lastName</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">customer</span><span class="p">.</span><span class="n">FullName</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Teardown</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In both cases, we explicitly set the required properties. The above test is similar to the previous test that we wrote without AutoFixture. But no longer are we dependent on the constructor. In the second way of using AutoFixture I used <em>InlineAutoData</em> attribute, that is part of <em>Ploeh.AutoFixture.Xunit2</em>. This attribute automatically does the fixture initialization and injects the Customer object for us. For all the values that it can match from the inline parameter list, it uses the provided values. It starts generating random values once all the parameters passed inline are used. In this case, only Customer object is created by AutoFixture.</p>
+
+<h3>AutoFixture and Immutable types</h3>
+
+<p>When using immutable types or properties with private setters, we cannot set the property value after it is created.</p>
+
+<blockquote><p><em>AutoFixture was originally build as a tool for Test-Driven Development (TDD), and TDD is all about feedback. In the spirit of GOOS, you should listen to your tests. If the tests are hard to write, you should consider your API design. AutoFixture tends to amplify that sort of feedback.</em></p>
+
+<p>-<em><a href="http://stackoverflow.com/a/20816487/1948745">Mark Seemann</a> (creator of AutoFixture)</em></p></blockquote>
+
+<p>In these cases, the suggested approach is something closer to the manual <a href="http://www.natpryce.com/articles/000714.html">Test Data Builder</a> we saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring example</a>. We can either have an explicit test data builder class or define extension methods on the immutable type such that it changes just the specified property and returns all other values same, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Name</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">FirstName</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">LastName</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">FullName</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">FirstName</span> <span class="p">+</span> <span class="s">&quot; &quot;</span> <span class="p">+</span> <span class="n">LastName</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Name</span><span class="p">(</span><span class="kt">string</span> <span class="n">firstName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">lastName</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Enforce parameter constraints</span>
+</span><span class='line'>        <span class="n">FirstName</span> <span class="p">=</span> <span class="n">firstName</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">LastName</span> <span class="p">=</span> <span class="n">lastName</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Name</span> <span class="nf">WithFirstName</span><span class="p">(</span><span class="kt">string</span> <span class="n">firstName</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">Name</span><span class="p">(</span><span class="n">firstName</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="n">LastName</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown the <em>WithFirstName</em> method returns a new Name class with just the first name changed. Again we do not need these <em>WithXXX</em> methods for all the properties. Only when there is a need to change any of the property values as part of the requirement do we need to introduce such methods and even test it. This again drives to the above point of using tests to guide the API design, from the feedback.</p>
+
+<h3>Customization</h3>
+
+<p>In cases where we have validations in constructor to hold the class constraints, we cannot rely on the random values generated by AutoFixture. For example.
+- The string should be at least ten characters in length for a Name class
+- Start date should be less than the End date for a date range class</p>
+
+<p>Without any custom code if we are to rely on AutoFixture to generate us, such classes, the tests will not be predictable. Depending on the random value that AutoFixture generates it might create a valid instance or throw an exception. To make this consistent, we can add Customization to ensure predictability.</p>
+
+<p>For the DateRange class below we can add the following Customization.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">DateTime</span> <span class="n">EndDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">DateTime</span> <span class="n">StartDate</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;End date cannot be less than the start date&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>DateRange Customization</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRangeCustomization</span> <span class="p">:</span> <span class="n">ICustomization</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Customize</span><span class="p">(</span><span class="n">IFixture</span> <span class="n">fixture</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">fixture</span><span class="p">.</span><span class="n">Customizations</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">DateRangeSpecimenBuilder</span><span class="p">());</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRangeSpecimenBuilder</span> <span class="p">:</span> <span class="n">ISpecimenBuilder</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">object</span> <span class="nf">Create</span><span class="p">(</span><span class="kt">object</span> <span class="n">request</span><span class="p">,</span> <span class="n">ISpecimenContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">requestAsType</span> <span class="p">=</span> <span class="n">request</span> <span class="k">as</span> <span class="n">Type</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">DateRange</span><span class="p">).</span><span class="n">Equals</span><span class="p">(</span><span class="n">requestAsType</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">times</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">CreateMany</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">times</span><span class="p">.</span><span class="n">Min</span><span class="p">(),</span> <span class="n">times</span><span class="p">.</span><span class="n">Max</span><span class="p">());</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">NoSpecimen</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The customization gets invoked every time a DateRange object is requested using the fixture. It then invokes this custom code that we have added in and creates a valid DateRange object. For the tests use the customization as part of the fixture either using a custom data attribute or explicitly adding the customization into the Fixture class.</p>
+
+<h3>Mocking behavior</h3>
+
+<p><a href="http://xunitpatterns.com/Mock%20Object.html">Mock Objects</a> is a popular way to unit test classes in isolation. For the external dependencies that a <a href="http://xunitpatterns.com/SUT.html">System Under Test</a> (SUT) has, the dependencies are mocked using a mocking framework. In these cases, we can setup the external dependencies to return different values as we expect for different tests and test the logic of the SUT and how it responds. Such tests are usually more coupled with the implementation as we have to setup the mocks prior. So we need to have an understanding of the return values expected from dependencies and the parameters expected by the dependencies. I use Moq framework for mocking, and AutoFixture has a library that helps integrate well with it.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">HttpResponseMessage</span> <span class="nf">Get</span><span class="p">(</span><span class="n">Guid</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">customer</span> <span class="p">=</span> <span class="n">CustomerRepository</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">customer</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Request</span><span class="p">.</span><span class="n">CreateResponse</span><span class="p">(</span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">NotFound</span><span class="p">,</span> <span class="s">&quot;Customer not Found with id &quot;</span> <span class="p">+</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Request</span><span class="p">.</span><span class="n">CreateResponse</span><span class="p">(</span><span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">OK</span><span class="p">,</span> <span class="n">customer</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineAutoMoqData]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">CustomerControllerGetWithNoCustomerReturnsNotFound</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">Guid</span> <span class="n">customerId</span><span class="p">,</span>
+</span><span class='line'><span class="na">    [Frozen]</span><span class="n">Mock</span><span class="p">&lt;</span><span class="n">ICustomerRepository</span><span class="p">&gt;</span> <span class="n">customerRepository</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">CustomerController</span> <span class="n">sut</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Fixture setup</span>
+</span><span class='line'>    <span class="n">customerRepository</span><span class="p">.</span><span class="n">Setup</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">customerId</span><span class="p">)).</span><span class="n">Returns</span><span class="p">(</span><span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="n">HttpStatusCode</span><span class="p">.</span><span class="n">NotFound</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Exercise system</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">customerId</span><span class="p">).</span><span class="n">StatusCode</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// Verify outcome</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The tests above uses <a href="http://blog.nikosbaxevanis.com/2012/07/31/autofixture-xunit-net-and-auto-mocking/">InlineAutoMoqData attribute</a> which is a customized xUnit data attribute that uses Moq framework to inject dependencies. The Mock<ICustomerRepository> represents a mocked interface implementation. Behavior is setup on the mock using the Setup method. By using <a href="http://blog.ploeh.dk/2010/03/17/AutoFixtureFreeze/">Frozen</a> attribute for the Mock parameter, we tell AutoFixture to create only one instance of the mocked object and then use the same instance for any future requests of that type. This forces the same instance of the repository to be injected into the CustomerController class as well when it asks for a ICustomerRepository to AutoFixture.</p>
+
+<p>Creating test data is an important aspect of any test. Making sure that you minimize the dependencies on the implementation detail is important to make your tests more robust. This allows the code to be refactored as long as some of the core contracts that we are testing remain the same. AutoFixture helps minimize the code in <a href="http://xunitpatterns.com/Four%20Phase%20Test.html">Fixture Setup phase</a>, which otherwise tends to grow bigger. Hope this helps you with your tests!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-03-02T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 2<sup>nd</sup>, 2017</time>
         
 
@@ -992,63 +1418,6 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-02-02T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 2<sup>nd</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/quick-launch-in-visual-studio/" itemprop="url">Tip of the Week: Quick Launch in Visual Studio</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img alt="Visual Studio Quick Launch" src="/images/visualstudio_quicklaunch.png" /></p>
-
-<p>As a .NET developer, I spent the majority of my time in Visual Studio. Knowing to navigate fast within the IDE or quickly find what I want is important. Many times finding specific settings or navigating to individual windows can take a while, especially if you are not familiar with it and don&rsquo;t know exactly where to look. Visual Studio has a quick launch toolbar that is designed exactly for this. Be it opening the Package Manager Console or changing the font style you can use the quick launch to search and navigate to it.</p>
-
-<blockquote><p><em>You can use <a href="https://msdn.microsoft.com/en-us/library/hh417697.aspx">Quick Launch</a> to quickly search and execute actions for IDE assets such as options, templates, menus. You can&rsquo;t use Quick Launch to search for code and symbols. The Quick Launch search box is located at the top-right corner of the menu bar and is accessible by choosing the <strong>Ctrl+Q</strong> keys.</em></p></blockquote>
-
-<p>The added advantage is that you can use the quick launch bar to <strong><em>learn new keyboard shortcuts</em></strong>. Searching for an item also shows the keyboard shortcut for it next to it. Over time you can remember the direct keyboard shortcut and avoid quick launch as well.</p>
-
-<p><img alt="Visual Studio Quick Launch learn keyboard shortcuts" src="/images/visualstudio_quicklaunch_keyboardShortcuts.png" /></p>
-
-<p>Knowing the tools that you use is an important part of development. Able to navigate fast within the IDE enables to remove any time wasted poking around the IDE. Use that time to read and write code.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1072,6 +1441,8 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/buffer-smarter-social-sharing/">Tip of the Week: Buffer - Smarter Social Sharing</a>
+    
     <a class="list-group-item " href="/blog/how-to-setup-google-indic-keyboard-on-your-android-phone/">Type in Your Native Indian Language - Setting up Indic Keyboard on Your Android Phone</a>
     
     <a class="list-group-item " href="/blog/autofixture-make-your-unit-tests-robust/">Tip of the Week: AutoFixture - Make Your Unit Tests Robust</a>
@@ -1079,8 +1450,6 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
     <a class="list-group-item " href="/blog/three_months_to_a_half_marathon/">How I Went From Couch to Half Marathon in Twelve Weeks</a>
     
     <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
-    
-    <a class="list-group-item " href="/blog/rescue-time-track-your-time/">Tip of the Week: Rescue Time - Track Your Time</a>
     
   </div>
 </section>
