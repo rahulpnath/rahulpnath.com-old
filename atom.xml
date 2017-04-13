@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-12T00:02:45+00:00</updated>
+  <updated>2017-04-13T00:02:08+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,203 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Refactoring to Composite Pattern]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-composite-pattern/"/>
+    <updated>2017-04-13T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-composite-pattern</id>
+    <content type="html"><![CDATA[<p>I often come across functions that do multiple things. Many times such functions have a common pattern where multiple sections within the function use the same parameters for calculations. The results from these different code sections within the function are either separated by conditionals (if, switch, etc.) or combined using various arithmetic operators. The most obvious refactoring in such scenarios is to move the code sections into different functions within the same class. Having it in separate functions keeps the code readable. But on closer observation, such functions can be moved into different classes, keeping each of these code sections as the only responsibility.</p>
+
+<h3>Identifying the Refactoring</h3>
+
+<p>Within a function when a similar pattern of code repeats, it could be refactored into multiple classes and composed to give the same functionality. Let us take a simple example of a function where we are validating an Account object based on different criteria. The various criteria end up as conditionals within the function. This function can soon get big and difficult to manage. It also makes it harder to test. If you are adding more validations to this class over a period you are violating the Open-Closed Principle (OCP), the O in <a href="http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod">SOLID</a>. Depending on the level of abstraction that we are looking at, the class also violates the Single Responsibility Principle(SRP), the S in SOLID. The function handles validations based on different criteria.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;No email&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">else</span> <span class="nf">if</span> <span class="p">(!</span><span class="n">IsValidEmailFormat</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;Email not valid&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">BillingDetails</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;Billing Details does not exists&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>The Composite Pattern</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Composite_pattern">Composite pattern</a> is appropriate when the client ignores the difference between the composition of objects and individual objects. The pattern helps developers to maintain the complexity of the code and also separate out class responsibilities.</p>
+
+<blockquote><p><em>Compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly</em></p></blockquote>
+
+<p><img alt="Composite Pattern" src="http://rahulpnath.com/images/composite_pattern.png" /></p>
+
+<h3>Refactoring</h3>
+
+<p>In the Account validation above, the function checks for an email and validates the format, checks for valid billing details, etc. The validations could also extend on to users attached to the account and check if there is at least one user, the user has email, phone number, etc. Each of these validations can be moved into separate classes and composed together in one class so that they are all executed when an account needs to be validated. You can see a tree like hierarchy forming here, and the actual validation is composed of all these validations</p>
+
+<p><img alt="Account Validation hierarchy" src="http://rahulpnath.com/images/composite_pattern_validation.png" /></p>
+
+<p>The actual C# code looks like this after the refactoring.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountValidators</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">IValidateAccount</span><span class="p">&gt;</span> <span class="n">Validators</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">AccountValidators</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Validators</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">IValidateAccount</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountHasEmailValidator</span><span class="p">(),</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountEmailIsValidValidator</span><span class="p">(),</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountHasBillingDetailsValidator</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">...</span> <span class="c1">// Add more validators</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Validators</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">validator</span> <span class="p">=&gt;</span> <span class="n">validator</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">account</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountHasEmailValidator</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">account</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="s">&quot;No email&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountEmailIsValidValidator</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">account</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">account</span><span class="p">.</span><span class="n">Email</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">IsValidEmail</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="s">&quot;Email not valid&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After the refactoring, we have separate classes for each of the validation rules. The <em>AccountValidators</em> class composes all the other validators and provides the same uniform interface for the consumers to validate an account. It calls on to all the Validators iteratively and invokes the Validate method on them. You can use Dependency Injection to inject in all validators to this class if you are not comfortable hard-wiring them. The IoC container can be setup using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">registration by convention</a>, which prevents the needs for explicit registration for any new validators.</p>
+
+<p>One other worry that I have seen common when moving to such a pattern is that - <em>We now have a lot more classes. Does that not affect the performance?</em>. If you are following SOLID principles to the core and want to maintain loose coupling in your code then creating more classes is something you cannot avoid. We do not want any
+<a href="http://wiki.c2.com/?GodClass">God Classes</a> in our code and the first step towards it is to split them into different classes.</p>
+
+<blockquote><p><em>If an Object Oriented language cannot handle the creation of many classes and objects then why should we be using it in the first place?</em></p>
+
+<p>-<em><a href="https://vimeo.com/68378923">Big Object Graphs Up Front, Mark Seemann</a></em></p></blockquote>
+
+<p>The composition can be complex conditions as in the case below. For, e.g., let&rsquo;s say we need to execute a different kind of algorithm to calculate based on a property.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountCalculator</span> <span class="p">:</span> <span class="n">ICalculate</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">AccountCalculator</span><span class="p">(</span><span class="n">ICalculate</span> <span class="n">calculate1</span><span class="p">,</span> <span class="n">ICalculate</span> <span class="n">calculate2</span><span class="p">,</span> <span class="n">ICalculate</span> <span class="n">calculate3</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">Calculate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">PropertyExists</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">calculate1</span><span class="p">.</span><span class="n">Calculate</span><span class="p">();</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>              <span class="k">return</span> <span class="n">calculate2</span><span class="p">.</span><span class="n">Calculate</span><span class="p">()</span> <span class="p">+</span> <span class="n">calculate3</span><span class="p">.</span><span class="n">Calculate</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above composition makes it easy to test the composed parts and the composition separately. It also helps keep the tests simple and easy to understand. The code is separated into maintainable classes and each criteria can be modified independently.</p>
+
+<p>Composite Pattern is a useful technique to keep code maintainable and readable. Identifying the pattern is a bit of a challenge, but the more you see it the more familiar you will be. Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Buffer - Smarter Social Sharing]]></title>
@@ -1254,66 +1451,6 @@ The problem is when an error happens; the exception stack trace will look like s
 <p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
 
 <p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[How I Lost 13 Kilos in One and Half Months]]></title>
-    <link href="http://rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/"/>
-    <updated>2017-02-04T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months</id>
-    <content type="html"><![CDATA[<p>Getting fit is one of the goals that I have set for myself this year. I have started running since mid of December and also controlling my diet.</p>
-
-<div class="alert alert-warning">
-<strong>DISCLAIMER!</strong> I am not a doctor or a dietitian. The below are just my personal experiences and has worked for me. If you feel you have a medical problem or are in need of professional help, please contact a professional. Always consult a doctor before starting a new diet or exercise program.
-</div>
-
-
-<blockquote><p><strong>TLDR;</strong></p>
-
-<ul>
-<li>Have Parvathy (my wife) support me throughout.</li>
-<li>Running 1-2 times a week</li>
-<li>No carbs till Dinner: Smoothie, Veggies, and nuts till dinner. Dinner is Chappathi and curry (mostly vegetables).</li>
-<li>150+ Pushups Daily, spread across the day</li>
-<li>No Sugar</li>
-</ul>
-</blockquote>
-
-<p>I was around 95 kilos when I started out in December. At the time of writing, I weigh 82 kilos. Yes, I have lost 13 kilos over the past one and half months. This is the first time I have seen such drastic changes in my body, and I believe it&rsquo;s because of the strict diet more than anything. Below are the various aspects of what I have been following.</p>
-
-<figure>
-    <img alt="Before and After" src="http://rahulpnath.com/images/weigth_Before and After.jpg" />
-    <figcaption><em>Here is the before and after.</em></figcaption>
-</figure>
-
-
-<h3>Exercises</h3>
-
-<p> I started with running once a week. But now I am so into it I try to run two to three times a week. I use <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b066">Runtastic</a> to track my runs. Last week I purchased the premium plan for Runtastic and looking forward to starting one of their 10k <a href="https://www.runtastic.com/en/training-plans/10k">training plans</a> and <a href="https://www.runtastic.com/en/results">runtastic results</a> on days that I do not run. I use a <a href="https://www.bose.com.au/en_au/products/headphones/earphones/soundsport-in-ear-headphones-audio.html#v=soundsport_ie_headphones_ii_audio_charcoal">Bose SoundSport in-ear audio only headphones</a>  headphones (the cheapest in their range) for music during the runs. Luckily Bose was running a half price on those models when I purchased.</p>
-
-<p> I do push-ups every day and get 150+ (25 * 6+) every day. I split this out throughout the day - 75 before I head off to work and 75 once back. I get enough time in the morning to space it at 30-minute intervals as I <a href="http://www.rahulpnath.com/blog/morning_routine/">wake up at four</a>. I plan to replace push-ups with Runtastic Results starting next week.</p>
-
-<p> <img alt="My Running History" src="http://rahulpnath.com/images/weight_running.jpg" /></p>
-
-<h3>Diet</h3>
-
-<p>Breakfast (<em>7:30 am</em>): Green Smoothie (+ eggs on days that I run) or Avocado and eggs.
-Lunch (<em>12 pm</em>): Raw vegetables (Carrot, Cucumber, spinach, kale, beetroot, corn, sprouts)
-Dinner (<em>6:30 pm</em>: Wheat Dosa or Chappathi + Vegetable Curry
-Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunflower seeds, etc.), Carrot, Banana and Peanut butter. Usually, I end up having just the nuts at around 10 30 in the morning.</p>
-
-<p><img alt="Diet" src="http://rahulpnath.com/images/weight_diet.jpg" /></p>
-
-<p>When eating out, I keep an eye on carbs and other junk. Try to eat grilled instead of fried. Usually, we eat out on weekends as we will be traveling places. We usually have a hearty lunch on weekends. Parvathy and I decided to have fruits for dinner on those days. I try to take fruits that contain less sugar like kiwi, berries, etc. But we do have apples, mangoes, watermelon, etc. but in moderation. The fruit choices are more driven by what&rsquo;s available at the place <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">I live now</a>.</p>
-
-<p>Sugar: I try my best to avoid it fully. To start with I quit tea and coffee. Believe me, I was a tea addict and I needed lots of it. It was hard, but then Parvathy quit it one day, and I got inspired by her. I still remember that last tea I took when I decided I am having no more of it. It&rsquo;s hard but doable!. I don&rsquo;t have any ice-cream, fruit juice, carbonated drinks, energy drinks, pastries, etc.</p>
-
-<h3>Family Outings</h3>
-
-<p>We used to spend a lot of our weekends in shopping malls till a while back. We decided to change that to more of outdoor activities. So it&rsquo;s either the beach, boating, parks, walks, etc. This has increased our general activity levels and help burn extra calories. And mostly I have &lsquo;an extra weight&rsquo; to carry around; you can tell that from the photos :). Gautham also enjoys these outdoor activities, and there&rsquo;s more for him to learn in each of those short trips. On weekdays we go for a walk after dinner, shop around for groceries, etc. and run any other errands so that we are free during weekends.</p>
-
-<p>With the new routine, I now feel great to be back in shape. I have never been this light since a long time, and I am happy to be in clothes that I had locked up in my bags. Since the new routine takes an hour out of <a href="http://www.rahulpnath.com/blog/morning_routine/">my morning routine</a> I have to optimize myself further to keep up with blogging, videos and learning new things. I am still trying to find a balance but for this. Hoping to continue with this new routine.</p>
 ]]></content>
   </entry>
   

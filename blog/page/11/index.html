@@ -163,6 +163,197 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-10-19T11:42:54+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 19<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/dependency-injection/'>dependency injection</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/configuring-unity-container-comparing-code-and-xml-configuration-side-by-side/" itemprop="url">Configuring Unity Container: Comparing Code and Xml Configuration Side by Side</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Setting up dependency containers from code is very easy, but not at all the same when done using a configuration file. The project that I am currently working on uses xml configuration for <a href="https://unity.codeplex.com/">Unity container</a> and I did struggle mapping certain dependencies, so thought of putting this up.</p>
+
+<p>To start with I have created a console application and added the Unity <a href="https://www.nuget.org/packages/Unity/">nuget package</a>. You could directly add the configurations in the app.config file, but I prefer to keep the configurations separately in a different file, <em>unity.config</em>, and have it referred in the app.config(or web.config). Also make sure that the unity.config file gets copied to the build directory(setting build properties as content and copy always should help) so that it is available to the application.</p>
+
+<figure class='code'><figcaption><span>app.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configSections&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;section</span> <span class="na">name=</span><span class="s">&quot;unity&quot;</span> <span class="na">type=</span><span class="s">&quot;Microsoft.Practices.Unity.Configuration.UnityConfigurationSection, Microsoft.Practices.Unity.Configuration&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;unity</span> <span class="na">configSource=</span><span class="s">&quot;unity.config&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the unity.config we need to specify the assemblies and namespaces that we will be injecting the dependencies from. Inside the container is where we register the dependencies.</p>
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;unity</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/practices/2010/unity&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Define Assemblies--&gt;</span>
+</span><span class='line'><span class="nt">&lt;assembly</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- End Assemblies--&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Define Namespaces--&gt;</span>
+</span><span class='line'><span class="nt">&lt;namespace</span> <span class="na">name=</span><span class="s">&quot;ConfiguringUnity&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- End Namespaces--&gt;</span>
+</span><span class='line'><span class="nt">&lt;container&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/container&gt;</span>
+</span><span class='line'><span class="nt">&lt;/unity&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have the basic infrastructure set up to start using the container, lets take a look at some common dependency injection scenarios that we come across. The <a href="http://msdn.microsoft.com/en-us/library/ff660914(v=pandp.20).aspx">Unity Configuration Schema</a> is worth  taking a look, to understand about the configuration elements and their attributes.</p>
+
+<p><strong>Simple Class and Interface</strong></p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">NormalClass</span><span class="p">&gt;();</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">INormalInterface</span><span class="p">,</span> <span class="n">NormalInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;NormalClass&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;INormalInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;NormalInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+Since we have only given the interface name while registering the type, specifying the assembly and namespace names of the type is important.Unity will look through these elements to find the type specified, whenever the specified type is not a full type name. This mechanism is also referred to as <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Automatic_Type_Lookup">Automatic Type Lookup</a></p>
+
+<p><strong>Generic Interface</strong></p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterface</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceImplementation</span><span class="p">&lt;&gt;));</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IGenericInterfaceWithTwoParameter</span><span class="p">&lt;,&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">GenericInterfaceWithTwoParametersImplementation</span><span class="p">&lt;,&gt;));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface`1&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation`1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter`2&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation`2&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>// or
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterface[]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceImplementation[]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IGenericInterfaceWithTwoParameter[,]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;GenericInterfaceWithTwoParametersImplementation[,]&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above registering <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Generic_Types">generic types</a> in config can either use the CLR notation of `N, where N is the number of generic parameters or use square brackets with commas to indicate the number of parameters. Examples using one and two parameters are shown above. <br/>
+For a generic interface, the parameters can have typed parameter associated with it, something like <em>IComplexGenericInterface&lt;ComplexGenericClass<GenericClass>></em>. In these cases we cannot directly register this using either of the notation above, as the configuration does not allow recursive formats of those notation. We can use <a href="http://msdn.microsoft.com/en-us/library/ff660933(v=pandp.20).aspx#_Type_Aliases">Aliases</a> for specifying the parameter type names and then refer the alias for registering the interface.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IComplexGenericInterface</span><span class="p">&lt;</span><span class="n">ComplexGenericClass</span><span class="p">&lt;</span><span class="n">GenericClass</span><span class="p">&gt;&gt;,</span> <span class="n">ComplexGenericInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;alias</span> <span class="na">alias=</span><span class="s">&quot;ComplexGenericInterfaceType&quot;</span>
+</span><span class='line'>         <span class="na">type=</span><span class="s">&quot;ConfiguringUnity.ComplexGenericClass`1[[ConfiguringUnity.GenericClass, ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], ConfiguringUnity, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;container&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IComplexGenericInterface[ComplexGenericInterfaceType]&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ComplexGenericInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/container&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above alias is nothing but a shorthand name that will be replaced with the full type name when the configuration is loaded. This is only available at configuration time and not at runtime.</p>
+
+<p><strong>Conflicting Interfaces</strong> <br/>
+When you have conflicting interface names , probably from two different assemblies then you can create aliases or use full names to register the types. For the example I have created a class library project, ExternalLibrary and added it as a reference to the Console Application.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">IConflictingInterface</span><span class="p">,</span> <span class="n">ExternalLibrary</span><span class="p">.</span><span class="n">ConflictingInterfaceImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IConflictingInterface&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ConflictingInterfaceImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;ExternalLibrary.IConflictingInterface, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;ExternalLibrary.ConflictingInterfaceImplementation, ExternalLibrary, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong><em>Code and Config</em></strong> instead of <strong><em>Code Vs Config</em></strong></h4>
+
+<p>Now that we have seen some of the common usage scenarios in registering types with containers, one main thought would be &lsquo;<a href="http://stackoverflow.com/questions/5418392/should-unity-be-configured-in-code-or-configuration-file">Should Unity be configured in code or configuration file?</a>&rsquo;. Xml configurations are anytime a pain for the developer as it more prone to errors and configuration complexities. But then there are scenarios where dependencies would have to be plugged in at runtime, for which xml configuration is really helpful. Unity does allow to specify both together, making the best use of both worlds. You can choose to have only your dependencies that are Late Bound in the config and have all others in the code. You could also override an already registered dependency.</p>
+
+<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">&lt;</span><span class="n">IOverridableDependency</span><span class="p">,</span> <span class="n">OverridableCodeImplementation</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>unity.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;register</span> <span class="na">type=</span><span class="s">&quot;IOverridableDependency&quot;</span> <span class="na">mapTo=</span><span class="s">&quot;OverridableConfigImplementation&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As shown above we have a different mapping in code and config for the same interface and I am loading the configuration into the container after all the  code registrations are done. In this case the dependency that is registered last will take precedence. So you could use this feature to override any dependencies specified in the code.</p>
+
+<p>There surely are a lot more cases that you would have come across while registering dependencies, do drop in a comment on the missing ones. The sample for this can be found <a href="https://github.com/rahulpnath/Blog/tree/master/ConfiguringUnity">here</a>
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-09-10T19:29:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 10<sup>th</sup>, 2014</time>
         
 
@@ -1249,233 +1440,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-07T23:40:39+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 7<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-bing-maps-and-turn-by-turn-navigation/" itemprop="url">Windows Phone Series: Bing Maps and Turn-by-Turn Navigation</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Many applications today provide features that integrate with users location and provide information on a map based on that. In this blog will see how we can use the Bing maps to show a users current location, search for destination and show route to that location. For this will use Bing maps, and you would have to create an account here and create a key that we would be using. Make sure that you read on the <a href="http://www.microsoft.com/maps/product/terms.html">licensing terms</a> on the api if you are planning to use this in a published application.</p>
-
-<p>To use Maps in windows phone application, you would need to add a reference to ‘<em>Microsoft.Phone.Controls.Maps</em>’ once you create a new Windows phone project. Add the maps control to the application as below to display current location or other map related features.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;maps:Map</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="na">Name=</span><span class="s">&quot;mapBing&quot;</span>  <span class="na">AnimationLevel=</span><span class="s">&quot;None&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Stretch&quot;</span> <span class="na">VerticalContentAlignment=</span><span class="s">&quot;Stretch&quot;</span>
-</span><span class='line'>          <span class="na">CopyrightVisibility=</span><span class="s">&quot;Collapsed&quot;</span>  <span class="na">LogoVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomBarVisibility=</span><span class="s">&quot;Collapsed&quot;</span>
-</span><span class='line'>          <span class="na">ZoomLevel=</span><span class="s">&quot;12&quot;</span> <span class="na">CredentialsProvider=</span><span class="s">&quot;BING MAPS API KEY&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;RouteLayer&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;StartPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;DestinationPoint&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;CurrentPosition&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;maps:MapLayer</span> <span class="na">Name=</span><span class="s">&quot;MyPathLayer&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/maps:MapLayer&gt;</span>
-</span><span class='line'><span class="nt">&lt;/maps:Map&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This adds a map user control to the application and also different layers to the application, on which we would be displaying the pins, routes etc. Anything that gets shown on the map is shown on different layers. Each of these can be cleared, deleted or toggled for visibility making it easy to work on maps.</p>
-
-<p><strong>Track Me</strong></p>
-
-<p>The  first thing that we would want is to track our location, so that we could provide information related to our current location. For this we use the <a href="http://msdn.microsoft.com/en-us/library/system.device.location.geocoordinatewatcher(v=vs.110">GeoCoordinateWatcher</a>.aspx), that provides the location information based in latitude and longitude. Registering for the PositionChanged event will update us whenver the location information related to the user has changed, so that we can update/obtain the real time location of the user if he is on the move. Once we have the user location co-ordinates, we can use the <a href="http://msdn.microsoft.com/en-us/library/ff701715.aspx">Location API</a>, to get the location name.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">GeoPosition</span> <span class="n">myPosition</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">TrackMe</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">startingPoint</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">CurrentPosition</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Clear</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">myWatcher</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">-=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">myWatcher</span><span class="p">.</span><span class="n">Dispose</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="n">myWatcher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GeoCoordinateWatcher</span><span class="p">();</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">TryStart</span><span class="p">(</span><span class="k">false</span><span class="p">,</span> <span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">myWatcher</span><span class="p">.</span><span class="n">PositionChanged</span> <span class="p">+=</span> <span class="n">myWatcher_PositionChanged</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">void</span> <span class="nf">myWatcher_PositionChanged</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">GeoPositionChangedEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>     <span class="n">myPosition</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">;</span>
-</span><span class='line'>     <span class="n">currentLocation</span> <span class="p">=</span> <span class="n">myWatcher</span><span class="p">.</span><span class="n">Position</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
-</span><span class='line'>     <span class="k">if</span> <span class="p">(</span><span class="n">isInDriveMode</span><span class="p">)</span>
-</span><span class='line'>     <span class="p">{</span>
-</span><span class='line'>         <span class="n">DrawMyCurrentRoute</span><span class="p">(</span><span class="n">currentLocation</span><span class="p">);</span>
-</span><span class='line'>     <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>     <span class="n">LocationManager</span><span class="p">.</span><span class="n">GetLocationName</span><span class="p">(</span><span class="n">UpdateLocation</span><span class="p">,</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Latitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">(),</span> <span class="n">myPosition</span><span class="p">.</span><span class="n">Location</span><span class="p">.</span><span class="n">Longitude</span><span class="p">.</span><span class="n">ToString</span><span class="p">());</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>Destination and Routes</strong></p>
-
-<p>Location points are depicted on maps using the Pushpin user control. Now that we have the users location, we need to get the destination where the user wants to go. We have added a simple panorama control where in one of them has a map and the other has the details to enter the destination location. Once the user enters the destination location name, we need to get the co-ordinates of this location. For this we use the Location API again but with a different endpoint. We might get multiple responses for the same location name, for which we add destination pushpins to the map, so that user can select the correct location from the map that he intends to go. On getting confirmation on the destination point, we now need to get the route from the current location to the destination location. A route is nothing but a set of co-ordinates between the start and the destination that the user will have to pass through to reach the final destination. You can use the <a href="http://msdn.microsoft.com/en-us/library/ff701705.aspx">Routes API</a> or consume it adding a service reference to <a href="http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex">http://dev.virtualearth.net/webservices/v1/routeservice/routeservice.svc/mex</a></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">RouteServiceClient</span> <span class="n">routeService</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteServiceClient</span><span class="p">(</span><span class="s">&quot;BasicHttpBinding_IRouteService&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteCompleted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">DrawRoute</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">mapBing</span><span class="p">.</span><span class="n">SetView</span><span class="p">(</span><span class="n">LocationRect</span><span class="p">.</span><span class="n">CreateLocationRect</span><span class="p">(</span><span class="n">locations</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">routeService</span><span class="p">.</span><span class="n">CalculateRouteAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">RouteRequest</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Credentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Credentials</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ApplicationId</span> <span class="p">=</span> <span class="n">LocationManager</span><span class="p">.</span><span class="n">bingApiKey</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">RouteOptions</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">RoutePathType</span> <span class="p">=</span> <span class="n">RoutePathType</span><span class="p">.</span><span class="n">Points</span>
-</span><span class='line'>    <span class="p">},</span>
-</span><span class='line'>    <span class="n">Waypoints</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ObservableCollection</span><span class="p">(</span>
-</span><span class='line'>        <span class="n">locations</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="k">new</span> <span class="n">Waypoint</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">Location</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Microsoft</span><span class="p">.</span><span class="n">Phone</span><span class="p">.</span><span class="n">Controls</span><span class="p">.</span><span class="n">Maps</span><span class="p">.</span><span class="n">Platform</span><span class="p">.</span><span class="n">Location</span><span class="p">()</span> <span class="p">{</span> <span class="n">Latitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">Longitude</span> <span class="p">=</span> <span class="n">x</span><span class="p">.</span><span class="n">Longitude</span> <span class="p">}</span>
-</span><span class='line'>        <span class="p">}))</span>
-</span><span class='line'><span class="p">});</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Draw route draws a route line on the RouteLayer on the map, so that the user can see the path that he needs to take to reach his final destination. As the user starts moving the routes are recalcualted and redrawn on the map, so that there is a constant feedback to the user on the path that he is taking. Along with the routes we also get a text direction information that describes the direction in which we need to travel. This can be spoken out to the user so that he need not always look at the mobile to find the next immediate action that he needs to perform. Here I have used the Google translate api</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="n">speechUrl</span> <span class="p">=</span> <span class="s">&quot;http://translate.google.com/translate_tts?tl=en&amp;amp;q=&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">SpeakText</span><span class="p">(</span><span class="kt">string</span> <span class="n">message</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Play the audio</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Source</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">speechUrl</span> <span class="p">+</span> <span class="n">message</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">med1</span><span class="p">.</span><span class="n">Play</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You could add on more features to this using the different location related api’s that are available and provide the user a more enhanced experience.</p>
-
-<p><img src="/images/Bing_wp_route.jpg" alt="Bing_wp_route" /><img src="/images/Bing_wp_place_search.jpg" alt="Bing_wp_place_search" /><img src="/images/Bing_wp_directions_text.jpg" alt="Bing_wp_directions_text" /></p>
-
-<p><strong>Testing</strong></p>
-
-<p>Using the <a href="http://msdn.microsoft.com/en-us/library/windowsphone/develop/hh202933(v=vs.105">additional tools along with the phone emulator</a>.aspx), you can simulate location changes and also be at any location without actually being there and test. The emulator also provides a lot of functionality to simulate movement along a specific route and fire location changes in fixed amount of time etc, that come handy while testing.
-<img src="/images/Bing_wp_simulator_geolocation.jpg" alt="Bing_wp_simulator_geolocation" /></p>
-
-<p>You could also install it on to a phone and dash out to test it for yourself in your real-time location and reach the coffee-shop faster!. Find the sample code <a href="https://github.com/rahulpnath/Blog/tree/master/SimpleGPS">here</a> and feel free to use it.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1499,6 +1463,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/refactoring-to-composite-pattern/">Refactoring to Composite Pattern</a>
+    
     <a class="list-group-item " href="/blog/buffer-smarter-social-sharing/">Tip of the Week: Buffer - Smarter Social Sharing</a>
     
     <a class="list-group-item " href="/blog/how-to-setup-google-indic-keyboard-on-your-android-phone/">Type in Your Native Indian Language - Setting up Indic Keyboard on Your Android Phone</a>
@@ -1506,8 +1472,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/autofixture-make-your-unit-tests-robust/">Tip of the Week: AutoFixture - Make Your Unit Tests Robust</a>
     
     <a class="list-group-item " href="/blog/three_months_to_a_half_marathon/">How I Went From Couch to Half Marathon in Twelve Weeks</a>
-    
-    <a class="list-group-item " href="/blog/improved-code-navigation-in-visual-studio-2017/">Tip of the Week: Improved Code Navigation in Visual Studio 2017</a>
     
   </div>
 </section>

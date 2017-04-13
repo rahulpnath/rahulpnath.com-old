@@ -4,7 +4,7 @@
   <title><![CDATA[Category: refactoring | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/refactoring/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-12T00:02:45+00:00</updated>
+  <updated>2017-04-13T00:02:08+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,128 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Refactoring to Composite Pattern]]></title>
+    <link href="http://rahulpnath.com/blog/refactoring-to-composite-pattern/"/>
+    <updated>2017-04-13T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/refactoring-to-composite-pattern</id>
+    <content type="html"><![CDATA[<p>I often come across functions that do multiple things. Many times such functions have a common pattern where multiple sections within the function use the same parameters for calculations. The results from these different code sections within the function are either separated by conditionals (if, switch, etc.) or combined using various arithmetic operators. The most obvious refactoring in such scenarios is to move the code sections into different functions within the same class. Having it in separate functions keeps the code readable. But on closer observation, such functions can be moved into different classes, keeping each of these code sections as the only responsibility.</p>
+
+<h3>Identifying the Refactoring</h3>
+
+<p>Within a function when a similar pattern of code repeats, it could be refactored into multiple classes and composed to give the same functionality. Let us take a simple example of a function where we are validating an Account object based on different criteria. The various criteria end up as conditionals within the function. This function can soon get big and difficult to manage. It also makes it harder to test. If you are adding more validations to this class over a period you are violating the Open-Closed Principle (OCP), the O in <a href="http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod">SOLID</a>. Depending on the level of abstraction that we are looking at, the class also violates the Single Responsibility Principle(SRP), the S in SOLID. The function handles validations based on different criteria.</p>
+
+<pre><code class="csharp">public List&lt;string&gt; Validate(Account account)
+{
+    var result = new List&lt;string&gt;();
+
+    if (string.IsNullOrEmpty(account.Email))
+        result.Add("No email");
+    else if (!IsValidEmailFormat(account.Email))
+        result.Add("Email not valid");
+
+    if (account.BillingDetails == null)
+        result.Add("Billing Details does not exists");
+
+    ...
+
+    return result;
+}
+</code></pre>
+
+<h3>The Composite Pattern</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Composite_pattern">Composite pattern</a> is appropriate when the client ignores the difference between the composition of objects and individual objects. The pattern helps developers to maintain the complexity of the code and also separate out class responsibilities.</p>
+
+<blockquote><p><em>Compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly</em></p></blockquote>
+
+<p><img alt="Composite Pattern" src="/images/composite_pattern.png" /></p>
+
+<h3>Refactoring</h3>
+
+<p>In the Account validation above, the function checks for an email and validates the format, checks for valid billing details, etc. The validations could also extend on to users attached to the account and check if there is at least one user, the user has email, phone number, etc. Each of these validations can be moved into separate classes and composed together in one class so that they are all executed when an account needs to be validated. You can see a tree like hierarchy forming here, and the actual validation is composed of all these validations</p>
+
+<p><img alt="Account Validation hierarchy" src="/images/composite_pattern_validation.png" /></p>
+
+<p>The actual C# code looks like this after the refactoring.</p>
+
+<pre><code class="csharp">public interface IValidateAccount
+{
+    IEnumerable&lt;string&gt; Validate(Account account);
+}
+
+public class AccountValidators : IValidateAccount
+{
+    public readonly IEnumerable&lt;IValidateAccount&gt; Validators;
+    public AccountValidators()
+    {
+        Validators = new List&lt;IValidateAccount&gt;()
+        {
+          new AccountHasEmailValidator(),
+          new AccountEmailIsValidValidator(),
+          new AccountHasBillingDetailsValidator()
+          ... // Add more validators
+        };
+    }
+    public IEnumerable&lt;string&gt; Validate(Account account)
+    {
+        return Validators.SelectMany(validator =&gt; validator.Validate(account));
+    }
+}
+
+public class AccountHasEmailValidator : IValidateAccount
+{
+    public IEnumerable&lt;string&gt; Validate(Account account)
+    {
+        if (account != null &amp;&amp; string.IsNullOrEmpty(account.Email))
+            yield return "No email";
+    }
+}
+
+public class AccountEmailIsValidValidator : IValidateAccount
+{
+    public IEnumerable&lt;string&gt; Validate(Account account)
+    {
+        if (account != null &amp;&amp; account.Email != null &amp;&amp; !IsValidEmail(account.Email))
+            yield return "Email not valid";
+    }
+}
+</code></pre>
+
+<p>After the refactoring, we have separate classes for each of the validation rules. The <em>AccountValidators</em> class composes all the other validators and provides the same uniform interface for the consumers to validate an account. It calls on to all the Validators iteratively and invokes the Validate method on them. You can use Dependency Injection to inject in all validators to this class if you are not comfortable hard-wiring them. The IoC container can be setup using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">registration by convention</a>, which prevents the needs for explicit registration for any new validators.</p>
+
+<p>One other worry that I have seen common when moving to such a pattern is that - <em>We now have a lot more classes. Does that not affect the performance?</em>. If you are following SOLID principles to the core and want to maintain loose coupling in your code then creating more classes is something you cannot avoid. We do not want any
+<a href="http://wiki.c2.com/?GodClass">God Classes</a> in our code and the first step towards it is to split them into different classes.</p>
+
+<blockquote><p><em>If an Object Oriented language cannot handle the creation of many classes and objects then why should we be using it in the first place?</em></p>
+
+<p>-<em><a href="https://vimeo.com/68378923">Big Object Graphs Up Front, Mark Seemann</a></em></p></blockquote>
+
+<p>The composition can be complex conditions as in the case below. For, e.g., let&rsquo;s say we need to execute a different kind of algorithm to calculate based on a property.</p>
+
+<pre><code class="csharp">public class AccountCalculator : ICalculate
+{
+    public AccountCalculator(ICalculate calculate1, ICalculate calculate2, ICalculate calculate3)
+    {
+        ...
+    }
+
+    public int Calculate(Account account)
+    {
+        if(account.PropertyExists)
+            return calculate1.Calculate();
+        else
+              return calculate2.Calculate() + calculate3.Calculate();
+    }
+}
+</code></pre>
+
+<p>The above composition makes it easy to test the composed parts and the composition separately. It also helps keep the tests simple and easy to understand. The code is separated into maintainable classes and each criteria can be modified independently.</p>
+
+<p>Composite Pattern is a useful technique to keep code maintainable and readable. Identifying the pattern is a bit of a challenge, but the more you see it the more familiar you will be. Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Introduce Tests when Fixing Bugs]]></title>
@@ -678,86 +800,6 @@ public void PerformOperationsShouldReturnTrue(
 </code></pre>
 
 <p>The test code does not have any dependency on the constructor of the SUT and a change in constructor signature does not affect our tests at all. We can refactor <em>MyService</em> and use the same tests as long as the functionality served by the class remains the same. Constructors are implementation details and it&rsquo;s better to keep tests independent of it. This keeps our test code clean and more robust!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Testability: Removing Unnecessary Dependencies]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/"/>
-    <updated>2016-03-28T04:27:03+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies</id>
-    <content type="html"><![CDATA[<p><a href="https://unsplash.com/photos/5Ntkpxqt54Y" class="center" title="Image By Sai Kiran Anagani, from https://unsplash.com/photos/5Ntkpxqt54Y"><img src="/images\refactoring.jpg" class="center" alt="Refactoring"></a></p>
-
-<p>Nowadays I am trying to stick to <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">TDD</a> (with the test first approach) and have found it to be of great help. One of the biggest reward doing TDD is that it helps me to <a href="https://vimeo.com/97419151">stay in the flow</a> and regain speed faster after a distraction. This post explains how to refactor code to remove unnecessary dependencies, which is easily found when writing tests.</p>
-
-<p>Unnecessary dependencies are those components which a <a href="http://xunitpatterns.com/SUT.html">SUT</a> depends on, but does not directly affect any of its functionalities. Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test Code Duplication</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>.</p>
-
-<blockquote><p><em>Cut-and-Paste code reuse for fixture setup happens often when there is an unnecessary dependency.</em></p></blockquote>
-
-<p>While looking for an example to write on, I came across a post from my friend <a href="https://twitter.com/zpbappi">Bappi</a>, where he explains <a href="http://zpbappi.com/testing-codes-with-configurationmanager-appsettings/">Testing Codes with ConfigurationManager</a>. It&rsquo;s a good read on how to remove the dependency with various Configuration Providers by creating an abstraction over it.</p>
-
-<h3>Testability Issues with Current Design</h3>
-
-<p>While abstracting the Configuration Manager by using an interface is a good idea, you should also be careful on how the application classes depend on it. Configurations live at the application root and it is a good idea to restrict dependencies with it at that level. Rest of the application must be dependent only on the configuration value and not the configuration itself. Inner components having dependency with the  configuration provider brings in unnecessary complexities and makes code fragile. Some common issues are</p>
-
-<ul>
-<li>Class needs to know of Configuration key</li>
-<li>Extra mocking while testing</li>
-</ul>
-
-
-<p>As you see below, the test case from the original post has to set up the Configuration provider mock to return values before testing the class. MyService (assuming that it is not a Factory class, which I confirmed from Bappi) is unnecessarily depending on IAppSettings and coupling itself with the configuration name, which really is not its concern. This leads to brittle code and tests!</p>
-
-<pre><code class="csharp">[Subject(typeof(MyService))]
-public class MyServiceTests
-{
-    Establish context = () =&gt;
-        {
-            otherDependency = Substitute.For&lt;IMyOtherDependency&gt;();
-
-            var appSettings = Substitute.For&lt;IAppSettings&gt;();
-            appSettings["app.name"].Returns("My Test Application");
-
-            myService = new MyService(otherDependency, appSettings);
-        };
-
-    Because of = () =&gt; result = myService.PerformOperations();
-
-    It should_call_my_dependency_utility_method_once = () =&gt; otherDependency.Received(1).UtilityMethod();
-    It should_execute_successfully = () =&gt; result.ShouldBeTrue();
-}
-</code></pre>
-
-<h3>Refactoring the Code</h3>
-
-<p>Refactoring such code is as easy as removing the dependency on IAppSettings and taking in the value of &lsquo;app.name&rsquo; as the dependency. This removes the interface dependency and requires only the string value to be passed in. Here I am passing in <a href="https://blogs.msdn.microsoft.com/ploeh/2008/11/17/anonymous-variables/">an anonymous Name</a>, as the value is not of concern for this test.</p>
-
-<pre><code class="csharp">[Subject(typeof(MyService))]
-public class MyServiceTests
-{
-    Establish context = () =&gt;
-        {
-            otherDependency = Substitute.For&lt;IMyOtherDependency&gt;();
-            var anonymousName = "Anonymous Name";
-            myService = new MyService(otherDependency, anonymousName);
-        };
-
-    Because of = () =&gt; result = myService.PerformOperations();
-
-    It should_call_my_dependency_utility_method_once = () =&gt; otherDependency.Received(1).UtilityMethod();
-    It should_execute_successfully = () =&gt; result.ShouldBeTrue();
-}
-</code></pre>
-
-<blockquote><p><em>When looked at isolation these are minor code changes that hardly removes a line or two. But it has a cumulative effect when applied to all the tests for the class and makes code more robust.</em></p></blockquote>
-
-<p>When looked at isolation, this is a seemingly minor change of not mocking an interface and is just one line of code, which you could live with. But you need to mock that for all tests of that class, which is when you start to see the real benefit. Also, you have made the tests more resilient by not taking an unnecessary dependency. Even if you decide to change the configuration name to &lsquo;<em>ApplicationName</em>&rsquo;, none of the tests break now, whereas with the original code all of them would have.</p>
-
-<p><em>One possible argument with this refactoring is, <strong> What if I need an extra value from the dependency (app.domain in the above case), I now have to update the class constructor</strong>.</em></p>
-
-<p>Agreed, but then this violates <a href="https://blog.8thlight.com/uncle-bob/2014/05/12/TheOpenClosedPrinciple.html">Open Closed Principle</a>, which states &lsquo;You should be able to extend a classes behaviour without modifying it.&rsquo; If you need a new configuration value, you are essentially changing the components functionality, so you should either extend current functionality or write a new component. This also opens up a hidden code smell with the existing code and an anti-pattern - <a href="http://blog.ploeh.dk/2010/02/03/ServiceLocatorisanAnti-Pattern/">Service Locator</a>. So the refactoring still holds good!</p>
-
-<p>Hope this helps you find dependencies with unnecessary components and remove them.</p>
 ]]></content>
   </entry>
   
