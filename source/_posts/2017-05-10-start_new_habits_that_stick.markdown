@@ -19,7 +19,7 @@ primaryImage: habit.jpg
 The ability to pick on something and to make a habit of it is something that is always helpful. This skill helps to create new habits and also let go off old ones that are not doing any good to you. Part of letting of bad old habits might be creating new ones. When I wrote about [Couch to Half Marathon](http://www.rahulpnath.com/blog/three_months_to_a_half_marathon/), some of my readers asked how to keep up with the plan. How to do 'Couch to Street'; just getting out there.
 
 <a href= "https://quotefancy.com/quote/20375/Jim-Rohn-Motivation-is-what-gets-you-started-Habit-is-what-keeps-you-going">
-    <img alt="Motivation is what gets you started. Habit is what keeps you going" src="{{site.images_root}}/Quotefancy-15975-3840x2160.jpg" class="center" />
+    <img alt="Motivation is what gets you started. Habit is what keeps you going" src="{{site.images_root}}/habit.jpg" class="center" />
 </a>
 
 ### How Habits Work
