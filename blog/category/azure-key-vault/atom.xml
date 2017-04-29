@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-29T18:48:13+00:00</updated>
+  <updated>2017-04-29T18:56:53+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,97 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
-    <updated>2017-04-25T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
-    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
-
-<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
-
-<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
-$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificate.Import($certificateFilePath)
-$rawCertificateData = $certificate.GetRawCertData()
-$credential = [System.Convert]::ToBase64String($rawCertificateData)
-$startDate= [System.DateTime]::Now
-$endDate = $startDate.AddYears(1)
-$adApplication = New-AzureRmADApplication -DisplayName "CertAdApplication" -HomePage  "http://www.test.com" -IdentifierUris "http://www.test.com" -CertValue $credential  -StartDate $startDate -EndDate $endDate
-
-$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
-
-Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ServicePrincipalName $servicePrincipal.ServicePrincipalNames[0] -PermissionsToSecrets all -PermissionToKeys all 
-</code></pre>
-
-<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
-
-<p><img src="/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
-
-<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
-
-<p><img src="/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
-
-<p>Upload the certificate by selecting it from your folder system.</p>
-
-<p><img src="/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
-
-<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
-
-<p><img src="/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
-
-<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
-
-<pre><code class="csharp">using System;
-using Microsoft.Azure.KeyVault;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-
-private const string applicationId = "AD Application ID";
-private const string certificateThumbprint = "Certificate Thumbprint";
-
-public async static Task Run(TimerInfo myTimer, TraceWriter log)
-{
-    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
-{
-    var authenticationContext = new AuthenticationContext(authority, null);
-    X509Certificate2 certificate;
-    X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-    try
-    {
-        store.Open(OpenFlags.ReadOnly);
-        X509Certificate2Collection certificateCollection = store.Certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
-        if (certificateCollection == null || certificateCollection.Count == 0)
-        {
-            throw new Exception("Certificate not installed in the store");
-        }
-
-        certificate = certificateCollection[0];
-    }
-    finally
-    {
-        store.Close();
-    }
-
-    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
-    var result = await authenticationContext.AcquireTokenAsync(resource, clientAssertionCertificate);
-    return result.AccessToken;
-});
-
-    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
-    var secret = await keyClient.GetSecretAsync(secretIdentifier);
-
-    log.Info($"Secret Value: {secret}"); 
-}
-</code></pre>
-
-<p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
-
-<p>Hope this helps!</p>
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Switching Subscriptions Under Same Azure Account to Access Key Vaults]]></title>
@@ -348,6 +257,67 @@ if($vaultObject.Expires -and $vaultObject.Expires.AddDays(-$AlertBeforeDays).Dat
 <p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
 
 <p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Accessing Azure Key Vault From Azure Runbook]]></title>
+    <link href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/"/>
+    <updated>2016-11-21T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook</id>
+    <content type="html"><![CDATA[<p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
+
+<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
+
+<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
+
+<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
+
+<pre><code class="powershell">Get-AzureKeyVaultKey -VaultName YoutubeVault
+</code></pre>
+
+<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
+
+<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
+
+<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
+
+<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
+
+<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
+
+<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
+
+<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
+
+<pre><code class="powershell">$connectionName = "AzureRunAsConnection"
+try
+{
+    # Get the connection "AzureRunAsConnection "
+    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName         
+
+    "Logging in to Azure..."
+    Add-AzureRmAccount `
+        -ServicePrincipal `
+        -TenantId $servicePrincipalConnection.TenantId `
+        -ApplicationId $servicePrincipalConnection.ApplicationId `
+        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+}
+catch {
+    if (!$servicePrincipalConnection)
+    {
+        $ErrorMessage = "Connection $connectionName not found."
+        throw $ErrorMessage
+    } else{
+        Write-Error -Message $_.Exception
+        throw $_.Exception
+    }
+}
+
+Get-AzureKeyVaultKey -VaultName YoutubeVault
+</code></pre>
+
+<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
 ]]></content>
   </entry>
   

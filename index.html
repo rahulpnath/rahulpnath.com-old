@@ -163,191 +163,6 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-25T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 25<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/" itemprop="url">Azure Key Vault From Azure Functions - Certificate Based Authentication</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>In the previous post we saw how to connect to <a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
-
-<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
-</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
-</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
-</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
-</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;CertAdApplication&quot;</span> <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-CertValue</span> <span class="nv">$credential</span>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">ServicePrincipalNames</span><span class="p">[</span><span class="n">0</span><span class="p">]</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span> <span class="n">-PermissionToKeys</span> <span class="n">all</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
-
-<p><img src="/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
-
-<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
-
-<p><img src="/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
-
-<p>Upload the certificate by selecting it from your folder system.</p>
-
-<p><img src="/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
-
-<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
-
-<p><img src="/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
-
-<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.Azure.KeyVault</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.IdentityModel.Clients.ActiveDirectory</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography.X509Certificates</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">applicationId</span> <span class="p">=</span> <span class="s">&quot;AD Application ID&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">certificateThumbprint</span> <span class="p">=</span> <span class="s">&quot;Certificate Thumbprint&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="k">static</span> <span class="n">Task</span> <span class="nf">Run</span><span class="p">(</span><span class="n">TimerInfo</span> <span class="n">myTimer</span><span class="p">,</span> <span class="n">TraceWriter</span> <span class="n">log</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">try</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="n">certificateThumbprint</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">finally</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">secretIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net/secrets/mySecretName&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">log</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;Secret Value: {secret}&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
-
-<p>Hope this helps!</p>
-</div>
-  
-  
-
-
-        </article>
-      
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 24<sup>th</sup>, 2017</time>
         
 
@@ -1178,6 +993,63 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
 
         </article>
       
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-03-23T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 23<sup>rd</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/rescue-time-track-your-time/" itemprop="url">Tip of the Week: Rescue Time - Track Your Time</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img alt="Rescue Time - My dashboard for March,2017" src="/images/rescuetime.png" /></p>
+
+<p>Tracking is essential for measuring progress. Depending on your area of focus tracking tools differ. If it is a time-based activity that you are tracking a simple watch can suffice the need. But this can soon become an overhead. <a href="https://www.rescuetime.com/">Rescue Time</a> helps track time spent on a computer or mobile devices.</p>
+
+<blockquote><p><em>Rescue Time is a  personal analytics service that shows you how you spend your time and provides tools to help you be more productive.</em></p></blockquote>
+
+<p>Rescue time runs in the background and helps you track the applications and websites that you use. Most of the applications are categorized automatically; However, it also allows manual categorization. Rescue Time lets you edit an activity and assign it to various categories and set productivity levels. So if you are spending more time on an application configured as <em>very productive</em> then your overall productivity pulse is higher for the day.</p>
+
+<p><img alt="Rescue Time - Edit Activity" src="/images/rescuetime_edit_activity.png" /></p>
+
+<p>Once you have your time tracked you can then adapt yourself to be more productive. Various reports are provided to visualize the data collected. The <a href="https://www.rescuetime.com/rescuetime-pro">premium version</a> offers a lot more features to help improve productivity. I am currently on the Free Plan. Rescue Time helps inspect your current behaviors and patterns at work. Once you have the details, you can understand where your time is spent and improve on it as required. Rescue Time is available for <a href="https://www.rescuetime.com/get_rescuetime">computer and mobile devices</a>. Hope this helps track your time and become more productive!</p>
+</div>
+  
+  
+
+
+        </article>
+      
     </div>
 
     <ul class="pager">
@@ -1201,8 +1073,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
   
   <div id="recent_posts" class="list-group">
     
-    <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
-    
     <a class="list-group-item " href="/blog/if-this-then-that-ifttt-connect-your-services/">Tip of the Week: IF This Then That (IFTTT) - Connect Your Services</a>
     
     <a class="list-group-item " href="/blog/flux-make-it-easy-for-your-eyes/">Tip of the Week: f.lux - Make it Easy For Your Eyes</a>
@@ -1210,6 +1080,8 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
     <a class="list-group-item " href="/blog/experimenting-with-pomodoro-technique/">How I Included Scrum and Pomodoro Technique in My Morning Routine</a>
     
     <a class="list-group-item " href="/blog/refactoring-to-composite-pattern/">Refactoring to Composite Pattern</a>
+    
+    <a class="list-group-item " href="/blog/buffer-smarter-social-sharing/">Tip of the Week: Buffer - Smarter Social Sharing</a>
     
   </div>
 </section>

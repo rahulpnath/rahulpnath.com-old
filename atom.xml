@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-29T18:48:13+00:00</updated>
+  <updated>2017-04-29T18:56:53+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,153 +12,6 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
-    <updated>2017-04-25T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
-    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
-
-<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
-</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
-</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
-</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
-</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
-</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;CertAdApplication&quot;</span> <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-CertValue</span> <span class="nv">$credential</span>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">ServicePrincipalNames</span><span class="p">[</span><span class="n">0</span><span class="p">]</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span> <span class="n">-PermissionToKeys</span> <span class="n">all</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
-
-<p><img src="http://rahulpnath.com/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
-
-<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
-
-<p><img src="http://rahulpnath.com/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
-
-<p>Upload the certificate by selecting it from your folder system.</p>
-
-<p><img src="http://rahulpnath.com/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
-
-<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
-
-<p><img src="http://rahulpnath.com/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
-
-<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.Azure.KeyVault</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.IdentityModel.Clients.ActiveDirectory</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography.X509Certificates</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">applicationId</span> <span class="p">=</span> <span class="s">&quot;AD Application ID&quot;</span><span class="p">;</span>
-</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">certificateThumbprint</span> <span class="p">=</span> <span class="s">&quot;Certificate Thumbprint&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="k">static</span> <span class="n">Task</span> <span class="nf">Run</span><span class="p">(</span><span class="n">TimerInfo</span> <span class="n">myTimer</span><span class="p">,</span> <span class="n">TraceWriter</span> <span class="n">log</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">try</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="n">certificateThumbprint</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">finally</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">secretIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net/secrets/mySecretName&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">log</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;Secret Value: {secret}&quot;</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Make sure you add in the <em>project.json</em> as seen in the <a href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
-
-<p>Hope this helps!</p>
-]]></content>
-  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: IF This Then That (IFTTT) - Connect Your Services]]></title>
@@ -1419,6 +1272,39 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
 <blockquote><p><em>Getting Things Done is tool agnostic. Tools do not matter; it is about the process. Choose any tool that works for you, for me it&rsquo;s Todoist</em></p></blockquote>
 
 <p>Todoist had all the features that I was looking out for in a task management application. Give Todoist a try if you are looking out for a task management application. Irrespective of the tools that you use it is your ability to stick to a plan and focus on tasks that will help you reach your goal.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Three Day Trip to Coffs Harbour from Sydney]]></title>
+    <link href="http://rahulpnath.com/blog/three-day-trip-to-coffs-harbour-from-sydney/"/>
+    <updated>2017-02-20T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/three-day-trip-to-coffs-harbour-from-sydney</id>
+    <content type="html"><![CDATA[<p>With the Australia Day (and Indian Republic Day) falling on a Thursday I got a long weekend by taking the Friday off. Me, Parvathy (my wife) and Gautham (my son) decided to head off to <a href="https://goo.gl/maps/Tb4awz6cx6H2">Coffs Harbour</a>, which is a six-hour drive from Sydney. We started off at six, Thursday morning.</p>
+
+<p>This was the first time Parvathy, and I was doing a road trip this long with Gautham and had no idea what to expect. Gautham was wide awake from the start of the trip till we reached Coffs Harbour. But it was all right traveling with him. The trip was also the first since he was fully toilet-trained. We did stop at 3 places on the way but were happy to do that. We stopped for breakfast at <a href="https://goo.gl/maps/H72Loz9zofk">Hungry Jack&rsquo;s, Beresfield</a> and had quick burger, fries and hash brown. We continued to have this same breakfast throughout the trip, for it was fast and enabled to get on with the day quickly. Deciding, ordering and eating at a cafe is much more time-consuming. After two more stops, we reached Coffs Harbour by two in the noon. Since both me and Parvathy are trying to <a href="http://www.rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/">eat healthy (since a month)</a>, we decided to keep our lunch light. Mostly we had carrots, cucumber, and some nuts. For Gautham, we usually got something on the way.</p>
+
+<h3>Day1 (Thursday)</h3>
+
+<p>We headed straight to Royal Palms Motor Inn and dropped our bags and quickly freshened up. The weather forecast said it would rain, but luckily there was no rain and was a pleasant climate. We headed off straight to Jetty Beach, where we spent the rest of our day. The beach was calm and had a great walk by the side of it. The sand looked like a mirror, and in the beginning, Gautham was even cautious not to break it. We enjoyed the time there and stayed there till five. After having a wash down at the beach showers, we headed back to the hotel. Gautham fell asleep the moment we got into the car. We reached the hotel and stayed in the car till seven so not to disturb his sleep. Once he woke up, we headed off to Bombay Brasserie, an Indian restaurant right next to the hotel. We usually prefer other food option while eating outside to try different cuisine. But during the trip, we stuck to Indian hotels as Gautham often ends up eating more from there, as it was similar to food at home. We had a nice tandoori platter, Nan, rice and ice-cream. By half past eight, we reached back at the hotel, had a bath and went to sleep by ten.</p>
+
+<p><a href="https://500px.com/photo/197577329/jetty-beach-by-rahul-nath"><img alt="Jetty Beach, Coffs Harbour" src="http://rahulpnath.com/images/coffs_harbour_jetty_beach.jpg" /></a>
+<img alt="Jetty Beach, Coffs Harbour" src="http://rahulpnath.com/images/coffs_harbour_jetty_beach_toys.jpg" /></p>
+
+<h3>Day 2 (Friday)</h3>
+
+<p>We all slept in a bit late today and woke up by seven. Luckily Parvathy was up and ready by then. After a quick fresh up, we started off to Dorrigo. Picked up our breakfast burgers on the way and headed off straight to Dorrigo. It was just over an hours drive from the hotel and a scenic one too. Dorrigo has a <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/dorrigo/attractions?&amp;">lot of attractions</a>, but we just did the <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/dorrigo/attractions/skywalk-lookout">Skywalk Lookout</a>, <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/dorrigo/attractions/wonga-walk">Wonga Walk</a>, <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/dorrigo/attractions/walk-the-birds-boardwalk">Walk with The Birds Boardwalk</a> and <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/dorrigo/attractions/dangar-falls">Dangar Falls</a>. We spent half a day there covering all these. The lookout and the walks were superb. It was a pleasant walk in the forest as it had rained the night before. By the time we headed back, Gautham was fast asleep after having a delicious cake with cream and juice. Woolgoolga was the next stop and was around one and half hours away. By three in the evening, we hit the <a href="https://goo.gl/maps/1fBYqWHDnyC2">beach</a>. By five we headed back to the hotel. On the way, we drove through <a href="https://goo.gl/maps/Pm7jh9nJRCM2">Emerald beach</a> to the hotel. After a quick fresh up we set out for dinner by six. We tried a different Indian restaurant today and ate to our full. By ten we hit the bed.</p>
+
+<p><img alt="Dorrigo Lookout, Coffs Harbour" src="http://rahulpnath.com/images/coffs_harbour_dorrigo_skyway_lookout.jpg" />
+<img alt="Dorrigo Lookout, Coffs Harbour" src="http://rahulpnath.com/images/coffs_harbout_dorrigo_lookout.jpg" /></p>
+
+<h3>Day 3 (Saturday)</h3>
+
+<p>I woke up at half past five and went for a run. I <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b066/sport-sessions/588ba8d079a46318f38e5d10">ran by the boat jetty to jetty beach and through the Coffs Coast State Park</a>. The route was scenic, and I enjoyed it.By seven I was at the hotel and got ready to checkout. We checked out by eight, grabbed a <a href="http://www.boostjuice.com.au/products">Boost smoothie</a> and burger and headed off to <a href="https://goo.gl/maps/P9e9sx5eib62">Sawtell beach</a>. It was a hot day, and the sun was already up and high. We just had a quick walk by the beach side and headed straight to <a href="http://www.visitnsw.com/destinations/north-coast/coffs-harbour-area/nambucca-heads">Nambucca heads</a> as we wanted to spend more time there. The walk by the Nambucca river is excellent. You can see the river meeting the sea here, and it is a beautiful sight. The river is calm and up to waist height and we can easily walk. We spent around two hours there and started our way back home at around one in the noon. It is around six hours drive, and with a couple of stops along the way, we reached home by eight in the evening.</p>
+
+<p><img alt="Nambucca Heads, Coffs Harbour" src="http://rahulpnath.com/images/coffs_harbour_nambucca_heads.jpg" /></p>
+
+<p>It was a good three-day break and completely disconnected from work and social media. It was refreshing, and the drive was great too. This was our first long drive after coming to Sydney and enjoyed it.</p>
 ]]></content>
   </entry>
   
