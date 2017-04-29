@@ -6,7 +6,7 @@ categories:
 - TDD
 - Testing
 tags: 
-date: 2017-05-01
+date: 2017-05-16
 completedDate: 2017-04-10 16:12:50 +1000
 keywords: 
 description: Listen to tests and act on it to improve the code you are writing.

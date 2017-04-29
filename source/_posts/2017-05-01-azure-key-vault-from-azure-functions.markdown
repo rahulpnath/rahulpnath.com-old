@@ -6,7 +6,7 @@ categories:
 - Azure Key Vault
 - Azure
 tags: 
-date: 2017-05-16
+date: 2017-05-01
 completedDate: 2017-04-23 06:41:04 +1000
 keywords: 
 description: How to access Key Vault objects from Azure Function.
