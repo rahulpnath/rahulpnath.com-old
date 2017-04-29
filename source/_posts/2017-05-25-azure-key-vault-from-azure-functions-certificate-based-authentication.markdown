@@ -6,7 +6,7 @@ categories:
 - Azure Key Vault
 - Azure
 tags: 
-date: 2017-04-25
+date: 2017-05-25
 completedDate: 2017-04-30 04:46:43 +1000
 keywords: 
 description: Authenticate with Azure Key Vault from Azure Function using Certificates
