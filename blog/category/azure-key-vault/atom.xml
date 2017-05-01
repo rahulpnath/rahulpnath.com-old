@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-04-30T18:19:57+00:00</updated>
+  <updated>2017-05-01T00:02:49+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,82 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault From Azure Functions]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/"/>
+    <updated>2017-05-01T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions</id>
+    <content type="html"><![CDATA[<p><em><a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-overview">Azure Functions</a> is a solution for easily running small pieces of code, or &ldquo;functions,&rdquo; in the cloud. You can write just the code you need for the problem at hand, without worrying about a whole application or the infrastructure to run it. Functions can make development even more productive, and you can use your development language of choice, such as C#, F#, Node.js, Python or PHP. Pay only for the time your code runs and trust Azure to scale as needed. Azure Functions lets you develop serverless applications on Microsoft Azure.</em></p>
+
+<p>Even when developing with Azure Functions you want to keep your sensitive data protected. Like for example if the function needs to connect to a database you might want to get the connection string from <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>. If you are new to Azure Key Vault check out <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">these posts to get started</a>. In this post, we will explore how we can consume objects in Azure Key Vault from an Azure Function.</p>
+
+<p><strong>Create Azure Function App</strong>: Let&rsquo;s first create an Azure Function App from the Azure portal. Under <em>New - Compute - Function App</em> you can create a new Azure Function.</p>
+
+<p><img src="/images/azureFunction_new.png" alt="" class="center" /></p>
+
+<p>Enter the details of the new function app and press Create. Each function app has an associated storage account. You can choose an existing one or create a new one.</p>
+
+<p><img src="/images/azureFunction_create.png" alt="" class="center" /></p>
+
+<p>You can view all Azure Functions Apps in the subscription under <em>More services - Function Apps</em></p>
+
+<p><img src="/images/azureFunction_all.png" alt="" class="center" /></p>
+
+<p><strong>Create Function</strong>: To create a function you can create from an existing template or create a custom function. In this example, I will use a timer based function in C#.</p>
+
+<p><img src="/images/azureFunction_createFunction.png" alt="" class="center" /></p>
+
+<p>In the <em>run.csx</em> file add in the code for the function. The below code fetches the secret value from the Key Vault and logs it. You need to provide the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Azure AD Application Id and secret</a> to authenticate with it. Make sure you add in the relevant <em>using</em> statements for the KeyVault client Azure Active Directory Authentication libraries (ADAL).</p>
+
+<pre><code class="csharp">using System;
+using Microsoft.Azure.KeyVault;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+
+private const string applicationId = "AD Application Id";
+private const string applicationSecret = "AD Application Secret";
+
+public async static Task Run(TimerInfo myTimer, TraceWriter log)
+{
+    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
+    {
+        var adCredential = new ClientCredential(applicationId, applicationSecret);
+        var authenticationContext = new AuthenticationContext(authority, null);
+        return (await authenticationContext.AcquireTokenAsync(resource, adCredential)).AccessToken;
+    });
+
+    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
+    var secret = await keyClient.GetSecretAsync(secretIdentifier);
+
+    log.Info($"C# Timer trigger function executed at: {secret}"); 
+}
+</code></pre>
+
+<p><img src="/images/azureFunction_code.png" alt="" class="center" /></p>
+
+<p>Since the KeyVaultClient and the ADAL libraries are NuGet packages, we need to specify these as dependencies for the Azure Function. To use NuGet packages, create a <em>project.json</em> file in the functions folder. Add in both the NuGet packages name and required version.</p>
+
+<pre><code class="json">{
+  "frameworks": {
+    "net46":{
+      "dependencies": {
+        "Microsoft.Azure.KeyVault": "1.0.0",
+        "Microsoft.IdentityModel.Clients.ActiveDirectory": "2.14.201151115"
+      }
+    }
+   }
+}
+</code></pre>
+
+<p><img src="/images/azureFunction_nuget.png" alt="" class="center" /></p>
+
+<p>Executing the function, retrieves the secret details from the Key Vault and logs it as shown below.</p>
+
+<p><img src="/images/azureFunction_run.png" alt="" class="center" /></p>
+
+<p>Hope this helps you to get started with Key Vault in Azure Functions and keep your sensitive data secure.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Switching Subscriptions Under Same Azure Account to Access Key Vaults]]></title>
@@ -257,67 +333,6 @@ if($vaultObject.Expires -and $vaultObject.Expires.AddDays(-$AlertBeforeDays).Dat
 <p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
 
 <p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Accessing Azure Key Vault From Azure Runbook]]></title>
-    <link href="http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook/"/>
-    <updated>2016-11-21T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/accessing-azure-key-vault-from-azure-runbook</id>
-    <content type="html"><![CDATA[<p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
-
-<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
-
-<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
-
-<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
-
-<pre><code class="powershell">Get-AzureKeyVaultKey -VaultName YoutubeVault
-</code></pre>
-
-<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
-
-<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
-
-<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
-
-<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
-
-<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
-
-<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
-
-<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
-
-<pre><code class="powershell">$connectionName = "AzureRunAsConnection"
-try
-{
-    # Get the connection "AzureRunAsConnection "
-    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName         
-
-    "Logging in to Azure..."
-    Add-AzureRmAccount `
-        -ServicePrincipal `
-        -TenantId $servicePrincipalConnection.TenantId `
-        -ApplicationId $servicePrincipalConnection.ApplicationId `
-        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
-}
-catch {
-    if (!$servicePrincipalConnection)
-    {
-        $ErrorMessage = "Connection $connectionName not found."
-        throw $ErrorMessage
-    } else{
-        Write-Error -Message $_.Exception
-        throw $_.Exception
-    }
-}
-
-Get-AzureKeyVaultKey -VaultName YoutubeVault
-</code></pre>
-
-<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
 ]]></content>
   </entry>
   

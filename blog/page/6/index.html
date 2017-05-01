@@ -163,6 +163,139 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-01T04:11:12+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 1<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/" itemprop="url">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>It&rsquo;s been a while since I have wanted to deploy my blog automatically whenever there is a new commit pushed into the associated <a href="https://github.com/rahulpnath/rahulpnath.com">git repository</a>. I use Octopress as my blog engine and have been <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">tweaking it to my blogging workflow</a>. Octopress is a static blog generator built over Jekyll. So anytime I make any updates to the blog, I need to build the blog with the accompanying rake tasks and push the generated output (HTML, JavaScript, and CSS) to an Azure Web App that hosts my blog. For this I use the <a href="https://azure.microsoft.com/en-us/documentation/articles/web-sites-deploy/#continuousdeployment">git deployment feature</a> of web apps, so just pushing the built output to a git repo (branch) deploys it to my website. As you see every time, I make a change I have to build the site and push it to the git repository and this can be automated. Since Octopress is in Ruby, I decided to use <a href="https://travis-ci.org/">Travis CI</a> for the build and deploy.</p>
+
+<h3>Local Build Environment with Docker</h3>
+
+<p>I am on an older repository fork of Octopress and have not updated to latest version. So it has hard dependencies with specific versions of gem packages that it needs and also on the Ruby and Jekyll version. So every time I change laptop it&rsquo;s difficult to set up the blog environment. In the past, I manually installed the dependencies whenever I got a new laptop. As changing laptop does not happen frequently, I had been delaying creating any script for this. But now since I had to setup the Travis build environment, I thought of also having a local build environment to test before pushing it up to Travis. Travis provides a Docker image that matches exactly their build environment.</p>
+
+<p>Setting up Docker is just a few steps:</p>
+
+<ol>
+<li><a href="https://docs.docker.com/docker-for-windows/">Install</a> the Docker components</li>
+<li>Load the <a href="https://quay.io/organization/travisci">Docker image</a></li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>docker run -it -p 4000:4000 quay.io/travisci/travis-ruby /bin/bash
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once in the container, you can run the same build scripts that you manually run yo deploy and check. I had a few issues with the gem packages and <a href="https://github.com/rahulpnath/rahulpnath.com/commit/abefbf58e3696384c7931d5a4918239a41700106#diff-8b7db4d5cc4b8f6dc8feb7030baa2478">fixed it by specifying hard package dependency</a>. To launch the site hosted in Docker from host system <a href="https://github.com/wsargent/docker-cheat-sheet#exposing-ports">I expose incoming ports through the host container</a>. Once I have the local server running in the docker container (in port 4000) I can access it via <em>localhost:4000</em> from my host computer.</p>
+
+<h3>Post Dates and TimeZones</h3>
+
+<p>When building from the container, I noticed that the dates of posts were off by 1. For posts that were on month start (like Aug 1), it started coming up in July, on the archive page. After a bit of investigation, I realized that Jekyll parses the date time from the post and converts them into local system time. The container was running in UTC and when generating the site it converted post DateTime to UTC. All the posts that I had written after coming to Sydney had an offset of +1000 (or +1100) and most were published early in the morning. So it converted those posts to the previous date.
+Since I am not that worried about the time zone of the post, I decided to remove it. I removed timezone information getting set for new posts in my Rake scripts. For the existing posts, <a href="https://github.com/rahulpnath/rahulpnath.com/commit/1d8902fa69a1aad9ad6615ee3c47e3474b6cd263">I removed all the timezone information from the <em>datetime</em> YAML header in the posts</a>. I set the config.yml to built in UTC irrespective of the system timezone that it is getting build.</p>
+
+<h3>Setting up TravisCI</h3>
+
+<p>Setting up automated build on Travis CI is smooth and easy process TDK. I just added a travis.yml with the &lsquo;<em>rake generate</em>. TDK The post build script does the following</p>
+
+<ul>
+<li>Clones the current statically generated code from my <em>blog</em> branch.</li>
+<li>Perform a rake deploy that updates the cloned code above with the latest site.I updated the existing rake deploy to use GitHub token in push URL. As I did not want the token to be logged on to the Travis console I redirect the output using <em><a href="http://askubuntu.com/questions/12098/what-does-outputting-to-dev-null-accomplish-in-bash-scripts">&amp;> /dev/null</a></em>.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">language</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ruby</span>
+</span><span class='line'><span class="l-Scalar-Plain">rvm</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">1.9.3</span>
+</span><span class='line'><span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'><span class="l-Scalar-Plain">script</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">bundle exec rake generate;</span>
+</span><span class='line'><span class="l-Scalar-Plain">after_success</span><span class="p-Indicator">:</span> <span class="p-Indicator">|</span>
+</span><span class='line'>  <span class="no">if [ -n &quot;$GITHUB_PUSH_URL&quot; ]; then</span>
+</span><span class='line'>    <span class="no">cd &quot;$TRAVIS_BUILD_DIR&quot;</span>
+</span><span class='line'>    <span class="no">git clone -b blog --single-branch https://github.com/rahulpnath/rahulpnath.com.git _azure &amp;&gt; /dev/null</span>
+</span><span class='line'>    <span class="no">bundle exec rake gitdeploy[&quot;$GITHUB_PUSH_URL&quot;] &amp;&gt; /dev/null</span>
+</span><span class='line'>    <span class="no">echo &quot;Deployed!&quot;</span>
+</span><span class='line'>  <span class="no">fi</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>Every time I make a commit to the GitHub master branch, the automated build triggers and deploys the latest generated site.</p>
+
+<h3>Current Blogging Workflow <a href="https://travis-ci.org/rahulpnath/rahulpnath.com"><img src="https://travis-ci.org/rahulpnath/rahulpnath.com.svg?branch=master" alt="Build Status" /></a></h3>
+
+<p><img class="center" alt="Continuos Delivery of Octopress Blog" src="/images/blog_ci.PNG" /></p>
+
+<ul>
+<li>Write posts on my phone or laptop. (<a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">Using Dropbox to sync posts across devices</a>)</li>
+<li>Publish and Push to Github from laptop</li>
+<li>Travis builds triggered by Github webhook</li>
+<li>Travis pushes back generated site into Github (<em><a href="https://github.com/rahulpnath/rahulpnath.com/tree/blog">blog branch</a></em>).</li>
+<li>Azure Web App triggers automated deployment from Github.</li>
+</ul>
+
+
+<p>With the automated deployment, I have one less thing to take care of when writing posts. The whole process might feel a bit complicated, but it is not. It is just that I have been tweaking few things to ease blogging. And since I am a programmer, I like hacking things. If you are new to blogging you do not need them and don&rsquo;t get overwhelmed (if at all you are). All you need to make sure is to <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">have a blog</a> and you <a href="http://www.rahulpnath.com/blog/own-your-urls/">own the URL</a>.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-25T04:27:32+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 25<sup>th</sup>, 2016</time>
         
 
@@ -1508,118 +1641,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-19T17:38:37+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 19<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/azure/'>azure</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/could-not-load-assembly-msshrtmi-dll/" itemprop="url">Could Not Load Assembly msshrtmi.dll?</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>While migrating a few Azure Cloud Services to Web Jobs, we started facing the error, <span style='color: red;'><em>Could not load assembly &hellip; /msshrtmi.dll</em></span>,for just one of the projects. The error provides the exact path from where it is trying to load the DLL and is the same path from which the process is running. But the location does have the <em>msshrtmi.dll</em>, which for some reason the process is not able to load.</p>
-
-<p><img class="center" src="/images/msshrtmi_load_error.png" alt="msshrtmi dll load error" /></p>
-
-<div class="alert alert-info" role="alert">
-<strong>TL;DR</strong> This error occurred due to an attribute - <i>&lt;Prefer32Bit&gt;false&lt;/Prefer32Bit&gt;</i> - in the csproj file, while the referred msshrtmi dll was 32-bit version. This might not be applicable to you, but since it has happened once it&#8217;s very likely to happen again.
-</div>
-
-
-<p>To our surprise, this was happening only with a specific worker, while all others (around 8) were working fine. All of the workers are generated by the same build process on a server. For some reason (I am still investigating into this) the msshrtmi.dll is added as an external reference in the project and referred from there in all the project files. This was done mainly because we had a few external dependencies that were dependent on specific Azure SDK version (2.2). But this explicit reference should not have caused any issues as all, as the other processes were working fine and only a specific one was failing.</p>
-
-<p>One useful tool to help diagnose why the .NET framework cannot locate assemblies is <a href="https://msdn.microsoft.com/en-us/library/e74a18c4(v=vs.110).aspx">Assembly Binding Log Viewer(Fuslogvw.exe)</a>. The viewer displays an entry for each failed assembly bind. For each failure, the viewer describes the application that initiated the bind; the assembly the bind is for, including name, version, culture and public key; and the date and time of the failure.</p>
-
-<blockquote><p><em>Fuslogvw.exe is automatically installed with Visual Studio. To run the tool, use the Developer Command Prompt with administrator credentials.</em></p></blockquote>
-
-<p>Running <em>fuslogvw</em> with the application shows the assembly binding error, double clicking which gives a details error information, as shown below. This error message gives more details and tells us that the assembly platform or ContentType is invalid.</p>
-
-<p><img class="center" src="/images/msshrtmi_fuslogvw.png" alt="LOG: Assembly Name is: msshrtmi, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
-ERR: Invalid assembly platform or ContentType in file (hr = 0x8007000b).
-ERR: Run-from-source setup phase failed with hr = 0x8007000b.
-ERR: Failed to complete setup of assembly (hr = 0x8007000b). Probing terminated." /></p>
-
-<p>In the Task Manager, the worker with the assembly loading error (last <em>worker</em> in the image below) shows as a 64-bit process, while the others as 32-bit. Since the referred msshrtmi DLL is 32-bit, it explains why it was unable to find the correct platform matching msshrtmi assembly.</p>
-
-<p><img class="center" src="/images/msshrtmi_task_manager.png" alt="msshrtmi task manager" /></p>
-
-<p><a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx">CorFlags.exe</a> is used to determine whether an .exe file or .dll file is meant to run only on a specific platform or under WOW64. Running the <em>corflags</em> on all the workers produces the below two results:</p>
-
-<p><mark>corflags Problematic_Worker.exe</mark> <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x1  <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark>32BITPREF : 0</mark><br/>
-Signed    : 0</p>
-
-<p><mark>corflags Worker.exe</mark>    <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x20003 <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark> 32BITPREF : 1</mark>  <br/>
-Signed    : 0</p>
-
-<p>The <em>32BITPREF</em> flag is &lsquo;0&rsquo; for the worker that shows the error, whereas for the rest shows 1. The <a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx"><em>32BITPREF</em></a> flag indicates that the application runs as a 32 bit process even on 64-bit platforms. This explains why the problematic worker was running as 64-bit process since the flag is turned off.</p>
-
-<blockquote><p><em><a href="http://blogs.microsoft.co.il/sasha/2012/04/04/what-anycpu-really-means-as-of-net-45-and-visual-studio-11/">From .NET 4.5 and Visual Studio 11</a>, the default for most .NET projects is again AnyCPU, but there is more than one meaning to AnyCPU now. There is an additional sub-type of AnyCPU, “Any CPU 32-bit preferred”, which is the new default (overall, there are now five options for the /platform C# compiler switch: x86, Itanium, x64, anycpu, and anycpu32bitpreferred). When using that flavor of AnyCPU, the semantics are the following:</em></p>
-
-<ul>
-<li><em>If the process runs on a 32-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on a 64-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on an ARM Windows system, it runs as a 32-bit process. IL is compiled to ARM machine code.</em></li>
-</ul>
-</blockquote>
-
-<p>All the projects are getting built using the same build scripts, and we are not explicitly turning off/on this compiler option. So the next possible place where any setting for this flag is specified is the <em>csproj</em> file. On the properties of the worker project file (the one that shows error), I see that &lsquo;<em>Prefer 32-bit</em>&rsquo; option is not checked and the csproj file has it explicitly set to false (as shown below). For other projects, this option is checked in Visual Studio and has no entry in the csproj file, which means the flag defaults to true.</p>
-
-<p><img class="center" src="/images/msshrtmi_prefer32bit.png" alt="msshrtmi prefer 32bit csproj" /></p>
-
-<p><strong><em>Deleting the Prefer32Bit attribute from the csproj and building fixed the assembly loading issue of msshrtmi!</em></strong></p>
-
-<p>Though this ended up being a minor fix (in terms of code change), I learned a lot of different tools that can be used to debug assembly loading issues. It was using these right tools that helped me identify this extra attribute on the csproj file and help solve the issue. So the next time you see such an error , either with mssrhtmi or another DLL, hope this helps to find your way through!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1643,6 +1664,8 @@ Signed    : 0</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault From Azure Functions</a>
+    
     <a class="list-group-item " href="/blog/if-this-then-that-ifttt-connect-your-services/">Tip of the Week: IF This Then That (IFTTT) - Connect Your Services</a>
     
     <a class="list-group-item " href="/blog/flux-make-it-easy-for-your-eyes/">Tip of the Week: f.lux - Make it Easy For Your Eyes</a>
@@ -1650,8 +1673,6 @@ Signed    : 0</p>
     <a class="list-group-item " href="/blog/experimenting-with-pomodoro-technique/">How I Included Scrum and Pomodoro Technique in My Morning Routine</a>
     
     <a class="list-group-item " href="/blog/refactoring-to-composite-pattern/">Refactoring to Composite Pattern</a>
-    
-    <a class="list-group-item " href="/blog/buffer-smarter-social-sharing/">Tip of the Week: Buffer - Smarter Social Sharing</a>
     
   </div>
 </section>
