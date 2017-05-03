@@ -163,6 +163,149 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 12<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/automatic_deployment_of_future_posts_with_octopress/" itemprop="url">Automatic Deployment of Future Posts With Octopress</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Since the start of this year, I have been trying to blog to a schedule and publish posts more often. The goal that I have set myself with is to post four posts a month, preferably one each week. I have been sticking to it till now, and I hope it continues. Initially, I did not have this upper limit on the number of posts in a month. In the month of March 2016, I went a bit aggressive and published nine articles. It made me think more about setting an upper limit on the number of posts so that I don&rsquo;t end up having higher expectations out of myself.</p>
+
+<h3>Staying Ahead</h3>
+
+<p>Having published nine posts, also made me realize that I could write faster if required and have posts ready for future. It will help me to stay ahead of the posting schedule and give me some off-time when I need it. But this also presented me with a new problem on how to manage and schedule posts for the future.</p>
+
+<blockquote><p><em>The more I automate the mundane tasks of blogging, the more I can concentrate on the writing part</em></p></blockquote>
+
+<h3>Jekyll Future flag</h3>
+
+<p><a href="http://octopress.org/docs/">Octopress</a> is over <a href="https://jekyllrb.com/">Jekyll</a> and it provides all the capabilities that Jekyll provides. The <a href="https://jekyllrb.com/docs/configuration/"><em>future</em> flag</a> in Jekyll indicates <strong><em>whether or not to publish posts or collection documents with a future date.</em></strong> With the flag set to false, Jekyll will not generate posts that have a date in the future. It works perfectly for me as all I need to do is to publish posts into the <em>_posts</em> directory once it&rsquo;s ready, with a date in the future. I have a <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">draft workflow</a>, which puts posts into a <em>_drafts</em> folder and move them into the <em>_posts</em> folder once ready. I updated the rake script that publishes drafts as posts, to take in a publish date and use that to update the post date.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='Ruby'><span class='line'><span class="n">task</span> <span class="ss">:publish_draft</span> <span class="k">do</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publish Date?&quot;</span>
+</span><span class='line'><span class="n">publishDateString</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
+</span><span class='line'><span class="n">publishDate</span> <span class="o">=</span> <span class="no">DateTime</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">publishDateString</span><span class="p">)</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'><span class="n">dest</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publishing post to: </span><span class="si">#{</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
+</span><span class='line'><span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
+</span><span class='line'><span class="n">contents</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/^thisIsStillADraft:$/</span><span class="p">,</span> <span class="s2">&quot;date: </span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">completedDate: </span><span class="si">#{</span><span class="no">DateTime</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S %z&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The rake script appends the publish date to the post file name and also the yaml date information and moves it from the <em>_drafts</em> to <em>_posts</em> folder. It also adds a completedDate set to the current time with the timezone information, just for reference.</p>
+
+<h3>Integrating with Travis CI</h3>
+
+<p>I have the <a href="/blog/continuos_delivery_of_octopress_blog_using_travisci_and_docker">deployment of my blog automated via Travis CI</a>, which builds and deploys the site when committing to the <a href="https://github.com/rahulpnath/rahulpnath.com">GitHub repository</a>. For future posts since there might not be a commit on the publish date, I need to trigger the build on those days, to publish the posts scheduled. The <a href="https://azure.microsoft.com/en-us/services/scheduler/">Azure Scheduler</a> enables scheduling requests and also provides out of the box support to invoke web service endpoints over HTTP/HTTPS. <a href="https://docs.travis-ci.com/api">Travis CI exposes an API</a> to interact with the build system and is the same API that the official Web interface uses. The API supports <a href="https://docs.travis-ci.com/user/triggering-builds">triggering builds</a> by making a POST request with an API token and the build details. The API has <a href="https://github.com/travis-ci/travis-ci/issues/5101">an existing bug</a> that requires the slash separating username and repository name in the trigger URL be encoded(%2F). Azure, however, does not like this and treats it as an invalid URL with the bellow error.</p>
+
+<p><img class="center" alt="Azure Scheduler Encoded URL error" src="/images/blogtrigger_scheduler_url_error.png" /></p>
+
+<p>The only way now is to have to custom write this code and have it scheduled. I chose the one with the least work involved - Azure Automation. <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> allows to create Run books and automatically trigger it on a schedule. The Azure Automation has a <a href="https://azure.microsoft.com/en-us/pricing/details/automation/">pricing plan with 500 minutes free</a> Job run time in a month, which meets my requirements. I created a <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-types/#powershell-runbooks">PowerShell script</a> and added in the token (<em>TravisToken</em>) and the build URL (<em>TravisBuildUrl</em>) as <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-input-parameters/">parameters to the script</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$travisBlogTriggerApiUrl</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisBuildUrl&#39;</span>
+</span><span class='line'><span class="nv">$token</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisToken&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$body</span> <span class="p">=</span> <span class="s2">&quot;{&quot;&quot;request&quot;&quot;: {&quot;&quot;message&quot;&quot;:&quot;&quot;Scheduled Automated build&quot;&quot;,&quot;&quot;branch&quot;&quot;:&quot;&quot;master&quot;&quot;}}&quot;</span>
+</span><span class='line'><span class="nv">$headers</span> <span class="p">=</span> <span class="p">@{</span>
+</span><span class='line'>    <span class="s1">&#39;Content-Type&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Accept&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Travis-API-Version&#39;</span> <span class="p">=</span> <span class="s1">&#39;3&#39;</span>
+</span><span class='line'>    <span class="s1">&#39;Authorization&#39;</span> <span class="p">=</span> <span class="s1">&#39;token &#39;</span> <span class="p">+</span> <span class="nv">$token</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Invoke-WebRequest</span> <span class="n">-Method</span> <span class="n">Post</span> <span class="nv">$travisBlogTriggerApiUrl</span> <span class="n">-Body</span> <span class="nv">$body</span> <span class="n">-Headers</span> <span class="nv">$headers</span> <span class="n">-UseBasicParsing</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The script runs on a schedule every day and triggers the Travis CI build. It deploys the latest generated site to Azure WebApp that hosts the site. Any posts scheduled for the current date gets picked up by Jekyll and included in the site generation.</p>
+
+<figure>
+    <img alt="Automatic Deployment of Future Posts With Octopress" src="/images/blog_scheduled.png" />
+    <figcaption><em>Scheduler triggers TravisCI build. For details on how TravisCI is set up check <a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a></em></figcaption>
+</figure>
+
+
+<p></p>
+
+<h3>Post to Social Media</h3>
+
+<p>With the posts getting deployed automatically, I want to update all my social networks. I already use <a href="https://buffer.com/">Buffer</a> to post updates to all social networks. Buffer is like &lsquo;<strong><em>Write Once, Post Everywhere</em></strong>&rsquo; kind of service. It clubs all your social media profiles into one place and allows you to post to all of them by just writing it once.</p>
+
+<p><a href="https://ifttt.com/recipes">IFTTT</a>(&lsquo;<em>If This Then That</em>&rsquo;) is a service that helps connect different apps and devices together based on a trigger. As the name says, you can trigger an action based on a trigger. IFTTT has many <a href="https://ifttt.com/channels">Channels</a> that can act as a source of the trigger. In my case, the trigger is a post getting published and I can hook into that event using the <a href="https://ifttt.com/feed">Feed Channel</a>. The feed channel has an option to trigger when a <a href="https://ifttt.com/channels/feed/triggers/5-new-feed-item">new item is available</a> on the feed. I use this to trigger an update to Buffer. <a href="https://ifttt.com/buffer">Buffer</a> is available as a channel on IFTTT but allows only update to one of the connected accounts in Buffer, which requires me to setup a recipe per social media account. I chose to use <a href="https://buffer.com/guides/email">update via email feature</a> in Buffer. It allows me to have just one recipe in IFTTT to update to all of my connected profiles in Buffer.</p>
+
+<p><img class="center" alt="Trigger Buffer Email When New Post is Published" src="/images/blog_ifttt.png" /></p>
+
+<p>With the Automated publishing of posts and ability to schedule them, I can concentrate more on just the writing part. I no longer have to push out posts manually. I had never thought that I would be scheduling posts in the future. But now that it is happening it&rsquo;s a great feeling when there are posts for a few weeks ahead all ready to go.</p>
+
+<p><em><a href="http://www.rahulpnath.com/blog/morning_routine/">My Morning Routine</a> was the first posts to be deployed using the schedule.</em></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-01T04:11:12+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 1<sup>st</sup>, 2016</time>
         
 
@@ -1541,106 +1684,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-06-27T05:07:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 27<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/own-your-urls/" itemprop="url">Own Your URLs; Nothing Else Really Matters</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Over the past couple of years, I have been successful in motivating a couple of my friends to start a blog and I am happy about that. Every time I discuss starting a blog the most common things that come up are what platform to choose, where to host, where to buy the domain, blogging frequency,will anyone even read my posts, what to blog etc.  These were the same questions that I had when I wanted to start a blog and good reasons to procrastinate on for a long time. Over the years having changed the blog platform a couple of times, changing domain name providers, hosting platform, blogging tools here is what I have learned.</p>
-
-<h3>The Golden Rule of Blogging!</h3>
-
-<p>You should have already guessed that from the   post title - The URL where you blog under - Make sure you own it. Buy one of your choices, from any of the <a href="https://www.google.com.au/search?q=buy+domain">domain providers</a> (more on this later) and blog under that. While it&rsquo;s easy to start blogging under popular services like WordPress.com/Blogspot.com, you actually don&rsquo;t own your domain.</p>
-
-<p><a href="https://i.kinja-img.com/gawker-media/image/upload/pgtqyluoyhr1swo4wrmn.jpg">
-<img class="center" alt="Own your URL" src="/images/url.jpg" /></a></p>
-
-<p>I have committed this mistake, of blogging under a URL not owned by me, not <a href="rahulpnath.blogspot.com">once</a> but <a href="https://rahulpnath.wordpress.com">twice</a>,and ended up having to edit the posts to redirect here. (I did not want to pay the providers a monthly fee just for the redirect and didn&rsquo;t have many readers). It&rsquo;s not that these external platforms are bad, but you are just throwing away the flexibility to change platforms (without any extra  charge) when you want to. Owning your URLs allows you to change platforms, hosts, URL formats, redirects anything that you want to and I like to have that flexibility.</p>
-
-<h3>The lesser important things</h3>
-
-<p>Other than the URL that you blog on, other things are not that important and here&rsquo;s why I feel that. If you are completely new to terms like domain, website, hosting etc. check out this article on <a href="http://support.hostgator.com/articles/hosting-guide/what-is-the-difference-between-domains-vs-hosting-vs-website"> the difference between all these</a>.</p>
-
-<h4><strong>Where to buy the domain?</strong></h4>
-
-<p>Choose one and move on with it, even if you do not like it you can change your domain provider anytime. You can <a href="http://www.macworld.com/article/1164499/web-apps/how-to-transfer-your-domain-name-between-hosts.html">transfer from one host to another</a> very easily and I have done that. I started off with GoDaddy for the first year as they seemed the cheapest when I started. But at the time of renewal, I learned that it was just for the first year that it was cheap but for renewals, it was costlier. So I moved on to <a href="https://www.namecheap.com/?aff=101935">Namecheap</a>(<em>affiliate</em>) and am with them ever since. Nothing against GoDaddy though, if it works for you get it from there or somewhere - <strong>Get one right now if you don&rsquo;t own a domain!</strong></p>
-
-<h4><strong>Where to host?</strong></h4>
-
-<p>For a website to be accessible to all, it needs to be running somewhere on the internet and accessible to all, and this is what typically a <a href="https://en.wikipedia.org/wiki/Web_hosting_service">hosting service</a> provides. The hosting and domain provider need not be the same entity, so you can get your hosting space anywhere and link it with your domain. Your domain provider will give you some console/website where you can configure this. There are also free hosts like <a href="https://pages.github.com/">Github</a>, <a href="https://www.tumblr.com/">tumblr</a>, <a href="https://support.google.com/blogger/answer/55374?hl=en">Blogger</a> etc., which allows custom domain mapping for free, unlike <a href="https://en.support.wordpress.com/domains/">wordpress.com</a>. Godaddy, Namecheap, Azure, AWS etc are few popular options for hosting, if not Google to find what matches your need. <a href="http://www.webhostingsecretrevealed.net/blog/web-hosting-guides/switching-web-host/">Switching from one web host to another</a> is even easier than transferring domains, so do not spend much time deciding where to host.</p>
-
-<h4><strong>Which blogging platform to choose?</strong></h4>
-
-<p>There are a large number of blogging platforms available today and it is a very difficult choice to decide on one. If all you are planning to put is a blog with static text, then <a href="https://www.staticgen.com/">static site generators</a> are a good choice and it ends up you hosting just plain <a href="https://github.com/rahulpnath/rahulpnath.com/tree/blog">HTML, Javascript, CSS and images</a>, <a href="http://www.rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">like this one</a> (at time of writing). But this does involve some knowledge of development environments and tools, so ignore it if you are not that person. <a href="https://wordpress.org/">WordPress</a> is easy to start with and is famous for its 5-minute installations. Note that this is not the wordpress.com site which is like a hosting service, but this is the WordPress  platform itself which you can host yourself anywhere you choose to, like <a href="http://www.rahulpnath.com/blog/azure-web-sites-moving-wordpress-to-cloud/">I did for some time in Azure</a>. WordPress is just one that is popular, but there are a lot of <a href="https://www.microsoft.com/web/gallery/categories.aspx?category=Blogs">similar platforms that you can choose from</a>.</p>
-
-<blockquote><p><em>When starting to blog, choose a platform that makes writing easy and not have the overhead of using the platform stop you from writing</em></p></blockquote>
-
-<h4><strong>Who will read my blog?</strong></h4>
-
-<p>This one was the biggest stopper for me - Who cares about what I write? Maybe no one does, but now I write for myself, it makes me happy as I like to share information with others. Blogging helps me understand and explore topics more deeply. Finally, it&rsquo;s a reference that I can always go back to when I face something similar. If you have faced a particular scenario (which might be totally weird) then it is very likely that it is going to be experienced by somebody else too. And Google makes finding things easy, and it will be found!</p>
-
-<h4><strong>Frequency and commitment</strong></h4>
-
-<p>I have been irregular with my blogging schedules (<a href="http://www.rahulpnath.com/blog/archives/">until lately</a>) and used to blog just when motivation strikes. But since the start of this year, I am trying to blog on a schedule. Just experimenting with it and seeing how it goes, so far I am really liking it.It has given a different outlook to work and life in general, as it makes me look more closely for opportunities to generate a blog post. But it&rsquo;s fine even without a commitment and blog irregularly unless you have some expectations of your reader base or generate revenue from the blog. But have a place to go and scribble down whenever you feel to and own that place!</p>
-
-<figure>  
-    <img alt="Blog frequency as on 26-06-2-16 http://www.rahulpnath.com" src="/images/blog_frequency.png" />
-    <figcaption><em>Blog frequency as on June,2016 http://www.rahulpnath.com</em></figcaption>
-</figure>
-
-
-<p></p>
-
-<p>It&rsquo;s a good idea to have a schedule to blog , so that you don&rsquo;t just end up writing one post and forget about your blog forever. <a href="https://blog.codinghorror.com/how-to-achieve-ultimate-blog-success-in-one-easy-step/">Pick a schedule that works for you</a> and try to stick with it.</p>
-
-<h4><strong>No Original Content</strong></h4>
-
-<p>It&rsquo;s fine to blog about things that you have not created yourself, the way you learned things or anything you feel to write about, necessarily not even current at the time of writing. For eg., You might be working on Mainframes system and MainFrame is not current and cutting edge now. But that does not mean you should not be blogging about it. Just like you, there are a lot of mainframe developers and it might just help one of them. So don&rsquo;t bother much about the originality of content, it&rsquo;s your experiences and the way you see it- that&rsquo;s always going to be unique.</p>
-
-<blockquote><p><em>&ldquo;A blog is neither a diary nor a journal. Many people think of blogging in relation to those two things, confessional or practical. It is neither but includes elements of both.&rdquo; - Lemn Sissay</em></p></blockquote>
-
-<p><a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">Every &lsquo;professional&rsquo; should have a blog</a>, and if you don&rsquo;t yet, now is a good time to start one. Sound off in the comments on what you feel about blogging in general, especially if you bought a domain and set up your blog after reading this. It will prove a point for this post!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1664,6 +1707,8 @@ keeping the abstraction level consistent.</em></p></blockquote>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/visual-studio-task-list-keep-track-of-your-todo-comments/">Tip of the Week: Visual Studio Task List - Keep Track of Your TODO Comments</a>
+    
     <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault From Azure Functions</a>
     
     <a class="list-group-item " href="/blog/if-this-then-that-ifttt-connect-your-services/">Tip of the Week: IF This Then That (IFTTT) - Connect Your Services</a>
@@ -1671,8 +1716,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
     <a class="list-group-item " href="/blog/flux-make-it-easy-for-your-eyes/">Tip of the Week: f.lux - Make it Easy For Your Eyes</a>
     
     <a class="list-group-item " href="/blog/experimenting-with-pomodoro-technique/">How I Included Scrum and Pomodoro Technique in My Morning Routine</a>
-    
-    <a class="list-group-item " href="/blog/refactoring-to-composite-pattern/">Refactoring to Composite Pattern</a>
     
   </div>
 </section>
