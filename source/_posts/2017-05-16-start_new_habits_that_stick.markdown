@@ -6,7 +6,7 @@ categories:
 - Thoughts
 - Productivity
 tags: 
-date: 2017-05-10
+date: 2017-05-16
 completedDate: 2017-04-21 04:40:13 +1000
 keywords: 
 description: 
