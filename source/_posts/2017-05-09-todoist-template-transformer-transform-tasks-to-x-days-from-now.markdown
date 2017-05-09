@@ -11,7 +11,7 @@ date: 2017-05-09
 completedDate: 2017-05-09 04:33:10 +1000
 keywords: 
 description: Transform Todoist templates to start on a specific date
-primaryImage: todoist_templates
+primaryImage: todoist_templates.png
 ---
 
 <img src="{{site.images_root}}/todoist_templates.png" alt="Todoist Templates" class="center" />
