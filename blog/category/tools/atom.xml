@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tools | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tools/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-05-08T18:43:55+00:00</updated>
+  <updated>2017-05-09T00:02:07+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,48 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Todoist Template Transformer - Transform Tasks to 'X' Days From Now]]></title>
+    <link href="http://rahulpnath.com/blog/todoist-template-transformer-transform-tasks-to-x-days-from-now/"/>
+    <updated>2017-05-09T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/todoist-template-transformer-transform-tasks-to-x-days-from-now</id>
+    <content type="html"><![CDATA[<p><img src="/images/todoist_templates.png" alt="Todoist Templates" class="center" /></p>
+
+<p><a href="https://blog.todoist.com/2015/11/19/new-way-to-create-todoist-templates/">Todoist Templates</a> is a simple way to create tasks for any of your recurring activities. Be it blogging, cooking, or any of your activities. With Todoist Templates, you can turn any project into a checklist that you can easily duplicate later. I have been using <a href="http://www.rahulpnath.com/blog/todoist-manage-your-todo-list/">Todoist</a> for a long time and find it useful to keep track of tasks (both personal and at work)</p>
+
+<h4><strong>Problem</strong></h4>
+
+<p>I <a href="http://www.rahulpnath.com/blog/experimenting-with-pomodoro-technique/">plan my tasks</a> for the upcoming week on Sunday morning. I pull in tasks for the upcoming week, and some of these tasks are template based. For e.g. for writing a blog post, I have the below template</p>
+
+<pre><code class="text">TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
+task,BlogTopic: Draft Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
+task,BlogTopic: Refine Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
+task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
+task,"BlogTopic: Images, Proof Read and Publish",4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
+</code></pre>
+
+<p>The dates on the template are relative to the day that you import the template in Todoist. So if I pull in the template on a Sunday, the tasks will start on Sunday. This is not something that I want; I want them to start on a Monday. Alternatively, I can update the template to start from tomorrow. Even in that case, I will always have to know the exact start day relative to the day that I intend to pull in. I usually plan for the tasks on a Sunday but still, like the flexibility to pull in tasks any day of the week.</p>
+
+<h3>Todoist Template Transformer</h3>
+
+<p>The Todoist Template Transformer takes in a date and template path and adjusts all tasks in the template to start relative to the passed in date. In the above example, if I want to blog on Wednesday, I will input the Wednesday date and the template file path. The first two tasks will start on Wednesday and the third and fourth on Thursday. Running the transformer on a Sunday (07-May-2017) with the next Wednesday (10-May-2017) below is the new template</p>
+
+<pre><code class="bat">TodoistTemplateTransformer.exe -startDate "10-May-2017" -templateFile "Blog Template.csv"
+</code></pre>
+
+<pre><code class="text">TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
+task,BlogTopic: Draft Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
+task,BlogTopic: Refine Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
+task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
+task,"BlogTopic: Images, Proof Read and Publish",4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
+</code></pre>
+
+<p>This utility is written in FSharp the <a href="https://github.com/rahulpnath/todoisttemplatetransformer">source code is available here</a> if you are interested. I am still in the initial stages of learning FSharp, so if you have any suggestions to improve the code, please raise a Pull Request or drop in a comment.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: IF This Then That (IFTTT) - Connect Your Services]]></title>
@@ -275,35 +317,6 @@ Install-Package Newtonsoft.Json -ProjectName WpfApplication1 -Version 8.0.3
 <p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
 
 <p>Hope this helps in case you come across a similar issue!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[CLAL - Command Line Application Launcher]]></title>
-    <link href="http://rahulpnath.com/blog/clal-command-line-application-launcher/"/>
-    <updated>2016-04-07T06:11:22+00:00</updated>
-    <id>http://rahulpnath.com/blog/clal-command-line-application-launcher</id>
-    <content type="html"><![CDATA[<p>CLAL (Command Line Application Launcher) is a desktop application to launch any (currently supports only SQL Server Management Studio - <a href="https://msdn.microsoft.com/en-us/library/ms162825.aspx">ssms</a>) command line application. It helps manage different configurations with which a command line application can be launched - such as different connection strings to various databases.</p>
-
-<p><strong> <a href="http://bit.ly/1REGiFT">Install the latest version here</a> </strong></p>
-
-<p>CLAL allows you to first specify the meta data of the command line application first and then create the various configurations for that by filling in the parameters as specified in the metadata. Currently since this only supports <em>ssms</em>, the metadata edit screen is not present and is hard coded into the application. The image below shows the various database servers that I connect to, and CLAL helps me reach them quickly</p>
-
-<p><img class="center" alt="Command Line Application Launcher" src="/images/clal.png" /></p>
-
-<p>Use the &lsquo;<em>Add Configuration</em>&rsquo; button to add a new configuration. You can specify a <em>Friendly Name</em> for the configuration and then fill in the other details required by the command line. Alternatively for <em>ssms</em> you can also paste in a connection string and have all the fields automatically populated.</p>
-
-<p><img class="center" alt="Command Line Application Launcher" src="/images/clal_new.png" /></p>
-
-<p>Once new configuration is saved you can launch the application with the specified configuration either using the <em>Launch</em> button or double click on the configuration name in the list.</p>
-
-<blockquote><p><em>Work in progress to support other command line applications and to update the look and feel.</em></p></blockquote>
-
-<p><a href="https://github.com/rahulpnath/clal/issues"><strong>Contribute</strong></a> to the development by coding or reporting issues that you find file using the application. <a href="http://www.rahulpnath.com/blog/category/clal/">Check out these articles</a> for my learnings while building this application.</p>
-
-<h4><strong>Credits</strong></h4>
-
-<p><a href="https://github.com/rahulpnath/clal/tree/master/Resources">Icons/Logo</a>: <a href="https://twitter.com/RoshTS">Rosh TS</a></p>
 ]]></content>
   </entry>
   
