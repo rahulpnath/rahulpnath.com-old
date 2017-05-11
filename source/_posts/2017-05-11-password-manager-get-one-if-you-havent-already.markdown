@@ -9,7 +9,7 @@ date: 2017-05-11
 completedDate: 2017-05-11 13:07:22 +1000
 keywords: 
 description: The only secure password is the one you can’t remember
-primaryImage: 
+primaryImage: password_manager.jpg
 ---
 
 <img src="{{site.images_root}}/password_manager.jpg" alt ="https://pixabay.com/en/data-security-keyboard-computer-1590455/" class="center" />
