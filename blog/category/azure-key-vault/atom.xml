@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-05-24T03:45:10+00:00</updated>
+  <updated>2017-05-25T00:02:23+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
+    <updated>2017-05-25T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
+    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
+
+<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
+
+<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+$certificate.Import($certificateFilePath)
+$rawCertificateData = $certificate.GetRawCertData()
+$credential = [System.Convert]::ToBase64String($rawCertificateData)
+$startDate= [System.DateTime]::Now
+$endDate = $startDate.AddYears(1)
+$adApplication = New-AzureRmADApplication -DisplayName "CertAdApplication" -HomePage  "http://www.test.com" -IdentifierUris "http://www.test.com" -CertValue $credential  -StartDate $startDate -EndDate $endDate
+
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
+
+Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ServicePrincipalName $servicePrincipal.ServicePrincipalNames[0] -PermissionsToSecrets all -PermissionToKeys all 
+</code></pre>
+
+<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
+
+<p><img src="/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
+
+<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
+
+<p><img src="/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
+
+<p>Upload the certificate by selecting it from your folder system.</p>
+
+<p><img src="/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
+
+<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
+
+<p><img src="/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
+
+<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
+
+<pre><code class="csharp">using System;
+using Microsoft.Azure.KeyVault;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+
+private const string applicationId = "AD Application ID";
+private const string certificateThumbprint = "Certificate Thumbprint";
+
+public async static Task Run(TimerInfo myTimer, TraceWriter log)
+{
+    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
+{
+    var authenticationContext = new AuthenticationContext(authority, null);
+    X509Certificate2 certificate;
+    X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+    try
+    {
+        store.Open(OpenFlags.ReadOnly);
+        X509Certificate2Collection certificateCollection = store.Certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
+        if (certificateCollection == null || certificateCollection.Count == 0)
+        {
+            throw new Exception("Certificate not installed in the store");
+        }
+
+        certificate = certificateCollection[0];
+    }
+    finally
+    {
+        store.Close();
+    }
+
+    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
+    var result = await authenticationContext.AcquireTokenAsync(resource, clientAssertionCertificate);
+    return result.AccessToken;
+});
+
+    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
+    var secret = await keyClient.GetSecretAsync(secretIdentifier);
+
+    log.Info($"Secret Value: {secret}"); 
+}
+</code></pre>
+
+<p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
+
+<p>Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault From Azure Functions]]></title>
@@ -201,138 +292,6 @@ $certBytes = $cert.Certificate.Export([System.Security.Cryptography.X509Certific
 
 
 <p>Thank you again for attending the talk. For any queries feel free to reach out to the <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/home?forum=AzureKeyVault">Azure Key Vault MSDN forum</a> or me. Hope this helps you to jump start on using Key Vault in applications you are building currently.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Expiry Notification for Azure Key Vault Keys and Secrets]]></title>
-    <link href="http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets/"/>
-    <updated>2016-12-01T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/expiry-notification-for-azure-key-vault-keys-and-secrets</id>
-    <content type="html"><![CDATA[<p>I came across this <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/90d4b814-f025-42a0-acac-b8c8bf9d8cf8/alert-or-event-on-secret-expiry?forum=AzureKeyVault">question</a> in Azure Key Vault forums looking for options to get notified when Key or Secrets in vault nears expiry. It&rsquo;s useful to know when Object&rsquo;s (Keys/Secrets) near expiry, to take necessary action. I decided to explore on my proposed solution of having a scheduled custom PowerShell script to notify when a key is about to expire. In this post, we will see how to get all objects nearing expiry and scheduling this using Azure Runbook to run daily.</p>
-
-<h3>Getting Expiring Objects</h3>
-
-<p>Both Keys and Secrets can be set with an Expiry date. The expiry date can be set when creating the Object or can be set on an existing Object. This can be set from the UI or using PowerShell scripts (setting the <a href="https://msdn.microsoft.com/en-us/library/dn868045.aspx">-Expires attribute</a>).</p>
-
-<p><img class="center" alt="Azure Key Vault - Set Key Expiry" src="/images/vaultexpiry_key.png"/></p>
-
-<p>Key Vault (at the time of writing) throws an <a href="https://social.msdn.microsoft.com/Forums/azure/en-US/c0d8953a-c117-4ca4-ad3d-e5d2b1868f9e/get-operation-not-permitted-for-some-of-the-secret-in-my-vault?forum=AzureKeyVault">exception</a> when an expired key is accessed over the API. Also, it does not provide any notification whenever a key/secret is about to expire. The last thing you want is your application go down because of an expired object in the vault. With the Get and List access on the vault, we can retrieve all the keys and secrets in the vault and loop through the elements to see objects that are nearing expiry.</p>
-
-<p>The PowerShell script takes the Vault Name, number of days before with alert should be raised and flags to indicate whether all versions of keys/secrets should be checked for expiry. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
-
-<pre><code class="powershell">$VaultName = ''
-$IncludeAllKeyVersions = $true
-$IncludeAllSecretVersions = $true
-$AlertBeforeDays = 3
-</code></pre>
-
-<p>All keys and secrets are converted into a common object model, which contains just the Identifier, Name, Version and the Expiry Date if it has one.</p>
-
-<pre><code class="powershell">Function New-KeyVaultObject
-{
-    param
-    (
-        [string]$Id,
-        [string]$Name,
-        [string]$Version,
-        [System.Nullable[DateTime]]$Expires
-    )
-
-    $server = New-Object -TypeName PSObject
-    $server | Add-Member -MemberType NoteProperty -Name Id -Value $Id
-    $server | Add-Member -MemberType NoteProperty -Name Name -Value $Name
-    $server | Add-Member -MemberType NoteProperty -Name Version -Value $Version
-    $server | Add-Member -MemberType NoteProperty -Name Expires -Value $Expires
-
-    return $server
-}
-</code></pre>
-
-<p>Depending on the flag set for retrieving all key/secret version, it fetches objects from the vault and returns in the common object model above.</p>
-
-<pre><code class="powershell">function Get-AzureKeyVaultObjectKeys
-{
-  param
-  (
-   [string]$VaultName,
-   [bool]$IncludeAllVersions
-  )
-
-  $vaultObjects = [System.Collections.ArrayList]@()
-  $allKeys = Get-AzureKeyVaultKey -VaultName $VaultName
-  foreach ($key in $allKeys) {
-    if($IncludeAllVersions){
-     $allSecretVersion = Get-AzureKeyVaultKey -VaultName $VaultName -IncludeVersions -Name $key.Name
-     foreach($key in $allSecretVersion){
-         $vaultObject = New-KeyVaultObject -Id $key.Id -Name $key.Name -Version $key.Version -Expires $key.Expires
-         $vaultObjects.Add($vaultObject)
-     }
-
-    } else {
-      $vaultObject = New-KeyVaultObject -Id $key.Id -Name $key.Name -Version $key.Version -Expires $key.Expires
-      $vaultObjects.Add($vaultObject)
-    }
-  }
-
-  return $vaultObjects
-}
-
-function Get-AzureKeyVaultObjectSecrets
-{
-  param
-  (
-   [string]$VaultName,
-   [bool]$IncludeAllVersions
-  )
-
-  $vaultObjects = [System.Collections.ArrayList]@()
-  $allSecrets = Get-AzureKeyVaultSecret -VaultName $VaultName
-  foreach ($secret in $allSecrets) {
-    if($IncludeAllVersions){
-     $allSecretVersion = Get-AzureKeyVaultSecret -VaultName $VaultName -IncludeVersions -Name $secret.Name
-     foreach($secret in $allSecretVersion){
-         $vaultObject = New-KeyVaultObject -Id $secret.Id -Name $secret.Name -Version $secret.Version -Expires $secret.Expires
-         $vaultObjects.Add($vaultObject)
-     }
-
-    } else {
-      $vaultObject = New-KeyVaultObject -Id $secret.Id -Name $secret.Name -Version $secret.Version -Expires $secret.Expires
-      $vaultObjects.Add($vaultObject)
-    }
-  }
-
-  return $vaultObjects
-}
-</code></pre>
-
-<p>Now that we have all the keys and secrets we want to check for expiry all we need to know is if there are any keys that are expiring in the upcoming days.</p>
-
-<pre><code class="powershell">$allKeyVaultObjects = [System.Collections.ArrayList]@()
-$allKeyVaultObjects.AddRange((Get-AzureKeyVaultObjectKeys -VaultName $VaultName -IncludeAllVersions $IncludeAllKeyVersions))
-$allKeyVaultObjects.AddRange((Get-AzureKeyVaultObjectSecrets -VaultName $VaultName -IncludeAllVersions $IncludeAllSecretVersions))
-
-# Get expired Objects
-$today = (Get-Date).Date
-$expiredKeyVaultObjects = [System.Collections.ArrayList]@()
-foreach($vaultObject in $allKeyVaultObjects){
-if($vaultObject.Expires -and $vaultObject.Expires.AddDays(-$AlertBeforeDays).Date -lt $today)
-{
-  # add to expiry list
-  $expiredKeyVaultObjects.Add($vaultObject) | Out-Null
-  Write-Output "Expiring" $vaultObject.Id
-
-}
-
-# Pass to Alerter $expiredKeyVaultObjects
-}
-</code></pre>
-
-<h3>Scheduling Expiry Notification using Azure Runbook</h3>
-
-<p>You can either run this manually every time you want to get a list of objects that are expired or nearing expiry. Alternatively, you can set up a scheduled task to run the script at a set frequency. Since you are already on Azure, you can try <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> and schedule the task for you. A Runbook in Azure Automation account can be granted access to the key vault. The Automation account should have &lsquo;Run as account&rsquo; setup and the service principal created for it can be used to assign Access Policies to access the vault. Check out the <a href="/blog/accessing-azure-key-vault-from-azure-runbook">Accessing Azure Key Vault From Azure Runbook</a> post for a step by step instruction on how to setup runbook to access key vault. You can then <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-scheduling-a-runbook/">schedule the runbook</a> to execute at fixed time intervals. Feel free to modify the script to send email notifications or push notification or any other that matches your need.</p>
-
-<p>Generally, it is a good practice to rotate your keys and secrets once in a while. Use the expiry attribute to set the expiry and force yourself to keep your sensitive configurations fresh. It&rsquo;s likely that such a notification feature will be built into the key vault. But till then Hope this helps to keep track of keys or secrets that are nearing expiry within the vault and take the necessary action to renew them. The full script is available <a href="https://github.com/rahulpnath/Blog/blob/master/KeyVaultExpiryAlerter/Expiry%20Alert.ps1">here</a>.</p>
 ]]></content>
   </entry>
   

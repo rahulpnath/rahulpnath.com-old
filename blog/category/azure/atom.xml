@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-05-24T03:45:10+00:00</updated>
+  <updated>2017-05-25T00:02:23+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
+    <updated>2017-05-25T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
+    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
+
+<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
+
+<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
+$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+$certificate.Import($certificateFilePath)
+$rawCertificateData = $certificate.GetRawCertData()
+$credential = [System.Convert]::ToBase64String($rawCertificateData)
+$startDate= [System.DateTime]::Now
+$endDate = $startDate.AddYears(1)
+$adApplication = New-AzureRmADApplication -DisplayName "CertAdApplication" -HomePage  "http://www.test.com" -IdentifierUris "http://www.test.com" -CertValue $credential  -StartDate $startDate -EndDate $endDate
+
+$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
+
+Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ServicePrincipalName $servicePrincipal.ServicePrincipalNames[0] -PermissionsToSecrets all -PermissionToKeys all 
+</code></pre>
+
+<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
+
+<p><img src="/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
+
+<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
+
+<p><img src="/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
+
+<p>Upload the certificate by selecting it from your folder system.</p>
+
+<p><img src="/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
+
+<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
+
+<p><img src="/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
+
+<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
+
+<pre><code class="csharp">using System;
+using Microsoft.Azure.KeyVault;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+
+private const string applicationId = "AD Application ID";
+private const string certificateThumbprint = "Certificate Thumbprint";
+
+public async static Task Run(TimerInfo myTimer, TraceWriter log)
+{
+    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
+{
+    var authenticationContext = new AuthenticationContext(authority, null);
+    X509Certificate2 certificate;
+    X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
+    try
+    {
+        store.Open(OpenFlags.ReadOnly);
+        X509Certificate2Collection certificateCollection = store.Certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
+        if (certificateCollection == null || certificateCollection.Count == 0)
+        {
+            throw new Exception("Certificate not installed in the store");
+        }
+
+        certificate = certificateCollection[0];
+    }
+    finally
+    {
+        store.Close();
+    }
+
+    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
+    var result = await authenticationContext.AcquireTokenAsync(resource, clientAssertionCertificate);
+    return result.AccessToken;
+});
+
+    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
+    var secret = await keyClient.GetSecretAsync(secretIdentifier);
+
+    log.Info($"Secret Value: {secret}"); 
+}
+</code></pre>
+
+<p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
+
+<p>Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault From Azure Functions]]></title>
@@ -315,52 +406,6 @@ var connectionStringSecret = await keyClient.GetSecretAsync(connectionStringIden
 <p>All your <a href="http://www.rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/">sensitive information should be moved out of your application configuration file</a>, and Key Vault is the one place to have them all. The application&rsquo;s configuration file should only have the azure key vault url and the AD application id and certificate identifier (thumb print) that can be used to authenticate with the AD. Yes it is advisable to use the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate authentication mechanism</a> as opposed to the secret mechanism, if not you would have to put the secret in your configuration file, which would be like &lsquo;giving a thief the key to your safe&rsquo;.Additionally you could also have the key identifier mappings in the configuration file that the application can use to map to key/secret in the vault as we had seen above.</p>
 
 <p>By doing this we have fully decoupled the application and its dependency with the vault store and have also protected all our sensitive information. This also helps in having the application to be tested with configurations appropriate to the type of deployment. Hope this helps you in developing your application against the key vault.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Moving Sensitive Information from Configuration File to Azure Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault/"/>
-    <updated>2015-03-14T17:34:23+00:00</updated>
-    <id>http://rahulpnath.com/blog/moving-sensitive-information-from-configuration-file-to-azure-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Most of the applications today needs to use some kind of sensitive information like a database connection-string, api secret or passwords for it to connect to external service providers. Today we see that all these information are stored in the application&rsquo;s configuration file, which poses a huge security risk. Anyone having access to this configuration file could use this information to access sensitive data posing a security risk. Having understood this risk, we would not want to keep these secrets anymore in the application but move it to a safer and secure place. With <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>, we can have this information encrypted and saved safely out of the application and use as required from the application.Azure Key Vault provides a feature of saving such small data, <strong>Secrets</strong>, into the vault and access them over a secure endpoint.</p>
-
-<blockquote><p>Secrets in Azure Key Vault are octet sequences with a maximum size of 10k bytes each and can have any data stored.</p></blockquote>
-
-<p>If you are new to Azure Key Vault and yet to setup a vault, you could refer to <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure Key Vault</a>, to setup the vault and the Active Directory(AD) application that is used to authenticate our application to access the keyvault. Since in this case we are going to use Secrets from the key vault, while setting the key vault access policy for the the AD application, we need to explicitly set access for the application to use the secrets. Access Policy to secrets and keys are distinct and can be set accordingly and you can choose to have different application&rsquo;s to access keys and secrets separately. In the below script I have set the same application to have access to keys and secrets, by setting  <em>PermissionsToKeys</em> and <em>PermissionsToSecrets</em></p>
-
-<pre><code class="powershell">Set-AzureKeyVaultAccessPolicy -VaultName 'TestVaultRahul' -ServicePrincipalName 'd4f09821-ab30-44f3-8d57-69925489b932' -PermissionsToKeys all -PermissionsToSecrets all
-</code></pre>
-
-<p>To create a secret in the Vault, you can use the powershell script command as shown below. On successful creation of the secret the identifier to the secret is returned, which can be used by the application to obtain the Secret value.Since we have given the AD application &lsquo;<em>all</em>&rsquo; access, we could also create the secret using the api client.</p>
-
-<pre><code class="powershell">PS C:\&gt; $apiKey = ConvertTo-SecureString -String "ApiKey" -AsPlainText -Force
-Set-AzureKeyVaultSecret -VaultName TestVaultRahul -Name "ApiKey" -SecretValue $apiKey
-
-SecretValue     : System.Security.SecureString
-SecretValueText : ApiKey
-VaultName       : testvaultrahul
-Name            : ApiKey
-Version         : cfedea84815e4ca8bc19cf8eb943ee13
-Id              : https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13
-</code></pre>
-
-<p>For the application to access this secret all it needs is the SecretIdentifier and the AD credentials to authenticate with the key vault. You would want to use <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate based authentication</a> to authenticate against the AD application so that only the thumbprint information needs to be there in the application&rsquo;s configuration and not the secret itself as that is again a sensitive information.
-&#8220;` csharp
-var keyClient = new KeyVaultClient((authority, resource, scope) =>
-{
-    var authenticationContext = new AuthenticationContext(authority, null);
-    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
-    var result = authenticationContext.AcquireToken(resource, clientAssertionCertificate);
-});</p>
-
-<p>var secret =
-    await keyClient.GetSecretAsync(&ldquo;<a href="https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13">https://testvaultrahul.vault.azure.net/secrets/ApiKey/cfedea84815e4ca8bc19cf8eb943ee13</a>&rdquo;);
-&#8220;`</p>
-
-<p>No longer do we need to keep these sensitive information in the applications configuration file, we can just have the Secret Identifiers configured in the application and have the application fetch is as required from the vault. By doing this we have kept the sensitive information out of reach from the application and also from the people who have access to a production environment.</p>
 ]]></content>
   </entry>
   

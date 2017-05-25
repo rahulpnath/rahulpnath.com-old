@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-05-24T03:45:10+00:00</updated>
+  <updated>2017-05-25T00:02:23+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,153 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
+    <updated>2017-05-25T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
+    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
+
+<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
+</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;CertAdApplication&quot;</span> <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-CertValue</span> <span class="nv">$credential</span>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">ServicePrincipalNames</span><span class="p">[</span><span class="n">0</span><span class="p">]</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span> <span class="n">-PermissionToKeys</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
+
+<p><img src="http://rahulpnath.com/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
+
+<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
+
+<p><img src="http://rahulpnath.com/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
+
+<p>Upload the certificate by selecting it from your folder system.</p>
+
+<p><img src="http://rahulpnath.com/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
+
+<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
+
+<p><img src="http://rahulpnath.com/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
+
+<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.Azure.KeyVault</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.IdentityModel.Clients.ActiveDirectory</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Security.Cryptography.X509Certificates</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">applicationId</span> <span class="p">=</span> <span class="s">&quot;AD Application ID&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">certificateThumbprint</span> <span class="p">=</span> <span class="s">&quot;Certificate Thumbprint&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="k">static</span> <span class="n">Task</span> <span class="nf">Run</span><span class="p">(</span><span class="n">TimerInfo</span> <span class="n">myTimer</span><span class="p">,</span> <span class="n">TraceWriter</span> <span class="n">log</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">X509Store</span> <span class="n">store</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Store</span><span class="p">(</span><span class="n">StoreName</span><span class="p">.</span><span class="n">My</span><span class="p">,</span> <span class="n">StoreLocation</span><span class="p">.</span><span class="n">CurrentUser</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">try</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Open</span><span class="p">(</span><span class="n">OpenFlags</span><span class="p">.</span><span class="n">ReadOnly</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">X509Certificate2Collection</span> <span class="n">certificateCollection</span> <span class="p">=</span> <span class="n">store</span><span class="p">.</span><span class="n">Certificates</span><span class="p">.</span><span class="n">Find</span><span class="p">(</span><span class="n">X509FindType</span><span class="p">.</span><span class="n">FindByThumbprint</span><span class="p">,</span> <span class="n">certificateThumbprint</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">certificateCollection</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">certificateCollection</span><span class="p">.</span><span class="n">Count</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">Exception</span><span class="p">(</span><span class="s">&quot;Certificate not installed in the store&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">certificate</span> <span class="p">=</span> <span class="n">certificateCollection</span><span class="p">[</span><span class="m">0</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">finally</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">store</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientAssertionCertificate</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientAssertionCertificate</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">clientAssertionCertificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secretIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net/secrets/mySecretName&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">log</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;Secret Value: {secret}&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Make sure you add in the <em>project.json</em> as seen in the <a href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
+
+<p>Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Pocket - Don't Miss Out on the Articles That You Want to Read Later]]></title>
@@ -956,106 +1103,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
 <p><em>If you are on a high DPI machine running Windows, the UI might not scale well. There is a <a href="https://github.com/tomighty/tomighty/issues/115">workaround</a> for this.</em></p>
 
 <p>Sticking to the Pomodoro Technique has been working well for me, and I am able to focus better on the task at hand. I am still exploring the technique and trying to improve on it. Do you use Pomodoro Technique? If you are new to Pomodoro Technique and want to learn more check out the book, <a href="http://amzn.to/2nCSZW1">The Pomodoro Technique</a>, by Francesco Cirillo, the creator of the technique.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Learnings from The Professional Scrum Master (PSM) Course]]></title>
-    <link href="http://rahulpnath.com/blog/psm-learnings/"/>
-    <updated>2017-03-15T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/psm-learnings</id>
-    <content type="html"><![CDATA[<p>Last month I attended the Professional Scrum Master (PSM) training. <a href="https://twitter.com/rbanks54">Richard Banks</a> was the training instructor who also happens to be my <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">colleague at Readify</a>. It is a two days training and was a great experience for me. It changed my perception towards Scrum. Before the training, I was not that fascinated about Scrum and often argued against it citing that it&rsquo;s development practices that we need to uphold more and not Scrum. After the training, I have still not changed on the latter part but have changed my perception towards Scrum. Here are some of the key takeaways for me from the training.</p>
-
-<blockquote><p><strong>TLDR;</strong></p>
-
-<ul>
-<li>Stick to the Process</li>
-<li>Make Daily Scrum (a.k.a Standup) effective by setting mini goals</li>
-<li>Understand the different Roles and imbibe the responsibilities</li>
-<li>Have a well-defined Definition for Done</li>
-<li>Deliver value in every sprint</li>
-<li>Foster team collaboration and openness</li>
-<li>Scrum is not the Silver Bullet. Other development practices must be followed in parallel.</li>
-</ul>
-</blockquote>
-
-<p>If you are completely new to Scrum or not so familiar with the different terms used I recommend that you read <a href="http://www.scrumguides.org/scrum-guide.html">The Scrum Guide</a>. Don&rsquo;t refrain from clicking that link thinking it is a long book. It is a short one, and you can finish it in less than an hour. It is an hour well spent!</p>
-
-<p><img alt="Scrum Framework" src="http://rahulpnath.com/images/scrum_framework.png" /></p>
-
-<h3>Sticking to the Process</h3>
-
-<p>Everyone who was attending the training was already using Scrum, <em>but..</em> This is one of the common things with mostly everything and specifically with Scrum. People take parts of it and change the system to suit their needs. This is fine as long as you have tried the original process long enough to understand the pros and cons of it.</p>
-
-<blockquote><p><em>Tweaking the process to suit existing practices as soon as you start with a new process is just <strong>resistance to change</strong></em></p></blockquote>
-
-<p>Like Uncle Bob Martin says in clean code, dedicate yourself to the process and follow it religiously until you have mastered the process. You can start modifying the process or finding new ways once you have reached that state. But till then follow it religiously if you want to see any benefit.</p>
-
-<blockquote><p><em>Martial artists do not all agree about the best martial art, or the best technique within a martial art. Often master martial artists will form their own schools of thought and gather students to learn from them. So we see Gracie Jiu Jistu, founded and taught by the Gracie family in Brazil. We see Hakkoryu Jiu Jistu, founded and taught by Okuyama Ryuho in Tokyo. We see Jeet Kune Do, founded and taught by Bruce Lee in the United States.</em></p>
-
-<p><em>Students of these approaches immerse themselves in the teachings of the founder.They dedicate themselves to learn what that particular master teaches, often to the exclusion of any other master’s teaching. Later, as the students grow in their art, they may become the student of a different master so they can broaden their knowledge and practice. Some eventually go on to refine their skills, discovering new techniques and founding their own schools. None of these different schools is absolutely right. Yet within a particular school we act as though the teachings and techniques are right. After all, there is a right way to practice Hakkoryu Jiu Jitsu, or Jeet Kune Do. But this rightness within a school does not invalidate the teachings of a different school.</em></p>
-
-<p><em>-Uncle Bob Martin, <a href="http://amzn.to/2kCHgVz">Clean Code</a></em></p></blockquote>
-
-<h3>Effectiveness of Daily Scrum</h3>
-
-<p>Daily Scrum or otherwise popular as Standup meetings are <strong>not about standing up to give status updates</strong>. The intent of the Daily Scrum is for the development team to get together and work out whatever is required to get closer to the goal set for the sprint. Standing up improves your activity levels and interaction levels. So it&rsquo;s recommended to stand up. The primary intent of the fifteen minutes time-boxed event (it can take no more than the allotted time) is to look at how we tracked on with our &lsquo;mini goals&rsquo; from last daily scrum and setting new &lsquo;mini goals&rsquo; till next stand up. Also, capture any impediments or blockers and make sure that there are assigned people following up on it. The daily scrum necessarily needs not be the first thing in the morning but is usually preferred. Currently, I am on an evening 4 pm daily scrum.</p>
-
-<h3>Roles and Their Importance</h3>
-
-<p>Understanding of the different roles in Scrum is necessary. A scrum team consists of</p>
-
-<ul>
-<li>The Product Owner</li>
-<li>Scrum Master</li>
-<li>Development team</li>
-</ul>
-
-
-<blockquote><p><em>Scrum Teams are self-organizing and cross-functional. Self-organizing teams choose how best to accomplish their work, rather than being directed by others outside the team. Cross-functional teams have all competencies needed to accomplish the work without depending on others not part of the team. The team model in Scrum is designed to optimize flexibility, creativity, and productivity.</em></p></blockquote>
-
-<p>Most important is to understand the responsibilities of each role and adhere to it as much as possible. Remember Sticking to the Process is important. Each of the roles must have the courage and openness to act according to their role responsibilities.</p>
-
-<h3>Definition of Done</h3>
-
-<p>Having a prior agreed on Definition of Done is important to decide when a piece of work is done. Having a common understanding of the definition of done ensures that we do not ship half-baked features. It also provides a guide for non-functional features, which often gets sidelined or missed and later becomes a show-stopper.</p>
-
-<blockquote><p><em>As Scrum Teams mature, it is expected that their definitions of “Done” will expand to include more stringent criteria for higher quality. Any one product or system should have a definition of “Done” that is a standard for any work done on it.</em></p></blockquote>
-
-<h3>Delivering Value</h3>
-
-<p>One of the golden rules is that every sprint must produce an increment that adds some business value. It need not be released to production, but it must be production ready. The Product Owner makes release decisions.</p>
-
-<blockquote><p><em>The Increment is the sum of all the Product Backlog items completed during a Sprint and the value of the increments of all previous Sprints</em></p></blockquote>
-
-<p>This hints that having sprints solely for handling Technical debts, Refactoring, Project setup, Infrastructure setup, etc. are not recommended.</p>
-
-<h3>Team collaboration and Effectiveness</h3>
-
-<p>The process heavily depends on the people encompassing The Scrum Team. So it is important to have a good rapport amongst the team members. The team members should be comfortable and open with each other. The team needs to be self-organizing. When starting with Scrum, this might not be the case, and the team must recognize this and work towards self-organizing. The Scrum Master must encourage and guide the team to reach that state of independence.</p>
-
-<blockquote><p><em>When the values of commitment, courage, focus, openness, and respect are embodied and lived by the Scrum Team, the Scrum pillars of <strong>transparency, inspection, and adaptation</strong> come to life and build trust for everyone.</em></p></blockquote>
-
-<p><img alt="Scrum Values" src="http://rahulpnath.com/images/scrum_values.png" /></p>
-
-<p>The Scrum Guide calls out the above five core values that a team should demonstrate for the effectiveness of the framework. The Scrum team should constantly try to demonstrate these core values and try to improve on this.</p>
-
-<h3>Not the Silver Bullet for Development</h3>
-
-<blockquote><p><em>There&rsquo;s a mess I&rsquo;ve heard about with quite a few projects recently. It works out like this:</em></p>
-
-<ul>
-<li><em>They want to use an agile process, and pick Scrum</em></li>
-<li><em>They adopt the Scrum practices, and maybe even the principles</em></li>
-<li><em>After a while progress is slow because the code base is a mess</em></li>
-</ul>
-
-
-<p> <em>-Martin Fowler, <a href="https://martinfowler.com/bliki/FlaccidScrum.html">Flaccid Scrum</a></em></p></blockquote>
-
-<p>If you are looking up to Scrum to solve the problems with the quality of code you are delivering, you are with the wrong process. Scrum does not talk anything specific about software development and related practices. <a href="https://en.wikipedia.org/wiki/Extreme_programming">Extreme Programming</a> is one process that is specific to coding and software development and is also a type of agile software development. It talks about the various development practices lays down strict rules <a href="http://www.extremeprogramming.org/rules.html">related to software development</a>. Again if you decide to follow this do that religiously - Sticking to the Process matters. Picking up only certain aspects of different school of thoughts might not provide the desired output always. <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">Code Coverage</a> if one such practice that is picked up in isolation and seen to produce not much value.</p>
-
-<p>Given these new insights, I now feel that following a proven process framework, like Scrum will help a team achieve its goals. The core values that Scrum lays down is important for any team. From my personal experience, the reason why I used to look down upon Scrum is that it was not practiced the way it was laid out. Like in software development premature optimization of the process is likely to give less value. The training provided a lot of new insights and helped me to have a better understanding of the Scrum process framework. I did the <a href="https://www.scrum.org/professional-scrum-certifications/professional-scrum-master-i-assessment">PSM I</a> and <a href="https://www.scrum.org/professional-scrum-certifications/professional-scrum-product-owner-i-assessment">PSPO I</a> (I had attended this training last year but never took the test until now) assessment and got certified.  Are you using Scrum, what are your experiences?</p>
 ]]></content>
   </entry>
   
