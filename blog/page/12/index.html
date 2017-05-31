@@ -163,6 +163,419 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-11-22T20:56:26+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 22<sup>nd</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/using-repository-pattern-for-abstracting-data-access-from-a-cache-and-data-store/" itemprop="url">Using Repository Pattern for Abstracting Data Access from a Cache and Data Store</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>A Repository abstracts the persistence logic from the core business logic and allows the data to be accessed as it would have been from an in-memory object collection.</p></blockquote>
+
+<p><a href="http://martinfowler.com/eaaCatalog/repository.html">Repository Pattern</a> is useful when you want your domain objects(or entities) to be persistence ignorant but yet have the flexibility to map your data to the choice of your data store e.g. Sql Server, Oracle, NoSQL databases, cache etc. The physical model of the stored data might vary from store to store but not the logical model. So a repository plays the role of mapping a logical model to physical model and vice versa. ORM (Object Relational Mapping) tools like <a href="http://msdn.microsoft.com/en-in/data/ef.aspx">Entity Framework</a> does help us to achieve this and we could make use of it wherever possible in building your domain specific repositories.</p>
+
+<p>With large scale applications it is very common to have an external cache, to optimize repeated access to the data held in a data store. The repository is the ideal place to decide on populating, fetching and invalidating the cache. When building the repositories, we would not want to tightly couple ourselves with a specific cache provider or a data store provider like sql nor with any ORM tool like Entity Framework.</p>
+
+<blockquote><p>In this blog post we will be seeing how to keep our Repositories clean and separate from the actual providers and provide a persistence ignorant data access to your business layer.</p></blockquote>
+
+<p><img src="/images/RepositoryPattern.png" class="center" alt="Repository Pattern Class Diagram"></p>
+
+<h3>Creating the Repository</h3>
+
+<p>At the bare minimum a repository should be able to provide CRUD (Create Read Update Delete) options, for which we will have a generic interface defined and have implementation of which will be inherited from, for specific repositories.</p>
+
+<figure class='code'><figcaption><span>Repository Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IIdentifiable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">GetAll</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">T</span> <span class="nf">Delete</span><span class="p">(</span><span class="kt">string</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">T</span> <span class="nf">GetById</span><span class="p">(</span><span class="kt">string</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">T</span> <span class="nf">Insert</span><span class="p">(</span><span class="n">T</span> <span class="n">entity</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">T</span> <span class="nf">Update</span><span class="p">(</span><span class="n">T</span> <span class="n">entity</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The implementation of this interface would need to perform following functionality:</p>
+
+<ol>
+<li>Decide on whether to get the data from cache or data store and keep the data consistent.</li>
+<li>Get/Modify the data from the cache</li>
+<li>Get/Modify the data from the data store.</li>
+</ol>
+
+
+<p>Thinking of the <a href="http://en.wikipedia.org/wiki/Single_responsibility_principle">SRP (Single Responsibility Principle)</a>, it is best to keep these responsibilities separate so that each of them can change independently without changing the other. For this we need to further introduce 2 more interfaces, one for getting the data from the cache and one for the data store. These 2 need not be the same, as a cache would mostly work on a key value pair combination and the one for the data store would need to have the same methods as supported by the repository (You could have them as the same too in case required). As for the repository, it depends on these 2 interface implementation (which we call strategies), to get the data - CacheStrategy or DataStoreStrategy.</p>
+
+<figure class='code'><figcaption><span>Cache Strategy Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">ICacheStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IIdentifiable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="nf">InsertOrUpdate</span><span class="p">(</span><span class="n">T</span> <span class="n">entity</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">T</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">string</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="nf">Invalidate</span><span class="p">(</span><span class="kt">string</span> <span class="n">id</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>DataStore Strategy Interface</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IDataStoreStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IIdentifiable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We see that above, for the Cache Strategy interface I have added a set of methods that acts on the key and the value, the entity itself. For the DataStore strategy, we have the same methods coming from the IRepository interface so that we can translate them all into corresponding querying format of their storage and return the data.</p>
+
+<p>The Sql data store strategy implementation using Entity Framework would be like below, which will have a context provided to it, that it can use for performing the queries on sql database. Will see more on the context later below.(The interface implementations are omitted below to keep it simple). A cache strategy would also look something similar and would depend on the caching provider that you use.</p>
+
+<figure class='code'><figcaption><span>SqlDataStoreStrategy</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SqlDataStoreStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">IDataStoreStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">class</span><span class="p">,</span> <span class="n">IIdentifiable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">readonly</span> <span class="n">SqlDataStoreContext</span> <span class="n">dataContext</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">readonly</span> <span class="n">IDbSet</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">dbSet</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">SqlDataStoreStrategy</span><span class="p">(</span><span class="n">IDataStoreContext</span> <span class="n">dataContext</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// Since this is a specific implementation for Sql it does know about the existence of SqlDataStoreContext</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">dataContext</span> <span class="p">=</span> <span class="n">dataContext</span> <span class="k">as</span> <span class="n">SqlDataStoreContext</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">dbSet</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">dataContext</span><span class="p">.</span><span class="n">Set</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The Generic repository implementation will use these strategies to return the data. For example, a Get, it will first look the cache and then the data store.</p>
+
+<figure class='code'><figcaption><span>Generic Repository</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">GenericRepository</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">:</span> <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="n">IIdentifiable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="n">ICacheStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">cacheStrategy</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="n">IDataStoreStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">dataStoreStrategy</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">GenericRepository</span><span class="p">(</span><span class="n">ICacheStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">cacheStrategy</span><span class="p">,</span> <span class="n">IDataStoreStrategy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">dataStoreStrategy</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">cacheStrategy</span> <span class="p">=</span> <span class="n">cacheStrategy</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">dataStoreStrategy</span> <span class="p">=</span> <span class="n">dataStoreStrategy</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">T</span> <span class="nf">GetById</span><span class="p">(</span><span class="kt">string</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">item</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">cacheStrategy</span><span class="p">.</span><span class="n">Get</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">item</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">item</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">item</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">dataStoreStrategy</span><span class="p">.</span><span class="n">GetById</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">cacheStrategy</span><span class="p">.</span><span class="n">InsertOrUpdate</span><span class="p">(</span><span class="n">item</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">item</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Creating Specific Repositories</h3>
+
+<p>There might be cases where we want to query on specific fields or combination of fields or do something that is specific for that repository. In these cases you can extend on to the repository methods. You would need to add a couple of classes for the new specific repository.</p>
+
+<ol>
+<li>Create a new repository interface and implement it.</li>
+<li>Create a new data store strategy interface which implements from the new repository interface and the base data store strategy interface and implement it.</li>
+<li>In case cache strategy needs an update update its interfaces too as like step 2</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IArticleRepository</span> <span class="p">:</span> <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;</span> <span class="n">GetAllArticlesByCategory</span><span class="p">(</span><span class="kt">string</span> <span class="n">categoryName</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IArticleDataStoreStrategy</span> <span class="p">:</span> <span class="n">IDataStoreStrategy</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;,</span> <span class="n">IArticleRepository</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ArticleSqlDataStoreStrategy</span> <span class="p">:</span> <span class="n">SqlDataStoreStrategy</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;,</span> <span class="n">IArticleDataStoreStrategy</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">ArticleSqlDataStoreStrategy</span><span class="p">(</span><span class="n">IDataStoreContext</span> <span class="n">dataStoreContext</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span><span class="p">(</span><span class="n">dataStoreContext</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;</span> <span class="n">GetAllArticlesByCategory</span><span class="p">(</span><span class="kt">string</span> <span class="n">categoryName</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// In case this is to return a large set of items then you can create a paged response and update the</span>
+</span><span class='line'>        <span class="c1">// input also to take in the page number and number of articles in one page</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">dbSet</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Category</span> <span class="p">==</span> <span class="n">categoryName</span><span class="p">).</span><span class="n">ToList</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Supporting Unit Of Work</h3>
+
+<p>There might be cases where we need to update against multiple repositories and have them all saved in one single transaction. <a href="http://martinfowler.com/eaaCatalog/unitOfWork.html">UnitOfWork</a> (UOW), is the common pattern that is used for this scenario, by passing around a context object that knows how to commit/save after a set of activities. For this support we have added the below set of interfaces.(Currently in this sample only the data store is supporting the transactions)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IUnitOfWork</span> <span class="p">:</span> <span class="n">IDisposable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;</span> <span class="n">BlogRepository</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">IArticleRepository</span> <span class="n">ArticleRepository</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">SaveChangesAsync</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">UnitOfWork</span> <span class="p">:</span> <span class="n">IUnitOfWork</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">IDataStoreContext</span> <span class="n">dataStoreContext</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="k">readonly</span> <span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IRepository</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;</span> <span class="n">BlogRepository</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="c1">// TODO : Use unity containers to generate the UnitOfwork so that to make sure that</span>
+</span><span class='line'>                <span class="c1">// datacontext is a single instance in that instance of uow</span>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="n">GenericRepository</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;(</span>
+</span><span class='line'>                    <span class="k">this</span><span class="p">.</span><span class="n">container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">ICacheStrategy</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;&gt;(),</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="n">SqlDataStoreStrategy</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">.</span><span class="n">dataStoreContext</span><span class="p">));</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IArticleRepository</span> <span class="n">ArticleRepository</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>               <span class="c1">// TODO : Use unity containers to generate the UnitOfwork so that to make sure that</span>
+</span><span class='line'>                <span class="c1">// datacontext is a single instance in that instance of uow</span>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="nf">ArticleRepository</span><span class="p">(</span>
+</span><span class='line'>                    <span class="k">this</span><span class="p">.</span><span class="n">container</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">ICacheStrategy</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;&gt;(),</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="nf">ArticleSqlDataStoreStrategy</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">dataStoreContext</span><span class="p">));</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">UnitOfWork</span><span class="p">(</span><span class="n">IDataStoreContext</span> <span class="n">dataStoreContext</span><span class="p">,</span> <span class="n">IUnityContainer</span> <span class="n">container</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">SaveChangesAsync</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">dataStoreContext</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The DataStoreContext is what maintains the in memory representation of the changes that we make across the repositories and finally saves it to the data store on <em>SaveChangesAsync</em>. For Sql data store we make use of the DbContext provided by Entity Framework, which already implements the same method from our interface. If you see the above sql strategy code, this is the data context that we use to perform queries and updates.</p>
+
+<figure class='code'><figcaption><span>IDataStoreContext</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IDataStoreContext</span> <span class="p">:</span> <span class="n">IDisposable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">SaveChangesAsync</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SqlDataStoreContext</span> <span class="p">:</span> <span class="n">DbContext</span><span class="p">,</span> <span class="n">IDataStoreContext</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DbSet</span><span class="p">&lt;</span><span class="n">Blog</span><span class="p">&gt;</span> <span class="n">Blogs</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DbSet</span><span class="p">&lt;</span><span class="n">Article</span><span class="p">&gt;</span> <span class="n">Articles</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a client to perform operation, it can get the repositories through the unit of work as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">article</span> <span class="p">=</span> <span class="n">unitOfWork</span><span class="p">.</span><span class="n">ArticleRepository</span><span class="p">.</span><span class="n">GetById</span><span class="p">(</span><span class="s">&quot;1&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">article</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;New Name&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="n">unitOfWork</span><span class="p">.</span><span class="n">SaveChangesAsync</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>IQueryable on your Repositories</h3>
+
+<p>In the repository methods we return an IEnumerable and not an IQueryable, as we want all my querying logics to be contained inside the strategies that implement the real querying. We definitely do not want the querying logic to be there all across the client code accessing the repository, as that would make maintaining the code difficult. Also each of the strategies would have their own ways of querying and should be well abstracted by them. Otherwise all we end up having would be a <a href="http://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a></p>
+
+<p>By separating out the cache and data store strategies we have made it possible to change the providers for either of them without affecting any of the repository code. We could switch out the sql data store strategy and have a oracle strategy or a mongodb strategy and have that implement the specifics on how to retrieve the the data that we want. We would also have a specific IDataStoreContext implementation for the corresponding new data store.</p>
+
+<p>You can find the code structure for this <a href="https://github.com/rahulpnath/Blog/tree/master/RepositoryPattern">here</a>. It only provides the interfaces and some mock implementations and does not connect to any data stores or cache providers. Hope this helps in architecting the repository pattern when dealing with multiple strategies to save. What are your thoughts on this?
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-11-10T01:38:56+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 10<sup>th</sup>, 2014</time>
         
 
@@ -1395,130 +1808,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-04-17T23:56:17+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/nuget/'>nuget</a>, <a class='category' href='/blog/category/open-source/'>open source</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-image-caching-library-jetimageloader/" itemprop="url">Windows Phone Series: Image Caching Library - JetImageLoader</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently on a client project, I had a requirement to cache images locally on the phone and then load it from there from subsequent requests. Initially I had plans for custom implementing this using sqlite and custom code. While googling for this, I came across an awesome custom library that solved my problem with just a few lines of code – <a href="https://github.com/artem-zinnatullin/jet-image-loader">JetImageLoader</a> by <a href="https://github.com/artem-zinnatullin">Artem</a>. This is available via nuget, making it easy to install</p>
-
-<p><a href="http://www.nuget.org/packages/WP-JetImagLoader/0.8.5"><img src="/images/WP-JetImagLoader.png" alt="WP-JetImagLoader" /></a></p>
-
-<p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}&quot;</span><span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderImplementation</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;</span> <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WeakMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;();</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseStorageCache</span> <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LimitedStorageCache</span><span class="p">(</span><span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">(),</span> <span class="s">&quot;\\image_cache&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">SHA1CacheFileNameGenerator</span><span class="p">(),</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">10</span><span class="p">);&lt;/</span><span class="n">p</span><span class="p">&gt;</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">JetImageLoaderConfig</span><span class="p">.</span><span class="n">Builder</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">IsLogEnabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
-</span><span class='line'>            <span class="n">CacheMode</span> <span class="p">=</span> <span class="n">CacheMode</span><span class="p">.</span><span class="n">MemoryAndStorageCache</span><span class="p">,</span>
-</span><span class='line'>            <span class="n">DownloaderImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpWebRequestDownloader</span><span class="p">(),</span>
-</span><span class='line'>            <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="n">MemoryCacheImpl</span><span class="p">,</span>
-</span><span class='line'>            <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="n">StorageCacheImpl</span>
-</span><span class='line'>        <span class="p">}.</span><span class="n">Build</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderConverter</span> <span class="p">:</span> <span class="n">BaseJetImageLoaderConverter</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">JetImageLoaderImplementation</span><span class="p">.</span><span class="n">GetJetImageLoaderConfig</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">object</span> <span class="nf">Convert</span><span class="p">(</span><span class="kt">object</span> <span class="k">value</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Type</span> <span class="n">targetType</span><span class="p">,</span> <span class="kt">object</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Globalization</span><span class="p">.</span><span class="n">CultureInfo</span> <span class="n">culture</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="k">value</span><span class="p">,</span> <span class="n">targetType</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">culture</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
-
-<p>The nuget is for Windows 8 library, but there is also a version for <a href="https://github.com/artem-zinnatullin/jet-image-loader/tree/master/JetImageLoader.Wp7">WP7.1 avaialble on Github</a> (which apparently is a pull request from me, indeed my very first on Github that got merged)</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1542,6 +1831,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/paint-dot-net/">Tip of the Week: Paint.net - A Layman&#8217;s Photoshop</a>
+    
     <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
     
     <a class="list-group-item " href="/blog/pocket-offline-reading-made-easy/">Tip of the Week: Pocket - Don&#8217;t Miss Out on the Articles That You Want to Read Later</a>
@@ -1549,8 +1840,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/start_new_habits_that_stick/">How to Start New Habits That Stick</a>
     
     <a class="list-group-item " href="/blog/feedly-one-stop-reading-place/">Tip of the Week: Feedly - One Stop Reading Place</a>
-    
-    <a class="list-group-item " href="/blog/password-manager-get-one-if-you-havent-already/">Tip of the Week: Password Manager - Get One If you Haven&#8217;t Already</a>
     
   </div>
 </section>
