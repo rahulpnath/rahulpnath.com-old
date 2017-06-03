@@ -7,7 +7,7 @@ categories:
 - Nodejs
 - Javascript
 tags: 
-date: 2017-06-07
+date: 2017-06-12
 completedDate: 2017-05-16 05:42:34 +1000
 keywords: 
 description: Connecting to Azure Key Vault from Node.js
