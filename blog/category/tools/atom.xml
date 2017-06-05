@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tools | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tools/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-06-04T00:01:32+00:00</updated>
+  <updated>2017-06-05T00:01:20+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,37 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up Git Credential Manager for Windows with Cmder]]></title>
+    <link href="http://rahulpnath.com/blog/setting-up-git-credential-manager-for-windows-with-cmder/"/>
+    <updated>2017-06-05T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/setting-up-git-credential-manager-for-windows-with-cmder</id>
+    <content type="html"><![CDATA[<p>If you are wondering what Git Credential Manager (GCM) is, then possibly you see the below screen very often when you are interacting with your git repositories.</p>
+
+<p><img src="/images/git_gcm.png" alt="Enter your Credentials, git" class="center" /></p>
+
+<p>On Windows, you can use <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows">Git Credential Manager for Windows</a> which integrates with git and provides the credentials whenever required. GCM removes the need for you to enter the credentials when using the git repositories.</p>
+
+<p><a href="http://www.rahulpnath.com/blog/cmder-portable-console-emulator-for-windows/">Cmder</a> is a portable console emulator for Windows. I prefer to use git from the command line and find the cmder experience good. Check out the <a href="https://www.youtube.com/watch?v=fpxx8hlNTzc">youtube video</a> for more details.</p>
+
+<p>To set up GCM with Cmder download the <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows/releases">latest release of GCM</a> in the zip format. Unzip the package under the <em>vendor</em> folder in cmder. Run the <em>install.cmd</em> from within the unzipped GCM package.</p>
+
+<p><img src="/images/git_gcm_location.png" alt="Vendor folder under cmder" class="center" /></p>
+
+<p>Once you run the install script, the git config will be updated to use the credential manager. Running <em>git config &ndash;list</em> will show the <em>credential.helper</em> set to <em>manager</em>. If this is not automatically set you can set it manually by running</p>
+
+<pre><code class="bash Set GCM as git credential manager">git config --global credential.helper manager
+</code></pre>
+
+<p>For GUI prompts for entering credentials use</p>
+
+<pre><code class="bash Enable Gui prompt for passwords">git config --global credential.modalprompt true
+</code></pre>
+
+<p>Hope that saves you some time if you were entering the credentials every time you push/pull from a git repository.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Todoist Template Transformer - Transform Tasks to 'X' Days From Now]]></title>
@@ -230,93 +261,6 @@ artifacts:
 </code></pre>
 
 <p>From now on any tagged commit is pushed into the master branch on the repository it will trigger a release into Chocolatey. I have not tested this yet as there were no updates to the tool. I might trigger a test release sometime soon to see if it all works well end to end. Since with this automated deployment, we no longer use the zip URL to download the package in Chocolatey. The exe gets bundled along with the package. There might be some extra build scripts required to support the upgrade scenario for Chocolatey. <strikethrough>I will update the post after the first deployment using this new pipeline!</strikethrough>. From version <a href="https://chocolatey.org/packages/asmspy/1.2.0">1.2.0</a> it uses this new pipeline</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Web Application Occasionally Throwing 'Could not Load File or Assembly or one of its Dependencies' Exception]]></title>
-    <link href="http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/"/>
-    <updated>2016-07-01T00:45:05+00:00</updated>
-    <id>http://rahulpnath.com/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies</id>
-    <content type="html"><![CDATA[<p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
-
-<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
-
-<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
-
-<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
-
-<h3>Using AsmSpy to find conflicting assemblies</h3>
-
-<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
-
-<pre><code class="text">asmspy WebApplication1\bin\ nonsystem
-
-Detailing only conflicting assembly references.
-Reference: Newtonsoft.Json
-   7.0.0.0 by SharedLibrary
-   6.0.0.0 by WebApplication1
-   4.5.0.0 by WebGrease
-</code></pre>
-
-<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
-
-<h3>Using MsBuild Structured Log to find conflicting writes</h3>
-
-<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
-
-<p><img src="/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
-
-<p><img class="left" src="/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
-
-<h3>Building Web application in Visual Studio</h3>
-
-<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
-
-<p><figure>
-    <img src="/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
-    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
-</figure></p>
-
-<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
-
-<p>I confirmed with other team members on the repro steps for this issue</p>
-
-<ul>
-<li>Get the latest code and do a full rebuild from VS</li>
-<li>Launch Web app works fine</li>
-<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
-<li>Launch Web app throws the error!</li>
-</ul>
-
-
-<p>It was a consistent repro with the above steps.</p>
-
-<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
-
-<h3>The Sample Application</h3>
-
-<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
-
-<ul>
-<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
-<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
-<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
-</ul>
-
-
-<pre><code class="powershell ">Install-Package Newtonsoft.Json -ProjectName WebApplication1 -Version 6.0.1
-Install-Package Newtonsoft.Json -ProjectName SharedLibrary -Version 7.0.1
-Install-Package Newtonsoft.Json -ProjectName WpfApplication1 -Version 8.0.3
-</code></pre>
-
-<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
-
-<p>Hope this helps in case you come across a similar issue!</p>
 ]]></content>
   </entry>
   
