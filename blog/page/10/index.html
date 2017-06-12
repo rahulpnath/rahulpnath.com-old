@@ -163,6 +163,192 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-04T12:00:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 4<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/clal/'>clal</a>, <a class='category' href='/blog/category/tools/'>tools</a>, <a class='category' href='/blog/category/wpf/'>wpf</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/" itemprop="url">Automated ClickOnce Deployment of a WPF Application using Appveyor</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>This post covers the current deployment setup of <a href="https://github.com/rahulpnath/clal">CLAL</a>(Command Line Application Launcher), a desktop application, that I am building. Since it is a WPF application, it supports <a href="https://msdn.microsoft.com/en-us/library/t71a733d.aspx">ClickOnce Deployment</a> that enables to create self-updating applications which can install with minimum interaction from the user. ClickOnce supports different <a href="https://msdn.microsoft.com/en-us/library/71baz9ah.aspx">deployment strategy</a> of which distributing it through the web is quite popular as it makes software distribution easier. It works well when the software size is not large so that application installation is faster. For CLAL, there are two deployments served from Azure: <a href="http://www.rahulpnath.com/clal/Releases/commandlineapplicationlauncherui.application">Latest stable build</a> and the <a href="http://www.rahulpnath.com/clal/Latest/commandlineapplicationlauncherui.application">Current build</a>.</p>
+
+<p>I did not want to do manually, the entire deployment process of building the solution, running all the tests, creating the ClickOnce package and pushing it up to Azure, I decided to automate this. Since <a href="https://www.appveyor.com/">Appveyor</a>, a hosted distributed continuous integration service used to build and test projects, is free for open-source projects and integrates very well with application developed on the Windows platform.</p>
+
+<h3>Setting up Appveyor project</h3>
+
+<p>Setting up Appveyor to read from Github is very easy. Once you authorize access to Github, Appveyor lists all the projects that you have in your Github account. After selecting a project, it creates a <a href="https://ci.appveyor.com/project/rahulpnath/clal">&lsquo;build project&rsquo;</a> for that in Appveyor, where you can control all build related activities. Appveyor automatically pulls in your latest source code from the repository, when a build triggers. Build configurations can be specified using a <a href="https://www.appveyor.com/docs/appveyor-yml">configuration file</a> (appveyor.yml) living at the repository root or using the user interface. For CLAL I exclusively use the configuration from the file and the latest version is available <a href="https://github.com/rahulpnath/clal/blob/master/appveyor.yml">here</a>.
+Primarily there are two branches (<em>master</em> and <em>development</em>) on the git repository which builds as the latest stable and current build. Since these two deployments have few attributes different (like the version numbers, deployment URL, update URL), I use <a href="https://www.appveyor.com/docs/branches#conditional-build-configuration">conditional build configuration</a> to have separate configuration properties for the branches.</p>
+
+<p>The primary things that vary for the different deployments are a few ClickOnce publishing properties, the version number, the build configurations - release/debug and the deployment locations. We will see in detail below how we handle this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">branches</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">only</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.0</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Release</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span><span class='line'>  <span class="p-Indicator">-</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">test</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">assemblies</span><span class="p-Indicator">:</span> <span class="s">&#39;**\*.*Test.dll&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">configuration</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Debug</span>
+</span><span class='line'>  <span class="c1"># Rest of the configuration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>ClickOnce Publish Profile</h3>
+
+<p>To create the publish profile, I used the Visual Studio Publish option on the project, which generates all the <a href="https://msdn.microsoft.com/en-us/library/ms165431.aspx#Anchor_2">Publishing Properties</a>. Most of these values remain the same across all deployment version (release and development). For the ones that are unique to the deployment version like the PublishUrl, UpdateUrl, and ApplicationVersion I removed them from <em>csproj</em> file. The deployment version specific properties is set in the Appveyor configuration file and used by the build script to set the right values.</p>
+
+<p><img class="center" alt="ClickOnce publish settings" src="/images/clickonce_publishsetting.png" /></p>
+
+<p>In the Appveyor configuration, the <a href="https://www.appveyor.com/docs/build-configuration#script-blocks-in-build-configuration">before_build</a> step these values are set as environment variables, which gets <a href="http://help.appveyor.com/discussions/questions/980-custom-msbuild-property">automatically passed into the MSBuild as Properties</a>. The certificate required for signing ClickOnce manifest gets installed during this step.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">before_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">nuget restore src\CommandLineApplicationLauncher.sln</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="s">&quot;$env:ApplicationVersion=$env:APPVEYOR_BUILD_VERSION;$env:UpdateUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;</span>
+</span><span class='line'>    <span class="s">$env:PublishUrl=&#39;http://www.rahulpnath.com/clal/Releases/&#39;;$mypwd</span><span class="nv"> </span><span class="s">=</span><span class="nv"> </span><span class="s">ConvertTo-SecureString</span><span class="nv"> </span><span class="s">-String</span><span class="nv"> </span><span class="s">\&quot;/(Z&amp;rbrFG){p/6W@8xZvg\&quot;</span><span class="nv"> </span><span class="s">-Force</span>
+</span><span class='line'>    <span class="s">–AsPlainText\nImport-PfxCertificate</span><span class="nv"> </span><span class="s">–FilePath</span>
+</span><span class='line'>    <span class="s">C:\\projects\\clal\\src\\CommandLineApplicationLauncherUI\\CommandLineApplicationLauncherUI_TemporaryKey.pfx</span><span class="nv"> </span><span class="s">cert:\\currentuser\\my</span><span class="nv"> </span><span class="s">-Password</span><span class="nv"> </span><span class="s">$mypwd&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Versioning</h3>
+
+<p>I am using <a href="http://semver.org/">semantic versioning</a> and wanted to control the version numbers for the releases explicitly. Since ClickOnce supports only four digit version numbers, the last one always defaults to zero in the release version. For Current build (development) deployments, the fourth place is used to maintain the build number, so that I can support different build version in development. I use a <a href="https://www.appveyor.com/docs/build-configuration#build-versioning">sequential number generated by appveyor</a> and set in the configuration file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">0.2.2.{build}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For a  release I run the below script on the master branch, which updates the version number across the source code files and then push the changes to Github, which triggers a build to the updated version. Then I merge back the master into development so that the next build on development branch would be a build number off the latest released version. The script uses <a href="https://github.com/ploeh/ZeroToNine">ZeroToNine</a> for updating AssemblyInfo files and updates the version numbers in the Appveyor configuration files.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">param</span><span class="p">([</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">=</span><span class="nv">$true</span><span class="p">)]</span><span class="no">[string]</span><span class="nv">$version</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update All AssemblyInfo file versions</span>
+</span><span class='line'><span class="nv">$z29</span> <span class="p">=</span> <span class="s2">&quot;./ExternalTools/ZeroToNine/Zero29.exe&quot;</span>
+</span><span class='line'><span class="p">&amp;</span><span class="nv">$z29</span> <span class="n">-a</span> <span class="nv">$version</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Update Appveyor.yml</span>
+</span><span class='line'><span class="p">((</span><span class="nb">Get-Content</span> <span class="p">./</span><span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span> <span class="p">|</span> <span class="nb">Out-String</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.0&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.0&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">-replace</span> <span class="s2">&quot;version: .*\.{build}&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;version: &quot;</span> <span class="p">+</span> <span class="nv">$version</span> <span class="p">+</span> <span class="s2">&quot;.{build}&quot;</span><span class="p">)).</span><span class="n">Trim</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">`r`n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">|</span> <span class="nb">Set-Content</span> <span class="n">-NoNewline</span> <span class="n">Appveyor</span><span class="p">.</span><span class="n">yml</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Artifacts and Deployment</h3>
+
+<p>The csproj file of the WPF application has <em>Publish</em> also as a default target, which results in a publish everytime the project is build. By default, the publish directory is in the bin folder under a subdirectory <em>app.publish</em>. Appveyor allows specifying folders as <a href="https://www.appveyor.com/docs/packaging-artifacts">artifacts</a>, which marks all the files under them as artifacts. The below script is for the latest stable build and marks it with a name &lsquo;releaseBuild&rsquo;.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'> <span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="p-Indicator">-</span> <span class="l-Scalar-Plain">ps</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">$root = Resolve-Path .\src\CommandLineApplicationLauncherUI\bin\Release\app.publish;</span>
+</span><span class='line'>    <span class="-Error"> </span><span class="p-Indicator">[</span><span class="nv">IO.Directory</span><span class="p-Indicator">]</span><span class="l-Scalar-Plain">::GetFiles($root.Path, &#39;*.*&#39;, &#39;AllDirectories&#39;) | % { Push-AppveyorArtifact $_ -FileName $_.Substring($root.Path.Length + 1) -DeploymentName releaseBuild }</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Appveyor allows to <a href="https://www.appveyor.com/docs/deployment">deploy using multiple providers</a> and <a href="https://www.appveyor.com/docs/deployment/ftp">FTP</a> is one of them. I use this to deploy the artifcats generated to an Azure FTP from which I serve the installer. This is currently hosted on my blog domain. The password for the FTP location is <a href="https://ci.appveyor.com/tools/encrypt">encrypted using the Appveyor tool</a>. The below configuration pushes all the artifacts with the name &lsquo;releaseBuild&rsquo; to the FTP folder.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">FTP</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">protocol</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">ftps</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">waws-prod-sg1-003.ftp.azurewebsites.windows.net</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">rahulpnath\rahulpnath</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span>
+</span><span class='line'>      <span class="l-Scalar-Plain">secure</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">YOmcTqGUyjYpJOKAnOAfO30hb59cCBTy+Otlj+qrcAo=</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">folder</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">/site/wwwroot/clal/Releases</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">artifact</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">releaseBuild</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With each push into the Github repository now we have Appveyor listening to it, pulling the latest source code, installing the code signing certificate for ClickOnce, building and running all tests in the project, publish the ClickOnce application, packaging and deploying this to the Azure FTP. There is a completely automated deployment pipeline and makes it easy to publish updates to <a href="https://github.com/rahulpnath/clal">CLAL</a>!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-01T11:57:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 1<sup>st</sup>, 2016</time>
         
 
@@ -1434,73 +1620,6 @@ rd</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-10T05:44:19+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 10<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tools/'>tools</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/tools-that-I-use/" itemprop="url">Tools that I use</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Tools are an indispensable part of our daily life and we all have our own likes and dislikes for them. Here are a list that I use (almost daily), most of them influenced from the <a href="http://www.hanselman.com/tools">greater list</a>. Having a great keyboard support is something that I look out for, especially for those that I interact with more frequently (IDE&rsquo;s or code editors). Couple of days back, while having a chat with my friend <a href="https://twitter.com/zpbappi">Bappi</a> some of these came up and he found a few interesting, so though of sharing the list over here.</p>
-
-<ul>
-<li><p><strong><a href="https://www.visualstudio.com/">Visual Studio</a></strong>: This one is almost daily and is one of them that gets on along with my laptop. For a Microsoft stack developer I do not think there are much alternatives(<a href="http://www.microsoft.com/web/webmatrix/">WebMatrix</a>, <a href="https://code.visualstudio.com/">Visual Studio Code</a>) if you are looking for full fledged development. Personally I am on VS2015 now(since I am lucky enough to have a free MSDN subscription), but being on any of the version is equally good.</p></li>
-<li><p><strong><a href="https://www.onenote.com/">One Note</a></strong>: For note taking I prefer OneNote as it is easy to manage and organize and is available on all platforms. Collaborating with multiple users is also so easy and comes loaded with features making it suitable for all kinds of scenarios.</p></li>
-<li><p><strong><a href="https://onedrive.live.com/about/en-in/">OneDrive</a>/<a href="https://db.tt/bvYw3pL6">Dropbox</a></strong>: I use a mix of OneDrive and Dropbox for backing up my data and photos and find the experience for both good on all devices.</p></li>
-<li><p><strong><a href="http://cmder.net/">Cmder</a></strong>: Looking out for a cool console in Windows, then this is the one! Loads of features and awesome color scheme makes it really one of the best consoles. Ctrl + C for copy and Ctrl + V works nicely on this(and you do not need to be on Windows 10 for this) and that alone would drive me to try out this one.</p></li>
-<li><p><strike><strong><a href="http://www.sublimetext.com/">Sublime Text</a></strong>: As the tag-line says, this is &lsquo;<em>The text editor that you would fall in love with</em>&rsquo;. I use this primarily for all my writing (except for markdown formats, for which I use <a href="http://markdownpad.com/">MarkdownPad</a>), quick edits, formatting and even for some coding when I do not want the full power of Visual Studio. There are loads of plugins available and a good community of users backing it.</strike>
-<strong><a href="https://code.visualstudio.com/">Visual Studio Code</a></strong>: The experience on VS Code has dramatically improved from the day that I originally wrote the post. Code is now my one stop editor and I use it for my blogging too.</p></li>
-<li><p><strong><a href="https://todoist.com/">Todoist</a></strong>: I have tried out a lot of tools and finally ended up with the premium version of Todoist for task management. Its got everything right and highly flexible to organize your tasks and has full fledged apps on all platforms, browsers and even mail integration. Its almost easy to access Todoist from any context that I am working on and syncs across all devices seamlessly. Its really worth paying for this one, if not you could use the free version with some reduced features.</p></li>
-<li><p><strong><a href="http://www.autohotkey.com/">AHK</a></strong>: This tiny little tool has innumerous uses and capabilities, but I just use very few of it to automate certain mundane tasks, store a list of <a href="http://ahkscript.org/docs/Hotstrings.htm">hotstring</a> and application <a href="http://ahkscript.org/docs/Hotkeys.htm">shortcut keys</a>. I have all my scripts synced across multiple PC&rsquo;s and have added a task in <a href="http://windows.microsoft.com/en-au/windows/schedule-task#1TC=windows-7">Task Scheduler</a> to run the scripts with highest privileges every time I log on.</p></li>
-<li><p><strong><a href="https://agilebits.com/onepassword">1Password</a></strong>: It&rsquo;s a password manager and is available on all platforms and quite easy to get started with. I had been using the browser capabilities to store and sync passwords before which was working fine. But password managers solve a totally different problem of generating passwords (though they also sync generated passwords without which it would be more difficult to use them given that we have multiple devices these days) as a <a href="http://www.troyhunt.com/2011/03/only-secure-password-is-one-you-cant.html">secure password is one that you cannon remember</a>. 1Password has a one time fee for license, can shared by up to six family members living in the same household, has various synchronization options and mainly gives you the control where all the data is stored.</p></li>
-<li><p><strong><a href="http://www.noisli.com/">Noisli</a>,<a href="https://soundcloud.com/">SoundCloud</a></strong>: Like to here music or have some background noise then these are for you. Noisli is a background noise generator, and lets you create different different combinations for your taste. SoundCloud has a lot of music tracks in them and it is free for online streaming.</p></li>
-<li><p><strong><a href="http://www.telerik.com/fiddler">Fiddler</a></strong>: The free web debugging proxy for any browser, system or platform, this one is really an indispensable tool if you are doing any kind of web development.</p></li>
-<li><p><strong><a href="https://feedly.com/">Feedly</a>,<a href="https://getpocket.com/a/">Pocket</a></strong>: Feedly is an RSS reader and has got quite a good UI and syncs across all devices and helps me keep all the reading list in one place. If you want to have some articles to read while offline then Pocket is for you. Pocket downloads the article while online onto devices and keeps it available for reading. I have been experimenting (for a little over a month) to go offline on mobile and use this for my offline reading if I don&rsquo;t have the Kindle.(The experiment is going pretty good if not for a very few times I had to turn connectivity on for finding bus routes and timings.)</p></li>
-<li><p><strong><a href="http://www.scootersoftware.com/">Beyond Compare</a></strong>: Really its &lsquo;beyond&rsquo; just comparing files and is really useful for comparing and merging files. I use the pro version and really recommend it. Integrates nicely with Visual Studio and other IDE&rsquo;s and also provides context menu&rsquo;s on file explorer.</p></li>
-<li><p><del>Resharper</del>: I had been using this on and off and realized that mostly I was using only the &lsquo;navigate to&rsquo; feature and decided on to start using the in built features of Visual Studio. <a href="https://twitter.com/ploeh">Mark Seemann</a> has quite an interesting <a href="http://blog.ploeh.dk/2013/02/04/BewareofProductivityTools/">article</a> on this and I couldn&rsquo;t agree any more. Resharper is also changing their licensing model going from a one time fee to a <a href="https://www.jetbrains.com/toolbox/">monthly fee</a>, which I don&rsquo;t personally prefer especially for a tool like R#.</p></li>
-</ul>
-
-
-<p>While there are some more, this is what I use most of the time. What tools help you at work. Do you have any better alternatives that I could try to replace something on this list.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1524,6 +1643,8 @@ rd</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-key-vault-from-node-dot-js/">Azure Key Vault From Node.js</a>
+    
     <a class="list-group-item " href="/blog/pnggauntlet-smash-pngs-for-faster-sites/">Tip of the Week: PNGGauntlet - Smash PNGs for Faster Sites</a>
     
     <a class="list-group-item " href="/blog/setting-up-git-credential-manager-for-windows-with-cmder/">Setting up Git Credential Manager for Windows with Cmder</a>
@@ -1531,8 +1652,6 @@ rd</p>
     <a class="list-group-item " href="/blog/tests-as-a-feedback-tool/">Use Tests As A Feedback Tool To Improve Code</a>
     
     <a class="list-group-item " href="/blog/paint-dot-net/">Tip of the Week: Paint.net - A Layman&#8217;s Photoshop</a>
-    
-    <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
     
   </div>
 </section>

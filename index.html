@@ -163,6 +163,259 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-06-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 12<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>, <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/nodejs/'>nodejs</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-from-node-dot-js/" itemprop="url">Azure Key Vault From Node.js</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img src="/images/nodejs_keyvault.png" alt="Azure Key Vault from Node js" class="center" /></p>
+
+<p>If you develop on Node.js, you can use the <a href="https://github.com/Azure/azure-sdk-for-node">Azure SDK for Node</a> that makes it easy to consume and manage Microsoft Azure Services. In this post let&rsquo;s explore how to use the node SDK to connect to Azure Key Vault and interact with the vault objects. If you are new to key vault check out my <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other posts here to get started</a>.</p>
+
+<p>The <a href="https://www.npmjs.com/package/azure-keyvault">azure-keyvault</a> npm (node package manager) package allows accessing keys, secrets, and certificates on Azure Key Vault. It required Node.js version 6.x.x or higher. You can get the <a href="https://nodejs.org/en/">latest Node.js version here</a>.</p>
+
+<blockquote><p><strong>Package Features</strong></p>
+
+<ul>
+<li><p><em>Manage keys: create, import, update, delete, backup, restore, list and get.</em></p></li>
+<li><p><em>Key operations: sign, verify, encrypt, decrypt, wrap, unwrap.</em></p></li>
+<li><p><em>Secret operations: set, get, update and list.</em></p></li>
+<li><p><em>Certificate operations: create, get, update, import, list, and manage contacts and issuers.</em></p></li>
+</ul>
+</blockquote>
+
+<p>It is easy to setup a new project and execute code using Node. The ease of setup is one of the things that I liked about node. To try out the Key Vault package, you can start fresh in a new folder and create a javascript file - <em>main.js</em> (you can name it anything you want).</p>
+
+<p>The following packages are <em>required</em> to connect to the vault and authenticate. The <em><a href="https://www.npmjs.com/package/azure-keyvault">azure-keyvault</a></em> package as we saw above provides capabilities to interact with the vault. The <a href="https://www.npmjs.com/package/adal-node"><em>adal-node</em></a> is the Windows Active Directory Authentication Library for Node. The package makes it easy to authenticate to AAD to access AAD protected web resources. Applications using key vault need to <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate using a token from an Azure AD Application</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kr">const</span> <span class="nx">KeyVault</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;azure-keyvault&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="kr">const</span> <span class="p">{</span> <span class="nx">AuthenticationContext</span> <span class="p">}</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s1">&#39;adal-node&#39;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Authenticate Using ClientId and Secret</strong></h4>
+
+<p>Create the Azure AD application and the Secret key as shown in <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">this post</a>. Grab the ClientId and Secret for authentication from the node application.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kr">const</span> <span class="nx">clientId</span> <span class="o">=</span> <span class="s2">&quot;CLIENT ID&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">const</span> <span class="nx">secret</span> <span class="o">=</span> <span class="s2">&quot;SECRET&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">secretAuthenticator</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">challenge</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AuthenticationContext</span><span class="p">(</span><span class="nx">challenge</span><span class="p">.</span><span class="nx">authorization</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">context</span><span class="p">.</span><span class="nx">acquireTokenWithClientCredentials</span><span class="p">(</span>
+</span><span class='line'>        <span class="nx">challenge</span><span class="p">.</span><span class="nx">resource</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">clientId</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">secret</span><span class="p">,</span>
+</span><span class='line'>        <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">tokenResponse</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kd">var</span> <span class="nx">authorizationValue</span> <span class="o">=</span> <span class="nx">tokenResponse</span><span class="p">.</span><span class="nx">tokenType</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nx">tokenResponse</span><span class="p">.</span><span class="nx">accessToken</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">authorizationValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To access the vault, we need to create an instance of the KeyVaultClient object which taken in a Credentials as shown below. The KeyVaultClient has different methods exposes to interact with keys, secrets, and certificates in the vault. For e.g. To retrieve a secret from the vault the <em>getSecret</em> method is used passing in the secret identifier.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kr">const</span> <span class="nx">secretUrl</span> <span class="o">=</span> <span class="s2">&quot;https://rahulkeyvault.vault.azure.net/secrets/ApiKey/b56396d7a46f4f848481de2e149ef069&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">credentials</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">KeyVault</span><span class="p">.</span><span class="nx">KeyVaultCredentials</span><span class="p">(</span><span class="nx">secretAuthenticator</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">KeyVault</span><span class="p">.</span><span class="nx">KeyVaultClient</span><span class="p">(</span><span class="nx">credentials</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">client</span><span class="p">.</span><span class="nx">getSecret</span><span class="p">(</span><span class="nx">secretUrl</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Authenticate Using ClientId and Certificate</strong></h4>
+
+<p>To authenticate using ClientId and Certificate the AuthenticationContext exposes a function <em>acquireTokenWithClientCertificate</em> which takes in the certificate (pem format) and the certificate thumbprint. If you already have a certificate go ahead and use that. If not create a new test certificate as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>makecert -sv mykey.pvk -n <span class="s2">&quot;cn=AD Test Vault Application&quot;</span> ADTestVaultApplication.cer -b 03/03/2017 -e 06/05/2018 -r
+</span><span class='line'>pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po <span class="nb">test</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Create a new AD application and set it to use certificate authentication. Assign the application permissions to access the key vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificateFilePath</span> <span class="p">=</span> <span class="s2">&quot;C:\certificates\ADTestVaultApplication.cer&quot;</span>
+</span><span class='line'><span class="nv">$certificate</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Security</span><span class="p">.</span><span class="n">Cryptography</span><span class="p">.</span><span class="n">X509Certificates</span><span class="p">.</span><span class="n">X509Certificate2</span>
+</span><span class='line'><span class="nv">$certificate</span><span class="p">.</span><span class="n">Import</span><span class="p">(</span><span class="nv">$certificateFilePath</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$rawCertificateData</span> <span class="p">=</span> <span class="nv">$certificate</span><span class="p">.</span><span class="n">GetRawCertData</span><span class="p">()</span>
+</span><span class='line'><span class="nv">$credential</span> <span class="p">=</span> <span class="no">[System.Convert]</span><span class="p">::</span><span class="n">ToBase64String</span><span class="p">(</span><span class="nv">$rawCertificateData</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$startDate</span><span class="p">=</span> <span class="no">[System.DateTime]</span><span class="p">::</span><span class="n">Now</span>
+</span><span class='line'><span class="nv">$endDate</span> <span class="p">=</span> <span class="nv">$startDate</span><span class="p">.</span><span class="n">AddYears</span><span class="p">(</span><span class="n">1</span><span class="p">)</span>
+</span><span class='line'><span class="nv">$adApplication</span> <span class="p">=</span> <span class="nb">New-AzureRmADApplication</span> <span class="n">-DisplayName</span> <span class="s2">&quot;CertAdApplication&quot;</span> <span class="n">-HomePage</span>  <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-IdentifierUris</span> <span class="s2">&quot;http://www.test.com&quot;</span> <span class="n">-CertValue</span> <span class="nv">$credential</span>  <span class="n">-StartDate</span> <span class="nv">$startDate</span> <span class="n">-EndDate</span> <span class="nv">$endDate</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$servicePrincipal</span> <span class="p">=</span> <span class="nb">New-AzureRmADServicePrincipal</span> <span class="n">-ApplicationId</span> <span class="nv">$adApplication</span><span class="p">.</span><span class="n">ApplicationId</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Set-AzureRmKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s1">&#39;RahulKeyVault&#39;</span> <span class="n">-ServicePrincipalName</span> <span class="nv">$servicePrincipal</span><span class="p">.</span><span class="n">ServicePrincipalNames</span><span class="p">[</span><span class="n">0</span><span class="p">]</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span> <span class="n">-PermissionToKeys</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To convert the pvk file into the pem format that is required by adal-node to authenticate with the AD application use the below command.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>openssl rsa -inform pvk -in mykey.pvk -outform pem -out mykey.pem
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the pem encoded certificate private key, we can authenticate with the vault as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">function</span> <span class="nx">getPrivateKey</span><span class="p">(</span><span class="nx">filename</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">privatePem</span> <span class="o">=</span> <span class="nx">fs</span><span class="p">.</span><span class="nx">readFileSync</span><span class="p">(</span><span class="nx">filename</span><span class="p">,</span> <span class="p">{</span> <span class="nx">encoding</span><span class="o">:</span> <span class="s1">&#39;utf8&#39;</span> <span class="p">});</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">privatePem</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">certificateAuthenticator</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">challenge</span><span class="p">,</span> <span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">context</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">AuthenticationContext</span><span class="p">(</span><span class="nx">challenge</span><span class="p">.</span><span class="nx">authorization</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">context</span><span class="p">.</span><span class="nx">acquireTokenWithClientCertificate</span><span class="p">(</span>
+</span><span class='line'>        <span class="nx">challenge</span><span class="p">.</span><span class="nx">resource</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">clientId</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">getPrivateKey</span><span class="p">(</span><span class="s2">&quot;mykey.pem&quot;</span><span class="p">),</span>
+</span><span class='line'>        <span class="s2">&quot;CERTIFICATE THUMBPRINT&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">tokenResponse</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kd">var</span> <span class="nx">authorizationValue</span> <span class="o">=</span> <span class="nx">tokenResponse</span><span class="p">.</span><span class="nx">tokenType</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="nx">tokenResponse</span><span class="p">.</span><span class="nx">accessToken</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nx">callback</span><span class="p">(</span><span class="kc">null</span><span class="p">,</span> <span class="nx">authorizationValue</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">)</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the <em>certificateAuthenticator</em> is the same as using the <em>secretAuthenticator</em>, by passing it to <em>KeyVaultCredentials</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">credentials</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">KeyVault</span><span class="p">.</span><span class="nx">KeyVaultCredentials</span><span class="p">(</span><span class="nx">certificateAuthenticator</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">client</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">KeyVault</span><span class="p">.</span><span class="nx">KeyVaultClient</span><span class="p">(</span><span class="nx">credentials</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">client</span><span class="p">.</span><span class="nx">getSecret</span><span class="p">(</span><span class="nx">secretUrl</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">result</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="k">throw</span> <span class="nx">err</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">result</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To run the application first run <em>npm install</em> to install all the required packages and then execute the js file using <em>node main.js</em>. It fetches the secret value from the key vault using the certificate or secret authenticator. Hope this helps you to get started with Azure Key Vault from Node.js.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-06-07T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 7<sup>th</sup>, 2017</time>
         
 
@@ -1197,104 +1450,6 @@
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 9<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/fsharp/'>fsharp</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tools/'>tools</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/todoist-template-transformer-transform-tasks-to-x-days-from-now/" itemprop="url">Todoist Template Transformer - Transform Tasks to &#8216;X&#8217; Days From Now</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img src="/images/todoist_templates.png" alt="Todoist Templates" class="center" /></p>
-
-<p><a href="https://blog.todoist.com/2015/11/19/new-way-to-create-todoist-templates/">Todoist Templates</a> is a simple way to create tasks for any of your recurring activities. Be it blogging, cooking, or any of your activities. With Todoist Templates, you can turn any project into a checklist that you can easily duplicate later. I have been using <a href="http://www.rahulpnath.com/blog/todoist-manage-your-todo-list/">Todoist</a> for a long time and find it useful to keep track of tasks (both personal and at work)</p>
-
-<h4><strong>Problem</strong></h4>
-
-<p>I <a href="http://www.rahulpnath.com/blog/experimenting-with-pomodoro-technique/">plan my tasks</a> for the upcoming week on Sunday morning. I pull in tasks for the upcoming week, and some of these tasks are template based. For e.g. for writing a blog post, I have the below template</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
-</span><span class='line'>task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Draft Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Refine Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
-</span><span class='line'>task,&quot;BlogTopic: Images, Proof Read and Publish&quot;,4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The dates on the template are relative to the day that you import the template in Todoist. So if I pull in the template on a Sunday, the tasks will start on Sunday. This is not something that I want; I want them to start on a Monday. Alternatively, I can update the template to start from tomorrow. Even in that case, I will always have to know the exact start day relative to the day that I intend to pull in. I usually plan for the tasks on a Sunday but still, like the flexibility to pull in tasks any day of the week.</p>
-
-<h3>Todoist Template Transformer</h3>
-
-<p>The Todoist Template Transformer takes in a date and template path and adjusts all tasks in the template to start relative to the passed in date. In the above example, if I want to blog on Wednesday, I will input the Wednesday date and the template file path. The first two tasks will start on Wednesday and the third and fourth on Thursday. Running the transformer on a Sunday (07-May-2017) with the next Wednesday (10-May-2017) below is the new template</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bat'><span class='line'>TodoistTemplateTransformer.exe -startDate <span class="s2">&quot;10-May-2017&quot;</span> -templateFile <span class="s2">&quot;Blog Template.csv&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
-</span><span class='line'>task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Draft Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Refine Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
-</span><span class='line'>task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
-</span><span class='line'>task,&quot;BlogTopic: Images, Proof Read and Publish&quot;,4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This utility is written in FSharp the <a href="https://github.com/rahulpnath/todoisttemplatetransformer">source code is available here</a> if you are interested. I am still in the initial stages of learning FSharp, so if you have any suggestions to improve the code, please raise a Pull Request or drop in a comment.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1318,6 +1473,8 @@
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-key-vault-from-node-dot-js/">Azure Key Vault From Node.js</a>
+    
     <a class="list-group-item " href="/blog/pnggauntlet-smash-pngs-for-faster-sites/">Tip of the Week: PNGGauntlet - Smash PNGs for Faster Sites</a>
     
     <a class="list-group-item " href="/blog/setting-up-git-credential-manager-for-windows-with-cmder/">Setting up Git Credential Manager for Windows with Cmder</a>
@@ -1325,8 +1482,6 @@
     <a class="list-group-item " href="/blog/tests-as-a-feedback-tool/">Use Tests As A Feedback Tool To Improve Code</a>
     
     <a class="list-group-item " href="/blog/paint-dot-net/">Tip of the Week: Paint.net - A Layman&#8217;s Photoshop</a>
-    
-    <a class="list-group-item " href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
     
   </div>
 </section>
