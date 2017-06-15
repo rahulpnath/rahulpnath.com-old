@@ -163,6 +163,138 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-11T05:45:31+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 11<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/protect-yourself-against-line-ending-issues-when-using-environment-dot-newline-to-split-text/" itemprop="url">Protect Yourself Against Line Ending Issues when Using Environment.Newline to Split Text</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p><em>In computing, a <a href="https://en.wikipedia.org/wiki/Newline">newline</a>, also known as a line ending, end of line (EOL), or line break, is a special character or sequence of characters signifying the end of a line of text and the start of a new line. The actual codes representing a newline vary across operating systems, which can be a problem when exchanging text files between systems with different newline representations.</em></p></blockquote>
+
+<p>I was using a Resource (resx) file to store large text of comma separated values (CSV). This key-value mapping represented the mapping of product codes between an old and new system. In code, I split this whole text using <a href="https://msdn.microsoft.com/en-us/library/system.environment.newline(v=vs.110).aspx">Environment.NewLine</a> and then by comma to generate the map, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">AllMappings</span> <span class="p">=</span> <span class="n">Resources</span><span class="p">.</span><span class="n">UsageMap</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="n">Environment</span><span class="p">.</span><span class="n">NewLine</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span><span class="p">[]</span> <span class="p">{</span> <span class="sc">&#39;,&#39;</span> <span class="p">}))</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">ToDictionary</span><span class="p">(</span><span class="n">item</span> <span class="p">=&gt;</span> <span class="n">item</span><span class="p">[</span><span class="m">0</span><span class="p">],</span> <span class="n">item</span> <span class="p">=&gt;</span> <span class="n">item</span><span class="p">[</span><span class="m">1</span><span class="p">]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It all worked fine on my machine and even on other team members machines. There was no reason to doubt this piece of code, until on the development environment we noticed the mapped value in the destination system always null.</p>
+
+<h3>Analyzing the Issue</h3>
+
+<p>Since in the destination system, all the other values were getting populated as expected, except for this mapping it was easy to narrow down to the class that returned the mapping value, to be the problematic one. Initially, I thought this was an issue with the resource file not getting bundled properly. I used <a href="https://www.jetbrains.com/decompiler/">dotPeek</a> to decompile the application and verified that resource file was getting bundled properly and had exactly the same text (visually) as expected.</p>
+
+<p><img src="/images/newline_dotpeek.png" alt ="Resource file disassembled in dotPeek" /></p>
+
+<p>I copied the resource file text from disassembled code in dotPeek into <a href="http://www.flos-freeware.ch/notepad2.html">Notepad2</a> (configured to show the line endings) and everything started falling into place. The resource text file from the build generated code ended with LF (\n), while the one on our development machines had CRLF (\r\n). All machines, including the build machines are running Windows and the expected value for <a href="https://msdn.microsoft.com/en-us/library/system.environment.newline(v=vs.110).aspx">Environemnt.Newline</a> is CRLF - <strong> A string containing &ldquo;\r\n&rdquo; for non-Unix platforms, or a string containing &ldquo;\n&rdquo; for Unix platforms.</strong></p>
+
+<figure>
+<img src="/images/newline_diff.png" alt ="Difference between build generated and development machine resource file" />
+<figcaption><em>Difference between build generated and development machine resource file</em></figcaption>
+</figure>
+
+
+<h3>Finding the Root Cause</h3>
+
+<p>We use git for our source control and <a href="https://help.github.com/articles/dealing-with-line-endings/">configured to use &lsquo;auto&rsquo; line endings</a> at the repository level. This ensures that the source code, when checked out, matches the line ending format of the machine. We use <a href="https://www.atlassian.com/software/bamboo">Bamboo</a> on our build servers running Windows. The checked out files on the build server had LF line endings, which in turn gets compiled into the assembly.</p>
+
+<p>The checkout step in Bamboo used the built in git plugin (JGit) and has certain limitations. It&rsquo;s recommended to use native git to use the full git features. JGit also has a known issue with <a href="https://jira.atlassian.com/plugins/servlet/mobile#issue/BAM-9591">line endings on a Windows machine</a> and checks out a file with LF endings. So whenever the source code was checked out, it replaced all line endings in the file with LF before compilation. So the resource file ended up having LF line endings in the assembly, and the code could no longer find Environment.Newline (\r\n) to split.</p>
+
+<h3>Possible Fixes</h3>
+
+<p>Two possible ways to fix this issue is</p>
+
+<ul>
+<li>Switch to using native git on the bamboo build process</li>
+<li>Use LF to split the text and trim any excess characters. This reduces dependency on line endings variations and settings between different machines only until we are on a different machine which has a different format.</li>
+</ul>
+
+
+<p>I chose to use LF to split the text and trim any additional characters, while also <a href="https://confluence.atlassian.com/bamboo/defining-a-new-executable-capability-289277164.html">updating Bamboo to use native git</a> for checkout.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">AllMappings</span> <span class="p">=</span> <span class="n">Resources</span><span class="p">.</span><span class="n">UsageMap</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span><span class="s">&quot;\n&quot;</span><span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">s</span> <span class="p">=&gt;</span> <span class="n">s</span><span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span><span class="p">[]</span> <span class="p">{</span> <span class="sc">&#39;,&#39;</span> <span class="p">}))</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">ToDictionary</span><span class="p">(</span><span class="n">item</span> <span class="p">=&gt;</span> <span class="n">item</span><span class="p">[</span><span class="m">0</span><span class="p">].</span><span class="n">Trim</span><span class="p">().</span><span class="n">ToUpper</span><span class="p">(),</span> <span class="n">item</span> <span class="p">=&gt;</span> <span class="n">item</span><span class="p">[</span><span class="m">1</span><span class="p">].</span><span class="n">Trim</span><span class="p">());</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Protecting Against Line Endings</h3>
+
+<p>The easiest and fastest way that this would have come to my notice was to have a unit test in place. This would ensure that the test fails on the build machine. A test like below will pass on my local but not on the build machine as UsageMap would not return any value for the destination system.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;MovieWeek&quot;, &quot;Weekly-Movie&quot;)]</span>
+</span><span class='line'><span class="na">[InlineData(&quot;Dell15&quot;, &quot;Laptop-Group3&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">SutReturnsExpected</span><span class="p">(</span><span class="kt">string</span> <span class="n">sourceSystemCode</span><span class="p">,</span> <span class="kt">string</span> <span class="n">expected</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UsageMap</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">GetDestinationCode</span><span class="p">(</span><span class="n">sourceSystemCode</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since there are different systems with different line endings and also applications with different line ending settings and issues of its own, there does not seem to be a &lsquo;one fix for all&rsquo; cases. The best I can think of in these cases is it protect us with such unit tests. It fails fast and brings it immediately to out notice. Have you ever had to deal with an issue with line endings and found better ways to handle them?</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-01T00:45:05+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 1<sup>st</sup>, 2016</time>
         
 
@@ -1701,120 +1833,6 @@ This could range from how to easily navigate the code base, scripts to do some c
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-26T12:21:21+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 26<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/checking-in-package-dependencies-into-source-control/" itemprop="url">Checking in Package Dependencies into Source Control</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This post looks into why we should include packages in the source control and not resolve it via configuration files at build time.</em></p>
-
-<p>Over the past few years, <a href="https://en.wikipedia.org/wiki/Package_manager">Package Managers</a> have gained an important role in the way software gets developed. There is an <a href="https://github.com/showcases/package-managers">increasing number of package managers</a> catering to different programming languages and areas of development, making the distribution of reusable libraries and plugins easy. The convention that&rsquo;s usually followed with these package dependencies is to exclude them from source control, and use a configuration file (<a href="https://docs.npmjs.com/files/package.json">package.json</a>, <a href="https://docs.nuget.org/consume/package-restore">packages.config</a>) to retrieve all the packages at build time. Even the <a href="https://github.com/github/gitignore">GitHub’s collection</a> of <a href="https://git-scm.com/docs/gitignore">.gitignore</a> file templates ignores the packages folders of various package managers.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'># NuGet Packages
-</span><span class='line'>*.nupkg
-</span><span class='line'># The packages folder can be ignored because of Package Restore
-</span><span class='line'>**/packages/*
-</span><span class='line'>...
-</span><span class='line'># Dependency directories
-</span><span class='line'>node_modules
-</span><span class='line'>jspm_packages
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<h3>Common Arguments for not Checking in Packages</h3>
-
-<p>Since checking in packages is not a common practice, let&rsquo;s first see some of the arguments for not doing this and how it compares to having them checked in.</p>
-
-<h4><strong>Storage</strong></h4>
-
-<p><em>Packages are something that can be resolved at runtime and keeping them excluded saves that extra space on the source control system.</em></p>
-
-<p>Yes, this might have been a good reason few years back, but these days this is not a good reason as storage has become really cheap. Moreover popular source control systems charge by the <a href="https://github.com/pricing/plans">number of repositories</a> and not by the space it occupies (although it has <a href="https://help.github.com/articles/what-is-my-disk-quota/">limits</a> on it).</p>
-
-<h4><strong>Time</strong></h4>
-
-<p><em>The clone is faster when you do not have packages in the source control repository as opposed to having them.</em></p>
-
-<p>But for the project to build we need the packages restored first. So the time is either spent in the clone or in the restore. But if the packages are included in the git clone then you can immediately start working on the project after a clone and do not need any internet connectivity to make the project build. This is also of advantage if you want to run a &lsquo;<a href="https://git-scm.com/docs/git-clean">git clean</a>&rsquo; - which cleans the working tree by recursively removing files that are not under version control. With packages not under the source control, you have to restore them every time you run it - This is not a problem if you have internet connectivity, but will block your work if you do it when you don&rsquo;t.</p>
-
-<blockquote><p><em>Without checking in dependent packages, you can&rsquo;t git clone and get on a flight nor can you git clean while on a <a href="https://en.wikipedia.org/wiki/Airplane_mode">flight</a></em></p></blockquote>
-
-<p>Moreover cloning a repository is a one-time activity, while a clean can be done any time a developer wants to. So it actually saves more time to keep the packages checked in.</p>
-
-<h3>More Reason for Checking in Packages</h3>
-
-<p>Now that we have seen most of the common arguments are not valid, let&rsquo;s see more reasons on why including the packages into the source control is actually better.</p>
-
-<h4><strong>Explicit Dependencies</strong></h4>
-
-<p>It&rsquo;s always better to be explicit about your code dependencies and not have them resolved by a package manager.</p>
-
-<blockquote><p><em>Packages are nothing but code and can alter the behaviour of the application.</em></p></blockquote>
-
-<p>There are possibilities of specific package versions getting <a href="http://blog.npmjs.org/post/141577284765/kik-left-pad-and-npm">removed from the package manager</a>, which your application is still dependent on and leads to build breakage! If your package configuration is set up in such a way to resolve the latest available package of  the specific dependency, there are possibilities that the package owner pushes an update that is not backward compatible, causing the build to break! Given that these possibilities exist there is no reason to exclude package dependencies from checked in.</p>
-
-<h4><strong>Package Source Downtime</strong></h4>
-
-<p>Though the publicly available package sources like NuGet, npm are available almost all the time, it is likely that they too <a href="http://stackoverflow.com/questions/17806889/nuget-feed-reliability">can go down</a>. The last thing you would want is to get blocked by the downtime of these services - be it failure to build locally or on a server or even block a critical deployment. With the packages available in your source control, you have one less moving part in your whole deployment pipeline and it is better to have lesser dependencies.</p>
-
-<h4><strong>Custom Package Sources</strong></h4>
-
-<p>Many times I have had to update my Package sources in Visual Studio and break my head on the specific order of these entries to get the project building. This is very common when using custom packages sources like <a href="http://inedo.com/proget">ProGet</a> or <a href="https://myget.org/">MyGet</a>. Such dependencies make project setup harder and is easily avoided if all the dependent assemblies are available within the repository.  You can still have them as custom NuGet sources but have the dependencies included into the repository and update the references whenever source changes. This makes project ramp up easier and faster, with one less configuration step.</p>
-
-<p><img class="center" alt="Nuget custom package source" src="/images/nuget_package_sources.png" /></p>
-
-<p>Do you still see any reason for not checking in package dependencies into the source control? If not let&rsquo;s go and change that package folder exclude and have them included in the source. (I just updated <a href="http://www.rahulpnath.com/blog/clal-command-line-application-launcher/">CLAL</a> to <a href="https://github.com/rahulpnath/clal/commit/736023d9ab4bd285cb077ff54acd1bbaad142a08">include dependencies.</a>)</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1838,6 +1856,8 @@ This could range from how to easily navigate the code base, scripts to do some c
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/spigen-awesome-phone-cases/">Tip of the Week: Spigen - Awesome Phone Cases</a>
+    
     <a class="list-group-item " href="/blog/azure-key-vault-from-node-dot-js/">Azure Key Vault From Node.js</a>
     
     <a class="list-group-item " href="/blog/pnggauntlet-smash-pngs-for-faster-sites/">Tip of the Week: PNGGauntlet - Smash PNGs for Faster Sites</a>
@@ -1845,8 +1865,6 @@ This could range from how to easily navigate the code base, scripts to do some c
     <a class="list-group-item " href="/blog/setting-up-git-credential-manager-for-windows-with-cmder/">Setting up Git Credential Manager for Windows with Cmder</a>
     
     <a class="list-group-item " href="/blog/tests-as-a-feedback-tool/">Use Tests As A Feedback Tool To Improve Code</a>
-    
-    <a class="list-group-item " href="/blog/paint-dot-net/">Tip of the Week: Paint.net - A Layman&#8217;s Photoshop</a>
     
   </div>
 </section>
