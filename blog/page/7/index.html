@@ -163,6 +163,204 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-10-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 3<sup>rd</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/introducing-code-formatting-into-a-large-codebase/" itemprop="url">Introducing Code Formatting into a Large Code Base</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Code Formatting is an important aspect of writing code. If followed well it helps keep the code more readable and easy to work with. Here are some of the different aspects of formatting code and my personal preferences. I then explore options to enforce code formatting and ways to introduce it into an existing code base.</p>
+
+<p>Below are some of the popular formatting rules and those that have a high value when enforced in a project.</p>
+
+<h4><strong>Tabs vs Spaces</strong></h4>
+
+<p>One of the most debated topic in code formatting is whether to use tabs or spaces to intend code. I never knew such a debate existed until my most recent project. It had developers from different parts of the world and with different preferences. I came across the below excerpt from Jeff Atwood, to which I completely agree.</p>
+
+<blockquote><p><em>Choose tabs, choose spaces, choose whatever layout conventions make sense to you and your team. It doesn&rsquo;t actually matter which coding styles you pick. What does matter is that you, and everyone else on your team, <strong>sticks with those conventions and uses them consistently.</strong></em></p>
+
+<p><em>That said, only a moron would use tabs to format their code.</em></p>
+
+<p><em>- <a href="https://blog.codinghorror.com/death-to-the-space-infidels/">Jeff Atwood</a></em></p></blockquote>
+
+<p>Settings for these are often available at the IDE level. In Visual Studio this is available under <a href="https://msdn.microsoft.com/en-us/library/7sffa753.aspx">Options, Text Editor, All Languages, Tabs</a>. Be aware of what you choose and make sure you have the same settings across your team members.</p>
+
+<h4><strong>Horizontal Alignment</strong></h4>
+
+<p>Avoid aligning by common separators (=;,) when they occur in adjacent lines. This kind of alignment falls out of order when we rename variables or properties. It happens when you chaange property names.</p>
+
+<figure class='code'><figcaption><span>Not Refactoring friendly and needs extra effort to keep it formatted</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LastName</span>  <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Site</span>      <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Refactoring friendly</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">LastName</span> <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Site</span> <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Horizontal Formatting</strong></h4>
+
+<p><em>You should never have to scroll to the right</em> - I caught on with this recommendation from the book Clean Code (<a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>). It is also recommended that a function should fit on the screen, without needing to scroll up or down. This encourages to keep functions short and specific.</p>
+
+<blockquote><p><em>We should strive to keep our lines short. The old Hollerith limit of 80 is a bit arbitrary, and I’m not opposed to lines edging out to 100 or even 120. But beyond that is probably just careless</em></p>
+
+<p><em>- Uncle Bob</em></p></blockquote>
+
+<p>The <a href="https://visualstudiogallery.msdn.microsoft.com/d0d33361-18e2-46c0-8ff2-4adea1e34fef">Productivity Power Tools</a> extension for Visual Studio allows adding a Column Guide. A Column Guide reminds developers their full line of code or comments may not fit on a single screen.</p>
+
+<p><img class="center" alt="Code Formatting Maximum Width Column Guide in Visual Studio using Power Tools"
+src="/images/codeformatting_column_guide.png" /></p>
+
+<h4><strong>Aligning Function Parameters</strong></h4>
+
+<p>Always try to keep the number of parameters as less as possible. In cases where there are more parameters or longer function names, the team must choose a style. There are different styling formats followed when splitting parameters to a new line.</p>
+
+<p>Allowing parameters to take the <strong><em>natural flow of IDE</em></strong> (Visual Studio) is the simplest approach. This often leads to poor readability and code cluttering.</p>
+
+<p><img class="center" alt="Function Parameters taking natural flow of IDE"
+src="/images/codeformatting_functionparameters_naturalflowide.png" /></p>
+
+<p>Breaking parameters into separate lines is important for readability. Use the Column guide to decide when to break function parameters into different lines. There are different approaches followed when splitting parameters into new lines. Keeping the first parameter on the same line as the function and then having all other <strong><em>parameters on new line aligned with the first parameter</em></strong> is another approach. This works well when viewed in the same font and resolution used when writing. When you change font or resolution this kind of formatting falls out of place.</p>
+
+<p><img class="center" alt="Function Parameters on new line aligned with first parameter"
+src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
+
+<p>A better variant of the above style is to have the parameters in the new line aligned to the left. This ensures parameters stay in the same place when changing font or resolutions. The one that I prefer is to have all parameters in a new line. This formatting works well with different font sizes and resolutions.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">int</span> <span class="nf">ThisIsALongFunctionNameWithLotsOfParameters</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter1</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">parameter2</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter3</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">optionalParameter</span> <span class="p">=</span> <span class="s">&quot;Test&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Visibility Based Ordering</strong></h4>
+
+<p>It is a good practice to maintain a specific order of items within a class. Have all properties declared first, then constructors, public methods, protected methods, private methods etc. This is up to the team to  determine the order, but sticking on to it makes the code more readable.</p>
+
+<h3>Code Analysis Tools</h3>
+
+<p>Checking for styling and formatting issues in a code review requests is a boring task. It’s best to automate style checks at build time (local and server builds). Making build throw errors for styling issues forces developers to fix them. Once developers get used to the rules, writing code without any formatting issues becomes second nature.  <a href="https://stylecop.codeplex.com">StyleCop</a> is an open source static code analysis tool from Microsoft that checks C# code for conformance to StyleCop&rsquo;s recommended coding styles and a subset of Microsoft&rsquo;s .NET Framework Design Guidelines. It has a Visual Studio plugin and also integrates well with <a href="https://stylecop.codeplex.com/wikipage?title=Setting%20Up%20StyleCop%20MSBuild%20Integration">MsBuild</a>.</p>
+
+<h4><strong>Cleaning up a Large Code Base</strong></h4>
+
+<p>Introducing StyleCop (or any code format enforcement) into a large pre-existing code base is challenging. Turning the tool on would immediately throw hundreds and thousands of errors. Trying to fix them in a stretch might impact the ongoing development process. This often causes us to delay the introduction of such enforcement&rsquo;s into the project and it continues to be a technical debt.</p>
+
+<p>Taking an incremental approach, fixing one by one as and when a file is changed seems a good idea. Teams can come with the <a href="http://programmer.97things.oreilly.com/wiki/index.php/The_Boy_Scout_Rule">Boy Scout Rule</a> - &lsquo;<em>Leave the file cleaner than you find</em>&rsquo;. Every time a file is touched for a fix, run StyleCop analysis and fix the errors. Over a period of time, this will make the project clean. The only problem with this approach is developers often tend to ignore/forget running the analysis and fix them.</p>
+
+<blockquote><p><em>Trivial things like code formatting is hard to mandate within a team unless it is enforced through tooling</em></p></blockquote>
+
+<h3>Source Control Hooks</h3>
+
+<p>We can plug into various hooks that source controls give to enforce code formatting on developer machines. In git, you can add a <a href="https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks">custom pre-commit hook</a> to run the StyleCop analysis on all the staged files. <a href="https://github.com/bbadjari/stylecopcli">StyleCopcli</a> is an open source application that wraps over the StyleCop DLLs and allows running the analysis from the command line. So in the hook, I use this CLI to run StyleCop analysis on all the staged files.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bat'><span class='line'>#!<span class="n">/bin/sh</span>
+</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Running Code Analysis&quot;</span>
+</span><span class='line'>.<span class="n">/stylecopcli/StyleCopCLI.exe</span> -cs $(git diff --cached --name-only)
+</span><span class='line'><span class="k">if</span> [ $? <span class="o">=</span> <span class="m">2</span> ]
+</span><span class='line'>    then
+</span><span class='line'>        <span class="k">echo</span> Commit Failed! Fix StyleCop Errors
+</span><span class='line'>        exit <span class="m">1</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>        <span class="k">echo</span> No SyleCop Errors!
+</span><span class='line'>        exit <span class="m">0</span>
+</span><span class='line'>fi
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If there are any StyleCop validation errors the commit is aborted, forcing the developer to fix it. The git hooks work fine when committing from a command line or UI tools like Source Tree. However, Visual Studio git plugin does not run the git hooks and fails to do the check.</p>
+
+<p><img class="center" alt="StyleCop git hook failing commit in console" src="/images/code_formatting_git_hook_console.png" /></p>
+
+<p><img class="center" alt="StyleCop git hook failing commit in Source Tree" src="/images/code_formatting_git_hook_sourcetree.png" /></p>
+
+<p>Over a period of time, most of the files will get cleaned and remaining can be done all at once with less effort. Once the entire code base passes all StyleCop rules, this can be enforced in the build server. This ensures that no more bad formatted code gets checked into the source control.</p>
+
+<p>Code is read more than written. So it is important to keep it readable and well-formatted. It also makes navigating code bases easier and faster. These are minor things that are often <a href="https://vimeo.com/97329157">overlooked by developers</a>, but have a high impact on productivity when followed. Do you enforce code formatting rules in your current project? What are the rules that you find important. Sound off in the comments below!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-26T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 26<sup>th</sup>, 2016</time>
         
 
@@ -1385,375 +1583,6 @@ Most commonly asked for documents are</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-18T04:52:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 18<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/refactoring/'>refactoring</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/" itemprop="url">Refactoring to Improve Readability - Separating Business Language and Programming Language Semantics</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often we write ourselves or come across code that has both business language and the programming language semantics mixed together. This makes it very hard to reason about the code and also fix any issues. It&rsquo;s easier to read code that is composed of different smaller individual functions doing a single thing.</p>
-
-<p>If you follow the <em>One Level of Abstraction per Function Rule</em> or the <em>Stepdown Rule</em> as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a> (I <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">recommend reading it</a> if you have not already), it is easier to keep the business and programming language semantics separate.</p>
-
-<blockquote><p><em>We want the code to read like a top-down narrative. We want every function to be followed by those at the next level of abstraction so that we can read the program, descending one level of abstraction at a time as we read down the list of functions. Making the code read like a top-down set of TO paragraphs is an effective technique for
-keeping the abstraction level consistent.</em></p></blockquote>
-
-<p>Recently while fixing a bug in one of the applications that I am currently working on, I came across a code with the business and programming language semantics mixed together. This made it really hard to understand the code and fixing it. So I decided to refactor it a bit before fixing the bug.</p>
-
-<p> <a href="http://www.slideshare.net/kvg452/the-art-of-readable-code-31322040">
-<img class="center" src="/images/readable_code.jpg" alt="Code should be readable" />
-</a></p>
-
-<p>The application is a subscription based service for renting books, videos, games etc. and enabled customers to have different subscription plans and terms. Currently, we are migrating away from the custom built billing module that the application uses to a SAAS based billing provider to make invoicing and billing easy and manageable. In code, a <em>Subscription</em> holds a list of <em>SubscriptionTerm</em> items, that specifies the different terms that a customer has for the specific subscription. A term typically has a start date, an optional end date and a price for that specific term. A null end date indicates that the subscription term is valid throughout the customer lifetime in the system.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Subscription</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">SubscriptionTerm</span><span class="p">&gt;</span> <span class="n">Terms</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">SubscriptionTerm</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">double</span> <span class="n">Price</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>But in the new system to which we are migrating to, does not support subscription terms that overlap each other with a different price. This had to be data fixed manually in the source system, so we decided to perform a validation step before the actual migration. The code below does exactly that and was working fine until we started seeing that for cases where there were more than one SubscriptionTerm without an end date and also when end date of one was the start date of another, there were no validation errors shown.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">otherTerms</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">if</span> <span class="p">(</span>
-</span><span class='line'>                <span class="p">(!</span><span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
-</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">a</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">).</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span> <span class="p">||</span>
-</span><span class='line'>                <span class="p">(</span><span class="n">otherTerms</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">term</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">a</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">&amp;&amp;</span> <span class="n">a</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">term</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span>
-</span><span class='line'>            <span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">hasOverlappingItems</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>                <span class="k">break</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">hasOverlappingItems</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The code, as you can see is not that readable and difficult to understand, which increases the chances of me breaking something else while trying to fix it. There were no tests covering this validator, which made it even harder to change it. While the algorithm itself to find overlappings can be improved (maybe a topic for another blog post), we will look into how we can refactor this existing code to improve its readability.</p>
-
-<blockquote><p><em>Code is read more than written, so it&rsquo;s much better to have code optimized for reading</em></p></blockquote>
-
-<h3>Creating the Safety Net</h3>
-
-<p>The first logical thing to do in this case is to protect us with test cases so that any changes made does not break existing functionality.  I came up with the below test cases (<em>test data shown does not cover all cases</em>), to cover the different possible cases that this method can take.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, 1, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, 2, false)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, 1, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, 2, true)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">ValidateReturnsExpected</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate1</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate1</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDate2</span><span class="p">,</span> <span class="kt">string</span> <span class="n">endDate2</span><span class="p">,</span> <span class="kt">double</span> <span class="n">price2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span> <span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Fixture setup</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">subscription</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Subscription</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">term1</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate1</span><span class="p">,</span> <span class="n">endDate1</span><span class="p">,</span> <span class="n">price1</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">term2</span> <span class="p">=</span> <span class="n">createTerm</span><span class="p">(</span><span class="n">startDate2</span><span class="p">,</span> <span class="n">endDate2</span><span class="p">,</span> <span class="n">price2</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term1</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">term2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Exercise system</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">OverlappingSubscriptionTermWithConflictingPriceValidator</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">subscription</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Verify outcome</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Teardown</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>All tests pass, except for those where there were issues in the destination system and I was about to fix.</p>
-
-<h3>Refactoring for Readability</h3>
-
-<p>Now that I have some tests to back me up for the changes that I am to make, I feel more confident to do the refactoring. Looking at the original validator code, all I see is <strong>DATETIME</strong> - There is a lot of manipulation of dates that is happening, which strongly indicates there is some abstraction waiting to be pulled out. We had seen in, <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>, that any time we use a primitive type, we should think more about the choice of type. We saw that properties that co-exist (like DateRange) should be pulled apart as Value Objects. The StartDate and EndDate in SubscriptionTerm fall exactly into that category.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">endDate</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="n">endDate</span><span class="p">.</span><span class="n">Value</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End date cannot be less than start Date&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Since these properties are used in a lot of other places, I did not want to make a breaking change, by deleting the existing properties and adding in a new DateRange class. So I chose to add a new read-only property <em>TermPeriod</em> to SubscriptionTerm which returns a DateRange, constructed from it&rsquo;s Start and End dates, as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">DateRange</span> <span class="n">TermPeriod</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">get</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">StartDate</span><span class="p">,</span> <span class="n">EndDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>From the existing validator code, what we are essentially trying to check is if there are any SubscriptionTerms for a subscription that overlaps, i.e if one TermPeriod falls in the range of another. Introducing a method, <em>IsOverlapping</em> on DateRange to check if it overlaps with another DateRange seems logical at this stages. Adding a few tests cases to protect myself here to implement the IsOverlapping method in DateRange class. I also added in the tests to cover the failure scenarios that were seen before.</p>
-
-<figure class='code'><figcaption><span>Tests for IsOverlapping</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[InlineData(&quot;10-Jan-2016&quot;, &quot;10-Feb-2016&quot;, &quot;11-Feb-2016&quot;, &quot;10-Dec-2016&quot;, false)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, &quot;10-Feb-2015&quot;, &quot;20-Jan-2015&quot;, &quot;1-Feb-2016&quot;, true)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Jan-2015&quot;, null, &quot;20-Jan-2016&quot;, null,  true)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;28-Jan-16&quot;, &quot;10-Mar-16&quot;, &quot;10-Mar-16&quot;, null, true)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">OverlappingDatesReturnsExpected</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateTime2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateTime2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">bool</span> <span class="n">expected</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// Fixture setup</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">range1</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime1</span><span class="p">,</span> <span class="n">endDateTime1</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">range2</span> <span class="p">=</span> <span class="n">CreateDateRange</span><span class="p">(</span><span class="n">startDateTime2</span><span class="p">,</span> <span class="n">endDateTime2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Exercise system</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">range1</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">range2</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Verify outcome</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'>    <span class="c1">// Teardown</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>IsOverlapping in DateRange</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">DateRange</span> <span class="n">dateRange</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">.</span><span class="n">HasValue</span><span class="p">)</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">EndDate</span>
-</span><span class='line'>        <span class="p">&amp;&amp;</span> <span class="n">dateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Given two DateRange&rsquo;s I can now tell if they overlap or not, which now can be used to check if two SubscriptionTerms overlap. I just need to check if their TermPeriod&rsquo;s overlap. The validator code is now much more easy to understand.</p>
-
-<figure class='code'><figcaption><span>IsOverlapping in SubscriptionTerm</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsOverlapping</span><span class="p">(</span><span class="n">SubscriptionTerm</span> <span class="n">term</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">TermPeriod</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">.</span><span class="n">TermPeriod</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Validator after Refactoring</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">Validate</span><span class="p">(</span><span class="n">Subscription</span> <span class="n">subscription</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">term</span> <span class="k">in</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">termsWithDifferentPrice</span> <span class="p">=</span> <span class="n">subscription</span><span class="p">.</span><span class="n">Terms</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">Price</span> <span class="p">!=</span> <span class="n">term</span><span class="p">.</span><span class="n">Price</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">termsWithDifferentPrice</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span><span class="p">.</span><span class="n">IsOverlapping</span><span class="p">(</span><span class="n">term</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The code now reads as a set of TO Paragraphs as mentioned in the book <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">Clean Code</a>.</p>
-
-<blockquote><p><em>To check if a subscription is valid, check if the subscription has overlapping SubscriptionTerms with a conflicting price. To check if two subscriptions are overlapping, check if their subscription term periods overlap each other. To check if two term periods overlap check if start date of one is before the end date of other</em></p></blockquote>
-
-<p>Readability of code is an important aspect and should be something that we strive towards for. The above just illustrates an example of why readability of code is important and how it helps us on a longer run. It makes maintaining code really easy. Following some basic guidelines like One Level of Abstraction per Function, allows us to write more readable code. Separating code into different small readable functions covers just one aspect of Readability, there are a lot of other practices mentioned in the book <a href="http://shop.oreilly.com/product/9780596802301.do">The Art of Readable Code</a>. The sample code with all the tests and validator is available <a href="https://github.com/rahulpnath/Blog/tree/master/Refactoring/RefactoringForReadability">here</a>.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1777,6 +1606,8 @@ keeping the abstraction level consistent.</em></p></blockquote>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/semantic-comparison-improve-test-assertions/">Semantic Comparison: Improve Test Assertions</a>
+    
     <a class="list-group-item " href="/blog/spigen-awesome-phone-cases/">Tip of the Week: Spigen - Awesome Phone Cases</a>
     
     <a class="list-group-item " href="/blog/azure-key-vault-from-node-dot-js/">Azure Key Vault From Node.js</a>
@@ -1784,8 +1615,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
     <a class="list-group-item " href="/blog/pnggauntlet-smash-pngs-for-faster-sites/">Tip of the Week: PNGGauntlet - Smash PNGs for Faster Sites</a>
     
     <a class="list-group-item " href="/blog/setting-up-git-credential-manager-for-windows-with-cmder/">Setting up Git Credential Manager for Windows with Cmder</a>
-    
-    <a class="list-group-item " href="/blog/tests-as-a-feedback-tool/">Use Tests As A Feedback Tool To Improve Code</a>
     
   </div>
 </section>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: testing | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/testing/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-06-19T00:02:07+00:00</updated>
+  <updated>2017-06-20T00:01:37+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,169 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Semantic Comparison: Improve Test Assertions]]></title>
+    <link href="http://rahulpnath.com/blog/semantic-comparison-improve-test-assertions/"/>
+    <updated>2017-06-20T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/semantic-comparison-improve-test-assertions</id>
+    <content type="html"><![CDATA[<p>One of the traits of a good unit test is to have just <a href="http://osherove.com/blog/2005/4/14/try-to-avoid-multiple-asserts-in-a-single-unit-test.html">one Assert statement.</a>.</p>
+
+<blockquote><p><em>Consider Assert failures as symptoms of a disease and Asserts as indication points or blood checks for the body of the software. The more symptoms you can find, the easier the disease will be to figure out and remove. If you have multiple asserts in one test - only the first failing one reveals itself as failed and you lose sight of other possible symptoms.</em></p>
+
+<p>-<a href="http://osherove.com/">Roy Osherove</a></p></blockquote>
+
+<p>When a test with multiple asserts fails, it is hard to tell the exact reason of test failure. To get more details on the actual failure we either have to debug the tests or look into the stack trace.</p>
+
+<h3>Tests With Multiple Assertions</h3>
+
+<p>Many times we end up needing to assert on more than one properties or behavior. Let&rsquo;s look at a few such examples and see how we can refactor the tests. <em>I have excluded the actual code that is getting is tested here as it is easy to understand what that will look like from the tests. (Drop a comment otherwise)</em></p>
+
+<p><strong>Example 1:</strong> In the below test we have a <em>Name</em> class that represents FirstName and LastName of a user. It exposes a <em>Parse</em> method to make it easy for us to create a Name object from a string. Below are some tests for the Parse method. The test has multiple assertions to confirm that the first and last name properties get set as expected.</p>
+
+<pre><code class="csharp Name class">[Theory]
+[InlineData("Rahul", "Rahul", "")]
+[InlineData("Rahul Nath", "Rahul", "Nath")]
+[InlineData("Rahul P Nath", "Rahul", "P Nath")]
+public void FirstNameOnlyProvidedResultsInFirstNameSet(
+   string name,
+   string expFirstName,
+   string expLastName)
+{
+    var actual = Name.Parse(name);
+
+    Assert.Equal(expFirstName, actual.FirstName);
+    Assert.Equal(expLastName, actual.LastName);
+}
+</code></pre>
+
+<p><strong>Example 2:</strong> The below test is for the <em>Controller</em> class to confirm that the <em>CustomerViewModel</em> passed to the <em>Post</em> method on the controller saves the <em>Customer</em> to the repository. The assert statement includes multiple properties of the customer object, which is just a shorthand version of writing multiple such assert statements on each of those properties.</p>
+
+<pre><code class="csharp Controller Unit Test">[Theory, AutoWebData]
+public void PostSavesToRepository(
+    CustomerViewModel model,
+    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
+    CustomerController sut)
+{
+  var expected = model.ToCustomer();
+
+  sut.Post(model);
+
+  customerRepository.Verify(a =&gt;
+    a.Upsert(It.IsAny&lt;Customer&gt;(customer =&gt; 
+        customer.Name == expected.Name &amp;&amp;
+        customer.Age == expected.Age &amp;&amp;
+        customer.Phone == customer.Phone))
+}
+</code></pre>
+
+<p><strong>Example 3:</strong> The below test ensures that all properties are set when transforming from DTO to domain entity (or any such object transformations at system boundaries). The test asserts on every property of the class.</p>
+
+<pre><code class="csharp Comparing different object types">[Theory]
+[AutoMoqData]
+public void AllowanceToDomainModelMapsAllProperties(
+    Persistence.Allowance allowance, 
+    int random)
+{
+    allowance.EndDate = allowance.StartDate.AddDays(random);
+
+    var actual = allowance.ToDomainModel();
+
+    Assert.Equal(allowance.ClientId, actual.ClientId);
+    Assert.Equal(allowance.Credit, actual.Credit);
+    Assert.Equal(allowance.Data, actual.Data);
+    Assert.Equal(allowance.StartDate, actual.Period.StartDate);
+    Assert.Equal(allowance.EndDate, actual.Period.EndDate);
+}
+</code></pre>
+
+<h3>Semantic Comparison Library</h3>
+
+<p><a href="https://www.nuget.org/packages/SemanticComparison/">Semantic Comparison</a> is a library that allows deep comparison of similar looking objects. Originally part of <a href="http://www.rahulpnath.com/blog/autofixture-make-your-unit-tests-robust/">AutoFixture</a> library, it is also available as a separate <a href="https://www.nuget.org/packages/SemanticComparison/">Nuget package</a>.</p>
+
+<blockquote><p><em>SemanticComparison makes it easier to compare instances of various objects to each other. Instead of performing a normal equality comparison, SemanticComparison compares objects that look semantically similar - even if they are of different types</em></p></blockquote>
+
+<p>Using SemanticComparison, we can compare two objects and compare their properties for equality. It allows including/excluding properties when comparing objects.</p>
+
+<h3>Refactoring Tests</h3>
+
+<p><strong>Example 1:</strong> The <em>Name</em> is a perfect case for being a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. In this case, the class will override Equals, and it will be easier for us to write the tests. Converting to a Value Object is one of the cases where we <a href="http://www.rahulpnath.com/blog/tests-as-a-feedback-tool/">use tests as a feedback to improve code</a>. But in cases where you do not have the control over the class or do not want to make it a value object, we can use SemanticComparison to help check for equality as shown below.</p>
+
+<pre><code class="csharp Name Class">[Theory]
+[InlineData("Rahul", "Rahul", "")]
+[InlineData("Rahul Nath", "Rahul", "Nath")]
+[InlineData("Rahul P Nath", "Rahul", "P Nath")]
+public void FirstNameOnlyProvidedResultsInFirstNameSet(
+   string name,
+   string expFirstName,
+   string expLastName)
+{
+    var expected = new Name(expFirstName, expLastName);
+
+    var actual = Name.Parse(name);
+
+    expected
+        .AsSource()
+        .OfLikeness&lt;Name&gt;()
+        .ShouldEqual(actual);
+}
+</code></pre>
+
+<p><strong>Example 2:</strong>  Using SemanticComparison we can remove the need of asserting on each of the properties. In the below case since the Customer Id is set to a new Guid in the ToCustomer method, I ignore the Id property from the comparison using <em>Without</em>. When the <em>expected</em> objects gets compared against the <em>actual</em> all properties except <em>Id</em> will be compared for equality. Any number of properties can be excluded by chaining multiple <em>Without</em> methods.</p>
+
+<pre><code class="csharp Controller Unit Test">[Theory, AutoWebData]
+public void PostSavesToRepository(
+    CustomerViewModel model,
+    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
+    CustomerController sut)
+{
+  var customer = model.ToCustomer();
+  var expected = customer
+      .AsSource()
+      .OfLikeness&lt;Customer&gt;()
+      .Without(a =&gt; a.Id);
+
+  sut.Post(model);
+
+  customerRepository.Verify(a =&gt;
+    a.Upsert(It.IsAny&lt;Customer&gt;(actual =&gt; 
+        expected.ShoudEqual(actual)));
+}
+</code></pre>
+
+<p><strong>Example 3:</strong>  Using SemanticComparison we can remove the asserts on every property and also set custom comparisons. The StartDate and EndDate on the persistence entity are converted into a DateRange object (Period). By using the <em>With</em> method in combination with the <em>EqualsWhen</em> method we can set custom comparison behavior that needs to be performed when comparing objects. The same test will hold true even if we add new properties and will force mapping to be updated if any of the property mappings is missed. Here we also see how SemanticComparison can compare two different types.</p>
+
+<pre><code class="csharp Comparing different object types">[Theory]
+[AutoMoqData]
+public void AllowanceToDomainModelMapsAllProperties(
+    Persistence.Allowance allowance, 
+    int random)
+{
+    allowance.EndDate = allowance.StartDate.AddDays(random);
+
+    var actual = allowance.ToDomainModel();
+
+    allowance
+        .AsSource()
+        .OfLikeness&lt;Allowance&gt;()
+        .With(a =&gt; a.Period)
+        .EqualsWhen((p, m) =&gt; { return m.Period.StartDate == p.StartDate &amp;&amp; m.Period.EndDate == p.EndDate; })
+        .ShouldEqual(actual);
+}
+</code></pre>
+
+<p>Using SemanticComparison library, we reduce the dependencies on the actual implementation and extract that into a more generic representation. Fewer dependencies on the actual implementation code/properties make the tests more robust and adaptable to change. Hope this helps you get started with Semantic Comparison and improve on your test assertions.</p>
+
+<p><strong>References:</strong></p>
+
+<ul>
+<li><a href="http://blog.ploeh.dk/2012/06/21/TheResemblanceidiom/">The Resemblance Idiom</a></li>
+<li><a href="http://blog.ploeh.dk/2010/06/29/IntroducingAutoFixtureLikeness/">Introducing AutoFixture Likeness</a></li>
+<li><a href="http://blog.ploeh.dk/2012/06/22/ResemblanceandLikeness/">Resemblance and Likeness</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Use Tests As A Feedback Tool To Improve Code]]></title>
@@ -518,149 +681,6 @@ public void CustomerControllerGetWithNoCustomerReturnsNotFound(
 <p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_latency.png"/></p>
 
 <p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Introduce Tests when Fixing Bugs]]></title>
-    <link href="http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs/"/>
-    <updated>2016-09-26T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/introduce-tests-when-fixing-bugs</id>
-    <content type="html"><![CDATA[<p><em>When creating a subscription for a client, the calculated number of months was off by one at times</em> - This was a bug reported from production application that I was currently working on. Though, not a blocker, it was creating enough issues for the end users that it required a hotfix. One of my friends picked this issue up and started working on it. A while later, while I was checking the status of that bug I noticed him playing around with  <a href="https://www.linqpad.net/">Linqpad</a>. He was testing a method to calculate the number of months between two dates with different values.</p>
-
-<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
-
-<p>We often test our code elsewhere because it&rsquo;s coupled with other code making it difficult to test at the source itself. The fact that we need to test an isolated part of a larger piece of code is a &lsquo;<a href="https://en.wikipedia.org/wiki/Code_smell">Code smell</a>&rsquo;. There possibly is a class or method that can be extracted and unit tested separately.</p>
-
-<blockquote><p><em>Having to test code elsewhere other than the source is a Smell. Look for a method or class waiting to be extracted</em></p></blockquote>
-
-<p>In this specific case, below is how the code that calculates month difference between two dates looked like. As you can see below, the code is coupled with the newAccount, which in turn is coupled with a few other entities that I have omitted. Added to this, this method existed in an MVC controller, which had other dependencies.</p>
-
-<pre><code class="csharp Existing Code">...
-var date1 = newAccount.StartDate;
-var date2 = newAccount.EndDate;
-int monthsApart = Math.Abs(12 * (date1.Year - date2.Year) + date1.Month - date2.Month) - 1;
-decimal daysInMonth1 = DateTime.DaysInMonth(date1.Year, date1.Month);
-decimal daysInMonth2 = DateTime.DaysInMonth(date2.Year, date2.Month);
-decimal dayPercentage = ((daysInMonth1 - date1.Day) / daysInMonth1)
-                      + (date2.Day / daysInMonth2);
-var months = (int)Math.Ceiling(monthsApart + dayPercentage);
-...
-</code></pre>
-
-<p>This explains why it was easier to copy this code across and test it in Linqpad. It was difficult to construct the whole hierarchy of objects and to test this. So the easiest thing to fix the bug in is to test elsewhere and fit back in its original place.</p>
-
-<h3>Extract Method Refactoring</h3>
-
-<p>This is one of the scenario where <a href="http://refactoring.com/catalog/extractMethod.html">Extract Method</a> Refactoring fits in best. According to the definition</p>
-
-<blockquote><p><em>You have a code fragment that can be grouped together. <strong>Turn the fragment into a method whose name explains the purpose of the method.</strong></em></p></blockquote>
-
-<p>Extract Method Refactoring is also referred in <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131177052&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=TTKEEYQLEMTOXPPQ">Working Effectively With Legacy Code</a> and <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131495054&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=XR55UAOEPPMVMFK3">xUnit Test Patterns</a> (to refactor test code).  It helps separate logic from rest of the object hierarchy and test individually. In this scenario, we can extract the logic to calculate the number of months between two dates into a separate method.</p>
-
-<p>For <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">Test driving</a> the extracted method, all I do initially is to extract the method. As the method purely depends on its passed in parameters and not on any instance variables, I mark it as a static method. This removes the dependency from the MVC controller class parameters and the need to construct them in the tests . The test cases includes the failed &lsquo;off by one&rsquo; case (<em>(&ldquo;25-Aug-2017&rdquo;, &ldquo;25-Feb-2018&rdquo;, 6)</em>). With tests that pass and fail it&rsquo;s now safe to make changes to the extracted method to fix the failing cases.</p>
-
-<pre><code class="csharp Tests">[Theory]
-[InlineData("10-Feb-2016", "10-Mar-2016", 1)]
-[InlineData("10-Feb-2016", "11-Mar-2016", 2)]
-[InlineData("10-Feb-2015", "11-Mar-2016", 14)]
-[InlineData("01-Feb-2015", "01-Mar-2015", 1)]
-[InlineData("21-Sep-2016", "22-Sep-2016", 1)]
-[InlineData("25-Aug-2017", "25-Feb-2018", 6)]
-[InlineData("12-Aug-2016", "15-Mar-2019", 32)]
-public void MonthsToReturnsExpectedMonths(
-    string date1,
-    string date2,
-    int expected)
-{
-    var actual = SubscriptionController.MonthsTo(DateTime.Parse(date1), DateTime.Parse(date2));
-    Assert.Equal(expected, actual);
-}
-</code></pre>
-
-<p>More than the algorithm used to solve the original issue what is more important is in identifying such scenarios and extracting them as a method. Make the least possible change to make it testable and fix step by step.</p>
-
-<blockquote><p><em>Whenever there are code fragments that depend only on a subset of properties of your class or function inputs, it could be extracted into a separate method.</em></p></blockquote>
-
-<pre><code class="csharp Extracted method after Refactoring.">public static int MonthsTo(DateTime date1, DateTime date2)
-{
-    int months = Math.Abs(12*(date1.Year - date2.Year) + date1.Month - date2.Month);
-    if (date2.Date.Day &gt; date1.Date.Day)
-        months = months + 1;
-
-    return months;
-}
-</code></pre>
-
-<h3>Introduce Value Object</h3>
-
-<p>Now that we have fixed the bug and have tests covering the different combinations, let&rsquo;s see if this method can live elsewhere and make it reusable. The start date and end date on account always go together and is a domain concept that can be extracted out as an &lsquo;Account Term Range&rsquo;. It can be represented as a DateRange <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. We can then introduce a method in the DateRange Value Object to return the number of months in the range. This makes the function reusable and also <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">code more readable</a>. I made the original refactored method as an extension method on DateTime and used it from DateRange Value Object.</p>
-
-<pre><code class="csharp Encapsulate into Value Object">public static class DateTimeExtensions 
-{
-    public static int MonthsTo(this DateTime date1, DateTime date2)
-    {
-        int months = Math.Abs(12*(date1.Year - date2.Year) + date1.Month - date2.Month);
-        if (date2.Date.Day &gt; date1.Date.Day)
-            months = months + 1;
-
-        return months;
-    }
-}
-
-public class DateRange
-{
-    public DateTime StartDate { get; private set; }
-    public DateTime EndDate { get; private set; }
-
-    public DateRange(DateTime startDate, DateTime endDate)
-    {
-        // Ignoring null checks
-        if (endDate &lt; startDate)
-            throw new ArgumentException("End Date cannot be less than Start Date");
-
-        this.StartDate = startDate;
-        this.EndDate = endDate;
-    }
-
-    public int GetMonths()
-    {
-        return StartDate.MonthsTo(EndDate);
-    }
-}
-... // Rest of Value Object Code to override Equals and GetHashCode
-</code></pre>
-
-<p>If you are new to TDD or just getting started with tests, introducing tests while fixing bugs is a good place to start. This might also help make code decoupled and readable. Try <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">covering a fix with tests</a> the next time you fix a bug!</p>
-
-<h4><strong>References</strong></h4>
-
-<div>
-    <div class="row">
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131495054&linkCode=as2&tag=rahulpnath-20&linkId=XR55UAOEPPMVMFK3">
-                    <img src="http://rahulpnath.com/images/books_xunit.jpg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0321503627/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321503627&linkCode=as2&tag=rahulpnath-20&linkId=TR6UCCVP6CMGBBZQ">
-                    <img src="http://rahulpnath.com/images/books_goos.jpeg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131177052&linkCode=as2&tag=rahulpnath-20&linkId=TTKEEYQLEMTOXPPQ">
-                    <img src="http://rahulpnath.com/images/books_welc.jpg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
 ]]></content>
   </entry>
   

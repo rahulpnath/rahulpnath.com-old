@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tdd | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tdd/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-06-19T00:02:07+00:00</updated>
+  <updated>2017-06-20T00:01:37+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,169 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Semantic Comparison: Improve Test Assertions]]></title>
+    <link href="http://rahulpnath.com/blog/semantic-comparison-improve-test-assertions/"/>
+    <updated>2017-06-20T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/semantic-comparison-improve-test-assertions</id>
+    <content type="html"><![CDATA[<p>One of the traits of a good unit test is to have just <a href="http://osherove.com/blog/2005/4/14/try-to-avoid-multiple-asserts-in-a-single-unit-test.html">one Assert statement.</a>.</p>
+
+<blockquote><p><em>Consider Assert failures as symptoms of a disease and Asserts as indication points or blood checks for the body of the software. The more symptoms you can find, the easier the disease will be to figure out and remove. If you have multiple asserts in one test - only the first failing one reveals itself as failed and you lose sight of other possible symptoms.</em></p>
+
+<p>-<a href="http://osherove.com/">Roy Osherove</a></p></blockquote>
+
+<p>When a test with multiple asserts fails, it is hard to tell the exact reason of test failure. To get more details on the actual failure we either have to debug the tests or look into the stack trace.</p>
+
+<h3>Tests With Multiple Assertions</h3>
+
+<p>Many times we end up needing to assert on more than one properties or behavior. Let&rsquo;s look at a few such examples and see how we can refactor the tests. <em>I have excluded the actual code that is getting is tested here as it is easy to understand what that will look like from the tests. (Drop a comment otherwise)</em></p>
+
+<p><strong>Example 1:</strong> In the below test we have a <em>Name</em> class that represents FirstName and LastName of a user. It exposes a <em>Parse</em> method to make it easy for us to create a Name object from a string. Below are some tests for the Parse method. The test has multiple assertions to confirm that the first and last name properties get set as expected.</p>
+
+<pre><code class="csharp Name class">[Theory]
+[InlineData("Rahul", "Rahul", "")]
+[InlineData("Rahul Nath", "Rahul", "Nath")]
+[InlineData("Rahul P Nath", "Rahul", "P Nath")]
+public void FirstNameOnlyProvidedResultsInFirstNameSet(
+   string name,
+   string expFirstName,
+   string expLastName)
+{
+    var actual = Name.Parse(name);
+
+    Assert.Equal(expFirstName, actual.FirstName);
+    Assert.Equal(expLastName, actual.LastName);
+}
+</code></pre>
+
+<p><strong>Example 2:</strong> The below test is for the <em>Controller</em> class to confirm that the <em>CustomerViewModel</em> passed to the <em>Post</em> method on the controller saves the <em>Customer</em> to the repository. The assert statement includes multiple properties of the customer object, which is just a shorthand version of writing multiple such assert statements on each of those properties.</p>
+
+<pre><code class="csharp Controller Unit Test">[Theory, AutoWebData]
+public void PostSavesToRepository(
+    CustomerViewModel model,
+    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
+    CustomerController sut)
+{
+  var expected = model.ToCustomer();
+
+  sut.Post(model);
+
+  customerRepository.Verify(a =&gt;
+    a.Upsert(It.IsAny&lt;Customer&gt;(customer =&gt; 
+        customer.Name == expected.Name &amp;&amp;
+        customer.Age == expected.Age &amp;&amp;
+        customer.Phone == customer.Phone))
+}
+</code></pre>
+
+<p><strong>Example 3:</strong> The below test ensures that all properties are set when transforming from DTO to domain entity (or any such object transformations at system boundaries). The test asserts on every property of the class.</p>
+
+<pre><code class="csharp Comparing different object types">[Theory]
+[AutoMoqData]
+public void AllowanceToDomainModelMapsAllProperties(
+    Persistence.Allowance allowance, 
+    int random)
+{
+    allowance.EndDate = allowance.StartDate.AddDays(random);
+
+    var actual = allowance.ToDomainModel();
+
+    Assert.Equal(allowance.ClientId, actual.ClientId);
+    Assert.Equal(allowance.Credit, actual.Credit);
+    Assert.Equal(allowance.Data, actual.Data);
+    Assert.Equal(allowance.StartDate, actual.Period.StartDate);
+    Assert.Equal(allowance.EndDate, actual.Period.EndDate);
+}
+</code></pre>
+
+<h3>Semantic Comparison Library</h3>
+
+<p><a href="https://www.nuget.org/packages/SemanticComparison/">Semantic Comparison</a> is a library that allows deep comparison of similar looking objects. Originally part of <a href="http://www.rahulpnath.com/blog/autofixture-make-your-unit-tests-robust/">AutoFixture</a> library, it is also available as a separate <a href="https://www.nuget.org/packages/SemanticComparison/">Nuget package</a>.</p>
+
+<blockquote><p><em>SemanticComparison makes it easier to compare instances of various objects to each other. Instead of performing a normal equality comparison, SemanticComparison compares objects that look semantically similar - even if they are of different types</em></p></blockquote>
+
+<p>Using SemanticComparison, we can compare two objects and compare their properties for equality. It allows including/excluding properties when comparing objects.</p>
+
+<h3>Refactoring Tests</h3>
+
+<p><strong>Example 1:</strong> The <em>Name</em> is a perfect case for being a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. In this case, the class will override Equals, and it will be easier for us to write the tests. Converting to a Value Object is one of the cases where we <a href="http://www.rahulpnath.com/blog/tests-as-a-feedback-tool/">use tests as a feedback to improve code</a>. But in cases where you do not have the control over the class or do not want to make it a value object, we can use SemanticComparison to help check for equality as shown below.</p>
+
+<pre><code class="csharp Name Class">[Theory]
+[InlineData("Rahul", "Rahul", "")]
+[InlineData("Rahul Nath", "Rahul", "Nath")]
+[InlineData("Rahul P Nath", "Rahul", "P Nath")]
+public void FirstNameOnlyProvidedResultsInFirstNameSet(
+   string name,
+   string expFirstName,
+   string expLastName)
+{
+    var expected = new Name(expFirstName, expLastName);
+
+    var actual = Name.Parse(name);
+
+    expected
+        .AsSource()
+        .OfLikeness&lt;Name&gt;()
+        .ShouldEqual(actual);
+}
+</code></pre>
+
+<p><strong>Example 2:</strong>  Using SemanticComparison we can remove the need of asserting on each of the properties. In the below case since the Customer Id is set to a new Guid in the ToCustomer method, I ignore the Id property from the comparison using <em>Without</em>. When the <em>expected</em> objects gets compared against the <em>actual</em> all properties except <em>Id</em> will be compared for equality. Any number of properties can be excluded by chaining multiple <em>Without</em> methods.</p>
+
+<pre><code class="csharp Controller Unit Test">[Theory, AutoWebData]
+public void PostSavesToRepository(
+    CustomerViewModel model,
+    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
+    CustomerController sut)
+{
+  var customer = model.ToCustomer();
+  var expected = customer
+      .AsSource()
+      .OfLikeness&lt;Customer&gt;()
+      .Without(a =&gt; a.Id);
+
+  sut.Post(model);
+
+  customerRepository.Verify(a =&gt;
+    a.Upsert(It.IsAny&lt;Customer&gt;(actual =&gt; 
+        expected.ShoudEqual(actual)));
+}
+</code></pre>
+
+<p><strong>Example 3:</strong>  Using SemanticComparison we can remove the asserts on every property and also set custom comparisons. The StartDate and EndDate on the persistence entity are converted into a DateRange object (Period). By using the <em>With</em> method in combination with the <em>EqualsWhen</em> method we can set custom comparison behavior that needs to be performed when comparing objects. The same test will hold true even if we add new properties and will force mapping to be updated if any of the property mappings is missed. Here we also see how SemanticComparison can compare two different types.</p>
+
+<pre><code class="csharp Comparing different object types">[Theory]
+[AutoMoqData]
+public void AllowanceToDomainModelMapsAllProperties(
+    Persistence.Allowance allowance, 
+    int random)
+{
+    allowance.EndDate = allowance.StartDate.AddDays(random);
+
+    var actual = allowance.ToDomainModel();
+
+    allowance
+        .AsSource()
+        .OfLikeness&lt;Allowance&gt;()
+        .With(a =&gt; a.Period)
+        .EqualsWhen((p, m) =&gt; { return m.Period.StartDate == p.StartDate &amp;&amp; m.Period.EndDate == p.EndDate; })
+        .ShouldEqual(actual);
+}
+</code></pre>
+
+<p>Using SemanticComparison library, we reduce the dependencies on the actual implementation and extract that into a more generic representation. Fewer dependencies on the actual implementation code/properties make the tests more robust and adaptable to change. Hope this helps you get started with Semantic Comparison and improve on your test assertions.</p>
+
+<p><strong>References:</strong></p>
+
+<ul>
+<li><a href="http://blog.ploeh.dk/2012/06/21/TheResemblanceidiom/">The Resemblance Idiom</a></li>
+<li><a href="http://blog.ploeh.dk/2010/06/29/IntroducingAutoFixtureLikeness/">Introducing AutoFixture Likeness</a></li>
+<li><a href="http://blog.ploeh.dk/2012/06/22/ResemblanceandLikeness/">Resemblance and Likeness</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Use Tests As A Feedback Tool To Improve Code]]></title>
@@ -620,175 +783,6 @@ public class DateRange
     </div>
 </div>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Refactoring to Improve Testability: Extracting Dependencies]]></title>
-    <link href="http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/"/>
-    <updated>2016-04-03T03:14:28+00:00</updated>
-    <id>http://rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies</id>
-    <content type="html"><![CDATA[<p><a href="https://pixabay.com/en/code-data-programming-code-944504/" class="center" title="Image By Lawrence Monk, from https://pixabay.com/en/code-data-programming-code-944504/"><img src="/images\coding.jpg" class="center" alt="Refactoring"></a></p>
-
-<p>In the earlier post, <a href="http://rahulpnath.com/blog/refactoring-to-improve-testability-removing-unnecessary-dependencies/">Removing Unnecessary Dependencies</a>, we saw how having an unnecessary dependency hinders testability. In this post we will see just the opposite of that - extracting functionality out of a class and creating another class to separate responsibilities, making it easier to test and adhere to <a href="https://blog.8thlight.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html">Single Responsibility Principle</a>(SRP).</p>
-
-<blockquote><p><em>Violating Single Responsibility Principle makes writings tests harder.</em></p></blockquote>
-
-<p>Some of the common tests smell (from XUnit Test Patterns by Gerard Meszaros, <a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>) that helps me to find these dependencies are <a href="http://xunitpatterns.com/Hard%20to%20Test%20Code.html">Hard-To-Test Code</a> and <a href="http://xunitpatterns.com/Fragile%20Test.html">Fragile Tests</a>. In this post we will explore the refactoring with the help of an example - I have to process usages (anything like electricity, internet, water etc.) for a list of locations aggregated over for a day. There is a repository where the last processed date for the location is stored, and whenever this process runs we have to process for all the days from the last processed date till the current day.</p>
-
-<p>The existing code looks like below, which loops through a list of locations passed in, fetches the last processed date from a repository , gets all the days to be processed till today (<em>DateTime.Now.Date</em>) and processes them for all the days.</p>
-
-<pre><code class="csharp">public class LocationsUsagesCalculator
-{
-    ILocationUsages locationUsages;
-    IUsageRepository usageRepository;
-
-    public void ProcessUsagesForLocations(IEnumerable&lt;Location&gt; locations)
-    {
-        foreach (var location in locations)
-        {
-            ProcessUsagesForLocation(location);
-        }
-    }
-
-    private void ProcessUsagesForLocation(Location location)
-    {
-        DateTime lastProcessedDate = usageRepository.GetLastProcessedDateForLocation(location);
-        IEnumerable&lt;DateTime&gt; datesToProcess = GetAllDaysTillTodayFromDate(lastProcessedDate);
-        foreach (var dateToProcess in datesToProcess)
-        {
-            ProcessUsagesForLocationOnDate(location, dateToProcess);
-        }
-    }
-
-    private void ProcessUsagesForLocationOnDate(Location location, DateTime dateToProcess)
-    {
-        locationUsages.ProcessUsagesForLocationOnDate(location, dateToProcess);
-    }
-
-    private IEnumerable&lt;DateTime&gt; GetAllDaysTillTodayFromDate(DateTime lastProcessedDate)
-    {
-        var dateCounter = lastProcessedDate.Date.AddDays(1);
-        while (dateCounter &lt;= DateTime.Now.Date)
-        {
-            yield return dateCounter;
-            dateCounter = dateCounter.AddDays(1);
-        }
-    }
-}
-</code></pre>
-
-<h3>Testability Issues with Current Design</h3>
-
-<p>The code is self-explanatory and does what&rsquo;s expected. But what interests us more is the test code for this. From a test perspective we need to make sure
-that for all locations, usages gets processed for the pending days. Direct cases when last processed day is a day before, a couple of days before and different for each location are some of the likely scenarios. Let&rsquo;s see one of the cases where the last processed day is a few days before for all locations</p>
-
-<pre><code class="csharp">[Theory, AutoMoqData]
-public void ProcessUsagesWithCoupleOfDaysBeforeAsLastProcessedProcessesAllDaysTillTodayForEachLocation(
-   [Frozen]Mock&lt;ILocationUsages&gt; locationUsages,
-   [Frozen]Mock&lt;IUsageRepository&gt; usageRepository,
-   IEnumerable&lt;Location&gt; locations,
-   LocationsUsagesCalculator sut)
-{
-    var days = 3;
-    var threeDaysBefore = DateTime.Now.AddDays(-days);
-    usageRepository
-        .Setup(a =&gt; a.GetLastProcessedDateForLocation(It.IsAny&lt;Location&gt;()))
-        .Returns(threeDaysBefore);
-
-    sut.ProcessUsagesForLocations(locations);
-
-    var expectedDates = Enumerable.Range(1, days).Select(a =&gt; threeDaysBefore.Date.AddDays(a));
-
-    foreach (var location in locations)
-        foreach (var date in expectedDates)
-            locationUsages
-                .Verify(a =&gt; a.ProcessUsagesForLocationOnDate(location, date), Times.Once());
-}
-</code></pre>
-
-<p>Clearly this is not the kind of tests that I want to write! It has a lot of setup code and even some logics to generate <em>expectedDates</em>. Let&rsquo;s see the various dependencies that the SUT has:</p>
-
-<ul>
-<li>ProcessUsagesForLocationOnDate on ILocationUsages</li>
-<li>GetLastProcessedDateForLocation on IUsageRepository</li>
-<li>List of locations that it&rsquo;s processing</li>
-<li>Last processed date for each location</li>
-<li>Dates pending processing as of today</li>
-</ul>
-
-
-<p>We clearly see that this one class does a lot more things than what its name suggests. Let&rsquo;s see how we can refactor this to improve our test code and manage the dependencies better.</p>
-
-<h3>Refactoring the Code</h3>
-
-<p>Finding all the dates till a given date (today in this case) is not this classes responsibility and can easily be pulled out. Since the SUT depends on <em>IUsageRepository</em> just to calculate the dates I can pull that out along with the refactoring. I have created a new interface, <em>IUsageDatesCalculator</em>, to return all the days pending process. With this interface, the test code looks a bit more clear and easier to write.</p>
-
-<pre><code class="csharp">[Theory, Tests.AutoMoqData]
-public void ProcessUsagesProcessesForAllLocationForPendingDays(
-    IEnumerable&lt;DateTime&gt; datesToProcess,
-    [Frozen]Mock&lt;ILocationUsages&gt; locationUsages,
-    [Frozen]Mock&lt;IUsageDatesCalculator&gt; usageDatesCalculator,
-    IEnumerable&lt;Location&gt; locations,
-    LocationsUsagesCalculator sut)
-{
-    usageDatesCalculator
-        .Setup(a =&gt; a.GetDatesToCalculate(It.IsAny&lt;Location&gt;()))
-        .Returns(datesToProcess);
-
-    sut.ProcessUsagesForLocations(locations);
-
-    foreach (var location in locations)
-        foreach (var date in datesToProcess)
-        locationUsages
-            .Verify(a =&gt; a.ProcessUsagesForLocationOnDate(location, date), Times.Once());
-}
-</code></pre>
-
-<p>This looks better and easy to write - we do not have to write any code in the test to generate the expected dates. All I need is a list of dates (no matter is what order) and I need to make sure that process calls all of those. We would also pull out a separate interface to process for a location, instead of a list of locations. This will further remove the need to loop through the locations list in the test.</p>
-
-<h3>DateTime and Tests</h3>
-
-<p>Both in the original code and the refactored code, the logic that generates the dates to be processed depends on <em>DateTime.Now</em> for getting the current date. Though this looks perfectly fine, it makes testing harder. In the original test code, I had to generate expected dates based on today (system time).</p>
-
-<p>It&rsquo;s a good practice to inject a Time Provider into the consumer so that you can mock the value of Now(today) for tests. <a href="https://msdn.microsoft.com/en-us/library/system.datetime.now(v=vs.110).aspx">DateTime.Now</a> is a static dependency on a class property and makes it hard for tests.
-Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimeProvider</a> and having overrides to set mocks for testing is not advised (also mentioned by Seemann in the <a href="http://stackoverflow.com/questions/2425721/unit-testing-datetime-now/2425739#comment38623763_2425739">comments</a>), as it creates problems for parallel tests execution.</p>
-
-<blockquote><p><em>Inject a Time Provider into the consumer. Do not depend on any static time provider (including DateTime.Now)</em></p></blockquote>
-
-<p>Refactoring the dependency with current time using a inject interface, <em>ITimeProvider</em>, makes setting the current day easy as shown in the tests below. I can now hard code my expected dates into the test code and not depend on a runtime generated list.</p>
-
-<pre><code class="csharp">[Theory]
-[InlineAutoMoqData("2016-04-02","2016-03-29", "2016-03-30,2016-03-31,2016-04-01,2016-04-02")]
-[InlineAutoMoqData("2016-04-02", "2016-04-02", "")]
-[InlineAutoMoqData("2016-04-02", "2016-04-01", "2016-04-02")]
-public void GetDatesToCalculateReturnsExpectedDates(
-    string todayString, 
-    string lastProcessedDayString,
-    string expectedDaysString,
-    [Frozen]Mock&lt;ITimeProvider&gt; timeProvider,
-    [Frozen]Mock&lt;IUsageRepository&gt; usageRepository,
-    Location dummyLocation,
-    UsageDatesCalculator sut)
-{
-    var expected = expectedDaysString
-        .Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries)
-        .Select(a =&gt; DateTime.Parse(a));
-    var lastProcessedDay = DateTime.Parse(lastProcessedDayString);
-    var today = DateTime.Parse(todayString);
-
-    timeProvider.Setup(a =&gt; a.Now).Returns(today.Date);
-    usageRepository
-        .Setup(a =&gt; a.GetLastProcessedDateForLocation(It.IsAny&lt;Location&gt;()))
-        .Returns(lastProcessedDay);
-
-    var actual = sut.GetDatesToCalculate(dummyLocation).ToList();
-
-    Assert.Equal(expected, actual);
-}
-</code></pre>
-
-<p>We have refactored various dependencies that the original code had and made it more testable. Testing is easier and <a href="https://pragprog.com/magazines/2012-01/unit-tests-are-first">repeatable</a>. Whenever writing tests become difficult - stop, think and refactor!</p>
 ]]></content>
   </entry>
   
