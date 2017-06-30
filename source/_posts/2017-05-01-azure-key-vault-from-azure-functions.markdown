@@ -33,7 +33,7 @@ You can view all Azure Functions Apps in the subscription under *More services -
 
 <img src="{{site.images_root}}/azureFunction_createFunction.png" alt="" class="center" />
 
-In the *run.csx* file add in the code for the function. The below code fetches the secret value from the Key Vault and logs it. You need to provide the [Azure AD Application Id and secret](http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/) to authenticate with it](http://www.rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/). Alternatively you can also use [certificate based authentication to authenticate with the Key Vault. Make sure you add in the relevant *using* statements for the KeyVault client Azure Active Directory Authentication libraries (ADAL).
+In the *run.csx* file add in the code for the function. The below code fetches the secret value from the Key Vault and logs it. You need to provide the [Azure AD Application Id and secret](http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/) to authenticate with it. Alternatively you can also use [certificate based authentication to authenticate with the Key Vault](http://www.rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/). Make sure you add in the relevant *using* statements for the KeyVault client Azure Active Directory Authentication libraries (ADAL).
 
 ``` csharp
 using System;
