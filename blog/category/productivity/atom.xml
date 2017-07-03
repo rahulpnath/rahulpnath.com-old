@@ -4,7 +4,7 @@
   <title><![CDATA[Category: productivity | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/productivity/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-07-02T00:02:11+00:00</updated>
+  <updated>2017-07-03T00:02:05+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Left Align Your Code For Better Readability]]></title>
+    <link href="http://rahulpnath.com/blog/left-align-your-code-for-better-readability/"/>
+    <updated>2017-07-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/left-align-your-code-for-better-readability</id>
+    <content type="html"><![CDATA[<p>Aesthetics of code is as important as the code you write. Aligning is an important part that contributes to the overall aesthetics of code. The importance of code aesthetics struck me while on a recent project. Below are some the code samples that I came across in the project. Traversing this code base was painful to me as the code was all over the place.</p>
+
+<pre><code class="csharp Bad Formatting">public class Account
+{
+    public long   Id                    { get; set; }
+    public string ClientId              { get; set; }
+    public long   ContactId             { get; set; }
+    public string UserName              { get; set; }
+    public string Name                  { get; set; }
+    public string Company               { get; set; }
+    public string Address               { get; set; }
+    public string BillingAddress        { get; set; }
+}
+</code></pre>
+
+<pre><code class="csharp Bad Formatting">public ConnectToServer(string username, 
+                       string password,
+                       string server,
+                       string port)
+{
+    ...
+}
+</code></pre>
+
+<p>The code has too many alignment points that attract the eye which makes it hard to read in the first place. When in isolation this might still be fine to read, but with such a style across the code base, it soon becomes a pain for your eyes and your mind. When refactoring code, it becomes even harder as you need to put in the extra effort to make sure that this fancy alignment is maintained. Let&rsquo;s take a look at how even changing a property name (<em>Company to CompanyName</em>) or function name(<em>ConnectToServer to Connect</em>) will affect the current formatting.</p>
+
+<pre><code class="csharp Renamed to CompanyName">public class Account
+{
+    ...
+    public string Name              { get; set; }
+    public string CompanyName           { get; set; }
+    public string Address           { get; set; }
+    ...
+}
+</code></pre>
+
+<pre><code class="csharp Renamed to Connect">public Connect(string username, 
+                       string password,
+                       string server,
+                       string port)
+{
+    ...
+}
+</code></pre>
+
+<p>As you can see above the formatting is now all over the place, and you need to format them into place manually. Again when in isolation this might seem like a few press of spacebar. But when the property/function that you rename is used in multiple places this soon becomes a problem. Such code formatting introduces maintenance overhead and soon falls out of place if something gets missed.</p>
+
+<h3>Better Ways To Format Code</h3>
+
+<p>Left aligning code is one of the key things that I try to follow always. Keeping the code aligned to the left makes it easier to read (assuming that you are programming in a language written from left to right). Since we read from left to right having most of the code aligned to the left means that you have more code visible. Left aligning also means that you would almost avoid the need to scroll the code editor when reading through the code horizontally.</p>
+
+<p>Let&rsquo;s take a look how left aligning the above code will look like.</p>
+
+<pre><code class="csharp Left Aligned">public class Account
+{
+    public long Id { get; set; }
+    public string ClientId { get; set; }
+    public long ContactId { get; set; }
+    public string UserName { get; set; }
+    public string Name { get; set; }
+    public string Company { get; set; }
+    public string Address { get; set; }
+    public string BillingAddress { get; set; }
+}
+</code></pre>
+
+<pre><code class="csharp Left Aligned Multiple Lines">public ConnectToServer(
+    string username, 
+    string password,
+    string server,
+    string port)
+{
+    ...
+}
+</code></pre>
+
+<pre><code class="csharp Left Aligned Single Line">public ConnectToServer(
+    string username, string password, string server, string port)
+{
+    ...
+}
+</code></pre>
+
+<p>As you can see above left aligning makes it much easier to read and also reduces the number of alignment points. This is also refactoring friendly as there are no specific space patterns that need to be maintained. As for the parameters in a single line VS parameters in multiple lines (as above), I prefer the multi-line approach, as it keeps the code further aligned to the left and also reduces the chance of getting a horizontal scroll bar. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">Column Guides</a> to remind yourself to keep the code within the acceptable horizontal space.</p>
+
+<p>Code formatting is an important aspect of coding. It is important that as a team you need to agree on some standard practices and find ways to stick to it. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">styling tools</a>, <a href="http://www.rahulpnath.com/blog/code-review/">Code Reviews</a>, etc. to make sure it does not get missed. It takes a while for any new practices to set in, but soon it will be of second nature and easy to follow.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Using Git Locally in a TFVC Repository]]></title>
@@ -170,45 +264,6 @@ task,"BlogTopic: Images, Proof Read and Publish",4,2,Rahul (3565260),,in 4 days,
 </code></pre>
 
 <p>This utility is written in FSharp the <a href="https://github.com/rahulpnath/todoisttemplatetransformer">source code is available here</a> if you are interested. I am still in the initial stages of learning FSharp, so if you have any suggestions to improve the code, please raise a Pull Request or drop in a comment.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Visual Studio Task List - Keep Track of Your TODO Comments]]></title>
-    <link href="http://rahulpnath.com/blog/visual-studio-task-list-keep-track-of-your-todo-comments/"/>
-    <updated>2017-05-03T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/visual-studio-task-list-keep-track-of-your-todo-comments</id>
-    <content type="html"><![CDATA[<p>It often happens when coding that I skip over some part and want to come back to it at a later point in time. I leave some comments in the code so that I do not miss it. It can be a bit tricky to keep track of these comments themselves. Before pushing up the changes to <a href="https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell">master branch</a> or creating a <a href="https://help.github.com/articles/about-pull-requests/">Pull Request</a>, I make sure that all such comments are addressed.</p>
-
-<p>Visual Studio comes with a <a href="https://msdn.microsoft.com/en-us/library/txtwdysk(v=vs.120).aspx">Task List</a> that is handy to track such unfinished work in code. It helps track your pending work items in one place and easily navigate to it. To have a comment appear in the task list, it has to start with a defined token (TODO, HACK, UNDONE, etc.) followed by the comment.</p>
-
-<pre><code class="csharp">public bool IsInRange(DateTime theDateTime)
-{
-    //TODO: Implement this function
-    throw new NotImplementedException();
-}
-</code></pre>
-
-<p><img src="/images/taskList.png" class="center" alt="Visual Studio Task List" /></p>
-
-<blockquote><p><em>A comment in your code preceded by a comment marker and a predefined token will appear in the Task List window. For example, the above comment has three distinct parts:</em></p>
-
-<ul>
-<li><em>The comment marker (//)</em></li>
-<li><em>The token (TODO)</em></li>
-<li><em>The comment (the rest of the text)</em></li>
-</ul>
-</blockquote>
-
-<p>Visual Studio by default has TODO, HACK and UNDONE as tokens. You can modify this under Options -> Task List. New custom tokens can be added as required and used instead of the default ones.</p>
-
-<p><img src="/images/taskList_customize.png" class="center" alt="Visual Studio, Customize Task List" /></p>
-
-<p>When in a multi-member team you can either use custom tokens per member or append the comment with your name or feature name. The Task List provides Search feature with which you can filter the tasks created by you or for the feature you are working.</p>
-
-<p>I try to remove all TODO comments before merging to the master branch. For tasks that need to be tracked even after a merge, I create separate work items to the project backlog (VSTS, GitHub Tasks, Jira whatever the team is using). I might still leave the TODO comment with the relevant ticket details as well for tracking.</p>
-
-<p>The next time you leave some unfinished work for later make sure you have it tracked. Hope it helps!</p>
 ]]></content>
   </entry>
   

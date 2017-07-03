@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-07-02T00:02:11+00:00</updated>
+  <updated>2017-07-03T00:02:05+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Left Align Your Code For Better Readability]]></title>
+    <link href="http://rahulpnath.com/blog/left-align-your-code-for-better-readability/"/>
+    <updated>2017-07-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/left-align-your-code-for-better-readability</id>
+    <content type="html"><![CDATA[<p>Aesthetics of code is as important as the code you write. Aligning is an important part that contributes to the overall aesthetics of code. The importance of code aesthetics struck me while on a recent project. Below are some the code samples that I came across in the project. Traversing this code base was painful to me as the code was all over the place.</p>
+
+<pre><code class="csharp Bad Formatting">public class Account
+{
+    public long   Id                    { get; set; }
+    public string ClientId              { get; set; }
+    public long   ContactId             { get; set; }
+    public string UserName              { get; set; }
+    public string Name                  { get; set; }
+    public string Company               { get; set; }
+    public string Address               { get; set; }
+    public string BillingAddress        { get; set; }
+}
+</code></pre>
+
+<pre><code class="csharp Bad Formatting">public ConnectToServer(string username, 
+                       string password,
+                       string server,
+                       string port)
+{
+    ...
+}
+</code></pre>
+
+<p>The code has too many alignment points that attract the eye which makes it hard to read in the first place. When in isolation this might still be fine to read, but with such a style across the code base, it soon becomes a pain for your eyes and your mind. When refactoring code, it becomes even harder as you need to put in the extra effort to make sure that this fancy alignment is maintained. Let&rsquo;s take a look at how even changing a property name (<em>Company to CompanyName</em>) or function name(<em>ConnectToServer to Connect</em>) will affect the current formatting.</p>
+
+<pre><code class="csharp Renamed to CompanyName">public class Account
+{
+    ...
+    public string Name              { get; set; }
+    public string CompanyName           { get; set; }
+    public string Address           { get; set; }
+    ...
+}
+</code></pre>
+
+<pre><code class="csharp Renamed to Connect">public Connect(string username, 
+                       string password,
+                       string server,
+                       string port)
+{
+    ...
+}
+</code></pre>
+
+<p>As you can see above the formatting is now all over the place, and you need to format them into place manually. Again when in isolation this might seem like a few press of spacebar. But when the property/function that you rename is used in multiple places this soon becomes a problem. Such code formatting introduces maintenance overhead and soon falls out of place if something gets missed.</p>
+
+<h3>Better Ways To Format Code</h3>
+
+<p>Left aligning code is one of the key things that I try to follow always. Keeping the code aligned to the left makes it easier to read (assuming that you are programming in a language written from left to right). Since we read from left to right having most of the code aligned to the left means that you have more code visible. Left aligning also means that you would almost avoid the need to scroll the code editor when reading through the code horizontally.</p>
+
+<p>Let&rsquo;s take a look how left aligning the above code will look like.</p>
+
+<pre><code class="csharp Left Aligned">public class Account
+{
+    public long Id { get; set; }
+    public string ClientId { get; set; }
+    public long ContactId { get; set; }
+    public string UserName { get; set; }
+    public string Name { get; set; }
+    public string Company { get; set; }
+    public string Address { get; set; }
+    public string BillingAddress { get; set; }
+}
+</code></pre>
+
+<pre><code class="csharp Left Aligned Multiple Lines">public ConnectToServer(
+    string username, 
+    string password,
+    string server,
+    string port)
+{
+    ...
+}
+</code></pre>
+
+<pre><code class="csharp Left Aligned Single Line">public ConnectToServer(
+    string username, string password, string server, string port)
+{
+    ...
+}
+</code></pre>
+
+<p>As you can see above left aligning makes it much easier to read and also reduces the number of alignment points. This is also refactoring friendly as there are no specific space patterns that need to be maintained. As for the parameters in a single line VS parameters in multiple lines (as above), I prefer the multi-line approach, as it keeps the code further aligned to the left and also reduces the chance of getting a horizontal scroll bar. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">Column Guides</a> to remind yourself to keep the code within the acceptable horizontal space.</p>
+
+<p>Code formatting is an important aspect of coding. It is important that as a team you need to agree on some standard practices and find ways to stick to it. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">styling tools</a>, <a href="http://www.rahulpnath.com/blog/code-review/">Code Reviews</a>, etc. to make sure it does not get missed. It takes a while for any new practices to set in, but soon it will be of second nature and easy to follow.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Using Git Locally in a TFVC Repository]]></title>
@@ -324,25 +418,6 @@ at UserQuery.GetPersonDetails(Guid personId)
 <p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
 
 <p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Quick Launch in Visual Studio]]></title>
-    <link href="http://rahulpnath.com/blog/quick-launch-in-visual-studio/"/>
-    <updated>2017-02-02T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/quick-launch-in-visual-studio</id>
-    <content type="html"><![CDATA[<p><img alt="Visual Studio Quick Launch" src="/images/visualstudio_quicklaunch.png" /></p>
-
-<p>As a .NET developer, I spent the majority of my time in Visual Studio. Knowing to navigate fast within the IDE or quickly find what I want is important. Many times finding specific settings or navigating to individual windows can take a while, especially if you are not familiar with it and don&rsquo;t know exactly where to look. Visual Studio has a quick launch toolbar that is designed exactly for this. Be it opening the Package Manager Console or changing the font style you can use the quick launch to search and navigate to it.</p>
-
-<blockquote><p><em>You can use <a href="https://msdn.microsoft.com/en-us/library/hh417697.aspx">Quick Launch</a> to quickly search and execute actions for IDE assets such as options, templates, menus. You can&rsquo;t use Quick Launch to search for code and symbols. The Quick Launch search box is located at the top-right corner of the menu bar and is accessible by choosing the <strong>Ctrl+Q</strong> keys.</em></p></blockquote>
-
-<p>The added advantage is that you can use the quick launch bar to <strong><em>learn new keyboard shortcuts</em></strong>. Searching for an item also shows the keyboard shortcut for it next to it. Over time you can remember the direct keyboard shortcut and avoid quick launch as well.</p>
-
-<p><img alt="Visual Studio Quick Launch learn keyboard shortcuts" src="/images/visualstudio_quicklaunch_keyboardShortcuts.png" /></p>
-
-<p>Knowing the tools that you use is an important part of development. Able to navigate fast within the IDE enables to remove any time wasted poking around the IDE. Use that time to read and write code.</p>
 ]]></content>
   </entry>
   
