@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-07-17T00:01:28+00:00</updated>
+  <updated>2017-07-18T00:01:43+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,235 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Signing a PDF File Using Azure Key Vault]]></title>
+    <link href="http://rahulpnath.com/blog/signing-a-pdf-file-using-azure-key-vault/"/>
+    <updated>2017-07-18T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/signing-a-pdf-file-using-azure-key-vault</id>
+    <content type="html"><![CDATA[<p><em>How to sign a PDF using Azure Key Vault?</em> - This is one of the questions that I often get regarding Azure Key Vault. In this post, we will explore how to sign a PDF using a certificate in Azure Key Vault. Signing a PDF has various aspects to it which are covered in depth in the white paper - <a href="http://developers.itextpdf.com/books#digsig">Digital Signatures for PDF Documents</a>. We will be using the <a href="http://itextpdf.com/">iText library</a> to sign the PDF. iText is available as a <a href="https://www.nuget.org/packages/itext7/">Nuget package library</a>. The below image shows the elements that composes a digital signature on the left and actual contents on the right.</p>
+
+<p><img src="http://rahulpnath.com/images/adobe_signature.png" alt="Digitally Signed PDF Contents" /></p>
+
+<h3>Signing with a Local Certificate</h3>
+
+<p>When the certificate (along with the private key) is available locally, signing the PDF is straightforward. You can load the certificate as an X509Certificate from the local certificate store using the <a href="https://stackoverflow.com/questions/11115511/how-to-find-certificate-by-its-thumbprint-in-c-sharp">thumbprint</a>. Make sure that the certificate is installed with the Exportable option as shown below.</p>
+
+<p><img src="http://rahulpnath.com/images/certificate_exportable.png" alt="Exportable certificate" /></p>
+
+<p>The <a href="http://itextsupport.com/apidocs/itext5/latest/com/itextpdf/text/pdf/security/PrivateKeySignature.html">PrivateKeySignature</a> is an implementation of IExteralSignature that can be used to sign the PDF when the private key is available. The below code signs the <em>Hello World.pdf</em> using the certificate from the local store and saves that as <em>Local Key.pdf</em>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">SignPdfWithLocalCertificate</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">certificate</span> <span class="p">=</span> <span class="n">GetCertificateLocal</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">privateKey</span> <span class="p">=</span> <span class="n">DotNetUtilities</span><span class="p">.</span><span class="n">GetKeyPair</span><span class="p">(</span><span class="n">certificate</span><span class="p">.</span><span class="n">PrivateKey</span><span class="p">).</span><span class="n">Private</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">externalSignature</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PrivateKeySignature</span><span class="p">(</span><span class="n">privateKey</span><span class="p">,</span> <span class="s">&quot;SHA-256&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">SignPdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="n">externalSignature</span><span class="p">,</span> <span class="s">&quot;Local Key.pdf&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">SignPdf</span><span class="p">(</span><span class="n">X509Certificate2</span> <span class="n">certificate</span><span class="p">,</span> <span class="n">IExternalSignature</span> <span class="n">externalSignature</span><span class="p">,</span> <span class="kt">string</span> <span class="n">signedPdfName</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">bCert</span> <span class="p">=</span> <span class="n">DotNetUtilities</span><span class="p">.</span><span class="n">FromX509Certificate</span><span class="p">(</span><span class="n">certificate</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">chain</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Org</span><span class="p">.</span><span class="n">BouncyCastle</span><span class="p">.</span><span class="n">X509</span><span class="p">.</span><span class="n">X509Certificate</span><span class="p">[]</span> <span class="p">{</span> <span class="n">bCert</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">reader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="s">&quot;Hello World.pdf&quot;</span><span class="p">))</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FileStream</span><span class="p">(</span><span class="n">signedPdfName</span><span class="p">,</span> <span class="n">FileMode</span><span class="p">.</span><span class="n">OpenOrCreate</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">signer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfSigner</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="k">false</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">signer</span><span class="p">.</span><span class="n">SignDetached</span><span class="p">(</span><span class="n">externalSignature</span><span class="p">,</span> <span class="n">chain</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="n">PdfSigner</span><span class="p">.</span><span class="n">CryptoStandard</span><span class="p">.</span><span class="n">CMS</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Certificates in Azure Key Vault</h3>
+
+<p>You can <a href="http://www.rahulpnath.com/blog/manage-certificates-in-azure-key-vault/">manage certificates in Azure Key Vault</a> as a first class citizen. Azure Key Vault supports creating new or uploading existing certificates into the vault. Key Vault provides an option to specify whether the private portion of the certificate is exportable or not. Let us see how we can use the certificate from the vault in both these scenarios.</p>
+
+<h4><strong>Exportable Certificate</strong></h4>
+
+<p>To create a self-signed certificate in the vault use the below PowerShell script. In this case, the private key is exportable. Executing the below script adds a self-signed certificate into the vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificatepolicy</span> <span class="p">=</span> <span class="nb">New-AzureKeyVaultCertificatePolicy</span>   <span class="n">-SubjectName</span> <span class="s2">&quot;CN=www.rahulpnath.com&quot;</span>   <span class="n">-IssuerName</span> <span class="n">Self</span>   <span class="n">-ValidityInMonths</span> <span class="n">12</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultCertificate</span> <span class="n">-VaultName</span> <span class="s2">&quot;VaultFromCode&quot;</span> <span class="n">-Name</span> <span class="s2">&quot;TestCertificate&quot;</span> <span class="n">-CertificatePolicy</span> <span class="nv">$certificatepolicy</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="http://rahulpnath.com/images/keyvault_getazurekeyvaultcertificate.png" class="center" alt="Key Vault Certificate" /></p>
+
+<p>Creating a certificate, in turn, creates three objects in the vault - Certificate, Key, and Secret. The certificate represents the certificate just created, the Key represents the private part of the certificate, and the Secret has the certificate in PFX format (just as if you had uploaded a <a href="http://www.rahulpnath.com/blog/pfx-certificate-in-azure-key-vault/">PFX as a Secret</a>). Since the certificate created above is exportable, the Secret contains the Private portion of the key as well. To recreate the certificate locally in memory, we use the below code</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">X509Certificate2</span><span class="p">&gt;</span> <span class="n">GetCertificateKeyVault</span><span class="p">(</span><span class="kt">string</span> <span class="n">secretIdentifier</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">client</span> <span class="p">=</span> <span class="n">GetKeyVaultClient</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">certSecret</span> <span class="p">=</span> <span class="k">new</span> <span class="n">X509Certificate2</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">Convert</span><span class="p">.</span><span class="n">FromBase64String</span><span class="p">(</span><span class="n">secret</span><span class="p">.</span><span class="n">Value</span><span class="p">),</span>
+</span><span class='line'>        <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">X509KeyStorageFlags</span><span class="p">.</span><span class="n">Exportable</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">certSecret</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The certificate is encoded as Base64String in the Secret. We create an in-memory representation of the certificate and mark it as <em>Exportable</em>. This certificate can be used the same way as the local certificate. Since the private key is part of it, the PrivateKeySignature can still be used to sign.</p>
+
+<h4><strong>Non Exportable Certificate</strong></h4>
+
+<p>To create a non-exportable certificate when creating the certificate use <a href="https://docs.microsoft.com/en-us/powershell/module/azurerm.keyvault/new-azurekeyvaultcertificatepolicy?view=azurermps-4.1.0"><em>KeyNotExportable</em> flag</a> flag as below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$certificatepolicy</span> <span class="p">=</span> <span class="nb">New-AzureKeyVaultCertificatePolicy</span>   <span class="n">-SubjectName</span> <span class="s2">&quot;CN=www.rahulpnath.com&quot;</span>   <span class="n">-IssuerName</span> <span class="n">Self</span>   <span class="n">-ValidityInMonths</span> <span class="n">12</span> <span class="n">-KeyNotExportable</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultCertificate</span> <span class="n">-VaultName</span> <span class="s2">&quot;VaultFromCode&quot;</span> <span class="n">-Name</span> <span class="s2">&quot;TestCertificateNE&quot;</span> <span class="n">-CertificatePolicy</span> <span class="nv">$certificatepolicy</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Executing this creates three objects in the vault as above. But since we marked the secret as non-exportable, the Secret will not have the private part of the key. We can create an in-memory representation of the certificate, but we cannot use the PrivateKeySignature as the certificate does not have the private key. We need to use the Key created along with the certificate to <em>Sign</em> the PDF bytes. For this we need a custom implementation of <em>IExternalSignature</em> - KeyVaultSignature.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">KeyVaultSignature</span> <span class="p">:</span> <span class="n">IExternalSignature</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">KeyVaultClient</span> <span class="n">keyClient</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">keyIdentifier</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">KeyVaultSignature</span><span class="p">(</span><span class="n">KeyVaultClient</span> <span class="n">client</span><span class="p">,</span> <span class="kt">string</span> <span class="n">keyIdentifier</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">keyClient</span> <span class="p">=</span> <span class="n">client</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">keyIdentifier</span> <span class="p">=</span> <span class="n">keyIdentifier</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">GetEncryptionAlgorithm</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;RSA&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">GetHashAlgorithm</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="s">&quot;SHA-256&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">byte</span><span class="p">[]</span> <span class="nf">Sign</span><span class="p">(</span><span class="kt">byte</span><span class="p">[]</span> <span class="n">message</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">hasher</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SHA256CryptoServiceProvider</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">digest</span> <span class="p">=</span> <span class="n">hasher</span><span class="p">.</span><span class="n">ComputeHash</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">keyClient</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">SignAsync</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">keyIdentifier</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Microsoft</span><span class="p">.</span><span class="n">Azure</span><span class="p">.</span><span class="n">KeyVault</span><span class="p">.</span><span class="n">WebKey</span><span class="p">.</span><span class="n">JsonWebKeySignatureAlgorithm</span><span class="p">.</span><span class="n">RS256</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">digest</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Result</span><span class="p">.</span><span class="n">Result</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>KeyVaultSignature uses the key vault library to connect to the vault and use the specified key to sign the passed in PDF bytes. Since the key is the private part of the certificate, it will be validated by the public key. Below code shows how to use the KeyVaultSignature in the signing process.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">SignPdfWithNonExportableCertificateInKeyVault</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">client</span> <span class="p">=</span> <span class="n">GetKeyVaultClient</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">exportableSecretIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://vaultfromcode.vault.azure.net:443/secrets/TestCertificateNE&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">certificate</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetCertificateKeyVault</span><span class="p">(</span><span class="n">exportableSecretIdentifier</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">keyIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://vaultfromcode.vault.azure.net:443/keys/TestCertificateNE/65d27605fdf74eb2a3f807827cd756e1&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">externalSignature</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultSignature</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">keyIdentifier</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SignPdf</span><span class="p">(</span><span class="n">certificate</span><span class="p">,</span> <span class="n">externalSignature</span><span class="p">,</span> <span class="s">&quot;Non Exportable Key Vault.pdf&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once you install and trust the public portion of the certificates, you can see the green tick, indicating that the PDF is verified and signed.</p>
+
+<p><img src="http://rahulpnath.com/images/pdf_signed.png" alt="Signed PDF" /></p>
+
+<p>The sample code for all three scenarios is available <a href="https://github.com/rahulpnath/Blog/tree/master/PDFSign">here</a>. I have used ClientId/Secret to authenticate with Key Vault for the sample code. If you are using this in a production environment, I will recommend using <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">certificate to authenticate with Key Vault</a>. iText supports creating PDF stamps and more features in the signing process, which is well documented. Hope this helps you to secure your PDF files.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Beyond Compare - Compare Files Quick and Easy]]></title>
@@ -1586,51 +1815,6 @@ Fiddler makes it easy to share captured traces with different people. All captur
 
 
 <p>This utility is written in FSharp the <a href="https://github.com/rahulpnath/todoisttemplatetransformer">source code is available here</a> if you are interested. I am still in the initial stages of learning FSharp, so if you have any suggestions to improve the code, please raise a Pull Request or drop in a comment.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Visual Studio Task List - Keep Track of Your TODO Comments]]></title>
-    <link href="http://rahulpnath.com/blog/visual-studio-task-list-keep-track-of-your-todo-comments/"/>
-    <updated>2017-05-03T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/visual-studio-task-list-keep-track-of-your-todo-comments</id>
-    <content type="html"><![CDATA[<p>It often happens when coding that I skip over some part and want to come back to it at a later point in time. I leave some comments in the code so that I do not miss it. It can be a bit tricky to keep track of these comments themselves. Before pushing up the changes to <a href="https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell">master branch</a> or creating a <a href="https://help.github.com/articles/about-pull-requests/">Pull Request</a>, I make sure that all such comments are addressed.</p>
-
-<p>Visual Studio comes with a <a href="https://msdn.microsoft.com/en-us/library/txtwdysk(v=vs.120).aspx">Task List</a> that is handy to track such unfinished work in code. It helps track your pending work items in one place and easily navigate to it. To have a comment appear in the task list, it has to start with a defined token (TODO, HACK, UNDONE, etc.) followed by the comment.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsInRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">theDateTime</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">//TODO: Implement this function</span>
-</span><span class='line'>    <span class="k">throw</span> <span class="k">new</span> <span class="nf">NotImplementedException</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><img src="http://rahulpnath.com/images/taskList.png" class="center" alt="Visual Studio Task List" /></p>
-
-<blockquote><p><em>A comment in your code preceded by a comment marker and a predefined token will appear in the Task List window. For example, the above comment has three distinct parts:</em></p>
-
-<ul>
-<li><em>The comment marker (//)</em></li>
-<li><em>The token (TODO)</em></li>
-<li><em>The comment (the rest of the text)</em></li>
-</ul>
-</blockquote>
-
-<p>Visual Studio by default has TODO, HACK and UNDONE as tokens. You can modify this under Options -> Task List. New custom tokens can be added as required and used instead of the default ones.</p>
-
-<p><img src="http://rahulpnath.com/images/taskList_customize.png" class="center" alt="Visual Studio, Customize Task List" /></p>
-
-<p>When in a multi-member team you can either use custom tokens per member or append the comment with your name or feature name. The Task List provides Search feature with which you can filter the tasks created by you or for the feature you are working.</p>
-
-<p>I try to remove all TODO comments before merging to the master branch. For tasks that need to be tracked even after a merge, I create separate work items to the project backlog (VSTS, GitHub Tasks, Jira whatever the team is using). I might still leave the TODO comment with the relevant ticket details as well for tracking.</p>
-
-<p>The next time you leave some unfinished work for later make sure you have it tracked. Hope it helps!</p>
 ]]></content>
   </entry>
   
