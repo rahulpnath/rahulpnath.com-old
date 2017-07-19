@@ -163,6 +163,125 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-14T22:31:51+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 14<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dependency-injection/'>dependency injection</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/isregistered-on-unity-container-for-generic-type/" itemprop="url">IsRegistered on Unity Container for Generic Type</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This post just describes a bug that is there in the Unity (3.5.1404) IoC container, when using the IsRegistered extension method, to check for generic types and a possible fix for it.</em></p>
+
+<p><a href="http://msdn.microsoft.com/en-us/library/ff647202.aspx">Unity</a> IoC container provides <a href="http://msdn.microsoft.com/en-us/library/microsoft.practices.unity.unitycontainerextensions.isregistered(v=pandp.51).aspx">IsRegistered</a> extension method, that can be used to check whether a registration exists for a given type and name (can be null too) combination. When a generic type is registered in the container and trying to check IsRegistered using a concrete typed version of the generic interface it returns false.</p>
+
+<p>As shown in the below code snippet, calling IsRegistered on a non-generic interface(<em>IFooBar</em>) returns true, indicating that a registration exists. But for the generic interface(<em>IFooGeneric&lt;></em>), trying to check if a registration exists for a concrete type (<em>IFooGeneric<string></em> - as only concrete types can be resolved from the container and an open generic type cannot be resolved) it returns false.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">IUnityContainer</span> <span class="n">unityContainer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UnityContainer</span><span class="p">();</span>
+</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooBar</span><span class="p">),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooBarImplementation</span><span class="p">));</span>
+</span><span class='line'><span class="n">unityContainer</span><span class="p">.</span><span class="n">RegisterType</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">IFooGeneric</span><span class="p">&lt;&gt;),</span> <span class="k">typeof</span><span class="p">(</span><span class="n">FooGenericImplementation</span><span class="p">&lt;&gt;));</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasFooBarRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooBar</span><span class="p">&gt;();</span> <span class="c1">// Returns true</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">hasFooGenericStringRegistration</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">IsRegistered</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Returns False</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">fooGenericString</span> <span class="p">=</span> <span class="n">unityContainer</span><span class="p">.</span><span class="n">Resolve</span><span class="p">&lt;</span><span class="n">IFooGeneric</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;();</span> <span class="c1">// Resolution Succeeds</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <a href="https://unity.codeplex.com/SourceControl/latest#source/Unity/Src/UnityContainerExtensions.cs">IsRegistered method </a> as shown below, loops through the list of available registrations looking for a match on the registered type and name. The &lsquo;<em>typeToCheck</em>&rsquo; is the type of the object that we are trying to resolve in IsRegistered - <em>typeof(IFooGeneric<string>)</em>, but the registered type is <em>typeof(IFooGeneric&lt;>)</em>. Because of this the comparison fails and the registration does not pass the where clause of the query, causing the function to return <em>false</em>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
+</span><span class='line'>                   <span class="k">where</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span> <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
+</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To fix this, we would need to modify the where condition so that in cases where the RegisteredType is a generic type definition, it would compare with the generic type definition of &lsquo;<em>typeToCheck</em>&rsquo;, as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">genericTypeToCheck</span> <span class="p">=</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericType</span>
+</span><span class='line'>                         <span class="p">?</span> <span class="n">typeToCheck</span><span class="p">.</span><span class="n">GetGenericTypeDefinition</span><span class="p">()</span>
+</span><span class='line'>                         <span class="p">:</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">registration</span> <span class="p">=</span> <span class="k">from</span> <span class="n">r</span> <span class="k">in</span> <span class="n">container</span><span class="p">.</span><span class="n">Registrations</span>
+</span><span class='line'>                   <span class="k">where</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span><span class="p">.</span><span class="n">GetTypeInfo</span><span class="p">().</span><span class="n">IsGenericTypeDefinition</span>
+</span><span class='line'>                   <span class="p">?</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">genericTypeToCheck</span>
+</span><span class='line'>                   <span class="p">:</span> <span class="n">r</span><span class="p">.</span><span class="n">RegisteredType</span> <span class="p">==</span> <span class="n">typeToCheck</span><span class="p">)</span>
+</span><span class='line'>                   <span class="p">&amp;&amp;</span> <span class="n">r</span><span class="p">.</span><span class="n">Name</span> <span class="p">==</span> <span class="n">nameToCheck</span>
+</span><span class='line'>                   <span class="k">select</span> <span class="n">r</span><span class="p">;</span>
+</span><span class='line'><span class="k">return</span> <span class="n">registration</span><span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">!=</span> <span class="k">null</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>A similar <a href="https://unity.codeplex.com/discussions/568979">issue</a> was already raised in the unity discussions, which I feel was closed inappropriately.</p>
+
+<blockquote><p>If a container can Resolve a particular type then it should also be able to return that it IsRegistered.</p></blockquote>
+
+<p>Please do be aware that using IsRegistered extensively has a <a href="http://unity.codeplex.com/discussions/268223">negative impact on performance</a> as looping through the Registration looking for the name and type has <a href="http://en.wikipedia.org/wiki/Big_O_notation">O(n) complexity</a>. But that still does not justify the bug!.</p>
+
+<p><em>I have submitted a <a href="https://unity.codeplex.com/SourceControl/network/forks/rahulpnath/isRegisteredForGenericTypes/contribution/7903">pull request</a> for the fix and it would be worth checking the latest comments on that to see if there are any better approaches or problems that I might have missed out with my fix!</em>
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-10T10:24:15+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 10<sup>th</sup>, 2015</time>
         
 
@@ -1837,120 +1956,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-08-20T10:20:06+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 20<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/web/'>web</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/yo-ko-a-yeoman-generator-for-knockoutjs/" itemprop="url">yo ko - A Yeoman Generator For KnockoutJS</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Templates/Scaffolding is something that we are all used to nowadays, given that we use an IDE for development. Visual Studio is one popular IDE, that is very popular among people developing on the Microsoft platform. Visual studio comes with a lot of pre-installed templates and scaffolding templates and also has a rich extension support from the <a href="http://visualstudiogallery.msdn.microsoft.com/site/search?f%5B0%5D.Type=RootCategory&amp;f%5B0%5D.Value=templates&amp;f%5B0%5D.Text=Templates">community</a>. While developing on text editors(say like <a href="http://www.sublimetext.com/">Sublime Text</a> which is what I have been using), which are not for any specific technology you might not have all the templating and scaffolding supported right out of the box. You might find plugins for specific editors but not for all the frameworks that are available today.</p>
-
-<p><a href="http://yeoman.io/">Yeoman</a> is the Web&rsquo;s scaffolding tool for Modern Web Apps. Yeoman is a command line tool that runs over <a href="http://nodejs.org/">Node.js</a>. Setting it up is pretty easy with the instructions <a href="http://yeoman.io/learning/index.html">here</a>. To scaffold web applications, which is the same as creating a new project in Visual Studio from a template, we need to install framework specific generators for Yeoman. There are some `<a href="http://yeoman.io/generators/official.html">officially maintained generators</a> and also ones that are <a href="http://yeoman.io/generators/community.html">maintained by the community</a>.</p>
-
-<p>KnockoutJs helps you simplify dynamic JavaScript UIs using the Model-View-ViewModel (MVVM) pattern. If you are new to knockout and come from a XAML backgorund, <a href="http://www.rahulpnath.com/blog/knockoutjs-for-xaml-developers/">KnockoutJS For XAML Developers</a>, would help you.   For KnockoutJs, there is an awesome generator that is written by <a href="https://twitter.com/stevensanderson">Steve Sanderson</a>, the creator of knockout itself and is available <a href="https://www.npmjs.org/package/generator-ko">here</a>. You can install this as below</p>
-
-<blockquote><p>$ npm install generator-ko</p></blockquote>
-
-<p>Once installed you can generate your web app from the command prompt and running the command &lsquo;<strong>yo ko</strong>&rsquo;. This is will ask for the name of the project, whether to use JavaScript or TypeScript and also if you need to include automated tests using Jasmine and Karma. On giving your options your web app would be  scaffolded out.</p>
-
-<p><img class="center" alt="hp_dv4" src="/images/yo_ko.png" /></p>
-
-<p><strong>Project Structure</strong></p>
-
-<p>The generated web app is a simple Single Page Application(SPA), using the components feature released with <a href="http://blog.stevensanderson.com/2014/08/18/knockout-3-2-0-released/">Knockout 3.2.0</a>, <a href="http://bower.io/">Bower</a> to manage packages and <a href="http://gulpjs.com/">Gulp</a> for the build</p>
-
-<p><img class="left" alt="hp_dv4" src="/images/yo_ko_structure.png" /> The generator creates the folder structure as shown here and by default has setup the required packages. It uses the following packages:</p>
-
-<ul>
-<li><a href="http://getbootstrap.com/">Bootstrap</a>: Responsive UI framework</li>
-<li><a href="http://millermedeiros.github.io/crossroads.js/">Crossroads</a>: Routing Library</li>
-<li><a href="https://github.com/millermedeiros/hasher/">Hahser</a>: Browsing History Manager</li>
-<li><a href="http://jquery.com/">Jquery</a>: Feature rich library</li>
-<li><a href="http://millermedeiros.github.io/js-signals/">Js-Signals</a>: Custom/Event Messaging System</li>
-<li><a href="http://www.rahulpnath.com/blog/knockoutjs-for-xaml-developers/">Knockout</a>: Simplifies dynamic Javascript UIs with <a href="http://www.rahulpnath.com/blog/tag/mvvm/">MVVM pattern</a></li>
-<li><a href="http://requirejs.org/">Requirejs</a>: File and Module Loader</li>
-<li><a href="https://github.com/requirejs/text">Requirejs-text</a>: AMD loader plugin for text resources</li>
-</ul>
-
-
-<p>There are three components: <em>about-page</em>, <em>home-page</em> and <em>nav-bar</em>. The main, <em>index.html</em> composes these components into the full blown view. The nav-bar component is referred as is and the home and about page are dynamically loaded based on the nav-bar menu interaction. As shown below the <em>div</em> binds to the component based on the selected route.We look further deep on how the view models bind and these components are tied together.<br style="clear:both;" /></p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;body&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;nav-bar</span> <span class="na">params=</span><span class="s">&quot;route: route&quot;</span><span class="nt">&gt;&lt;/nav-bar&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;page&quot;</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span> <span class="na">data-bind=</span><span class="s">&quot;component: { name: route().page, params: route }&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
-</span><span class='line'><span class="nt">&lt;/body&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The javascript modules are loaded using Requirejs and the startup class for this is <em>app/starup.js</em> as defined in the data-main attribute in index.html. The knockout components are registered here and view-bindings are setup.Registering a component can be in multiple ways and is well explained in the article <a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">here</a>. The <em>currentRoute</em> object is what gets binded to the page and is defined in the app/router.js where the crossroads is setup. To use any other routing library of your choice this is where you would need to update. Whenever a user clicks a menu item and navigates to a new route, the currentRoute is updated, which in turn triggers the corresponding component to get loaded. <a href="https://github.com/millermedeiros/hasher/">Hasher</a> library is used to listen to browser navigation events and update them to crossroads, where the input is parsed and dispatch matched signal for the first Route that matches the input.</p>
-
-<p>The knockout components are defined in the <em>components</em> folder and has both the html and js parts in the same component folder. Whenever the component is loaded the viewmodel defined in the corresponding js file gets bounded to it. This way of developments helps to keep different components of the app well separated as modules and compose them into the view as required.</p>
-
-<p>The build is managed is using <a href="http://gulpjs.com/">Gulp</a>, which can be installed using <a href="https://www.npmjs.org/package/gulp">npm</a>. To build the project, you need to run <em>gulp</em> at the root folder. The build packages all the javascript modules/files into a single file, replaces the required updates in the html file, minifies the html, js and css etc. If not for the build systems, the application would  have to make lots of file/scripts/css requests or would have to have it all in the same file while development which makes working as a team difficult. These build system are highly configurable and can be used to setup output as required. The build tasks are defined in the <em>gulpfile.js</em> and the &lsquo;<em>default</em>&rsquo; task runs when running the gulp command. This is will generate the optimized files in the <em>dist</em> folder, which can be hosted in the server of your choice. I use the <a href="https://www.npmjs.org/package/http-server">zero-configuration command-line http-server</a> available on nodejs.</p>
-
-<p><img src="/images/yo_ko_app.png" alt="yo ko application " /></p>
-
-<p><strong>Adding New Components</strong></p>
-
-<p>To add new components the knockout generator provides a command which generated the html/css components in the appropriate folder. You would still need to add the registration of the component in the startup file.</p>
-
-<blockquote><p>yo ko:component &lt;component name&gt;</p></blockquote>
-
-<p>This is just a starting point on building Single Page Applications using knockoutjs. Start on from here to build great web applications.</p>
-
-<p><strong>Additional Resources</strong></p>
-
-<ul>
-<li><a href="http://blog.stevensanderson.com/2014/06/11/architecting-large-single-page-applications-with-knockout-js/">Architecting large Single Page Applications with Knockout.js</a></li>
-<li><a href="http://www.knockmeout.net/2014/06/knockout-3-2-preview-components.html">Knockout.js 3.2 Preview : Components</a></li>
-<li><a href="http://www.scottlogic.com/blog/2014/02/28/developing-large-scale-knockoutjs-applications.html">Developing Large Scale Knockoutjs Applications</a></li>
-<li><a href="http://www.scottlogic.com/blog/2014/07/30/spa-angular-knockout.html">Single Page Applications - Angular Vs Knockout</a></li>
-</ul>
-
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1974,6 +1979,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/hemingway-editor/">Tip of the Week: Hemingway Editor - Improve Your Writing</a>
+    
     <a class="list-group-item " href="/blog/signing-a-pdf-file-using-azure-key-vault/">Signing a PDF File Using Azure Key Vault</a>
     
     <a class="list-group-item " href="/blog/beyond-compare-compare-files-quick-and-easy/">Tip of the Week: Beyond Compare - Compare Files Quick and Easy</a>
@@ -1981,8 +1988,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/review-pixel/">Review: Pixel, Phone by Google - Made by Google</a>
     
     <a class="list-group-item " href="/blog/grammarly-improve-your-writing/">Tip of the Week: Grammarly - Improve Your Writing</a>
-    
-    <a class="list-group-item " href="/blog/left-align-your-code-for-better-readability/">Left Align Your Code For Better Readability</a>
     
   </div>
 </section>
