@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-07-23T00:02:36+00:00</updated>
+  <updated>2017-07-24T00:02:42+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,85 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Web App Restarting Automatically Due to Overwhelming Change Notification]]></title>
+    <link href="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/"/>
+    <updated>2017-07-24T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification</id>
+    <content type="html"><![CDATA[<p>At one of my clients, we faced a strange issue recently. The Azure Web application restarted automatically very often. The event log in the <a href="https://github.com/projectkudu/kudu/wiki/Kudu-console">Kudu console</a> showed the below error message.</p>
+
+<blockquote><p><em>2017-07-13 00:09:50,333 [P45516/D4/T171] INFO  Umbraco.Core.UmbracoApplicationBase - Application shutdown. Details: HostingEnvironment</em></p>
+
+<p><em>_shutDownMessage=Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>  <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>HostingEnvironment initiated shutdown</em>  <br/>
+<em>Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>   <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>Initialization Error</em>   <br/>
+<em>HostingEnvironment caused shutdown</em></p></blockquote>
+
+<p>As you can tell from the logs, the website is an <a href="https://umbraco.com/">Umbraco</a> CMS hosted as an Azure Web application. We noticed that the restarts were happening more when the content was getting updated through <a href="https://our.umbraco.org/documentation/getting-started/backoffice/">backoffice</a>. The error also states that the restart was caused due to <em>Overwhelming Change Notification in wwwroot</em>. This hints that there are changes that are happening under the wwwroot folder, where the site is hosted.</p>
+
+<div class="alert alert-info">
+Even though this post details on why the specific site on Umbraco was restarting, most of the contents are still applicable for any other ASP.NET MVC application.
+</div>
+
+
+<h3>fcnMode Configuration</h3>
+
+<p>A quick search got me to the <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection.fcnmode(v=vs.110">fcnMode</a>.aspx)setting under <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection(v=vs.110">httpRuntime</a>.aspx) section. An ASP.net application monitors certain files and folders under the wwwroot folder and will restart the application domain whenever it detects changes. This likely look looks the reason why the web site is restarting.</p>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.fcnmode(v=vs.110">fcnMode enumeration</a>.aspx) can take one of the four values below. For an Umbraco application this is by <a href="http://issues.umbraco.org/issue/U4-7712">default set to <em>Single</em></a>.</p>
+
+<ul>
+<li><strong>Default</strong>: For each subdirectory, the application creates an object that monitors the subdirectory. This is the default behavior.</li>
+<li><strong>Disabled</strong>: File change notification is disabled.</li>
+<li><strong>NotSet</strong>: File change notification is not set, so the application creates an object that monitors each subdirectory. This is the default behavior.</li>
+<li><strong>Single</strong>: The application creates one object to monitor the main directory and uses this object to monitor each subdirectory.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>fcnMode set to Single for Umbraco application</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;system.web&gt;</span>
+</span><span class='line'>    ...
+</span><span class='line'>    <span class="nt">&lt;httpRuntime</span>
+</span><span class='line'>        <span class="na">requestValidationMode=</span><span class="s">&quot;2.0&quot;</span>
+</span><span class='line'>        <span class="na">enableVersionHeader=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>        <span class="na">targetFramework=</span><span class="s">&quot;4.5&quot;</span>
+</span><span class='line'>        <span class="na">maxRequestLength=</span><span class="s">&quot;51200&quot;</span>
+</span><span class='line'>        <span class="na">fcnMode=</span><span class="s">&quot;Single&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    ...
+</span><span class='line'><span class="nt">&lt;system.web&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>FCNMode creates a monitor object with a buffer size of 4KB for each folder. When FCNMode is set to Single, a single monitor object is created with a buffer size of 64KB. When there are file changes, the buffer is filled with file change information. If the buffer gets overwhelmed with too many file change notifications an “Overwhelming File Change Notifications” error will occur and the app domain will recycle. The likelihood of the buffer getting overwhelmed is higher in an environment where you are using separate file server because the folder paths are much larger.</em></p>
+
+<p>-<a href="http://www.dnnsoftware.com/community-blog/cid/154980/aspnet-file-change-notifications-and-dnn"> ASP.NET File Change Notifications and DNN</a></p></blockquote>
+
+<p>You can read more about fcnMode setting and how it affects ASP.Net applications <a href="https://shazwazza.com/post/all-about-aspnet-file-change-notification-fcn/">here</a>.</p>
+
+<h3>What&rsquo;s causing file changes?</h3>
+
+<p>Default reaction when you come across such a setting or configuration value might be to turn that off and fcnMode does allow that as well - <em>Disabled</em>. But first, it is better that we understand what is causing file changes under the wwwroot folder and see if we can address that. The <a href="https://shazwazza.com/post/fcn-file-change-notification-viewer-for-aspnet/">FCN Viewer</a> helps visualize how many files and folders are being watched in as ASP.Net application.</p>
+
+<p>In the Umbraco website, we are using a third party library <a href="http://imageprocessor.org/">ImageProcessor</a> that helps to process images dynamically. The ImageProcessor caches images and the <a href="http://imageprocessor.org/imageprocessor-web/configuration/#cacheconfig">cache location is configurable</a>. By default, it caches files under the App_Data/cache folder, which also happens to be one of the folders that the ASP.Net application monitors for changes. So anytime there are lots of files changing in the cache folder it causes the single monitor object monitoring the folders. This causes a buffer overflow and triggers an application restart due to <em>Overwhelming file change notifications</em>. However, ImageProcessor does allow moving the <a href="https://github.com/JimBobSquarePants/ImageProcessor/issues/518">cache folder outside of the wwwroot folder</a>. This causes the file not to be monitored and still work fine with the application. Since the <a href="https://twitter.com/Shazwazza/status/885770960321773568">library does not create the cache folder automatically</a>, we need to make sure that the folder specified in the config file exists.</p>
+
+<p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
+
+<p>Hope that helps fix your application restarting problem!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Hemingway Editor - Improve Your Writing]]></title>
@@ -1757,27 +1836,6 @@ Fiddler makes it easy to share captured traces with different people. All captur
 <p>Feedly has <a href="https://feedly.com/apps.html">apps and browser plugins</a> for a broad range of platforms and provides a uniform experience across devices. Currently, I am on the free version of the application, and it has a limit of 100 feeds. The <a href="https://feedly.com/i/pro/">pro version</a> provides a lot more features if you are interested.</p>
 
 <p>Get a one stop reading place, Get <a href="https://feedly.com/">Feedly</a>!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Password Manager - Get One If you Haven't Already]]></title>
-    <link href="http://rahulpnath.com/blog/password-manager-get-one-if-you-havent-already/"/>
-    <updated>2017-05-11T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/password-manager-get-one-if-you-havent-already</id>
-    <content type="html"><![CDATA[<p><img src="http://rahulpnath.com/images/password_manager.jpg" alt ="https://pixabay.com/en/data-security-keyboard-computer-1590455/" class="center" /></p>
-
-<p>First things first; <strong>Check if any of your accounts on the web has been compromised in the various data breaches</strong>. All you need is enter your email address in <a href="https://haveibeenpwned.com/">haveibeenpwned</a>, and it tells you the rest.</p>
-
-<p>My email did show up on multiple breaches, and there is nothing much that you can do about it anyways. The problem with data breaches is not confined just to the site that got breached but also with other sites if you have reused your passwords. The best that we can do is to use different passwords for each account that we create and never reuse them across sites. Also, remember to use &lsquo;stronger&rsquo; passwords. So what makes a password stronger? - <a href="https://www.troyhunt.com/only-secure-password-is-one-you-cant/">The one that you cannot remember</a>.</p>
-
-<blockquote><p><em>A <a href="https://en.wikipedia.org/wiki/Password_manager">Password manager</a> assists in generating, storing, and retrieving complex passwords from an encrypted database</em></p></blockquote>
-
-<p>Password Managers allows keeping all your passwords in a single strongly encrypted location. This manager itself is protected by a password - the master password!. The master password is the only password that you need to remember, so make sure you <a href="https://support.1password.com/strong-master-password/">get this really strong</a>!</p>
-
-<p>There are different <a href="http://au.pcmag.com/password-managers-products/4524/guide/the-best-password-managers-of-2017">password managers</a> out there, both paid and free. Personally, I use <a href="https://1password.com/">1Password</a> and love the experience that it has across all my devices. Initially, I was worried to have my passwords (password since I was mostly reusing the same one) on a cloud store with an external service. But with all these data breaches that I was part of and having realized that not having one is worse than having it in the cloud. <em><a href="https://www.troyhunt.com/password-managers-dont-have-to-be-perfect-they-just-have-to-be-better-than-not-having-one/">Password managers don&rsquo;t have to be perfect, they just have to be better than not having one</a></em>. Having a password manager does not prevent your from being part of data breaches, but at least it protects your accounts elsewhere as you have not reused the password.</p>
-
-<p>So if you still remember your passwords or reuse them, go set yourself up with a password manager!</p>
 ]]></content>
   </entry>
   

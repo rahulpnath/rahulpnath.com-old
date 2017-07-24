@@ -163,6 +163,104 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-06T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 6<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/solve-the-business-problem-dont-mimic-the-process/" itemprop="url">Solve the Business Problem, Don&#8217;t Mimic The Process</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><a href="http://www.dhc-gmbh.com/en/kompetenzen/business-process-management/"><img class="center" alt="Business" src="/images/business_problem_automation.jpg"/></a></p>
+
+<p>While working with clients I often get into conversations with the domain experts and people involved directly with the business. The discussions usually happen around what the process they are currently doing and how to automate those. Knowing the business process is helpful but getting influenced by that to design the solution is often not effective. Recently our team was in a conversation with a domain expert for a new feature request.</p>
+
+<div class="alert alert-warning">
+The series of events mentioned below were modified to fit into the conversational style used in the post.
+</div>
+
+
+<blockquote><p><em><strong>Domain Expert</strong> We need to charge customers a processing fee if they pay using an electronic payment method. Depending on the type of card (mastercard, visa etc) the processing charge percentage differs. The processing fees are always charged in the subsequent billing period after their current payment. For e.g. if a customer pays 1000$ for the month of November, then his December bill will have 2% card processing charge in the December invoice</em></p>
+
+<p><em><strong>Team</strong> That sounds easy, think we have enough details to get started on this. Thank you.</em></p>
+
+<p><em><strong>Domain Expert</strong> Perfect. Ahhh&hellip; Before you go, I think this can be a <a href="http://hangfire.io/">hangfire job</a> that runs on 29 every month, a few days before the billing date, 3rd, and generate these charges for the client. This is what we do manually at present. (And walks off)</em></p>
+
+<p><em><strong>Team</strong> Discussing amongst themselves the team agreed that creating a recurring job is the way to go. Based on the assumption that this job will be run only once a month, the job was to read all the invoices from 29th of the previous month till 28th of the current month and charge the clients. The meeting was dismissed and off went everyone busy to get the new feature out</em></p></blockquote>
+
+<h3>Business has Exceptions</h3>
+
+<p>Problems started coming up the immediate month of feature deployment. Below is the sequence of events that happened.</p>
+
+<ul>
+<li><strong>29th</strong> : Nice work, team! The processing charges have been applied as expected.</li>
+<li><strong>30th</strong> : Some of the invoices have wrong data. We have deleted them. Can you run the job?</li>
+<li><strong>2nd</strong> : A few of our clients (as usual) paid late and we need to charge their processing fees. Can you run the job?</li>
+<li><strong>15th</strong> : One of our clients is ending tomorrow, so we need to send them an invoice and it should include the processing fees for their last payment. Can you run the job?</li>
+</ul>
+
+
+<p>But wait! We had decided that we will run this job only once a month and that is the only time we need to process the charges. We cannot run that job over and over again.</p>
+
+<blockquote><p><em>What I’ve noticed over the years is that our users find very creative ways to achieve their business objectives despite the limitations of the system that they’re working with. We developers ultimately see these as requirements, but they are better interpreted as <strong>workarounds</strong>.</em></p>
+
+<p><strong><em>- <a href="http://udidahan.com/2013/04/28/queries-patterns-and-search-food-for-thought/">Udi Dahan</a></em></strong></p></blockquote>
+
+<p>The business was right when it said that <em>&lsquo;This is what we do manually at present.</em> What they did not say though is that there were always exceptions. And in these cases, they did the same process, but just for those exceptions. Business process mostly will be around the majority of the cases and the exceptions always get handled ad-hoc. So for the business it&rsquo;s always that which takes a good part of their time that matters more.</p>
+
+<h3>Finding the Way Out</h3>
+
+<p>The problem, in this case, was that the team modeled the solution exactly as the business did manually. Think kind of a solution is most likely to fail in case of exceptions. The human brain can easily deal with these exceptions. But for a program to solve it that way it needs to be told so, which implies that there need to be alternate flow paths defined. So with the improved understanding of these exception cases, the team does another analysis through the problem. After some discussion the team re-defines their original problem statement - *We need to be able to run the job any number of times and it should have the same effect.</p>
+
+<blockquote><p><em>A payment should get </em>one and only one<em> processing charge associated, no matter however times it is seen by the job.</em></p></blockquote>
+
+<p>With the new implementation, we decided to maintain a list of payments (a strong identifier that does not change) we have seen and processed. So every time a payment is seen, it is matched to see if it is already processed. If a charge is not already applied, a charge is applied and added to the list of processed payments. This ensures that they can run the job anytime. The team added in capability to specify the time range to look for invoices. By default, this ranged from 29th - 28th. The team also added in a way to void out payment charges applied, so that whenever the invoices changed then can just clear that off and re-run the job. These changes gave the flexibility to meet the businesses exception cases.</p>
+
+<h3>Idempotent</h3>
+
+<blockquote><p><em>The term <a href="http://www.enterpriseintegrationpatterns.com/patterns/messaging/IdempotentReceiver.html">idempotent</a> is used in mathematics to describe a function that produces the same result if it is applied to itself, i.e. f(x) = f(f(x)). In Messaging this concept translates into a message that has the same effect whether it is received once or multiple times. This means that a message can safely be re-sent without causing any problems even if the receiver receives duplicates of the same message.</em></p></blockquote>
+
+<p>Being idempotent is what we missed with the first implementation. There was an assumed &lsquo;idempotency&rsquo; that the job will be run only once a month. But this constraint is not something that the code had control of and something it could enforce. The job was also not idempotent at the granular level that it was affecting - payments. Asserting idempotency at the batch level fails when we want to re-run batches (when exceptions like the wrong invoice happens). Idempotency should be enforced at the unit level of change, which is what maintaining a list of processed payments helps with. Any payment that is not processed before will get processed now when the job is run. We can also ensure that the payment will only be processed at most once.</p>
+
+<p>This is just an example where we fail to see beyond the business problem and also see the computing problems accompanying it. Not always will it be easy and fast to rewrite the code. Even if we fail to see these problems the business will eventually make us to. But it is when we can see the computing problems that accompanies a business problem that we start becoming better developers. Applying basic computing principles, probing the domain expert during discussions, sitting with domain experts while they work etc. are all good ways to start seeing the untold business processes. Hope this helps the next time you are into a meeting with domain expert or solving a business problem.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-01T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 1<sup>st</sup>, 2016</time>
         
 
@@ -1271,258 +1369,6 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-26T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 26<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/refactoring/'>refactoring</a>, <a class='category' href='/blog/category/tdd/'>tdd</a>, <a class='category' href='/blog/category/testing/'>testing</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/introduce-tests-when-fixing-bugs/" itemprop="url">Introduce Tests when Fixing Bugs</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>When creating a subscription for a client, the calculated number of months was off by one at times</em> - This was a bug reported from production application that I was currently working on. Though, not a blocker, it was creating enough issues for the end users that it required a hotfix. One of my friends picked this issue up and started working on it. A while later, while I was checking the status of that bug I noticed him playing around with  <a href="https://www.linqpad.net/">Linqpad</a>. He was testing a method to calculate the number of months between two dates with different values.</p>
-
-<p><a href="https://www.flickr.com/photos/toomore/23066277453" class="center" title="Image By Toomore Chiang, from https://www.flickr.com/photos/toomore/23066277453"><img src="/images\testing.jpg" class="center" alt="Testing"></a></p>
-
-<p>We often test our code elsewhere because it&rsquo;s coupled with other code making it difficult to test at the source itself. The fact that we need to test an isolated part of a larger piece of code is a &lsquo;<a href="https://en.wikipedia.org/wiki/Code_smell">Code smell</a>&rsquo;. There possibly is a class or method that can be extracted and unit tested separately.</p>
-
-<blockquote><p><em>Having to test code elsewhere other than the source is a Smell. Look for a method or class waiting to be extracted</em></p></blockquote>
-
-<p>In this specific case, below is how the code that calculates month difference between two dates looked like. As you can see below, the code is coupled with the newAccount, which in turn is coupled with a few other entities that I have omitted. Added to this, this method existed in an MVC controller, which had other dependencies.</p>
-
-<figure class='code'><figcaption><span>Existing Code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">...</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">date1</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">StartDate</span><span class="p">;</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">date2</span> <span class="p">=</span> <span class="n">newAccount</span><span class="p">.</span><span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'><span class="kt">int</span> <span class="n">monthsApart</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span> <span class="p">*</span> <span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">)</span> <span class="p">-</span> <span class="m">1</span><span class="p">;</span>
-</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth1</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
-</span><span class='line'><span class="kt">decimal</span> <span class="n">daysInMonth2</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">DaysInMonth</span><span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
-</span><span class='line'><span class="kt">decimal</span> <span class="n">dayPercentage</span> <span class="p">=</span> <span class="p">((</span><span class="n">daysInMonth1</span> <span class="p">-</span> <span class="n">date1</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span> <span class="p">/</span> <span class="n">daysInMonth1</span><span class="p">)</span>
-</span><span class='line'>                      <span class="p">+</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Day</span> <span class="p">/</span> <span class="n">daysInMonth2</span><span class="p">);</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">months</span> <span class="p">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">Math</span><span class="p">.</span><span class="n">Ceiling</span><span class="p">(</span><span class="n">monthsApart</span> <span class="p">+</span> <span class="n">dayPercentage</span><span class="p">);</span>
-</span><span class='line'><span class="p">...</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This explains why it was easier to copy this code across and test it in Linqpad. It was difficult to construct the whole hierarchy of objects and to test this. So the easiest thing to fix the bug in is to test elsewhere and fit back in its original place.</p>
-
-<h3>Extract Method Refactoring</h3>
-
-<p>This is one of the scenario where <a href="http://refactoring.com/catalog/extractMethod.html">Extract Method</a> Refactoring fits in best. According to the definition</p>
-
-<blockquote><p><em>You have a code fragment that can be grouped together. <strong>Turn the fragment into a method whose name explains the purpose of the method.</strong></em></p></blockquote>
-
-<p>Extract Method Refactoring is also referred in <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131177052&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=TTKEEYQLEMTOXPPQ">Working Effectively With Legacy Code</a> and <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0131495054&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=XR55UAOEPPMVMFK3">xUnit Test Patterns</a> (to refactor test code).  It helps separate logic from rest of the object hierarchy and test individually. In this scenario, we can extract the logic to calculate the number of months between two dates into a separate method.</p>
-
-<p>For <a href="http://butunclebob.com/ArticleS.UncleBob.TheThreeRulesOfTdd">Test driving</a> the extracted method, all I do initially is to extract the method. As the method purely depends on its passed in parameters and not on any instance variables, I mark it as a static method. This removes the dependency from the MVC controller class parameters and the need to construct them in the tests . The test cases includes the failed &lsquo;off by one&rsquo; case (<em>(&ldquo;25-Aug-2017&rdquo;, &ldquo;25-Feb-2018&rdquo;, 6)</em>). With tests that pass and fail it&rsquo;s now safe to make changes to the extracted method to fix the failing cases.</p>
-
-<figure class='code'><figcaption><span>Tests</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;10-Mar-2016&quot;, 1)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2016&quot;, &quot;11-Mar-2016&quot;, 2)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;10-Feb-2015&quot;, &quot;11-Mar-2016&quot;, 14)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Feb-2015&quot;, &quot;01-Mar-2015&quot;, 1)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;21-Sep-2016&quot;, &quot;22-Sep-2016&quot;, 1)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;25-Aug-2017&quot;, &quot;25-Feb-2018&quot;, 6)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;12-Aug-2016&quot;, &quot;15-Mar-2019&quot;, 32)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsToReturnsExpectedMonths</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">date1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">date2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">expected</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">SubscriptionController</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date1</span><span class="p">),</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">date2</span><span class="p">));</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>More than the algorithm used to solve the original issue what is more important is in identifying such scenarios and extracting them as a method. Make the least possible change to make it testable and fix step by step.</p>
-
-<blockquote><p><em>Whenever there are code fragments that depend only on a subset of properties of your class or function inputs, it could be extracted into a separate method.</em></p></blockquote>
-
-<figure class='code'><figcaption><span>Extracted method after Refactoring.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
-</span><span class='line'>        <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Introduce Value Object</h3>
-
-<p>Now that we have fixed the bug and have tests covering the different combinations, let&rsquo;s see if this method can live elsewhere and make it reusable. The start date and end date on account always go together and is a domain concept that can be extracted out as an &lsquo;Account Term Range&rsquo;. It can be represented as a DateRange <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. We can then introduce a method in the DateRange Value Object to return the number of months in the range. This makes the function reusable and also <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-readability-separating-business-language-and-programming-language-semantics/">code more readable</a>. I made the original refactored method as an extension method on DateTime and used it from DateRange Value Object.</p>
-
-<figure class='code'><figcaption><span>Encapsulate into Value Object</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">DateTimeExtensions</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">MonthsTo</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">date1</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">date2</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">int</span> <span class="n">months</span> <span class="p">=</span> <span class="n">Math</span><span class="p">.</span><span class="n">Abs</span><span class="p">(</span><span class="m">12</span><span class="p">*(</span><span class="n">date1</span><span class="p">.</span><span class="n">Year</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Year</span><span class="p">)</span> <span class="p">+</span> <span class="n">date1</span><span class="p">.</span><span class="n">Month</span> <span class="p">-</span> <span class="n">date2</span><span class="p">.</span><span class="n">Month</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">date2</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span> <span class="p">&gt;</span> <span class="n">date1</span><span class="p">.</span><span class="n">Date</span><span class="p">.</span><span class="n">Day</span><span class="p">)</span>
-</span><span class='line'>            <span class="n">months</span> <span class="p">=</span> <span class="n">months</span> <span class="p">+</span> <span class="m">1</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="n">months</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">StartDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">EndDate</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="c1">// Ignoring null checks</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End Date cannot be less than Start Date&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">GetMonths</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">StartDate</span><span class="p">.</span><span class="n">MonthsTo</span><span class="p">(</span><span class="n">EndDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="p">...</span> <span class="c1">// Rest of Value Object Code to override Equals and GetHashCode</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>If you are new to TDD or just getting started with tests, introducing tests while fixing bugs is a good place to start. This might also help make code decoupled and readable. Try <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">covering a fix with tests</a> the next time you fix a bug!</p>
-
-<h4><strong>References</strong></h4>
-
-<div>
-    <div class="row">
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0131495054/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131495054&linkCode=as2&tag=rahulpnath-20&linkId=XR55UAOEPPMVMFK3">
-                    <img src="/images/books_xunit.jpg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0321503627/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321503627&linkCode=as2&tag=rahulpnath-20&linkId=TR6UCCVP6CMGBBZQ">
-                    <img src="/images/books_goos.jpeg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-            <div class="thumbnail">
-                <a href="http://www.amazon.com/gp/product/0131177052/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131177052&linkCode=as2&tag=rahulpnath-20&linkId=TTKEEYQLEMTOXPPQ">
-                    <img src="/images/books_welc.jpg" data-holder-rendered="true" style="display: block;">
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1546,6 +1392,8 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
+    
     <a class="list-group-item " href="/blog/hemingway-editor/">Tip of the Week: Hemingway Editor - Improve Your Writing</a>
     
     <a class="list-group-item " href="/blog/signing-a-pdf-file-using-azure-key-vault/">Signing a PDF File Using Azure Key Vault</a>
@@ -1553,8 +1401,6 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
     <a class="list-group-item " href="/blog/beyond-compare-compare-files-quick-and-easy/">Tip of the Week: Beyond Compare - Compare Files Quick and Easy</a>
     
     <a class="list-group-item " href="/blog/review-pixel/">Review: Pixel, Phone by Google - Made by Google</a>
-    
-    <a class="list-group-item " href="/blog/grammarly-improve-your-writing/">Tip of the Week: Grammarly - Improve Your Writing</a>
     
   </div>
 </section>

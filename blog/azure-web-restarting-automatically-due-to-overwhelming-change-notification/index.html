@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Azure Web App Restarting Automatically Due to Overwhelming Change Notification - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Explore how the fcnMode setting and changes to files within wwwroot can cause application restarts." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Azure Web App Restarting Automatically Due to Overwhelming Change Notification" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/" />
+<meta property="og:description" content="Explore how the fcnMode setting and changes to files within wwwroot can cause application restarts." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/restart.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification" />
+<meta property="twitter:title" content="Azure Web App Restarting Automatically Due to Overwhelming Change Notification" />
+<meta property="twitter:description" content="Explore how the fcnMode setting and changes to files within wwwroot can cause application restarts." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/restart.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-07-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 24<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Azure Web App Restarting Automatically Due to Overwhelming Change Notification
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>At one of my clients, we faced a strange issue recently. The Azure Web application restarted automatically very often. The event log in the <a href="https://github.com/projectkudu/kudu/wiki/Kudu-console">Kudu console</a> showed the below error message.</p>
+
+<blockquote><p><em>2017-07-13 00:09:50,333 [P45516/D4/T171] INFO  Umbraco.Core.UmbracoApplicationBase - Application shutdown. Details: HostingEnvironment</em></p>
+
+<p><em>_shutDownMessage=Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>  <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>HostingEnvironment initiated shutdown</em>  <br/>
+<em>Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>   <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>Initialization Error</em>   <br/>
+<em>HostingEnvironment caused shutdown</em></p></blockquote>
+
+<p>As you can tell from the logs, the website is an <a href="https://umbraco.com/">Umbraco</a> CMS hosted as an Azure Web application. We noticed that the restarts were happening more when the content was getting updated through <a href="https://our.umbraco.org/documentation/getting-started/backoffice/">backoffice</a>. The error also states that the restart was caused due to <em>Overwhelming Change Notification in wwwroot</em>. This hints that there are changes that are happening under the wwwroot folder, where the site is hosted.</p>
+
+<div class="alert alert-info">
+Even though this post details on why the specific site on Umbraco was restarting, most of the contents are still applicable for any other ASP.NET MVC application.
+</div>
+
+
+<h3>fcnMode Configuration</h3>
+
+<p>A quick search got me to the <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection.fcnmode(v=vs.110">fcnMode</a>.aspx)setting under <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection(v=vs.110">httpRuntime</a>.aspx) section. An ASP.net application monitors certain files and folders under the wwwroot folder and will restart the application domain whenever it detects changes. This likely look looks the reason why the web site is restarting.</p>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.fcnmode(v=vs.110">fcnMode enumeration</a>.aspx) can take one of the four values below. For an Umbraco application this is by <a href="http://issues.umbraco.org/issue/U4-7712">default set to <em>Single</em></a>.</p>
+
+<ul>
+<li><strong>Default</strong>: For each subdirectory, the application creates an object that monitors the subdirectory. This is the default behavior.</li>
+<li><strong>Disabled</strong>: File change notification is disabled.</li>
+<li><strong>NotSet</strong>: File change notification is not set, so the application creates an object that monitors each subdirectory. This is the default behavior.</li>
+<li><strong>Single</strong>: The application creates one object to monitor the main directory and uses this object to monitor each subdirectory.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>fcnMode set to Single for Umbraco application</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;system.web&gt;</span>
+</span><span class='line'>    ...
+</span><span class='line'>    <span class="nt">&lt;httpRuntime</span>
+</span><span class='line'>        <span class="na">requestValidationMode=</span><span class="s">&quot;2.0&quot;</span>
+</span><span class='line'>        <span class="na">enableVersionHeader=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>        <span class="na">targetFramework=</span><span class="s">&quot;4.5&quot;</span>
+</span><span class='line'>        <span class="na">maxRequestLength=</span><span class="s">&quot;51200&quot;</span>
+</span><span class='line'>        <span class="na">fcnMode=</span><span class="s">&quot;Single&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    ...
+</span><span class='line'><span class="nt">&lt;system.web&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>FCNMode creates a monitor object with a buffer size of 4KB for each folder. When FCNMode is set to Single, a single monitor object is created with a buffer size of 64KB. When there are file changes, the buffer is filled with file change information. If the buffer gets overwhelmed with too many file change notifications an “Overwhelming File Change Notifications” error will occur and the app domain will recycle. The likelihood of the buffer getting overwhelmed is higher in an environment where you are using separate file server because the folder paths are much larger.</em></p>
+
+<p>-<a href="http://www.dnnsoftware.com/community-blog/cid/154980/aspnet-file-change-notifications-and-dnn"> ASP.NET File Change Notifications and DNN</a></p></blockquote>
+
+<p>You can read more about fcnMode setting and how it affects ASP.Net applications <a href="https://shazwazza.com/post/all-about-aspnet-file-change-notification-fcn/">here</a>.</p>
+
+<h3>What&rsquo;s causing file changes?</h3>
+
+<p>Default reaction when you come across such a setting or configuration value might be to turn that off and fcnMode does allow that as well - <em>Disabled</em>. But first, it is better that we understand what is causing file changes under the wwwroot folder and see if we can address that. The <a href="https://shazwazza.com/post/fcn-file-change-notification-viewer-for-aspnet/">FCN Viewer</a> helps visualize how many files and folders are being watched in as ASP.Net application.</p>
+
+<p>In the Umbraco website, we are using a third party library <a href="http://imageprocessor.org/">ImageProcessor</a> that helps to process images dynamically. The ImageProcessor caches images and the <a href="http://imageprocessor.org/imageprocessor-web/configuration/#cacheconfig">cache location is configurable</a>. By default, it caches files under the App_Data/cache folder, which also happens to be one of the folders that the ASP.Net application monitors for changes. So anytime there are lots of files changing in the cache folder it causes the single monitor object monitoring the folders. This causes a buffer overflow and triggers an application restart due to <em>Overwhelming file change notifications</em>. However, ImageProcessor does allow moving the <a href="https://github.com/JimBobSquarePants/ImageProcessor/issues/518">cache folder outside of the wwwroot folder</a>. This causes the file not to be monitored and still work fine with the application. Since the <a href="https://twitter.com/Shazwazza/status/885770960321773568">library does not create the cache folder automatically</a>, we need to make sure that the folder specified in the config file exists.</p>
+
+<p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
+
+<p>Hope that helps fix your application restarting problem!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault From Azure Functions</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/could-not-load-assembly-msshrtmi-dll/">Could Not Load Assembly msshrtmi.dll?</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/managing-azure-ad-application-for-key-vault/">Managing Azure AD Application for Key Vault</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/hemingway-editor/" title="Previous Post: Tip of the Week: Hemingway Editor - Improve Your Writing">&laquo; Tip of the Week: Hemingway Editor - Improve Your Writing</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2017 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/';
+        var disqus_url = 'http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

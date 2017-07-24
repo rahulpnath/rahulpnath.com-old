@@ -163,6 +163,131 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-11T01:08:17+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 11<sup>th</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/managing-user-permissions-for-key-vault/" itemprop="url">Managing User Permissions for Key Vault</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
+
+<p>Granting access to different users to manage the key vault would be a typical scenario in an organization. This could either be to create new vaults or manage keys and secrets within an existing key vault. One way to do that would be to create an <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">AD application and use that to manage the vault</a>. Alternatively you would also want to add users to your azure subscription and grant them access for this (which was exactly what one of my readers wanted to achieve and reached out to me for).</p>
+
+<p>In this post we will see how we can add a new user and grant him the required permissions. The permissions to be provided would differ based on your requirement, so you would want to modify them as required.</p>
+
+<h4><strong>Creating the user</strong></h4>
+
+<p><a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-create-users/">Creating a new user to the azure subscription</a> can easily be done from the <a href="https://manage.windowsazure.com">management portal</a>. We need to create the user in the azure subscription, as any resource in the subscription can be accessed only after authenticating against the Active Directory (AD) associated with it.</p>
+
+<blockquote><p>Every Azure subscription is associated with an Azure Active Directory (AD) and needs to be authenticated with, before any of its resources can be used.</p></blockquote>
+
+<p>Azure Key Vault gets created in the default AD associated with the subscription, so we need to add the new user to that. (If you are not sure on how to find the default AD <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">this post</a> describes it in the beginning). In the portal under the <em>Azure Directory</em> option, select the default directory and on the <em>Users</em> tab, we can add a new user.</p>
+
+<p><img src="/images/ad_add_user.png" class="center"></img></p>
+
+<p>When creating the user, you can <a href="https://azure.microsoft.com/en-us/documentation/articles/active-directory-assign-admin-roles/">assign the role required</a> based on the requirement. In this case I have added the user to a &lsquo;<em>User</em>&rsquo; role, as I do not want this user to have any administrative access to the my azure subscriptions or resources.</p>
+
+<h4><strong>Creating the key vault</strong></h4>
+
+<p>To create a key vault that we want to give permissions for the user, the below powershell scripts can be used. If you are new to key vault, then check out the <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Getting Started with Azure  Key Vault</a> or <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">other related articles</a>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Switch</span><span class="n">-AzureMode</span> <span class="n">AzureResourceManager</span>
+</span><span class='line'><span class="nb">New-AzureResourceGroup</span> <span class="err">–</span><span class="n">Name</span> <span class="s1">&#39;SharedGroup&#39;</span> <span class="err">–</span><span class="n">Location</span> <span class="s1">&#39;East Asia&#39;</span>
+</span><span class='line'><span class="nb">New-AzureKeyVault</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestKeyVault&#39;</span> <span class="n">-ResourceGroupName</span>
+</span><span class='line'>  <span class="s1">&#39;SharedGroup&#39;</span> <span class="n">-Location</span> <span class="s1">&#39;East Asia&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above scripts creates the key vault under the &lsquo;<em>SharedGroup</em>&rsquo;. <a href="https://azure.microsoft.com/en-us/documentation/articles/resource-group-overview/#resource-groups">Resource Groups</a> are logical containers, used to group resources together as required. <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/">Access to azure resources</a> can be assigned at any of the three levels (subscription, resource group or resource) and it inherits down the hierarchy as shown below. Roles can be assigned specifically to a resource, or to resource group (which would mean all to all resources in that group) or at the subscription level (which would apply to all resources/resource groups in that subscription.).</p>
+
+<p><a href="https://acomdpsstorage.blob.core.windows.net/dpsmedia-prod/azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/20151006095042/rbacassignmentscopes.png"><img src="/images/rbac_assignment_scopes.png" class="center"></img></a></p>
+
+<h4><strong>Setting Permission on the resource group</strong></h4>
+
+<p>As an administrator I want the newly created user to have permission to interact with the key vault, but not create new or delete existing vaults. I would also want to give the user ability to modify keys and secrets within the vault. Currently since the new user does not have any rights, we should first give him rights to see the vaults in the <em>SharedGroup</em>. For this a <em>Reader</em> role from the set of <a href="https://azure.microsoft.com/en-us/documentation/articles/role-based-access-control-configure/#built-in-roles">built in roles</a> can be assinged, through the new azure portal or powershell.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">New-AzureRoleAssignment</span> <span class="n">-Mail</span> <span class="n">keyvaultuser</span><span class="nv">@domain</span><span class="p">.</span><span class="n">onmicrosoft</span><span class="p">.</span><span class="n">com</span>
+</span><span class='line'>  <span class="n">-RoleDefinitionName</span> <span class="n">Reader</span> <span class="n">-ResourceGroupName</span> <span class="n">SharedGroup</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/resource_group_permission.png" class="center"></img></p>
+
+<p>To modify objects (keys/secrets) in the key vault we need to run <a href="https://msdn.microsoft.com/en-us/library/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a> cmdlet with the required permissions, to grant access for the user. In the below script the user is given all Permissions to both keys and secrets, and this again depends on your requirement.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Set-AzureKeyVaultAccessPolicy</span> <span class="n">-VaultName</span> <span class="s2">&quot;TestKeyVault&quot;</span> <span class="n">-UserPrincipalName</span> <span class="s2">&quot;keyvaultuser@domain.onmicrosoft.com&quot;</span>
+</span><span class='line'>  <span class="n">-PermissionsToKeys</span> <span class="n">all</span> <span class="n">-PermissionsToSecrets</span> <span class="n">all</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Creating the key (new user)</strong></h4>
+
+<p>The new user can login with the email id and password, shared to him by the administrator (received when creating the user in the AD), in the powershell prompt and create keys/secrets in the key vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$userName</span> <span class="p">=</span> <span class="s1">&#39;keyvaultuser@domain.onmicrosoft.com&#39;</span>
+</span><span class='line'><span class="nv">$subscriptionPassword</span> <span class="p">=</span> <span class="s1">&#39;mypassword&#39;</span>
+</span><span class='line'><span class="nv">$securePassword</span> <span class="p">=</span> <span class="nb">ConvertTo-SecureString</span> <span class="n">-String</span> <span class="nv">$subscriptionPassword</span> <span class="n">-AsPlainText</span> <span class="n">-Force</span>
+</span><span class='line'><span class="nv">$cred</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">System</span><span class="p">.</span><span class="n">Management</span><span class="p">.</span><span class="n">Automation</span><span class="p">.</span><span class="n">PSCredential</span><span class="p">(</span><span class="nv">$userName</span><span class="p">,</span> <span class="nv">$securePassword</span><span class="p">)</span>
+</span><span class='line'><span class="nb">Add-AzureAccount</span> <span class="n">-Credential</span> <span class="nv">$cred</span>
+</span><span class='line'><span class="nb">Add-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="s1">&#39;TestKeyVault&#39;</span> <span class="n">-Name</span> <span class="s1">&#39;MyKey&#39;</span> <span class="n">-Destination</span> <span class="s1">&#39;Software&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The newly created user now has full access on the key vault and only that. He can only add/remove objects within the key vault and see resources within the SharedGroup. This way the administrator can be rest assured that no other sensitive information or accesses is being shared accidentally. Periodically revisiting these permissions and revoking unnecessary accesses is recommended!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-10-10T05:44:19+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 10<sup>th</sup>, 2015</time>
         
 
@@ -1212,95 +1337,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-17T18:05:53+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 17<sup>th</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-and-powershell-module-version/" itemprop="url">Azure Key Vault and Powershell Module Version</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>I was trying out the public preview of the  Azure Key Vault service that has been released recently. While following the steps as mentioned in their <a href="http://blogs.technet.com/b/kv/archive/2015/01/08/azure-key-vault-making-the-cloud-safer.aspx">blog</a>, came across the below error when trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command.</p>
-
-<blockquote><p>Please install Azure Powershell module version 0.8.13 or newer.</p></blockquote>
-
-<p>I did have the <a href="http://azure.microsoft.com/en-us/documentation/articles/install-configure-powershell/#Install">latest powershell for azure</a> installed, but still this error is thrown.</p>
-
-<p><img class="center" alt="azure powershell installed version" src="/images/azure_powershell_installed.png" /></p>
-
-<p>Exploring the <a href="http://msdn.microsoft.com/library/dn868052.aspx">powershell scripts for key vault</a>, below is where the error is thrown from &lsquo;<em>Common.ps1</em>&rsquo;. The script looks for the <a href="http://msdn.microsoft.com/en-us/library/dn654592.aspx">AzureResourceManager</a>, which got introduced in poweshell version 0.8.0 and lets you manage resources in a completely different way.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Function</span> <span class="n">Azure-Version-Check</span><span class="p">{</span>
-</span><span class='line'>    <span class="nv">$expectedMinVersion</span> <span class="p">=</span> <span class="nb">New-Object</span> <span class="n">-TypeName</span> <span class="n">System</span><span class="p">.</span><span class="n">Version</span> <span class="n">-ArgumentList</span> <span class="s2">&quot;0.8.13&quot;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nv">$azureModule</span> <span class="p">=</span> <span class="nb">Get-Module</span> <span class="n">AzureResourceManager</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">((</span><span class="o">-not</span> <span class="nv">$azureModule</span><span class="p">)</span> <span class="o">-or</span> <span class="p">(</span><span class="nv">$azureModule</span><span class="p">.</span><span class="n">Version</span> <span class="o">-lt</span> <span class="nv">$expectedMinVersion</span><span class="p">))</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">Throw</span> <span class="s1">&#39;Please install Azure Powershell module version 0.8.13 or newer.&#39;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>When you use the Azure PowerShell cmdlets, the Azure module is imported into the session by default. To remove the Azure module from the session and import the AzureResourceManager and AzureProfile modules, use the Switch-AzureMode cmdlet.</p></blockquote>
-
-<p>This is what is exactly causing the issue, we need to switch to use the azure resource manager. Running the below command and trying the &lsquo;<em>New-AzureKeyVault</em>&rsquo; command works like a charm</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="k">Switch</span><span class="n">-AzureMode</span> <span class="n">-Name</span> <span class="n">AzureResourceManager</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><em>You would face this issue only if you started trying out the steps as mentioned in the <a href="http://blogs.technet.com/b/kv/archive/2015/01/09/azure-key-vault-step-by-step.aspx">azure key vault blog</a>(as I did), since the steps in the <a href="http://azure.microsoft.com/en-us/documentation/articles/key-vault-get-started/">documentation site</a></em> is updated with the above step.*</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1324,6 +1360,8 @@ Before we do you might ask, Are we not building a web-site for the customer so w
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
+    
     <a class="list-group-item " href="/blog/hemingway-editor/">Tip of the Week: Hemingway Editor - Improve Your Writing</a>
     
     <a class="list-group-item " href="/blog/signing-a-pdf-file-using-azure-key-vault/">Signing a PDF File Using Azure Key Vault</a>
@@ -1331,8 +1369,6 @@ Before we do you might ask, Are we not building a web-site for the customer so w
     <a class="list-group-item " href="/blog/beyond-compare-compare-files-quick-and-easy/">Tip of the Week: Beyond Compare - Compare Files Quick and Easy</a>
     
     <a class="list-group-item " href="/blog/review-pixel/">Review: Pixel, Phone by Google - Made by Google</a>
-    
-    <a class="list-group-item " href="/blog/grammarly-improve-your-writing/">Tip of the Week: Grammarly - Improve Your Writing</a>
     
   </div>
 </section>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-07-23T00:02:36+00:00</updated>
+  <updated>2017-07-24T00:02:42+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,74 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Web App Restarting Automatically Due to Overwhelming Change Notification]]></title>
+    <link href="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/"/>
+    <updated>2017-07-24T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification</id>
+    <content type="html"><![CDATA[<p>At one of my clients, we faced a strange issue recently. The Azure Web application restarted automatically very often. The event log in the <a href="https://github.com/projectkudu/kudu/wiki/Kudu-console">Kudu console</a> showed the below error message.</p>
+
+<blockquote><p><em>2017-07-13 00:09:50,333 [P45516/D4/T171] INFO  Umbraco.Core.UmbracoApplicationBase - Application shutdown. Details: HostingEnvironment</em></p>
+
+<p><em>_shutDownMessage=Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>  <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>HostingEnvironment initiated shutdown</em>  <br/>
+<em>Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>   <br/>
+<em>Overwhelming Change Notification in wwwroot</em>   <br/>
+<em>Initialization Error</em>   <br/>
+<em>HostingEnvironment caused shutdown</em></p></blockquote>
+
+<p>As you can tell from the logs, the website is an <a href="https://umbraco.com/">Umbraco</a> CMS hosted as an Azure Web application. We noticed that the restarts were happening more when the content was getting updated through <a href="https://our.umbraco.org/documentation/getting-started/backoffice/">backoffice</a>. The error also states that the restart was caused due to <em>Overwhelming Change Notification in wwwroot</em>. This hints that there are changes that are happening under the wwwroot folder, where the site is hosted.</p>
+
+<div class="alert alert-info">
+Even though this post details on why the specific site on Umbraco was restarting, most of the contents are still applicable for any other ASP.NET MVC application.
+</div>
+
+
+<h3>fcnMode Configuration</h3>
+
+<p>A quick search got me to the <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection.fcnmode(v=vs.110">fcnMode</a>.aspx)setting under <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection(v=vs.110">httpRuntime</a>.aspx) section. An ASP.net application monitors certain files and folders under the wwwroot folder and will restart the application domain whenever it detects changes. This likely look looks the reason why the web site is restarting.</p>
+
+<p>The <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.fcnmode(v=vs.110">fcnMode enumeration</a>.aspx) can take one of the four values below. For an Umbraco application this is by <a href="http://issues.umbraco.org/issue/U4-7712">default set to <em>Single</em></a>.</p>
+
+<ul>
+<li><strong>Default</strong>: For each subdirectory, the application creates an object that monitors the subdirectory. This is the default behavior.</li>
+<li><strong>Disabled</strong>: File change notification is disabled.</li>
+<li><strong>NotSet</strong>: File change notification is not set, so the application creates an object that monitors each subdirectory. This is the default behavior.</li>
+<li><strong>Single</strong>: The application creates one object to monitor the main directory and uses this object to monitor each subdirectory.</li>
+</ul>
+
+
+<pre><code class="xml fcnMode set to Single for Umbraco application">&lt;system.web&gt;
+    ...
+    &lt;httpRuntime 
+        requestValidationMode="2.0" 
+        enableVersionHeader="false"
+        targetFramework="4.5"
+        maxRequestLength="51200" 
+        fcnMode="Single" /&gt;
+    ...
+&lt;system.web&gt;
+</code></pre>
+
+<blockquote><p><em>FCNMode creates a monitor object with a buffer size of 4KB for each folder. When FCNMode is set to Single, a single monitor object is created with a buffer size of 64KB. When there are file changes, the buffer is filled with file change information. If the buffer gets overwhelmed with too many file change notifications an “Overwhelming File Change Notifications” error will occur and the app domain will recycle. The likelihood of the buffer getting overwhelmed is higher in an environment where you are using separate file server because the folder paths are much larger.</em></p>
+
+<p>-<a href="http://www.dnnsoftware.com/community-blog/cid/154980/aspnet-file-change-notifications-and-dnn"> ASP.NET File Change Notifications and DNN</a></p></blockquote>
+
+<p>You can read more about fcnMode setting and how it affects ASP.Net applications <a href="https://shazwazza.com/post/all-about-aspnet-file-change-notification-fcn/">here</a>.</p>
+
+<h3>What&rsquo;s causing file changes?</h3>
+
+<p>Default reaction when you come across such a setting or configuration value might be to turn that off and fcnMode does allow that as well - <em>Disabled</em>. But first, it is better that we understand what is causing file changes under the wwwroot folder and see if we can address that. The <a href="https://shazwazza.com/post/fcn-file-change-notification-viewer-for-aspnet/">FCN Viewer</a> helps visualize how many files and folders are being watched in as ASP.Net application.</p>
+
+<p>In the Umbraco website, we are using a third party library <a href="http://imageprocessor.org/">ImageProcessor</a> that helps to process images dynamically. The ImageProcessor caches images and the <a href="http://imageprocessor.org/imageprocessor-web/configuration/#cacheconfig">cache location is configurable</a>. By default, it caches files under the App_Data/cache folder, which also happens to be one of the folders that the ASP.Net application monitors for changes. So anytime there are lots of files changing in the cache folder it causes the single monitor object monitoring the folders. This causes a buffer overflow and triggers an application restart due to <em>Overwhelming file change notifications</em>. However, ImageProcessor does allow moving the <a href="https://github.com/JimBobSquarePants/ImageProcessor/issues/518">cache folder outside of the wwwroot folder</a>. This causes the file not to be monitored and still work fine with the application. Since the <a href="https://twitter.com/Shazwazza/status/885770960321773568">library does not create the cache folder automatically</a>, we need to make sure that the folder specified in the config file exists.</p>
+
+<p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
+
+<p>Hope that helps fix your application restarting problem!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Left Align Your Code For Better Readability]]></title>
@@ -290,134 +358,6 @@ public class AccountEmailIsValidValidator : IValidateAccount
 <p>Since the exceptions are so used to, it is highly possible that we set that as an expectation. New business flows come up expecting a certain kind of exception to be thrown or assuming a particular type of message will not get processed. Since we are so used to the fact that it happens, we take it for granted and start coding against it. It might be the last thing that happens on a project, but believe me, it happens!. Such code becomes harder to maintain and might not work once the actual exception gets fixed.</p>
 
 <p>Ignoring exceptions and getting around to live with it can be more costly over a longer period. The further we delay action on such errors the higher the cost involved. Even though there is no immediate or direct business value seen from fixing such errors, we saw that on a longer run it could have a great impact. So try not to live with such errors but instead prioritize them with the work your team is doing and get it fixed. A fix might not always be an extra null check or a conditional to avoid the error. It might seem the easier approach to reducing the errors but will soon become a different problem. Understand the business and explore into what is causing the error. Do you have any known exceptions in the application you are working? What are you doing about it?</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Defensive Coding]]></title>
-    <link href="http://rahulpnath.com/blog/defensive-coding/"/>
-    <updated>2017-02-07T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/defensive-coding</id>
-    <content type="html"><![CDATA[<p>Often when writing code or in code review discussions it comes up - &lsquo;<em>Should I be doing a null check here?</em>.&rsquo; and we start off long discussions. Like in most cases, there is no definite answer to this. In this post let us examine some of the pros and cons of having defensive checks and how and when we can avoid it to make the code more readable.</p>
-
-<p><img alt="Defensive Coding" src="/images/defensive_coding.jpg" /></p>
-
-<p>Let&rsquo;s see an example to explore more. The below code aggregated details from different repository classes and returns a combined model. I have kept this simple with just three dependencies.</p>
-
-<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
-{
-    var person = personRepository.GetPerson(personId);
-    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
-    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
-
-    return new PersonDetails() {...};
-}
-</code></pre>
-
-<p>As you see, there are no null checks on any of the values returned from external dependencies. The code expects all calls to be successful with no exceptions - &lsquo;<a href="https://en.wikipedia.org/wiki/Happy_path">happy path</a>&rsquo; scenario.
-The problem is when an error happens; the exception stack trace will look like something below.</p>
-
-<pre><code class="text">Object reference not set to an instance of an object.
-at UserQuery.GetPersonDetails(Guid personId)
-  at UserQuery.Main()
-</code></pre>
-
-<p>We will not be able to tell which of the values was null, making it hard to debug the error. We have to manually go through the code checking how each of the dependencies retrieves values and check which one possibly was null. Debugging takes a lot of time and might be difficult depending on the complexity of the dependencies. The advantage of the above code though is that it is readable and there is <strong><em>noise</em></strong> in the code.</p>
-
-<h3>Extensive Defense</h3>
-
-<p>Let us now modify the above example to see how it would be to add defensive code and check for nulls.</p>
-
-<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
-{
-    if (personId == Guid.Empty)
-        throw new ArgumentNullException(nameof(personId);
-
-    var person = personRepository.GetPerson(personId);
-    if (person == null)
-        throw new Exception("Person is null");
-
-    if (person.Email == null)
-        throw new Exception("Email is null for person " + personId);
-
-    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
-    if (subscriptionPlan == null)
-        throw new Exception("Subscription Plan is null");
-
-    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
-    if (billingSummary == null)
-        throw new Exception("BillingSummary is null");
-
-    return new PersonDetails() { };
-}
-</code></pre>
-
-<p> The defensive checks added for guarding against invalid values makes the code harder to read. Defensive checks are there for incoming parameters as well and validate if they are null/default value (for Guid). However when an error happens the stack trace will mention the name of the property which was null. Debugging is fast and easy and makes the exception message useful. But we don&rsquo;t want our code filled with defensive checks like this.</p>
-
-<h3>Team Conventions and Practices</h3>
-
-<p>Let us dig a bit deeper into why we had to put in the defensive checks in the first place. We had to check for null on <em>person</em> since the repository decided to return a null when it could not find the person given an id. Does it even make sense or add any value in returning a null reference from the repository? Unless the business works in a way that there is a high possibility of something returning null this does not add any value. Even in cases like that, we should revert to other options which we will see in a while. When most of the time we expect a person to exists, it is better for the repository to throw an exception right away that the person does not exist. If the validations and the defensive checks are performed at the boundaries, then we do not need to do a null check anymore when getting a person or any similar functions.</p>
-
-<pre><code class="csharp">public Person GetPerson(Guid personId)
-{
-    if (personId == Guid.Empty)
-        throw new ArgumentNullException(nameof(personId));
-
-    var person = DataContext.Get(personId);
-    if (person == null)
-        throw new UserDoesNotExistsException("Person does not exists with id ", personId);
-
-    return person;
-} 
-</code></pre>
-
-<p>For cases where there are possibilities of a value existing or not you can resort to <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">Stronger Code Contracts</a>. Using the Maybe type to indicate a value might or might not be present is a good way to force defensive checks. Maybe type ensures that any consumer of the code handles the case where the object does not exist. Readability of the code also improves in this case.</p>
-
-<p>If you have noticed in the above code when checking for null&rsquo;s, I checked the Email property for null as well. Setting up team conventions that properties cannot be null, help reduce defensive checks for it. You could use various techniques to ensure properties are not null like setting a default value for the property in the constructor, <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null object pattern</a>, checking for null&rsquo;s when setting property values or modeling the object in a way that optional parameters are not direct properties on the object.</p>
-
-<pre><code class="csharp">public class Person
-{
-    private Email email;
-
-    public Person()
-    {
-       Email = Email.Empty;
-    }
-
-    public Email Email
-    {
-        get { return email; }
-        set
-        {
-            if (value == null)
-                throw new ArgumentNullException("email cannot be null");
-
-            email = value;
-        }
-    }
-}
-</code></pre>
-
-<p>With the updated repository code and the property changes, we can rewrite the original code much similar as it was before introducing the defensive checks. The guard clauses at the start of the function, checking for the parameters is still important. Validating for input parameters helps find the problems earlier in the code stack and follows the <a href="https://en.wikipedia.org/wiki/Fail-fast">fail fast</a> pattern. It helps us find exactly where the null was introduced and address the issue faster. The defensive code is at the beginning of the function and can be easily skipped over while reading. If you are not that keen to write this on all functions, you can also write some helper classes which Validates a list of parameters (<a href="https://msdn.microsoft.com/en-au/library/w5zay9db.aspx">params</a>). I prefer the explicit check and used to skipping over them when reading code.</p>
-
-<pre><code class="csharp">public PersonDetails GetPersonDetails(Guid personId)
-{
-   if (personId == Guid.Empty)
-        throw new ArgumentNullException(nameof(personId);
-
-    var person = personRepository.GetPerson(personId);
-    var subscriptionPlan = subscriptionRepository.GetSubscriptionForPerson(person.Email);
-    var billingSummary = billingRepository.GetSummary(subscriptionPlan.Id);
-
-    return new PersonDetails() {...};
-}
-</code></pre>
-
-<h3>Value Objects and Defensive Coding</h3>
-
-<p>Let us now look at other ways to improve defensive checks on properties. Modeling properties as <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Objects</a> helps contain the defensive code within the property. Like in the above case where email cannot be null, the checks to make sure that it is a valid email can be within the Email class. Containing this logic in the class removes the need for the rest of the code to check for it. If an email object exists, it will be valid. It is the same with names, date ranges, money, etc. The lesser we expose primitive type properties, the less defensive code we need to write. It also removes the problems of checking <em>string.IsNullOrEmpty</em> at some places and just for nulls at others.</p>
-
-<p>Though this is not an extensive examination of all possible cases, we have still seen some common scenarios. Defensive coding is required. It is about striking a balance and making <a href="http://www.rahulpnath.com/blog/stronger-code-contracts/">code contracts stronger</a> to convey the intent. The defensive checks are within the classes responsible for the object and exist at a central place. It removes the need to check for it elsewhere in the code. This is a simple application of <a href="https://en.wikipedia.org/wiki/Encapsulation_(computer_programming">Encapsulation</a>. So the next time you check for null make sure it is where it should be!</p>
 ]]></content>
   </entry>
   
