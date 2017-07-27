@@ -9,7 +9,7 @@ date: 2017-08-03
 completedDate: 2017-07-28 06:31:58 +1000
 keywords: 
 description: Check out these places around Sydney perfect for a one day trip.
-primaryImage: sydney_trip_mandarin_picking.png
+primaryImage: sydney_trip_illawara.png
 ---
 
 Australia is known for its beaches, and there are a plenty of them all around. Sydney is no different for that, and it's known for some of the world famous beaches including the Bondi beach. But at times it's also good to try places other than beaches. Here is a list of such places around Sydney that is perfect for a day trip and not just limited to beaches.
@@ -63,8 +63,6 @@ If you want to see Kangaroos, then this is the place you should be. You can get 
 ### [Mandarin Picking](http://www.watkinsfamilyfarm.com.au/)
 
 Situated on the banks of Hawkesbury River at Wisemans Ferry there are a couple of farms where you can go picking mandarins. I had been to the [Watkins Family Farm](http://www.watkinsfamilyfarm.com.au/) and enjoyed every bit of it. It's great fun for kids and equally for adults. We ended up going back there twice in the same season. Make sure you check the farm sites for details on timing and months they are open.
-
-<img src="{{site.images_root}}/sydney_trip_mandarin_picking.png" class="center" alt="Mandarin Picking - Watkins Family Farm">
 
 There are a few other picnic spots as well around the area. There is a [vehicle ferry service](http://www.rms.nsw.gov.au/roads/using-roads/vehicular-ferries/index.html#Wisemansferry) to take your vehicle across the river and explore that side as well.
 
