@@ -45,6 +45,8 @@ Do make it one day for the [sun rise at the Sea Cliff bridge](https://www.instag
 
 As the name suggests, the Fitzroy Falls spots a magnificent waterfall with a nice walking track along the sides. There are various lookouts to the waterfall along the walking track. There is also a cycling track from the falls to Kangaroo Valley for those interested.
 
+<img src="{{site.images_root}}/sydney_trip_fitzroy_falls.jpg" class="center" alt="Fitzroy Falls" />
+
 ### [Kangaroo Valley](http://visitkangaroovalley.com.au/)
 
 Kangaroo Valley is a two-hour drive from Sydney and is popular for kayaking, canoeing, golf and wine tasting. You can take a break and play on the banks of the Kangaroo River. Do check out the [Fudge House](http://kangaroovalleyfudge.com.au/) if you have a sweet tooth and the [pie shop](http://worldsbestpies.com.au/) for a quick snack.
