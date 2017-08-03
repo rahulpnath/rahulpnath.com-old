@@ -14,7 +14,7 @@ primaryImage: sydney_trip_illawara.png
 
 Australia is known for its beaches, and there are a plenty of them all around. Sydney is no different for that, and it's known for some of the world famous beaches including the Bondi beach. But at times it's also good to try places other than beaches. Here is a list of such places around Sydney that is perfect for a day trip and not just limited to beaches.
 
-> **TLDR;**
+> [**TLDR;**](https://en.wikipedia.org/wiki/Wikipedia:Too_long;_didn%27t_read)
 
 > - [Grand Pacific Drive](http://www.grandpacificdrive.com.au/)
 > - [Fitzroy Falls](http://www.visitnsw.com/destinations/country-nsw/southern-highlands/fitzroy-falls/attractions)
