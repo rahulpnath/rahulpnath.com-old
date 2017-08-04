@@ -163,6 +163,241 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-13T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 13<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/refactoring/'>refactoring</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/refactoring-to-composite-pattern/" itemprop="url">Refactoring to Composite Pattern</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>I often come across functions that do multiple things. Many times such functions have a common pattern where multiple sections within the function use the same parameters for calculations. The results from these different code sections within the function are either separated by conditionals (if, switch, etc.) or combined using various arithmetic operators. The most obvious refactoring in such scenarios is to move the code sections into different functions within the same class. Having it in separate functions keeps the code readable. But on closer observation, such functions can be moved into different classes, keeping each of these code sections as the only responsibility.</p>
+
+<h3>Identifying the Refactoring</h3>
+
+<p>Within a function when a similar pattern of code repeats, it could be refactored into multiple classes and composed to give the same functionality. Let us take a simple example of a function where we are validating an Account object based on different criteria. The various criteria end up as conditionals within the function. This function can soon get big and difficult to manage. It also makes it harder to test. If you are adding more validations to this class over a period you are violating the Open-Closed Principle (OCP), the O in <a href="http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod">SOLID</a>. Depending on the level of abstraction that we are looking at, the class also violates the Single Responsibility Principle(SRP), the S in SOLID. The function handles validations based on different criteria.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;No email&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">else</span> <span class="nf">if</span> <span class="p">(!</span><span class="n">IsValidEmailFormat</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;Email not valid&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">BillingDetails</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">result</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;Billing Details does not exists&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>The Composite Pattern</h3>
+
+<p><a href="https://en.wikipedia.org/wiki/Composite_pattern">Composite pattern</a> is appropriate when the client ignores the difference between the composition of objects and individual objects. The pattern helps developers to maintain the complexity of the code and also separate out class responsibilities.</p>
+
+<blockquote><p><em>Compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly</em></p></blockquote>
+
+<p><img alt="Composite Pattern" src="/images/composite_pattern.png" /></p>
+
+<h3>Refactoring</h3>
+
+<p>In the Account validation above, the function checks for an email and validates the format, checks for valid billing details, etc. The validations could also extend on to users attached to the account and check if there is at least one user, the user has email, phone number, etc. Each of these validations can be moved into separate classes and composed together in one class so that they are all executed when an account needs to be validated. You can see a tree like hierarchy forming here, and the actual validation is composed of all these validations</p>
+
+<p><img alt="Account Validation hierarchy" src="/images/composite_pattern_validation.png" /></p>
+
+<p>The actual C# code looks like this after the refactoring.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountValidators</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">IValidateAccount</span><span class="p">&gt;</span> <span class="n">Validators</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">AccountValidators</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Validators</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">IValidateAccount</span><span class="p">&gt;()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountHasEmailValidator</span><span class="p">(),</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountEmailIsValidValidator</span><span class="p">(),</span>
+</span><span class='line'>          <span class="k">new</span> <span class="nf">AccountHasBillingDetailsValidator</span><span class="p">()</span>
+</span><span class='line'>          <span class="p">...</span> <span class="c1">// Add more validators</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Validators</span><span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">validator</span> <span class="p">=&gt;</span> <span class="n">validator</span><span class="p">.</span><span class="n">Validate</span><span class="p">(</span><span class="n">account</span><span class="p">));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountHasEmailValidator</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">account</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="s">&quot;No email&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountEmailIsValidValidator</span> <span class="p">:</span> <span class="n">IValidateAccount</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Validate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">account</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">account</span><span class="p">.</span><span class="n">Email</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="p">!</span><span class="n">IsValidEmail</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">Email</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="s">&quot;Email not valid&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After the refactoring, we have separate classes for each of the validation rules. The <em>AccountValidators</em> class composes all the other validators and provides the same uniform interface for the consumers to validate an account. It calls on to all the Validators iteratively and invokes the Validate method on them. You can use Dependency Injection to inject in all validators to this class if you are not comfortable hard-wiring them. The IoC container can be setup using <a href="http://www.rahulpnath.com/blog/ioc-registration-by-convention/">registration by convention</a>, which prevents the needs for explicit registration for any new validators.</p>
+
+<p>One other worry that I have seen common when moving to such a pattern is that - <em>We now have a lot more classes. Does that not affect the performance?</em>. If you are following SOLID principles to the core and want to maintain loose coupling in your code then creating more classes is something you cannot avoid. We do not want any
+<a href="http://wiki.c2.com/?GodClass">God Classes</a> in our code and the first step towards it is to split them into different classes.</p>
+
+<blockquote><p><em>If an Object Oriented language cannot handle the creation of many classes and objects then why should we be using it in the first place?</em></p>
+
+<p>-<em><a href="https://vimeo.com/68378923">Big Object Graphs Up Front, Mark Seemann</a></em></p></blockquote>
+
+<p>The composition can be complex conditions as in the case below. For, e.g., let&rsquo;s say we need to execute a different kind of algorithm to calculate based on a property.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AccountCalculator</span> <span class="p">:</span> <span class="n">ICalculate</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">AccountCalculator</span><span class="p">(</span><span class="n">ICalculate</span> <span class="n">calculate1</span><span class="p">,</span> <span class="n">ICalculate</span> <span class="n">calculate2</span><span class="p">,</span> <span class="n">ICalculate</span> <span class="n">calculate3</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="p">...</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="nf">Calculate</span><span class="p">(</span><span class="n">Account</span> <span class="n">account</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">PropertyExists</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">calculate1</span><span class="p">.</span><span class="n">Calculate</span><span class="p">();</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>              <span class="k">return</span> <span class="n">calculate2</span><span class="p">.</span><span class="n">Calculate</span><span class="p">()</span> <span class="p">+</span> <span class="n">calculate3</span><span class="p">.</span><span class="n">Calculate</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above composition makes it easy to test the composed parts and the composition separately. It also helps keep the tests simple and easy to understand. The code is separated into maintainable classes and each criteria can be modified independently.</p>
+
+<p>Composite Pattern is a useful technique to keep code maintainable and readable. Identifying the pattern is a bit of a challenge, but the more you see it the more familiar you will be. Hope this helps!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 11<sup>th</sup>, 2017</time>
         
 
@@ -881,59 +1116,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-03-08T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 8<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/track-current-file-in-visual-studio-solution-explorer/" itemprop="url">Tip of the Week: Track Current File in Visual Studio Solution Explorer</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>While working on large codebases, I want my Solution Explorer to be synchronized with the current working file. With the solution explorer in sync, it makes navigating to other related files, adding new classes in the same location, renaming files, etc. faster.</p>
-
-<p><img alt="Track Active Item in Solution Explorer, Visual Studio" src="/images/visualstudio_trackActiveItem.png" /></p>
-
-<p>The setting to keep the items in sync is configurable in Visual Studio and is turned off by default. You can enable this by checking the &lsquo;<strong><em>Track Active Item in Solution Explorer</em></strong>&rsquo; under <em>Options -> Projects and Solutions -> General</em>. You can navigate there quickly using <a href="http://www.rahulpnath.com/blog/quick-launch-in-visual-studio/">Visual Studio Quick Launch (Ctrl + Q)</a>. Just type &lsquo;<em>Track active</em>&rsquo; and you will get the quick link to the setting. Keep it checked, and off you go, the solution explorer and the current file will be in sync.</p>
-
-<p>PS: Visual Studio 2017 is now available.<a href="https://www.visualstudio.com/downloads/">Get it</a> if you have not already!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -957,6 +1139,8 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/chocolatey-install-softwares-with-ease/">Tip of the Week: Chocolatey - Install Softwares With Ease</a>
+    
     <a class="list-group-item " href="/blog/one-day-trips-around-sydney/">One Day Trips Around Sydney</a>
     
     <a class="list-group-item " href="/blog/testing-your-website-under-different-bandwidths/">Tip of the Week: Testing Your Website Under Different Bandwidths</a>
@@ -964,8 +1148,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
     <a class="list-group-item " href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
     
     <a class="list-group-item " href="/blog/hemingway-editor/">Tip of the Week: Hemingway Editor - Improve Your Writing</a>
-    
-    <a class="list-group-item " href="/blog/signing-a-pdf-file-using-azure-key-vault/">Signing a PDF File Using Azure Key Vault</a>
     
   </div>
 </section>
