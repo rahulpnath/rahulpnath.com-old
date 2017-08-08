@@ -163,6 +163,262 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-25T06:41:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 25<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/being-explicit-about-time-when-handling-multiple-timezone/" itemprop="url">Being Explicit About Time when Handling Multiple Timezone</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This article is to put my thoughts together on a possible solution. Challenges of real world implementation are yet to be discovered.</em></p>
+
+<p>Handling date/time in application&rsquo;s that affect different time zones is tricky! The general recommendation is that all dates be saved in UTC time and convert them as required. This works well if developers make sure of converting all dates to UTC at application boundaries and keep it consistent throughout the application.</p>
+
+<p><a href="https://unsplash.com/photos/yBzrPGLjMQw" class="center" title="Image By Heather Zabriskie , from https://unsplash.com/photos/yBzrPGLjMQw"><img src="/images\timezone.jpg" class="center" alt="Timezone"></a></p>
+
+<p>At one of my clients, we are facing similar issues with date time, with an application that deals with different <a href="https://en.wikipedia.org/wiki/Time_zone">time zones</a>. The client sells office spaces across the globe and the application is for their employees to manage their clients. It integrates with various back-end systems and provides a single point of access for everything, aggregating data across those different  systems and itself. Some of the backend systems are in different locations and deal with times local to them. This increases the challenge when sending and retrieving data from them. The application has defined a set of locations, identified by, three-letter codes (<em>SYD, TRV, SEA</em>), and these locations fall under different time zones. Office spaces are at these locations and the application allows to manage those from anywhere.</p>
+
+<p>Across the domain, we use either <a href="https://msdn.microsoft.com/en-us/library/system.datetime(v=vs.110).aspx">DateTime</a> or <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset(v=vs.110).aspx">DateTimeOffset</a> to represent time - there is a good recommendation on when to use what - <a href="https://msdn.microsoft.com/en-us/library/bb384267(v=vs.110).aspx">Choosing Between DateTime, DateTimeOffset, TimeSpan, and TimeZoneInfo</a>. The problem with using either is that it does not play well with the domain concept to where time is related to - the location. We do have property name suffixes (not consistent though) indicating whether it is Coordinated Universal Time (UTC) or local - like <em>bookingDateUTC</em>, <em>paymentDateLocal</em> etc. But it so happens that these naming conventions gets broken somewhere along the different layers and leads to conversion between time zone at the application boundary layers.</p>
+
+<h3>Issues with Current Approach</h3>
+
+<p>DateTime and DateTimeOffset have by default time zones attached to it and it might go unnoticed till we face issues.</p>
+
+<ul>
+<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetime.kind(v=vs.110).aspx">Kind</a> property on DateTime indicates whether the time represents a <a href="https://msdn.microsoft.com/en-us/library/shx7s921(v=vs.110).aspx">local time, UTC or neither</a>.</li>
+<li>The <a href="https://msdn.microsoft.com/en-us/library/system.datetimeoffset.offset(v=vs.110).aspx">Offset</a> property on DateTimeOffset indicates the time&rsquo;s offset from UTC</li>
+</ul>
+
+
+<p>A common scenario in the current application is user selects a date time in the UI using a date picker, which gets send to the server as a string. This value flows through the entire system and is used to populate external systems. The problem here is that the time zone of the date time is not clear. The developer might treat this as UTC time, system local time or even time local to the location in context. This gives different results to the end user and puts the system in an inconsistent state.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">GetAvailability</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTime</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="c1">// Code to Get as on date</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even worse this date time might get converted back and forth to different time zones, even by the same developer or other developers in the team. These conversions implicitly depend on the Kind property and goes unnoticed. One of the most common problems that we see as a result of this is that the dates might fall over to a day before or after or after, depending on where in the world the user, the server running the application is.</p>
+
+<h3>Being Explicit Using Value Objects</h3>
+
+<blockquote><p><em>The issue in dealing with time is about not being explicit. It&rsquo;s a good idea to tie your domain concept (location in this case) and time together</em></p></blockquote>
+
+<p>Since time is always tied to a location (<em>SYD, TRV, SEA</em>) it&rsquo;s better to keep these together. Though DateTimeOffset and DateTime already has a timezone information attached it does not fit well into the domain, it makes more sense to have a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> encapsulating time and location. Timezone by itself is less likely to fit into a domain unless time zones are a domain concept. Most likely the domain would be dealing with a location, place, airport, station etc which falls under a timezone. So it&rsquo;s a good idea to tie your domain concept and the time together. Only for the creation of the Value Object, we need the location after which it is the date time it represents that is relevant. But if by default you want to get back the date time for the same location it was created for, then location can be saved along with the Value Object. In our case, we always want to show the time at the location, so I am keeping it in the Value Object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">LocationDateTime</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Location</span> <span class="n">Location</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTime</span> <span class="n">DateTimeInUTC</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="n">DateTimeAtLocation</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">dateTimeUTC</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">dateTimeUTC</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Utc</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;Date Time not in UTC&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Location</span> <span class="p">=</span> <span class="n">location</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DateTimeInUTC</span> <span class="p">=</span> <span class="n">dateTimeUTC</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DateTimeAtLocation</span> <span class="p">=</span> <span class="n">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">AtLocation</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">locationDateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">locationDateTime</span><span class="p">.</span><span class="n">Kind</span> <span class="p">!=</span> <span class="n">DateTimeKind</span><span class="p">.</span><span class="n">Unspecified</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;DateTimeKind should be unspecified&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">utcTime</span> <span class="p">=</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTimeToUtc</span><span class="p">(</span><span class="n">locationDateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">LocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">,</span> <span class="n">utcTime</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateTimeOffset</span> <span class="nf">TimeAtLocation</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">TimeZoneInfo</span><span class="p">.</span><span class="n">ConvertTime</span><span class="p">((</span><span class="n">DateTimeOffset</span><span class="p">)</span><span class="n">DateTimeInUTC</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="n">TimeZoneInfo</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">Equals</span><span class="p">(</span><span class="kt">object</span> <span class="n">obj</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">objAsLocationDateTime</span> <span class="p">=</span> <span class="n">obj</span> <span class="k">as</span> <span class="n">LocationDateTime</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">((</span><span class="n">System</span><span class="p">.</span><span class="n">Object</span><span class="p">)</span><span class="n">objAsLocationDateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">objAsLocationDateTime</span><span class="p">.</span><span class="n">DateTimeInUTC</span> <span class="p">==</span> <span class="n">DateTimeInUTC</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">int</span> <span class="nf">GetHashCode</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">DateTimeInUTC</span><span class="p">.</span><span class="n">GetHashCode</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The Value Object mandates that all date time gets tracked as UTC and allows conversion to time at different locations. The public constructor enforces this by checking the Kind property on DateTime.</p>
+
+<blockquote><p><em>The Value Object Equality is only on the UTC time it represents</em></p></blockquote>
+
+<p><a href="https://github.com/rahulpnath/Blog/blob/master/ExplicitAboutDateTime/ExplicitAboutDateTime/Location.cs">Location</a> is another Value Object, that encapsulates the code, name and the time zone it belongs to. There is a factory method that allows the creation of the value object at a location, which assumes any passed in DateTime as the time at location, and mandates the Kind property is Unspecified. You could update this to accept UTC/Local time depending on the passed in location&rsquo;s time zone, checking if both fall under the same time zone. You can also create an implicit operator to cast to DateTime or DateTimeOffset values and have it return the desired date time value that you want.</p>
+
+<p>All occurrences of datetime in model classes can now be replaced with custom datetime value object. This makes creating a date explicit and mandates developers to make a decision on the location of datetime.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">string</span> <span class="n">locationCode</span><span class="p">,</span> <span class="n">DateTime</span><span class="p">?</span> <span class="n">dateTimeAtLocation</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">location</span> <span class="p">=</span> <span class="n">GetLocation</span><span class="p">(</span><span class="n">locationCode</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTimeAtLocation</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+</span><span class='line'>    <span class="c1">// Code to Get as on date</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Even with the above code, you cannot restrict what gets passed into the API/application boundary method, but this has made it explicit to the application on how to start treating the date time. This forces the developer to think and be explicit on the time format expected at the boundary. This might lead to better naming of the variables at the boundary - instead of <em>dateTime</em> to <em>dateTimeAtLocation</em> - and being more explicit to the outside world too!</p>
+
+<h3>Custom Factories Using Extension Method</h3>
+
+<p>Depending on the use case there will be a lot of ways you want to create the value object and possibility of some being used over and over again is more. You can use factory methods to help you extract out this code duplication.</p>
+
+<p>As <a href="https://twitter.com/unclebobmartin">Uncle Bob</a> points out in <a href="http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">Agile Principles, Patterns, and Practices in C#</a>, interfaces should be closer to the client. <a href="http://blog.ploeh.dk/2014/12/24/placement-of-abstract-factories/">Factories are nothing but an interface</a>, so it should be defined closer to where it&rsquo;s consumed. Creating a LocationDateTime is always tied to a DateTime object. Using <a href="https://msdn.microsoft.com/en-AU/library/bb383977.aspx">Extension Methods</a> in C#, I have defined an extension on DateTime to create a LocationDateTime object.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="n">LocationDateTime</span> <span class="nf">ToLocationDateTime</span><span class="p">(</span><span class="k">this</span> <span class="n">DateTime</span> <span class="n">dateTime</span><span class="p">,</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">dateTime</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">location</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">location</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">LocationDateTime</span><span class="p">.</span><span class="n">AtLocation</span><span class="p">(</span><span class="n">dateTime</span><span class="p">,</span> <span class="n">location</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now creating a LocationDateTime from a DateTime is easy. Similarly, extension methods can be defined on Location, LocationDateTime to provide custom capabilities as required by the consuming clients.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">locationDateTime</span> <span class="p">=</span> <span class="n">dateTimeAtLocation</span><span class="p">.</span><span class="n">ToLocationDateTime</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By using a Value Object to represent the DateTime within the application enforces developers to be more explicit on the date time at the boundaries, results in better naming of the variables at boundaries, ensures that it remains the same within the application. You can also override some of the most commonly used operators with DateTime like greater than, less than, equal to, so that it seamlessly fits into the application.</p>
+
+<p>Hoping this will work well in the application too, let me get on to fix it!</p>
+
+<p><em>Will update this post with more real life experiences once implemented!</em></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-18T12:21:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 18<sup>th</sup>, 2016</time>
         
 
@@ -1602,298 +1858,6 @@ Branding is an ongoing effort that you need to do when freelancing, which indire
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-01-20T22:51:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 20<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/optimizing-octopress-workflow-for-new-posts/" itemprop="url">Optimizing Octopress Workflow for New Posts</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Over the past month I had thought of migrating this blog to Hugo, a static site generator that is faster than the current one, Octopress. Lack of workflow for creating new posts and slower build times were the main reasons. I am the kind of person when writing post want to see often, how it looks like on the real site. With the current number of posts it takes around 40-50 seconds to build the entire site and it makes me to wander off to something else while the build is happening - at times it takes a long time to get back to writing!. But migrating to a new platform has a lot of challenges and time-consuming and I did not want to invest my time in that, so though of looking out for ways to optimize the current process. A bit of googling and playing around with Ruby, solved both of the major issues and I have an improved workflow!</p>
-
-<h4><strong>Draft workflow</strong></h4>
-
-<p>I was lucky to find this <a href="http://neverstopbuilding.com/how-to-enhance-your-octopress-draft-and-heroku-deploy-process">post</a> which handled most of the draft workflow process. Most of the code below is used from there with a very few minor additions. Newer versions of Jekyll support <a href="http://jekyllrb.com/docs/drafts/">working with drafts</a> and uses the &lsquo;<em>&ndash;drafts</em>&rsquo; switch to build the drafts (instead of using published flag as in thr above linked post), that are in &lsquo;<em>_drafts</em>&rsquo; folder. Drafts are posts which does not have date&rsquo;s, so I added in a placeholder text, &lsquo;<em>thisIsStillADraft</em>&rsquo;, in the yaml front matter of the post which will later be replaced with the post publish date. Also added in the code to open the default writer with the newly created post</p>
-
-<figure class='code'><figcaption><span>Rake new_draft</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># usage rake new_draft[my-new-draft] or rake new_draft[&#39;my new draft&#39;]</span>
-</span><span class='line'><span class="n">desc</span> <span class="s2">&quot;Begin a new draft in </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:new_draft</span><span class="p">,</span> <span class="ss">:title</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="p">,</span> <span class="n">args</span><span class="o">|</span>
-</span><span class='line'>  <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">title</span>
-</span><span class='line'>    <span class="n">title</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">title</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="n">title</span> <span class="o">=</span> <span class="n">get_stdin</span><span class="p">(</span><span class="s2">&quot;Enter a title for your post: &quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="k">raise</span> <span class="s2">&quot;### You haven&#39;t set anything up yet. First run `rake install` to set up an Octopress theme.&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">mkdir_p</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">title</span><span class="o">.</span><span class="n">to_url</span><span class="si">}</span><span class="s2">.</span><span class="si">#{</span><span class="n">new_post_ext</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="k">if</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-</span><span class='line'>    <span class="nb">abort</span><span class="p">(</span><span class="s2">&quot;rake aborted!&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">ask</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> already exists. Do you want to overwrite?&quot;</span><span class="p">,</span> <span class="o">[</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="o">]</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Creating new draft: </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">post</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;---&quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;layout: post&quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;title: </span><span class="se">\&quot;</span><span class="si">#{</span><span class="n">title</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/&amp;/</span><span class="p">,</span><span class="s1">&#39;&amp;amp;&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;comments: true&quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;categories: &quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;tags: &quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;thisIsStillADraft:&quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;keywords: &quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;description: &quot;</span>
-</span><span class='line'>    <span class="n">post</span><span class="o">.</span><span class="n">puts</span> <span class="s2">&quot;---&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="sx">%{cmd /c &quot;start </span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="sx">&quot;}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The publish draft task just asks for the post to publish and replaces the placeholder text with the current date time. Also it moves the post from the &lsquo;<em>_drafts</em>&rsquo; folder to the &lsquo;<em>_posts</em>&rsquo; folder with the file name appended with the date time. Since I run this just before deploying a post, the date on the post will be the actual publish date, and not the date I started writing the post (usually writing a  post spans over multiple days).</p>
-
-<figure class='code'><figcaption><span>Rake publish_draft</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># usage rake publish_draft</span>
-</span><span class='line'><span class="n">desc</span> <span class="s2">&quot;Select a draft to publish from </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2"> on the current date.&quot;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:publish_draft</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">drafts_path</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">drafts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">drafts</span> <span class="o">=</span> <span class="no">Dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">drafts_path</span><span class="si">}</span><span class="s2">/*.</span><span class="si">#{</span><span class="n">new_post_ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">drafts</span><span class="o">.</span><span class="n">each_with_index</span> <span class="k">do</span> <span class="o">|</span><span class="n">draft</span><span class="p">,</span> <span class="n">index</span><span class="o">|</span>
-</span><span class='line'>    <span class="k">begin</span>
-</span><span class='line'>      <span class="n">content</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">if</span> <span class="n">content</span> <span class="o">=~</span> <span class="sr">/\A(---\s*\n.*?\n?)^(---\s*$\n?)/m</span>
-</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="no">YAML</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="vg">$1</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;Error reading file </span><span class="si">#{</span><span class="n">draft</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="k">rescue</span> <span class="no">SyntaxError</span> <span class="o">=&gt;</span> <span class="n">e</span>
-</span><span class='line'>      <span class="nb">puts</span> <span class="s2">&quot;YAML Exception reading </span><span class="si">#{</span><span class="n">draft</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;  [</span><span class="si">#{</span><span class="n">index</span><span class="si">}</span><span class="s2">]  </span><span class="si">#{</span><span class="n">data</span><span class="o">[</span><span class="s1">&#39;title&#39;</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Publish which draft? &quot;</span>
-</span><span class='line'>  <span class="n">answer</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
-</span><span class='line'>  <span class="k">if</span> <span class="sr">/\d+/</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">drafts</span><span class="o">[</span><span class="n">answer</span><span class="o">.</span><span class="n">to_i</span><span class="o">].</span><span class="n">nil?</span>
-</span><span class='line'>    <span class="n">mkdir_p</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="n">source</span> <span class="o">=</span> <span class="n">drafts</span><span class="o">[</span><span class="n">answer</span><span class="o">.</span><span class="n">to_i</span><span class="o">]</span>
-</span><span class='line'>    <span class="n">filename</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/</span><span class="si">#{</span><span class="n">drafts_path</span><span class="si">}</span><span class="sr">\//</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">dest</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Publishing post to: </span><span class="si">#{</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>    <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
-</span><span class='line'>      <span class="n">contents</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/^thisIsStillADraft:$/</span><span class="p">,</span> <span class="s2">&quot;date: </span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="no">FileUtils</span><span class="o">.</span><span class="n">rm</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span class='line'>  <span class="k">else</span>
-</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Index not found!&quot;</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>With these two new rake tasks, I can now create as many draft posts at a time and publish them once ready.</p>
-
-<h4><strong>Improving the build time</strong></h4>
-
-<p>Jekyll build command options provides a switch, &lsquo;<em>configuration</em>&rsquo;, that allows to pass a configuration file instead of using &lsquo;<em>_config.yml</em>&rsquo;. In the configuration file we can specify a &lsquo;exclude&rsquo; option to exclude the directories and/or files from the build. I created a new task for building only the current drafts, by specifying the &lsquo;<em>&ndash;drafts</em>&rsquo; switch and a dynamically generated configuration file, <em>_previewconfig.yml</em>, which excludes the &lsquo;<em>_posts</em>&rsquo; folder. This dramatically increases the build time, and completes almost immediately after a making a change to a post. This fits perfectly into my workflow, as while writing new posts I do not want to see any already published posts. You can  add the dynamically generated configuration file name to the <em>.gitignore</em> as I do not delete it in the tasks. I did not want to use the &lsquo;<em>rake isolate</em>&rsquo; task that is already present in the  rakefile, as that does not integrate with the draft workflow and unnecessarily moves all the posts to a temporary place.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">desc</span> <span class="s2">&quot;preview the site in a web browser with all the draft posts&quot;</span>
-</span><span class='line'><span class="n">task</span> <span class="ss">:previewdrafts</span> <span class="k">do</span>
-</span><span class='line'>  <span class="k">raise</span> <span class="s2">&quot;### You haven&#39;t set anything up yet. First run `rake install` to set up an Octopress theme.&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">directory?</span><span class="p">(</span><span class="n">source_dir</span><span class="p">)</span>
-</span><span class='line'>  <span class="nb">puts</span> <span class="s2">&quot;Starting to watch source with Jekyll and Compass. Starting Rack on port </span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="nb">system</span> <span class="s2">&quot;compass compile --css-dir </span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/stylesheets&quot;</span> <span class="k">unless</span> <span class="no">File</span><span class="o">.</span><span class="n">exist?</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/stylesheets/screen.css&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;_config.yml&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
-</span><span class='line'>      <span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;_previewconfig.yml&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">f</span><span class="o">|</span>
-</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
-</span><span class='line'>      <span class="n">f</span><span class="o">.</span><span class="n">puts</span><span class="p">(</span><span class="s2">&quot;exclude: [</span><span class="se">\&quot;</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="se">\&quot;</span><span class="s2">]&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="n">jekyllPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">({</span><span class="s2">&quot;OCTOPRESS_ENV&quot;</span><span class="o">=&gt;</span><span class="s2">&quot;preview&quot;</span><span class="p">},</span> <span class="s2">&quot;jekyll build --watch --drafts --config _previewconfig.yml&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">compassPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="s2">&quot;compass watch&quot;</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">rackupPid</span> <span class="o">=</span> <span class="no">Process</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="s2">&quot;rackup --port </span><span class="si">#{</span><span class="n">server_port</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nb">trap</span><span class="p">(</span><span class="s2">&quot;INT&quot;</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="o">[</span><span class="n">jekyllPid</span><span class="p">,</span> <span class="n">compassPid</span><span class="p">,</span> <span class="n">rackupPid</span><span class="o">].</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">pid</span><span class="o">|</span> <span class="no">Process</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span> <span class="k">rescue</span> <span class="no">Errno</span><span class="o">::</span><span class="no">ESRCH</span> <span class="p">}</span>
-</span><span class='line'>    <span class="nb">exit</span> <span class="mi">0</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="o">[</span><span class="n">jekyllPid</span><span class="p">,</span> <span class="n">compassPid</span><span class="p">,</span> <span class="n">rackupPid</span><span class="o">].</span><span class="n">each</span> <span class="p">{</span> <span class="o">|</span><span class="n">pid</span><span class="o">|</span> <span class="no">Process</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span> <span class="p">}</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Dropbox integration</strong></h4>
-
-<p>At times, I have started to draft blog posts while commuting to work from my mobile device, so I wanted to sync my draft posts to <a href="https://db.tt/bvYw3pL6">Dropbox</a>, so that I can edit it from my <a href="http://www.rahulpnath.com/blog/review-two-months-and-counting-android-and-nexus-5/">mobile phone</a>. Apps like <a href="https://play.google.com/store/apps/details?id=net.keepzero.markdrop&amp;hl=en">MarkDrop</a>/<a href="https://play.google.com/store/apps/details?id=net.keepzero.markdrop&amp;hl=en">JotterPad</a> integrates with Dropbox and supports Markdown editing. I set up a drafts folder on my Dropbox folder on laptop, which is automatically synced using the <a href="https://www.dropbox.com/install">Dropbox application</a>. I then used <a href="https://technet.microsoft.com/en-us/library/cc753194.aspx">Mklink</a> to create a symbolic link from the folder on Dropbox to my drafts folder in my blog repository. Whenever a new draft post is added, it gets automatically inserted into the Dropbox folder, which will then be synced to cloud and available for edit on my mobile phone too. (Part of this post is written from my mobile!)</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>mklink /D &quot;C:\blog\_drafts&quot; &quot;C:\dropbox\_drafts&quot;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<h4><strong>Cmder integration</strong></h4>
-
-<p><a href="http://cmder.net/">Cmder</a> is a portable console emulator for Windows and provides a good nice looking feature rich console experience on Windows and is one of my <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">favourite tools</a>. Creating alias for commands is one of the features, that allows to create a short key combination for an otherwise long command. You can use this to create commands for the task in Octopress like below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>alias rp=rake previewdrafts
-</span><span class='line'>
-</span><span class='line'>// Below are the list of alias that I have for the rake tasks
-</span><span class='line'>rp=rake previewdrafts
-</span><span class='line'>rps=rake preview // Preview the whole site
-</span><span class='line'>rd=rake deploy
-</span><span class='line'>rnd=rake new_draft[&quot;$&quot;] // Takes in the post name as parameter
-</span><span class='line'>rpd=rake publish_draft
-</span><span class='line'>rd=rake deploy
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><strong>So my new workflow is</strong></p>
-
-<p>rnd Optimizing Octopress Workflow for New Posts <br/>
-rp <br/>
-rpd <br/>
-rps <br/>
-rd</p>
-
-<p>It&rsquo;s much faster, cleaner and easier publishing new posts. To see the latest code for the rake tasks head over to the original file on <a href="https://github.com/rahulpnath/rahulpnath.com/blob/master/Rakefile">github</a>.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1917,6 +1881,8 @@ rd</p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/generating-a-large-pdf-from-website-contents/">Generating a Large PDF from Website Contents</a>
+    
     <a class="list-group-item " href="/blog/chocolatey-install-softwares-with-ease/">Tip of the Week: Chocolatey - Install Softwares With Ease</a>
     
     <a class="list-group-item " href="/blog/one-day-trips-around-sydney/">One Day Trips Around Sydney</a>
@@ -1924,8 +1890,6 @@ rd</p>
     <a class="list-group-item " href="/blog/testing-your-website-under-different-bandwidths/">Tip of the Week: Testing Your Website Under Different Bandwidths</a>
     
     <a class="list-group-item " href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
-    
-    <a class="list-group-item " href="/blog/hemingway-editor/">Tip of the Week: Hemingway Editor - Improve Your Writing</a>
     
   </div>
 </section>

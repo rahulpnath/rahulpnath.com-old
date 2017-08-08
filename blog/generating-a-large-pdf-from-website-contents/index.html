@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Tip of the Week: Using Git Locally in a TFVC Repository - Rahul Nath</title>
+  <title>Generating a Large PDF from Website Contents - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Use the power of git even with TFVC source control." />
+<meta name="description" content="Dynamically generate a PDF file for a CMS Website." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository">
+  <link rel="canonical" href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="Tip of the Week: Using Git Locally in a TFVC Repository" />
+<meta property="og:title" content="Generating a Large PDF from Website Contents" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository/" />
-<meta property="og:description" content="Use the power of git even with TFVC source control." />
+<meta property="og:url" content="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/" />
+<meta property="og:description" content="Dynamically generate a PDF file for a CMS Website." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-<meta property="og:image" content="http://www.rahulpnath.com/images/tfvc_local_git.png" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/pdf_generation_flow.png" />
 
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository" />
-<meta property="twitter:title" content="Tip of the Week: Using Git Locally in a TFVC Repository" />
-<meta property="twitter:description" content="Use the power of git even with TFVC source control." />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents" />
+<meta property="twitter:title" content="Generating a Large PDF from Website Contents" />
+<meta property="twitter:description" content="Dynamically generate a PDF file for a CMS Website." />
 <meta property="twitter:creator" content="rahulpnath" />
-<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/tfvc_local_git.png" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/pdf_generation_flow.png" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-06-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 21<sup>st</sup>, 2017</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-08-08T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 8<sup>th</sup>, 2017</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
   
 </span>
 
@@ -175,22 +175,62 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Tip of the Week: Using Git Locally in a TFVC Repository
+        Generating a Large PDF from Website Contents
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>The project that I am currently working on using <a href="https://www.visualstudio.com/en-us/docs/tfvc/overview">Team Foundation Version Control</a>(TFVC) as it&rsquo;s source control. After <a href="http://www.rahulpnath.com/blog/git-checkout-tfs/">using Git</a> for a long time it felt hard to move back to TFVC. One of the biggest pain for me is losing the short commits that I do when working. Short commits help keep track of the work and also quickly revert unwanted changes. Branching is also much easier with Git and allows to switch between work without much hassle of &lsquo;<em>shelving -> undoing -> pulling back the latest as with TFS.</em>&rsquo;</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>At one of my recent clients, we had a requirement to generate a PDF dynamically based on the contents of the website. The website is a Content Management System (CMS) built on top of <a href="https://umbraco.com/">Umbraco</a>. The content is grouped into different categories and sub-categories. Each category and sub-category had different sections/sub-sections under that. Some sections are optional for certain categories, and all of these are dynamic. In this post, I will walk through at high level the approach taken to solve the problem.</p>
 
-<p><img src="/images/tfvc_local_git.png" alt="Use Git Locally in a TFVC Repository" class="center" /></p>
+<p>The user selects the categories/sub-categories and the sections that they wish to export as PDF. On submit, a PDF needs to be generated based on the website content.</p>
 
-<p>The best part with git is that you can use it to work with any folder in your system and does not need any setup. By just running &lsquo;<em><a href="https://git-scm.com/docs/git-init">git init</a></em>&rsquo; it initializes a git repository in the folder. Running <em>init</em> against my local TFVC source code folder, I initialized a git repository locally. Now it allows me to work locally using git - make commits, revert, change branches, etc. Whenever I reach a logical end to the work, I create a shelveset and push the changes up the TFVC source control from Visual Studio.</p>
+<figure class='code'><figcaption><span>Model Structure of Domain</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Category</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Section</span><span class="p">&gt;</span> <span class="n">Sections</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Category</span><span class="p">&gt;</span> <span class="n">SubCategory</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Section</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Section</span><span class="p">&gt;</span> <span class="n">SubSections</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>If you want to interact with the TFVC source control straight from the command line, you can try out <a href="https://github.com/git-tfs/git-tfs">git-tfs</a> - a Git/TFS bridge. For me, since I am happy working locally with git and pushing up the finished work as shelvesets from Visual Studio I have not explored the git-tfs tool.</p>
 
-<p>Hope this helps someone if you feel stuck with TFVC repositories!</p>
+<p><img src="/images/pdf_generation.png" class="center" alt="Select options to download" /></p>
+
+<p>The actual site had one more level of options (say sub-sections), so you can imagine the number of possible combinations to generate the content. The site content was huge as well, and a PDF with all options selected would be around 4000-5000 pages. So creating the PDF every time some one clicks the button was out of the question. We had to cache the generated PDF&rsquo;s and serve them as the request comes in. But the challenge was how to manage the cache so that we can build up the PDF based on the options selected.</p>
+
+<div class="alert alert-info">
+If you are using HTML to PDF libraries be aware that most of the libraries out there (<a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object</a>, <a href="http://www.evopdf.com/">EvoPDF</a> etc.) <strong>does not work on Azure Web Apps</strong>. This is because of the <a href="https://github.com/projectkudu/kudu/wiki/Azure-Web-App-sandbox#pdf-generation-from-html">sandbox restrictions</a> on the applications irrespective of the Azure plan you are on. The preferred solution is to host the conversion code on a VM. If you find that an overhead (which it is) consider using the SAAS alternatives for converting HTML to PDF.
+</div>
+
+
+<p>Below is the flow diagram of the complete process of generating the PDF as a request comes. The request specifies the categories/sub-categories along with the sections that need to be in the generated PDF.</p>
+
+<p><img src="/images/pdf_generation_flow.png" class="center" alt="PDF Generation Flow" /></p>
+
+<p>We decided to create a PDF file for each section per category/subcategory selection. Once all the sections are ready, all the PDF files will be merged into one. While merging we also build up the bookmark tree and the table of contents. Inserting the table of contents page at the start of the PDF requires pushing all the page numbers to match the new ones.</p>
+
+<p>The PDF layout for individual sections per category/subcategory is in HTML. The application exposes endpoints for the HTML content for the different sections. We used <a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object HTML to PDF Converter</a> to convert the HTML to PDF files. Bookmarks for the associated section are embedded in HTML. While converting to PDF, the bookmarks get added to the PDF, which later gets merged into the full bookmark tree. The generated PDF file is cached for any new requests.</p>
+
+<p>Since we have around forty categories/sub-categories, twelve section, and ten sub-sections, generating the full PDF take a while. So we generate the cache at fixed intervals and as required (when content is updated in the CMS). The above approach of generating PDF files has been working fine for us. Since the individual PDF sections are generated in isolation, it gives us the flexibility to scale the generation process as required. Combining the generated PDF files is often fast and can be cached at a different level as well to speed up the whole process.</p>
 </div>
 
 
@@ -223,25 +263,25 @@
   
     <li>
     	<p>
-      		<a href="/blog/quick-launch-in-visual-studio/">Tip of the Week: Quick Launch in Visual Studio</a>
+      		<a href="/blog/being-explicit-about-time-when-handling-multiple-timezone/">Being Explicit About Time when Handling Multiple Timezone</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/left-align-your-code-for-better-readability/">Left Align Your Code For Better Readability</a>
+      		<a href="/blog/thinking-beyond-primitive-values-value-objects/">Thinking Beyond Primitive Values: Value Objects</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/git-checkout-tfs/">git checkout TFS</a>
+      		<a href="/blog/when-your-architecture-screams-technology/">When your Architecture Screams Technology!</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/generating-a-large-pdf-from-website-contents/">Generating a Large PDF from Website Contents</a>
+      		<a href="/blog/using-repository-pattern-for-abstracting-data-access-from-a-cache-and-data-store/">Using Repository Pattern for Abstracting Data Access from a Cache and Data Store</a>
   		</p>
     </li>
   
@@ -253,7 +293,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/" >Tweet</a>
   
   
   
@@ -265,10 +305,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/semantic-comparison-improve-test-assertions/" title="Previous Post: Semantic Comparison: Improve Test Assertions">&laquo; Semantic Comparison: Improve Test Assertions</a></li>
+            <li class="previous"><a href="/blog/chocolatey-install-softwares-with-ease/" title="Previous Post: Tip of the Week: Chocolatey - Install Softwares With Ease">&laquo; Tip of the Week: Chocolatey - Install Softwares With Ease</a></li>
             
-            
-            <li class="next"><a href="/blog/fiddler-free-web-debugging-proxy/" title="Next Post: Tip of the Week: Fiddler - Free Web Debugging Proxy">Tip of the Week: Fiddler - Free Web Debugging Proxy &raquo;</a></li>
             
           </ul>
         
@@ -313,8 +351,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository/';
-        var disqus_url = 'http://rahulpnath.com/blog/using-git-locally-in-a-tfvc-repository/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/';
+        var disqus_url = 'http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/';
         var disqus_script = 'embed.js';
       
     (function () {
