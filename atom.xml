@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-08-15T00:02:07+00:00</updated>
+  <updated>2017-08-16T00:02:15+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,149 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages]]></title>
+    <link href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/"/>
+    <updated>2017-08-16T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii</id>
+    <content type="html"><![CDATA[<p>In the previous post, <a href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents">Generating a Large PDF from Website Contents</a> we saw from a high level the approach taken to generate PDF files from a Content Management System (CMS) website. In this post, we will delve further into the details of each of those areas.</p>
+
+<h3>HTML To PDF</h3>
+
+<p>There are a lot of libraries and services that support converting HTML to PDF. We chose this mechanism mainly for keeping the content formatting simple and reusable. Most of the PDF data was to be structured like the website content. This means we can reuse (read copy/paste) the HTML styling for the PDF content as well.</p>
+
+<p>We used <a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Objects HTML to PDF Converter</a> library. Our website is hosted as an Azure Web App and the <a href="https://www.essentialobjects.com/doc/pdf/install/deploy.aspx">Essential Objects library does not work in the Azure sandbox environment</a>. The <a href="https://github.com/projectkudu/kudu/wiki/Azure-Web-App-sandbox#pdf-generation-from-html">Azure Sandbox restriction</a> affects most of the HTML to PDF libraries. The recommended approach to use those libraries is to host the PDF conversion logic on an Azure Virtual Machine, which is what we also ended up doing. Alternatively, you can choose to use one of the <a href="https://stackoverflow.com/questions/5344176/is-there-a-web-service-for-converting-html-to-pdf">HTML to PDF hosted services</a>.</p>
+
+<p>The below code snippet is what you need to convert an HTML URL endpoint to PDF. It uses the HtmlToPdf class from the <a href="https://www.nuget.org/packages/EO.Pdf/">EO.Pdf Nuget package</a>. The HtmlToPdfOptions specifies various conversion and formatting options. You can set margin space, common headers, footers, etc. for the generated PDF content. It also provides extensibility points in the PDF conversion pipeline.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">FileContentResult</span> <span class="nf">Convert</span><span class="p">(</span><span class="kt">string</span> <span class="n">url</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">pdfStream</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">pdfDocument</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfDocument</span><span class="p">();</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">pdfOptions</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">GetPdfOptions</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">HtmlToPdf</span><span class="p">.</span><span class="n">ConvertUrl</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">pdfDocument</span><span class="p">,</span> <span class="n">pdfOptions</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">pdfDocument</span><span class="p">.</span><span class="n">Save</span><span class="p">(</span><span class="n">pdfStream</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">FileContentResult</span><span class="p">(</span><span class="n">pdfStream</span><span class="p">.</span><span class="n">ToArray</span><span class="p">(),</span> <span class="s">&quot;application/pdf&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><strong><em>HTML Formatting Tip</em></strong></p>
+
+<p><em>You might want to avoid content being split across multiple pages. E.g., images, charts, etc. In this cases, you can use the <a href="https://css-tricks.com/almanac/properties/p/page-break/">page-break-*</a> CSS property to adjust page breaks. <a href="https://www.essentialobjects.com/doc/pdf/htmltopdf/paging.aspx">Essentials objects honors the page-break-*</a> settings and adjusts the content when converting into PDF.</em></p></blockquote>
+
+<h3>Bookmarks</h3>
+
+<p><em>A <a href="https://helpx.adobe.com/acrobat/using/page-thumbnails-bookmarks-pdfs.html#about_bookmarks">bookmark</a> is a type of link with representative text in the Bookmarks panel in the navigation pane. Each bookmark goes to a different view or page in the document. Bookmarks are generated automatically during PDF creation from the table-of-contents entries of a document.</em></p>
+
+<p>We generate a lot of small PDF files (per section and category/sub-category) and then merge them together to form the larger PDF. Each of the sections has one or more entries towards Table Of Contents (TOC). We decided to generate bookmarks first per each generated PDF. When merging the individual PDF, the bookmarks are merged first, and then the TOC is created from the full bookmark tree.</p>
+
+<p>Bookmarks can be created automatically or manually using Essential Objects library. Most of the other libraries also provide similar functionality. Using the <a href="https://www.essentialobjects.com/doc/EO.Pdf.HtmlToPdfOptions.AutoBookmark.html">AutoBookmark property</a> we can have bookmarks created automatically based on HTML header (H1-H6) elements. If this does not fit with your scenario, then you can create them manually. In our case, we insert hidden HTML tags to specify bookmarks. Bookmark hierarchy is represented using custom attributes as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">&quot;bookmark&quot;</span> <span class="na">id=</span><span class="s">&quot;TOC_Category1&quot;</span> <span class="na">name=</span><span class="s">&quot;Category1&quot;</span><span class="nt">&gt;</span>Category 1<span class="nt">&lt;/a&gt;</span>
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">&quot;bookmark&quot;</span> <span class="na">id=</span><span class="s">&quot;TOC_Category1_Section1&quot;</span> <span class="na">name=</span><span class="s">&quot;Section1&quot;</span> <span class="na">tocParent=</span><span class="s">&quot;TOC_Category1&quot;</span><span class="nt">&gt;</span>Section 1<span class="nt">&lt;/a&gt;</span>
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;a</span> <span class="na">class=</span><span class="s">&quot;bookmark&quot;</span> <span class="na">id=</span><span class="s">&quot;TOC_Category1_Section2&quot;</span> <span class="na">name=</span><span class="s">&quot;Section2&quot;</span> <span class="na">tocParent=</span><span class="s">&quot;TOC_Category1&quot;</span><span class="nt">&gt;</span>Section 2<span class="nt">&lt;/a&gt;</span>
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the PDF is created from the URL, we parse the HTML content for elements with <em>bookmark</em> class and manually add the bookmarks into the generated PDF. The <em><a href="https://www.essentialobjects.com/doc/EO.Pdf.HtmlDocument.GetElementsByClassName_overload_1.html">GetElementsByClassName</a></em> and the <em><a href="https://www.essentialobjects.com/doc/EO.Pdf.HtmlElement.CreateBookmark_overloads.html">CreateBookmark</a></em> methods help us to create bookmarks from the hidden HTML elements in the page.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">{</span>
+</span><span class='line'> <span class="p">...</span>
+</span><span class='line'> <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">HtmlToPdf</span><span class="p">.</span><span class="n">ConvertUrl</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">pdfDocument</span><span class="p">,</span> <span class="n">pdfOptions</span><span class="p">);</span>
+</span><span class='line'> <span class="n">BuildBookmarkTree</span><span class="p">(</span><span class="n">pdfDocument</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span>
+</span><span class='line'> <span class="n">pdfDocument</span><span class="p">.</span><span class="n">Save</span><span class="p">(</span><span class="n">pdfStream</span><span class="p">);</span>
+</span><span class='line'> <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">void</span> <span class="nf">BuildBookmarkTree</span><span class="p">(</span><span class="n">PdfDocument</span> <span class="n">pdfDocument</span><span class="p">,</span> <span class="n">HtmlToPdfResult</span> <span class="n">htmlToPdfResult</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">bookmarkElements</span> <span class="p">=</span> <span class="n">htmlToPdfResult</span><span class="p">.</span><span class="n">HtmlDocument</span><span class="p">.</span><span class="n">GetElementsByClassName</span><span class="p">(</span><span class="s">&quot;bookmark&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">htmlElement</span> <span class="k">in</span> <span class="n">bookmarkElements</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">bookmark</span> <span class="p">=</span> <span class="n">htmlElement</span><span class="p">.</span><span class="n">CreateBookmark</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">...</span> <span class="c1">// Custom logic to build the bookmark hierarchy</span>
+</span><span class='line'>        <span class="c1">// based on custom attributes or whatever approach you choose.</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">pdfDocument</span><span class="p">.</span><span class="n">Bookmarks</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">bookmark</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Handling Empty Pages</h3>
+
+<p>In our case, the content is from a CMS, and the user gets an option to select what categories/sub-categories and sections of data to be displayed in the generated PDF. At times it happens that some of the selected combinations might not have any data in the system. To avoid printing a blank page (or an error page) in the generated PDF, we can check the conversion result to check for the returned content. Whenever the content does not exists the HTML endpoint returns an <a href="https://msdn.microsoft.com/en-us/library/system.web.mvc.emptyresult(v=vs.118">EmptyResult class</a>.aspx). At the PDF conversion side, you can check if the response is empty and accordingly perform your logic to ignore the generated PDF.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">HtmlToPdfResultExtensions</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="kt">bool</span> <span class="nf">IsEmptyResponse</span><span class="p">(</span><span class="k">this</span> <span class="n">HtmlToPdfResult</span> <span class="n">htmlToPdfResult</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">htmlToPdfResult</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>            <span class="n">htmlToPdfResult</span><span class="p">.</span><span class="n">HtmlDocument</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>            <span class="n">htmlToPdfResult</span><span class="p">.</span><span class="n">HtmlDocument</span><span class="p">.</span><span class="n">Body</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>            <span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">htmlToPdfResult</span><span class="p">.</span><span class="n">HtmlDocument</span><span class="p">.</span><span class="n">Body</span><span class="p">.</span><span class="n">InnerText</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the individual PDF files are created for each of the section and category/subcategory combination, we can merge them together to generate the full PDF. We will see in the next post how to merge the bookmarks together along with shifting the PDF pages and generating Table of Contents from the bookmarks.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Analyze Your Site Performance]]></title>
@@ -1426,360 +1569,6 @@ Fiddler makes it easy to share captured traces with different people. All captur
 
 
 <p>Hope that saves you some time if you were entering the credentials every time you push/pull from a git repository.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Use Tests As A Feedback Tool To Improve Code]]></title>
-    <link href="http://rahulpnath.com/blog/tests-as-a-feedback-tool/"/>
-    <updated>2017-06-01T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/tests-as-a-feedback-tool</id>
-    <content type="html"><![CDATA[<p>A unit test suite provides immediate feedback when you make a change. A passing test suite gives the confidence on the changes made. It&rsquo;s the confidence that the team has on the tests suite that matters more than the <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">code coverage number</a>. Tests also provide feedback about the code. It suggests how easy or difficult it is to use the code just written since tests are the first consumers of the code. Different kinds of <a href="http://xunitpatterns.com/Test%20Smells.html">Test Smells</a> indicates a problem with the code that is getting tested or the test code itself and provides feedback to improve it.</p>
-
-<p><img alt = "Test Feedback" src="http://rahulpnath.com/images/test_feedback.png" class = "center" /></p>
-
-<p>Let&rsquo;s take a look at a couple of Test Smells and see what changes can be made to improve the code.</p>
-
-<h3>Multiple Asserts on Class Properties</h3>
-
-<p>Tests should ideally follow the Single Responsibility Principle (SRP). It should test one thing and try to limit that to one <em>Assert</em> statement. Often I come across tests that assert multiple things. At times this could just be that we are testing all side-effects of the method that is getting tested. Such tests can be broken down into separate tests which test just one thing each. In certain other cases, the effects of the method that is getting tested itself are spread across multiple properties. Let&rsquo;s see a simple example of one such case. Below is a DateRange class which takes in a StartDate and EndDate and creates a DateRange class if the endDate is greater than startDate.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRange</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">DateTime</span> <span class="n">StartDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="n">DateTime</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">startDate</span><span class="p">,</span> <span class="n">DateTime</span> <span class="n">endDate</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">endDate</span> <span class="p">&lt;</span> <span class="n">startDate</span><span class="p">)</span>
-</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentException</span><span class="p">(</span><span class="s">&quot;End date cannot be less than start Date&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">StartDate</span> <span class="p">=</span> <span class="n">startDate</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">EndDate</span> <span class="p">=</span> <span class="n">endDate</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">DateRange</span> <span class="nf">MonthsFromDate</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">date</span><span class="p">,</span> <span class="kt">int</span> <span class="n">numOfMonths</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">date</span>   <span class="p">,</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Today</span><span class="p">.</span><span class="n">AddMonths</span><span class="p">(</span><span class="n">numOfMonths</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">bool</span> <span class="nf">IsInRange</span><span class="p">(</span><span class="n">DateTime</span> <span class="n">theDateTime</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">theDateTime</span> <span class="p">&gt;=</span> <span class="n">StartDate</span> <span class="p">&amp;&amp;</span> <span class="n">theDateTime</span> <span class="p">&lt;=</span> <span class="n">EndDate</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Let&rsquo;s take a look at one of the tests that check for the successful creation of a DateRange object using the MonthsFromDate function. In the tests below you can see that there are two statements to assert that the DateRange object is created successfully. In this particular case, the assertions are limited to two, but could often be more than that.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 2, &quot;01-Mar-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 0, &quot;01-Jan-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 27, &quot;01-Apr-2019&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsFromDateReturnsExpected</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateString</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">monthsFromNow</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateString</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">startDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">startDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">endDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">endDateString</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">DateRange</span><span class="p">.</span><span class="n">MonthsFromDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">monthsFromNow</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">actual</span><span class="p">.</span><span class="n">StartDate</span><span class="p">);</span>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">endDate</span><span class="p">,</span> <span class="n">actual</span><span class="p">.</span><span class="n">EndDate</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>I can think if two ways to solve the above problem. One is to refactor the test code and the other to refactor the DateRange class itself. Both methods involve creating the expected DateRange object upfront and then comparing against it for equality. The tests can be refactored using <a href="https://www.nuget.org/packages/SemanticComparison">SemanticComparison</a> library.</p>
-
-<figure class='code'><figcaption><span>Refactor Test using SemanticComparison</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 2, &quot;01-Mar-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 0, &quot;01-Jan-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 27, &quot;01-Apr-2019&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsFromDateReturnsExpectedUsingSemanticComparison</span><span class="p">(</span>
-</span><span class='line'>   <span class="kt">string</span> <span class="n">startDateString</span><span class="p">,</span>
-</span><span class='line'>   <span class="kt">int</span> <span class="n">monthsFromNow</span><span class="p">,</span>
-</span><span class='line'>   <span class="kt">string</span> <span class="n">endDateString</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">startDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">startDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">endDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">endDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DateRange</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">DateRange</span><span class="p">.</span><span class="n">MonthsFromDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">monthsFromNow</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">expected</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">AsSource</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">OfLikeness</span><span class="p">&lt;</span><span class="n">DateRange</span><span class="p">&gt;()</span>
-</span><span class='line'>        <span class="p">.</span><span class="n">ShouldEqual</span><span class="p">(</span><span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In this particular case looking closely at the <a href="http://xunitpatterns.com/SUT.html">system under test (SUT)</a>, the DateRange class, we understand that it can be a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. Any two instances of DateRange with the same start and end date can be considered equal. Equality is based on the value contained and not on any other identity. Though in all cases that you observe this behavior it might not be possible for you to convert it into a value object. In those case use the approach mentioned below. But in cases where you have control over it, override <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Equals and GetHashCode</a> to implement value equality. The test is much simpler and had less code</p>
-
-<figure class='code'><figcaption><span>Refactor DateRange to ValueObject</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 2, &quot;01-Mar-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 0, &quot;01-Jan-2017&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;01-Jan-2017&quot;, 27, &quot;01-Apr-2019&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">MonthsFromDateReturnsExpectedUsingValueObject</span><span class="p">(</span>
-</span><span class='line'>   <span class="kt">string</span> <span class="n">startDateString</span><span class="p">,</span>
-</span><span class='line'>   <span class="kt">int</span> <span class="n">monthsFromNow</span><span class="p">,</span>
-</span><span class='line'>   <span class="kt">string</span> <span class="n">endDateString</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">startDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">startDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">endDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">endDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">expected</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DateRange</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">DateRange</span><span class="p">.</span><span class="n">MonthsFromDate</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">monthsFromNow</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">Equal</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>Complicated Test Setup and Test Code Duplication</h3>
-
-<p>At times we run into cases where setting up the sut is complicated and is a lot of code. Complicated setup often leads to <a href="http://xunitpatterns.com/Test%20Code%20Duplication.html">Test code duplication</a>.</p>
-
-<blockquote><p><em>A complicated test setup warrants &lsquo;</em>cut-copy-paste<em>&rsquo; to test different aspects of the sut.</em></p></blockquote>
-
-<p>From my experience, I have seen this happen more for the test setup phase. The test setup phase is identical across a set of tests with only the assertions being different. Let us look into some common reasons why test setup can becoming complicated leading to test code duplication as well.</p>
-
-<h4><strong>Violating Single Responsibility Principle (SRP)</strong></h4>
-
-<p>The test setup can get complicated when the sut violates Single Responsibility Principle (SRP). When there are too many things that are getting affected by the sut, the setup and the verification phases become complex. In these cases extracting the responsibilities as injected dependencies help reduce complexity. The tests can then use mocks to test the sut in isolation. The post, <a href="http://www.rahulpnath.com/blog/refactoring-to-improve-testability-extracting-dependencies/">Refactoring to Improve Testability: Extracting Dependencies</a> looks into an end to end scenario of this case and how it can be improved.</p>
-
-<p>Violating SRP also leads to test code duplication as multiple aspects need testing and the setup looks almost similar. Refactoring the sut and the test code are ways that test code can be made more robust in these cases.</p>
-
-<h4><strong>SUT Constraints</strong></h4>
-
-<p>Test Code Duplication can occur when there are constraints on a constructor, and the test needs to construct it. Let&rsquo;s take the example of DateRange class we saw above. The DateRange constructor takes in two dates, startDate and endDate. But the constructor has a rule enforced that endDate must be greater than startDate. In such cases, I often see tests that have DateRange as a property directly or indirectly (as properties on other objects) creating them explicitly.</p>
-
-<figure class='code'><figcaption><span>Explicitly create objects with Constraints</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;1 Jan 2016&quot;, &quot;1 Mar 2016&quot;, &quot;20 Feb 2016&quot;)]</span>
-</span><span class='line'><span class="na">[InlineData(&quot;11 Apr 2016&quot;, &quot;30 Mar 2017&quot;, &quot;26 Dec 2016&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">DateInBetweenStartAndEndDateIsInRangeManualSetup</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">startDateString</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">endDateString</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">dateInBetween</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">startDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">startDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">endDate</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">endDateString</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">date</span> <span class="p">=</span> <span class="n">DateTime</span><span class="p">.</span><span class="n">Parse</span><span class="p">(</span><span class="n">dateInBetween</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">sut</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DateRange</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="n">endDate</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">IsInRange</span><span class="p">(</span><span class="n">date</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We cannot depend on the default behavior of AutoFixture to generate a DateRange object for us, as it does not know about this constraint and will always pass two random dates to the constructor. The below test is not repeatable and can fail at times if AutoFixture sends the endDate less than the start date.</p>
-
-<figure class='code'><figcaption><span>Using AutoFixture on classes that have constraints can lead to tests that are not repeatable</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Theory]</span>
-</span><span class='line'><span class="na">[InlineAutoData]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">DateInBetweenStartAndEndDateIsInRange</span><span class="p">(</span><span class="n">DateRange</span> <span class="n">sut</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">rand</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Random</span><span class="p">();</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">date</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">StartDate</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="n">rand</span><span class="p">.</span><span class="n">Next</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="p">(</span><span class="n">sut</span><span class="p">.</span><span class="n">EndDate</span> <span class="p">-</span> <span class="n">sut</span><span class="p">.</span><span class="n">StartDate</span><span class="p">).</span><span class="n">Days</span> <span class="p">-</span> <span class="m">1</span><span class="p">));</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">actual</span> <span class="p">=</span> <span class="n">sut</span><span class="p">.</span><span class="n">IsInRange</span><span class="p">(</span><span class="n">date</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Assert</span><span class="p">.</span><span class="n">True</span><span class="p">(</span><span class="n">actual</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To make the test repeatable, we must be able to generate a DateRange class successfully every time we ask AutoFixture for one. For this, we add a DateRange <a href="https://github.com/AutoFixture/AutoFixture/wiki/Internal-Architecture">customization and plug it into the Fixture creation pipeline</a>. The customization makes sure that the DateRange class constructor parameters match the constraints.</p>
-
-<figure class='code'><figcaption><span>DateRange AutoFixture Customization</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">InlineCustomizedAutoDataAttribute</span> <span class="p">:</span> <span class="n">AutoDataAttribute</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">InlineCustomizedAutoDataAttribute</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">:</span> <span class="k">base</span><span class="p">(</span><span class="k">new</span> <span class="n">Fixture</span><span class="p">().</span><span class="n">Customize</span><span class="p">(</span><span class="k">new</span> <span class="n">DateRangeCustomization</span><span class="p">()))</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRangeCustomization</span> <span class="p">:</span> <span class="n">ICustomization</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Customize</span><span class="p">(</span><span class="n">IFixture</span> <span class="n">fixture</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">fixture</span><span class="p">.</span><span class="n">Customizations</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">DateRangeSpecimenBuilder</span><span class="p">());</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DateRangeSpecimenBuilder</span> <span class="p">:</span> <span class="n">ISpecimenBuilder</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="kt">object</span> <span class="nf">Create</span><span class="p">(</span><span class="kt">object</span> <span class="n">request</span><span class="p">,</span> <span class="n">ISpecimenContext</span> <span class="n">context</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">requestAsType</span> <span class="p">=</span> <span class="n">request</span> <span class="k">as</span> <span class="n">Type</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">DateRange</span><span class="p">).</span><span class="n">Equals</span><span class="p">(</span><span class="n">requestAsType</span><span class="p">))</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">startTime</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="n">DateTime</span><span class="p">&gt;();</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">range</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="kt">uint</span><span class="p">&gt;();</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="nf">DateRange</span><span class="p">(</span><span class="n">startTime</span><span class="p">,</span> <span class="n">startTime</span><span class="p">.</span><span class="n">AddDays</span><span class="p">(</span><span class="n">range</span><span class="p">));</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="nf">NoSpecimen</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The tests can now be updated to use the <em>InlineCustomizedAutoDataAttribute</em> instead of the default <em>InlineAutoDataAttribute</em>. The tests are repeatable now as we can be sure that AutoFixture will always generate a valid DateRange object.</p>
-
-<h3>Public vs. Private for Tests</h3>
-
-<p>It often happens that we get into discussions on whether a function should be private or public. We think it is a bad idea to write production code in a way to suit tests. To test private methods, you can employ techniques of reflection or use <a href="https://msdn.microsoft.com/en-us/library/system.runtime.compilerservices.internalsvisibletoattribute">InternalsVisibleTo attribute</a>. But this is a smell in itself.</p>
-
-<p>Tests should be through public API of the class. If it gets difficult to test through the API, it hints that the code is dealing with different responsibilities or has too many dependencies.</p>
-
-<blockquote><p><em>There are valid use cases for the private and internal access modifiers, but the majority of the time I see private and internal code, it merely smells of poor design. If you change the design, you could make types and members public, and feel good about it.</em></p>
-
-<p>-<a href="http://blog.ploeh.dk/2015/09/22/unit-testing-internals/"><em>Unit Testing Internals, Mark Seemann</em></a></p></blockquote>
-
-<p>Consider refactoring your code so that it is easier to test. Tests are the first consumers of code, and it helps shape the public API and the way it gets consumed. It is fine to have tests affect the way you write code. What is not fine is to have explicit loops within the production code, just for test code. The problem with having such code is that the other code loop never gets tested.</p>
-
-<p>Tests act as a feedback tool and it is important that you listen to it. If you decide to bear the pain of writing tests ignoring the feedback just to meet some <a href="http://www.rahulpnath.com/blog/is-code-coverage-a-lie/">code coverage numbers</a> then you are doing it wrong. Most of the cases you will end up with hard to maintain code and fragile tests. Listen to the feedback and incorporate it into the code you write.</p>
 ]]></content>
   </entry>
   
