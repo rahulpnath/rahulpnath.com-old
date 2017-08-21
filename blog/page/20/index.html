@@ -163,6 +163,66 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2010-06-30T16:39:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 30<sup>th</sup>, 2010</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/wcf/'>wcf</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/role-based-access-control/" itemprop="url">Role Based Access Control</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>RBAC(Role Based Access Control) is something that is very common in the day-to-day world.<br/>
+So what is this all about.It is just about a authorization check on whether you have the access to a particular resource or not.<br/>
+When faced with scenarios like this when developing applications, where you have to implement Role based access for the different users that are to use the system you might be confused on how to implement this.<br/>
+Say you have a WCF service exposing a set of services.You have a WPF thick client consuming this service.Say for example you are exposing a service to Add/Delete/View Employees.Based on the various roles you need to allow/disallow the access to the functionality.The easiest way would be enable/disable the controls that would be used invoke the corresponding functionality,based on the user role.<br/>
+So am I done?<br/>
+What if tomorrow you are exposing this service to some other client of yours,who is to develop his on User Interface(UI) for the service.<br/>
+Do I have a problem here?<br/>
+Yes of course!!!<br/>
+What if he does not make the same check on the UI to enable/disable the controls that would act as his inputs.So here exactly is where you have a access break.Any user will be able to perform all functions irrespective of the access specified for him.<br/>
+So how do I go about?<br/>
+Make this check at the service level itself.Check for access and throw a NoAccess exception if not authorized.What exactly happens when you try to enter a no-access area in your office :)<br/>
+UI synchronization is an added level to this,so that you can stop unnecessary service calls.</p>
+
+<p>Will soon post a implementation sample :)</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2010-03-06T11:52:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 6<sup>th</sup>, 2010</time>
         
 
@@ -651,76 +711,6 @@ Just gonna relax the day ahead after the hard earned certification :):)</p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2009-08-20T16:41:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 20<sup>th</sup>, 2009</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/wpf/'>wpf</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/solidcolorbrush-list-from-brushes/" itemprop="url">SolidColorBrush List from Brushes</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Hi,
-Everybody will be using <a href="http://msdn.microsoft.com/en-us/library/system.windows.media.brushes.aspx">Brushes</a>,which implements a set of predefined SolidColrBrush objects,to choose various colors.
-Sometimes you may want to get a list of all these brushes up in your application,so that the user can select the color of his/her choice.
-To get the list of colors from Brushes you can use the following piece of code</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='vbnet'><span class='line'><span class="k">Dim</span> <span class="n">dictBrushes</span> <span class="ow">As</span> <span class="k">New</span> <span class="n">Dictionary</span><span class="p">(</span><span class="k">Of</span> <span class="kt">String</span><span class="p">,</span> <span class="n">SolidColorBrush</span><span class="p">)</span>
-</span><span class='line'><span class="k">For</span> <span class="k">Each</span> <span class="n">objPropertyInfo</span> <span class="ow">As</span> <span class="n">PropertyInfo</span> <span class="ow">In</span> <span class="ow">GetType</span><span class="p">(</span><span class="n">Brushes</span><span class="p">).</span><span class="n">GetProperties</span>
-</span><span class='line'>  <span class="k">If</span> <span class="p">(</span><span class="n">objPropertyInfo</span><span class="p">.</span><span class="n">PropertyType</span> <span class="ow">Is</span> <span class="ow">GetType</span><span class="p">(</span><span class="n">SolidColorBrush</span><span class="p">))</span> <span class="k">Then</span>
-</span><span class='line'>      <span class="n">dictBrushes</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">objPropertyInfo</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span><span class="n">objPropertyInfo</span><span class="p">.</span><span class="n">GetValue</span><span class="p">(</span><span class="k">Nothing</span><span class="p">,</span> <span class="k">Nothing</span><span class="p">))</span><span class="err"> </span>
-</span><span class='line'>  <span class="k">End</span> <span class="k">If</span><span class="err"> </span>
-</span><span class='line'><span class="k">Next</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here dictBrushes will give what you want.
-You can use this in your view,bind to a combobox if you want and show the possible selections of color</p>
-
-<p>Hope it helps :)</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -744,6 +734,8 @@ You can use this in your view,bind to a combobox if you want and show the possib
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
+    
     <a class="list-group-item " href="/blog/learn-touch-typing/">Tip of the Week: Learn Touch Typing</a>
     
     <a class="list-group-item " href="/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>
@@ -751,8 +743,6 @@ You can use this in your view,bind to a combobox if you want and show the possib
     <a class="list-group-item " href="/blog/analyze-your-site-performance/">Tip of the Week: Analyze Your Site Performance</a>
     
     <a class="list-group-item " href="/blog/generating-a-large-pdf-from-website-contents/">Generating a Large PDF from Website Contents</a>
-    
-    <a class="list-group-item " href="/blog/chocolatey-install-softwares-with-ease/">Tip of the Week: Chocolatey - Install Softwares With Ease</a>
     
   </div>
 </section>
