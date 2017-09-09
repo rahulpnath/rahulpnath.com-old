@@ -163,6 +163,312 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-12T04:27:36+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 12<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/react/'>react</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/reactjs-setting-up-the-environment/" itemprop="url">ReactJS: Setting up the Environment</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This post helps setting up the development environment for React on VS Code using Browserify and Gulp</em></p>
+
+<p>I have been playing around with <a href="https://facebook.github.io/react/">React</a> for the past few days and liking the one way binding and immutability concept that it puts forward. The component-based approach and having all related code in a single place is really interesting. Need to explore more and see how it really turns out building UI&rsquo;s with React.</p>
+
+<p>The openness of the Web makes it really difficult to get started with any development platform on it and is the same with React. There are a lot of options for getting things done and can get <a href="https://en.wikipedia.org/wiki/Decision_fatigue">overwhelming when newly starting out</a>. This post explains &lsquo;one way&rsquo; to set up the development environment when developing an application using the React JavaScript framework. I am using VS Code for some time now and wanted to use the same for React development. Except for setting up VS Code, everything else would still make sense to you if you are using a different editor.</p>
+
+<h3>Package Manager for External Dependencies</h3>
+
+<p>One of the first things we need when starting with a fresh project on React, is the React library itself. I use Node Package Manager(npm) for managing all my code and development dependencies. Use the below commands to set up the <a href="https://docs.npmjs.com/cli/init">npm configuration (<em>package.json</em>) </a> and install the latest version of React library.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>npm init
+</span><span class='line'>npm i --save react
+</span><span class='line'>npm i --save react-dom
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><em>When installing npm packages use <a href="https://docs.npmjs.com/files/package.json#dependencies">&ndash;save</a> if it needs to be deployed with the application and use <a href="https://docs.npmjs.com/files/package.json#devdependencies">&ndash;save-dev</a> for a package added to support development.</em></p></blockquote>
+
+<h3>Setting up VS Code</h3>
+
+<p>JavaScript development experience is better when you have <em><a href="https://code.visualstudio.com/Docs/languages/javascript">jsconfig.json</a></em> file in your project root. VSCode recommends adding this file through a small light bulb notification on the right side of the status bar (as shown below). With this configuration file, VSCode treats all the <em>js</em> files under the same project context.</p>
+
+<p><img class="center" src= "/images/vscode_jsconfig_balloon.png" alt="Visual Studio code jsconfig balloon notification" /></p>
+
+<p>Intellisense for libraries is available through type definition files, usually available in the <a href="http://definitelytyped.org/">DefinitelyTyped</a> <a href="https://github.com/DefinitelyTyped/DefinitelyTyped">repository</a>. With npm, you can manage these definition files using the <a href="https://github.com/typings/typings">TypeScript Definition Manager (typings)</a> package. To get started install the typings package and support for node packages. Now you can use <a href="https://github.com/typings/typings/blob/master/docs/commands.md">typings</a> to manage all the typescript definitions and use it for getting IntelliSense support. Once you have the correct type definitions installed for the packages you use, VSCode will show IntelliSense as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>npm i --save-dev typings
+</span><span class='line'>typings install --ambient node
+</span><span class='line'>typings install --save-dev gulp
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img class="center" src= "/images/react_vscode_intellisense.png" alt="Visual Studio code Intellisense" /></p>
+
+<h3>Hello World from React</h3>
+
+<p>Now that we have enough to get us started let&rsquo;s write our first react component, which displays a message passed into it.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="s1">&#39;use strict&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="nx">React</span> <span class="nx">from</span> <span class="s1">&#39;react&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">HelloWorld</span> <span class="o">=</span> <span class="nx">React</span><span class="p">.</span><span class="nx">createClass</span><span class="p">({</span>
+</span><span class='line'>   <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">(){</span>
+</span><span class='line'>       <span class="k">return</span> <span class="p">(</span>
+</span><span class='line'>           <span class="o">&lt;</span><span class="nx">div</span><span class="o">&gt;</span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">props</span><span class="p">.</span><span class="nx">message</span><span class="p">}</span><span class="o">&lt;</span><span class="err">/div&gt;</span>
+</span><span class='line'>       <span class="p">);</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">export</span> <span class="k">default</span> <span class="nx">HelloWorld</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s save the above into <em><a href="https://github.com/rahulpnath/Blog/blob/master/React_Template/src/components/helloworld.js">components/helloworld.js</a></em>. To use this component in the application, it needs to be rendered into the HTML page. So let&rsquo;s add a main entry point for the application as below and save it into <em><a href="https://github.com/rahulpnath/Blog/blob/master/React_Template/src/main.js">main.js</a></em>. Notice how the component is referred in here and rendered into the HTML div element <em>app</em>.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="s2">&quot;use strict&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kr">import</span> <span class="nx">React</span> <span class="nx">from</span> <span class="s1">&#39;react&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">ReactDOM</span> <span class="nx">from</span> <span class="s1">&#39;react-dom&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="kr">import</span> <span class="nx">HelloWorld</span> <span class="nx">from</span> <span class="s1">&#39;./components/helloworld&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="nx">HelloWorld</span> <span class="nx">message</span> <span class="o">=</span><span class="s2">&quot;Hello World From React&quot;</span> <span class="o">/&gt;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;app&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For completeness below is how the <em><a href="https://github.com/rahulpnath/Blog/blob/master/React_Template/src/Index.html">Index.html</a></em> looks</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;html&gt;</span>
+</span><span class='line'><span class="nt">&lt;head&gt;</span>
+</span><span class='line'><span class="nt">&lt;/head&gt;</span>
+</span><span class='line'><span class="nt">&lt;body&gt;</span>
+</span><span class='line'>     <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;app&quot;</span><span class="nt">&gt;&lt;/div&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;main.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'><span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Using Browserify for Bundling</h3>
+
+<p>Now that we have all the code needed for rendering the component, let&rsquo;s bundle up all the different JavaScript files together so that we can deploy it as a single file. Since we are using <em>JSX</em> and ES6 features, which not all browsers support, we need to transform it. <a href="https://babeljs.io/">Babel</a> is a JavaScript compiler to get this done and it also has preset specific to <a href="https://babeljs.io/docs/plugins/preset-react/">react</a> and <a href="https://babeljs.io/docs/plugins/preset-es2015/">es2015</a>. <a href="http://browserify.org">Browserify</a> bundles all the JavaScript modules and also enables specifying transforms using the <a href="https://github.com/substack/node-browserify#usage">&ndash;transform (-t)</a> switch, to pass in <a href="https://github.com/babel/babelify">babel</a> along with the presets required.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>browserify -t [babelify --presets [react es2015] ] src\main.js -o dest\main.js -d
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If you now manually copy over the HTML file into the <em>dest</em> folder and open it from there you should be seeing the &lsquo;<em>Hello World from React</em>&rsquo; message.</p>
+
+<h3>Automating Build and More</h3>
+
+<p>I definitely did not want to keep running the above command and copy the HTML(/CSS) files, every time I make a change, to see the output - so automating it was very much required. What I would essentially like to have is every time I make a change on any of the files in the project, the build to trigger and output the updated application into the <em>dest</em> folder and automatically refreshing the browser so that I can see the changes (near) real-time. I chose to use <a href="http://gulpjs.com/">Gulp</a> as this is popular and I have had some <a href="http://www.rahulpnath.com/blog/organizing-tests-into-test-suites-for-visual-studio/">experience using it before</a>.</p>
+
+<h4><strong><a href="https://github.com/rahulpnath/Blog/blob/master/React_Template/gulpfile.js">gulpfile.js</a></strong></h4>
+
+<p>To organize all the different path&rsquo;s used in the gulp build file, I have an object, <em>path</em> holding all the properties together, that&rsquo;s used in the <a href="https://github.com/gulpjs/gulp/blob/master/docs/API.md#gulptaskname--deps-fn">gulp tasks</a>. The different tasks that I have defined are to <em>build</em> ( which <em>copyHtmlFiles</em> and builds and transforms <em>js</em> files), <em><a href="https://github.com/adametry/gulp-eslint">lint</a></em>, <em><a href="https://github.com/gulpjs/gulp/blob/master/docs/API.md#gulpwatchglob--opts-tasks-or-gulpwatchglob--opts-cb">watch</a></em>&lsquo;es the source folder for changes and triggers the required build, <em><a href="https://www.npmjs.com/package/gulp-connect">connect</a></em>&rsquo;s a server to host the application and automatically <em>reload</em>&rsquo;s the browser whenever code is changed.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">appConfig</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">localBaseUrl</span><span class="o">:</span> <span class="s1">&#39;http://localhost&#39;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">port</span><span class="o">:</span> <span class="mi">8090</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">paths</span> <span class="o">:</span> <span class="nx">path</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;copyHtmlFiles&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">HTML</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">gulp</span><span class="p">.</span><span class="nx">dest</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">DEST</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">connect</span><span class="p">.</span><span class="nx">reload</span><span class="p">());</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;js&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">browserify</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">MAINJS</span><span class="p">,</span> <span class="p">{</span> <span class="nx">debug</span><span class="o">:</span> <span class="kc">true</span> <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">transform</span><span class="p">(</span><span class="nx">babelify</span><span class="p">,</span> <span class="p">{</span> <span class="nx">presets</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;react&#39;</span><span class="p">,</span> <span class="s1">&#39;es2015&#39;</span><span class="p">]</span> <span class="p">})</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">bundle</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">console</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">source</span><span class="p">(</span><span class="s1">&#39;main.js&#39;</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">gulp</span><span class="p">.</span><span class="nx">dest</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">DEST</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">connect</span><span class="p">.</span><span class="nx">reload</span><span class="p">());;</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;build&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;copyHtmlFiles&#39;</span><span class="p">,</span> <span class="s1">&#39;js&#39;</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;lint&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">JS</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">lint</span><span class="p">({</span> <span class="nx">config</span><span class="o">:</span> <span class="s1">&#39;eslint.config.json&#39;</span> <span class="p">}))</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">lint</span><span class="p">.</span><span class="nx">format</span><span class="p">())</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;watch&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">gulp</span><span class="p">.</span><span class="nx">watch</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">HTML</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;copyHtmlFiles&#39;</span><span class="p">]);</span>
+</span><span class='line'>    <span class="nx">gulp</span><span class="p">.</span><span class="nx">watch</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">JS</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;js&#39;</span><span class="p">]);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;connect&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">connect</span><span class="p">.</span><span class="nx">server</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">root</span><span class="o">:</span> <span class="s1">&#39;dist&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">livereload</span><span class="o">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">port</span><span class="o">:</span> <span class="nx">appConfig</span><span class="p">.</span><span class="nx">port</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;reload&#39;</span><span class="p">,</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="s1">&#39;dist/**/*&#39;</span><span class="p">).</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">connect</span><span class="p">.</span><span class="nx">reload</span><span class="p">());</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;open&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(){</span>
+</span><span class='line'>        <span class="nx">gulp</span><span class="p">.</span><span class="nx">src</span><span class="p">(</span><span class="nx">path</span><span class="p">.</span><span class="nx">DEST</span> <span class="o">+</span> <span class="s1">&#39;Index.html&#39;</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="nx">pipe</span><span class="p">(</span><span class="nx">open</span><span class="p">({</span><span class="nx">uri</span> <span class="o">:</span> <span class="nx">appConfig</span><span class="p">.</span><span class="nx">localBaseUrl</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="o">+</span><span class="nx">appConfig</span><span class="p">.</span><span class="nx">port</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span><span class="p">}));</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">gulp</span><span class="p">.</span><span class="nx">task</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;build&#39;</span><span class="p">,</span> <span class="s1">&#39;connect&#39;</span><span class="p">,</span> <span class="s1">&#39;lint&#39;</span><span class="p">,</span> <span class="s1">&#39;open&#39;</span><span class="p">,</span> <span class="s1">&#39;watch&#39;</span><span class="p">]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With the default gulp task running, either using <a href="https://code.visualstudio.com/Docs/editor/tasks">VSCode Task Runner</a> or the <a href="https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md#4-run-gulp">command line</a>, any edits that I make to the code gets build and pushed to the output directory and the browser refreshes to show the latest changes.</p>
+
+<p><img class="center" src= "/images/react_realtime_edits.gif" alt="React real-time browser refresh" /></p>
+
+<p><em>If you find any package details missing see the <a href="https://github.com/rahulpnath/Blog/blob/master/React_Template/package.json">package.json</a> file.</em></p>
+
+<p>You can find the hello world project template <a href="https://github.com/rahulpnath/Blog/tree/master/React_Template">here</a>. The repository size is a bit high as I have <a href="http://www.rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">included the npm packages</a> (<em>node_modules</em>) in the repository, which you would have anyways downloaded when doing a &lsquo;<a href="https://docs.npmjs.com/cli/install">npm install</a>&rsquo;.</p>
+
+<p>Hope this helps you to get started with React!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-02T13:26:59+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 2<sup>nd</sup>, 2016</time>
         
 
@@ -1834,180 +2140,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-03-16T05:44:03+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 16<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/developer-learnings-from-the-ikea-experience/" itemprop="url">Developer Learnings from the IKEA Experience</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>When we moved over to Sydney, last year, we had to start over with all the home furnishings. Since we were just starting out, didn&rsquo;t want to spent a lot on furnishings, so decided to go with <a href="http://www.ikea.com/au/en/?cid=au|ps|branded|brand|google|ikea_australia">IKEA</a> for its cost effectiveness and value for money.</p>
-
-<blockquote><p><em>IKEA is a multinational group of companies that designs and sells ready-to-assemble furniture (such as beds, chairs and desks), appliances, small motor vehicles and home accessories. <span class="right">Wiki</span></em></p></blockquote>
-
-<p>Right from the in-shop experience to setting it up, I found many similarities with the IKEA experience and Software Development. Visiting IKEA is an experience in itself and totally wow&rsquo;s you. If not for any of the displayed items, the &lsquo;<em>Self Serve Furniture Area</em>&rsquo; surely will. The sheer size and setup there was breath-taking for me and my wife!</p>
-
-<figure>
-    <img alt="IKEA Self Serve Furniture Area, Ikea Tempe" src="/images/ikea_self_serve_furniture_area.jpg" />
-    <figcaption><em>This is just one of the aisle and there were around 35 of them!</em></figcaption>
-</figure>
-
-
-<h3>Code Management &amp; Inventory Management</h3>
-
-<p>Throughout the <a href="https://shoutsfromtheabyss.files.wordpress.com/2013/06/ikea-map.jpg">Showroom</a> you see an <em>Aisle number</em> and the <em>Location</em> displayed under the displayed items. For the items interested in, one can note those numbers on paper or use the mobile application to <a href="http://www.ikea.com/ms/en_KR/customer-service/apps/mobile_app_14.html">scan the QR code of the product</a> for reference. In the checkout area, you can find the item at the said aisle/location number. Finding and picking up the item from the aisle is easy and joyful.</p>
-
-<p>Code management is an important aspect in Software development, as code bases can get quite large. Setting up a <a href="https://github.com/">version control</a> to manage code bases have become a norm and is a good practice to follow even on your side projects. Few other things to follow include</p>
-
-<ul>
-<li>Maintain a project structure, naming conventions and code conventions.</li>
-<li>Code Navigability and discoverability are important for fast and smooth development. Good and descriptive class names allow us to navigate easily based on the application functionality.</li>
-<li><a href="https://msdn.microsoft.com/en-us/library/893ke618(v=vs.71).aspx">Organizing Namespace</a></li>
-<li>Remove unused code and not comment it out. Let the version control system take care of file history.</li>
-</ul>
-
-
-<h3>Manual</h3>
-
-<p>The assembly instructions that comes with each package is clear and expressive. It&rsquo;s mostly <a href="http://www.ikea.com/au/en/assembly_instructions/malm-desk__AA-516949-7_pub.pdf">conveyed through pictures</a> and easy to follow through. The manual is up to date with the packaged product and matched exactly with the contents.</p>
-
-<p>This shows the importance of having a <a href="https://en.wikipedia.org/wiki/README">README</a> file or software manuals or in context help for users to use the application. Feedback messages and keeping the user always connected with the system is also important. Long wait times, unresponsive progress bars, silent suppression of error messages are not acceptable. Error messages are for the application user and the level and kind of details differs based on who the user is:</p>
-
-<ul>
-<li>For business/non-technical users, mostly of Front-end applications, Business error messages makes more value than technical errors</li>
-<li>For developers consuming an API, detailed technical error messages add value than just returning a &lsquo;500 - Internal Server Error&rsquo;</li>
-</ul>
-
-
-<p>Error messages must be relevant and up to date with the current functionality. Always review messages for appropriateness.</p>
-
-<p>Code comments used for communicating intent mostly gets out of sync with what the code actually does. So it&rsquo;s a better practice to avoid comments in code and break code into descriptive function and classes to convey the intent.</p>
-
-<blockquote><p><em><a href="http://butunclebob.com/ArticleS.TimOttinger.ApologizeIncode">A comment is an apology</a> for not choosing a more clear name or a more reasonable set of parameters, or for the failure to use explanatory variables and explanatory functions.</em></p></blockquote>
-
-<h3>Tools</h3>
-
-<p><img class="left" alt="IKEA Tools" src="/images/ikea_tools.jpg" /></p>
-
-<p>The <a href="http://www.ikea.com/us/en/catalog/products/00169254/">FIXA 17-piece tool kit</a>, is all that you need for fitting all the furniture. Some products have an <a href="https://en.wikipedia.org/wiki/Hex_key">Allen Key</a> packaged along with them, but otherwise, most of the time the FIXA toolkit is all that one needs.</p>
-
-<p>Having the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">right set of tools</a> for assisting in the development and being familiar with it is important.  It&rsquo;s not just about having the best/costliest tools, but about knowing them well. Taking some time out to understand the tools that you use daily is important. By tools, I include keyboard, mouse, programming languages, IDE&rsquo;s and other support software that you use daily.</p>
-
-<div style="clear: both;"></div>
-
-
-<blockquote><p><em><a href="http://blog.codinghorror.com/we-are-typists-first-programmers-second/">We are Typists First, Programmers Second</a>: The keyboard is one of the most important tools for a developer - learn it well</em></p></blockquote>
-
-<h3>Componentization</h3>
-
-<p>The furniture comes as separate pieces that can be easily assembled, with all the screw holes of perfect size. All the different pieces fit perfectly and right even when done by an amateur. Though some of the pieces required two people to fix, I could fix them up myself. It was all cut to perfection with all the holes right in place and fits perfectly the first time.</p>
-
-<p>Having well-defined interfaces that interact with each other seamlessly is important in software development. Any application should be composed of smaller parts that can fit together well. Adhering to good design principles and design patterns helps us to achieve this.</p>
-
-<blockquote><p><em>One of the most important principles while using Object Oriented  languages is <strong><a href="http://butunclebob.com/ArticleS.UncleBob.PrinciplesOfOod">SOLID</a></strong>:   <br/>
-  Single Responsibility, Open-Closed, Liskov Substitution, Interface segregation and Dependency Injection</em></p></blockquote>
-
-<p><img class="center" alt="IKEA Components" src="/images/ikea_components.jpg" /></p>
-
-<p>Interfaces should be well-defined and not <a href="https://en.wikipedia.org/wiki/Leaky_abstraction">leak abstractions</a>. The name and parameters(input/return) should completely abstract the &lsquo;how&rsquo; part of the functionality and expose only the &lsquo;what&rsquo;. This helps to build more robust interfaces.</p>
-
-<h3>Packaging and Shipping</h3>
-
-<p><a href="http://www.wsj.com/articles/ikea-cant-stop-obsessing-about-its-packaging-1434533401">IKEA&rsquo;s efficiency in packaging</a> is one of the reasons that enables them to sell at a low-cost and they keep improving at it. Compact and small packages make it easy to handle right from &lsquo;self-checkout&rsquo; to unpacking it at your home. It also helps in optimizing transportation costs for IKEA which in turn enables them to reduce prices.</p>
-
-<figure>
-    <img alt="IKEA Packaging" src="/images/ikea_packed.jpg"></img>
-    <figcaption><em>King size bed frame with storage, extendable dining table and four chairs!</em></figcaption>
-</figure>
-
-
-<p></p>
-
-<p>Deployment in software development is a key part and having the entire pipeline automated is essential for a smooth delivery. <a href="http://www.rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/">Setting up a build server, automated building, running tests</a> etc are some of the starting points to move towards <a href="http://martinfowler.com/bliki/ContinuousDelivery.html">Continuous Delivery</a>. Deployment needs to be scripted and be possible to deploy to any environment at the click of a button. If it is a distributable software then easily accessible delivery mechanisms should be available and preferably offer multiple options (like distributable media, server hosted images etc like Windows)</p>
-
-<blockquote><p><em>The package has just the right number of screws, nails and other assembly accessories - not one less, not one more!</em></p></blockquote>
-
-<p><img class="center" alt="IKEA Components" src="/images/ikea_assembly_accessories.jpg" /></p>
-
-<p>This shows IKEA&rsquo;s confidence in the shipped product and the self-belief of nothing going wrong. For a software product to be shipped with this level of confidence it should be thoroughly tested - preferably automated, which allows verifying each time we make a release and allows us to release more often.</p>
-
-<h3>Cost Effective</h3>
-
-<p>Having always bought pre-assembled furniture I have never had to think about anything - it was always just about the money. But with IKEA being self-assembled, you get the flexibility to choose the components/features that you need for the furniture like you could choose to have a <a href="http://www.ikea.com/au/en/catalog/products/20228714/">headboard for the bed</a> or not, which obviously implies a reduced price. You could choose to self-checkout and pay nothing, but also do a paid checkout, where an IKEA member would get all the items out for you to the billing counter. You could transport it yourself to your home or <a href="http://www.ikea.com/ms/en_AU/customer_service/ikea_services/home_delivery.html">get it delivered</a>. So it&rsquo;s all about giving you the options to choose what you want and really keep the cost low.</p>
-
-<p>Keeping the cost low is an important aspect in software industry too and at various levels</p>
-
-<ul>
-<li>Development and Licensing  costs - Try to keep these costs low, by looking for open source alternatives and choosing your technology wisely and not just looking for the &lsquo;cool and latest&rsquo;.</li>
-<li>Deployment/Infrastructure costs - Build applications for scale and as independent services so that they can be  turned on and off  as required. <a href="https://azure.microsoft.com/en-us/">The cloud</a> has greatly reduced the infrastructure setup costs and provides an easy way for setup. Make sure you understand well the pricing models offered by various cloud providers.</li>
-<li>Software Costs/Subscription Costs: Give flexibility to your consumers in how they can consume your software. Keeping functionality loosely coupled and pluggable allows to offer various subscription plans or selling model.</li>
-</ul>
-
-
-<h3>Value Added Services</h3>
-
-<p>It&rsquo;s not just in the home furnishings and their core business that IKEA has taken great care for. The other <a href="http://www.ikea.com/ms/en_SG/service-offer/">Value Added Services</a> they offer like Delivery, Assembly, Planning Tools, Gift Cards, Children&rsquo;s Services and Return Policy are top-notch.</p>
-
-<blockquote><p><em>Users are happy when the expected works, and wowed when it goes beyond expectations.</em></p></blockquote>
-
-<p>The <a href="http://www.ikea.com/au/en/catalog/categories/departments/food/">food at IKEA</a> is worth mentioning (and a picture) - low-priced and tasty! It caters for the needs of all kinds of people and age. The value for money attracts people to IKEA just for the food.</p>
-
-<p><img alt="IKEA Components" src="/images/ikea_food.jpg" /></p>
-
-<p>Any product should deliver what it&rsquo;s supposed to anyways, but it&rsquo;s in providing a bit extra that really matters. Like the few examples below,that gave a better experience to me</p>
-
-<ul>
-<li>When you hit Ctrl + V with an image in clipboard on Facebook it automatically uploads the image</li>
-<li>When Amazon sent a replacement for my broken Kindle (all the way from the US to India) for free</li>
-<li>When Google Now showed the <a href="https://support.google.com/websearch/answer/6015842?hl=en">parking location</a>.</li>
-<li>The IKEA Experience!</li>
-</ul>
-
-
-<p>Strive to look for cases where you can delight your customers every time you deliver a product. The IKEA has made me think about delivering products and the need for constantly improving at it. We often need to take a stop, look at what we are doing and correct things and move forward.</p>
-
-<blockquote><p><em>The only way to make the deadline—the only way to go fast—is to keep the <a href="http://www.amazon.com/gp/product/0132350882/ref=as_li_tl?ie=UTF8&amp;camp=1789&amp;creative=390957&amp;creativeASIN=0132350882&amp;linkCode=as2&amp;tag=rahulpnath-20&amp;linkId=CVCVZFAR5SBYVMJW">code as clean</a> as possible at all times.</em></p></blockquote>
-
-<p>Head off to an IKEA store if there is one <a href="http://www.ikea.com/">near you</a> and get wowed!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -2031,6 +2163,8 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/electronically-sign-pdf-no-more-printing-and-scanning/">Tip of the Week: Electronically Sign PDF - No More Printing and Scanning</a>
+    
     <a class="list-group-item " href="/blog/office-lens-scan-documents-with-your-phone/">Tip of the Week: Office Lens - Scan Documents With Your Phone</a>
     
     <a class="list-group-item " href="/blog/the-headphones-rule/">Tip of the Week: The Headphones Rule</a>
@@ -2038,8 +2172,6 @@ Even using a <a href="http://stackoverflow.com/a/2425739/1948745">static TimePro
     <a class="list-group-item " href="/blog/visual-studio-dev-essentials/">Tip of the Week: Visual Studio Dev Essentials</a>
     
     <a class="list-group-item " href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
-    
-    <a class="list-group-item " href="/blog/learn-touch-typing/">Tip of the Week: Learn Touch Typing</a>
     
   </div>
 </section>

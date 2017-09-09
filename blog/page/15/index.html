@@ -163,6 +163,232 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-09-10T19:29:35+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 10<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/asp-dot-net/'>asp.net</a>, <a class='category' href='/blog/category/web-api/'>web api</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/asp-dot-net-web-api-and-external-login-authenticating-with-social-networks/" itemprop="url">ASP.NET Web API and External Login - Authenticating with Social Networks</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>The ASP.NET Web API project created from the default template in Visual Studio 2013 comes with an option to choose the Authentication method. The &lsquo;Individual User Accounts&rsquo; option of authorization will allow users of your API to authenticate using exisitng their exisitng social networks(Facebook, Twitter, Google or Microsoft). This is a very useful feature and also speeds up the signing process, as there is little or no input required from the user and also one less password less to remember. All these social logins uses <a href="http://oauth.net/">OAuth</a> to provide authorized access to their services, and there are exisitng Owin adapters for these social networks. You could very well write a custom owin adapter to plug new authorization providers.</p>
+
+<blockquote><p>In this post we will see how we can enable Facebook login for your API when <strong><em>the client and api are hosted on seperate domains</em></strong>.</p></blockquote>
+
+<p>We will start off with the default template for the Web API, created by Visual Studio 2013 for Web API(File->New Project->ASP.NET Web Application->Web API with Authentication set to Individual User Accounts)</p>
+
+<p><img src="/images/web_api_authentication_vs_template.png" alt="Visual Studio 2013 Web Api Template" /></p>
+
+<p>The Account Controller has all the methods that is required for a client to authenticate with the api and get the token to access protected resources. We will go through the calls that the client app would need to perform a successful authentication. I have updated the owin nuget packages to use the latest Owin 3.0.0 packages.</p>
+
+<p><strong>1. Getting the supported Authentication providers</strong></p>
+
+<p>The client in it login screen would be showing the allowed authorization providers along with the normal username/password login option. The <em>ExternalLogins</em> endpoint returns all the supported external authentication providers. The supported list of providers can be added in <em>Startup.Auth.cs</em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">appId</span><span class="p">:</span> <span class="s">&quot;APPID&quot;</span><span class="p">,</span> <span class="n">appSecret</span><span class="p">:</span> <span class="s">&quot;APPSECRET&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> <br/>
+The application id and secret can be obtained by registering for an application with the corresponding provider. For facebook you can do that <a href="https://developers.facebook.com/">here</a>. You would also need to configure the web api endpoint as a website platform when obtaining the api keys. Now on querying the endoint the client will get back the endpoint that it needs to hit when an authentication with Facebook is required. A redirect url is to be passsed along with the request, to which the api will redirect to after succesfull authentication with the token. By default email is not received from facebook, but you can override this behaviour by providing some extra options when registering the provider as shown below. The OnAuthenticated method on the FacebookProvider gets called once the user is authenticated with facebook. At this point you can get the Email details explicitly and add it to the claims.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">facebookProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationProvider</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">OnAuthenticated</span> <span class="p">=</span> <span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Add the email id to the claim</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">AddClaim</span><span class="p">(</span><span class="k">new</span> <span class="n">Claim</span><span class="p">(</span><span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">,</span> <span class="n">context</span><span class="p">.</span><span class="n">Email</span><span class="p">));</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="m">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">options</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FacebookAuthenticationOptions</span><span class="p">()</span>
+</span><span class='line'>              <span class="p">{</span>
+</span><span class='line'>                  <span class="n">AppId</span> <span class="p">=</span> <span class="s">&quot;AppId&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="n">AppSecret</span> <span class="p">=</span> <span class="s">&quot;AppSecret&quot;</span><span class="p">,</span>
+</span><span class='line'>                  <span class="n">Provider</span> <span class="p">=</span> <span class="n">facebookProvider</span>
+</span><span class='line'>              <span class="p">};</span>
+</span><span class='line'><span class="n">options</span><span class="p">.</span><span class="n">Scope</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseFacebookAuthentication</span><span class="p">(</span><span class="n">options</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>You can also get the facebook token if required from the context and which can be used in the database to update information to facebook on behalf of the user.</p>
+
+<p><strong>2. Making a request to an Authentication provider</strong></p>
+
+<p>Now that we have got the list of supported list of providers, we can make the request to the required provider from the client. This is simply done by navigating to the url obtained for the corresponding provider in the previous request, i.e to the <em>ExternalLogin</em> endpoint. If the user is already authenticated (detected via cookie), then the user is redirected to the redirect url provided in above step. If the user is not authenticated then the login page of the corresponding provider will be shown and after a successfull login the redirection will happen. The token that is received here is the custom token that gets generated by the web-api and should not be mistaken for the authorization server&rsquo;s(facebook) token itself.</p>
+
+<p>The owin middleware abstracts away the interaction with the authorization server, Facebook in our case here. On successfull login in facebook, it redirects to &lsquo;<em><a href="https://katanaproject.codeplex.com/SourceControl/latest#src/Microsoft.Owin.Security.Facebook/FacebookAuthenticationOptions.cs">/signin-facebook</a></em> along with the facebook token. We can get the username or email from the claims provided by the authentication server that can then be passed back to the client for registering the user in the next step. The <em>ExternalLoginData</em> class get the data from the claims. I have modified this to use the new Email property that we have added. To return this email address to the client, we need to override the method as shown below in ApplicationOAuthProvider</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="n">Task</span> <span class="nf">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">OAuthAuthorizationEndpointResponseContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c1">//  Add the claims to the return url</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">claim</span> <span class="k">in</span> <span class="n">context</span><span class="p">.</span><span class="n">Identity</span><span class="p">.</span><span class="n">Claims</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimsIdentity</span><span class="p">.</span><span class="n">DefaultNameClaimType</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span><span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="n">ClaimTypes</span><span class="p">.</span><span class="n">Email</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">AdditionalResponseParameters</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="s">&quot;email&quot;</span><span class="p">,</span> <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">AuthorizationEndpointResponse</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above method adds in the additional response parameters that gets embedded in the redirect url to the client.</p>
+
+<p><strong>3. Register user</strong></p>
+
+<p>Now that the user is successfully authenticated with  the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">registerUser</span> <span class="o">=</span> <span class="kd">function</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>        <span class="nx">url</span><span class="o">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s1">&#39;api/Account/RegisterExternal&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">data</span><span class="o">:</span> <span class="p">{</span> <span class="s1">&#39;Email&#39;</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span> <span class="s1">&#39;Name&#39;</span> <span class="o">:</span> <span class="nx">email</span><span class="p">},</span>
+</span><span class='line'>        <span class="nx">method</span><span class="o">:</span> <span class="s1">&#39;POST&#39;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nx">xhrFields</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">withCredentials</span><span class="o">:</span> <span class="kc">true</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span><span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">token</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Navigate to the user page</span>
+</span><span class='line'>            <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#user&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>        <span class="nx">failure</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>            <span class="nx">alert</span><span class="p">(</span><span class="s1">&#39;Registration failed&#39;</span> <span class="o">+</span> <span class="nx">data</span><span class="p">.</span><span class="nx">toString</span><span class="p">());</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">userInfoUrl</span> <span class="o">=</span> <span class="nx">config</span><span class="p">.</span><span class="nx">apiBaseUrl</span> <span class="o">+</span> <span class="s2">&quot;api/Account/UserInfo&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">url</span><span class="o">:</span> <span class="nx">userInfoUrl</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nb">window</span><span class="p">.</span><span class="nx">location</span> <span class="o">=</span> <span class="s2">&quot;#&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>    <span class="nx">beforeSend</span><span class="o">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">xhr</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nx">xhr</span><span class="p">.</span><span class="nx">setRequestHeader</span><span class="p">(</span><span class="s1">&#39;Authorization&#39;</span><span class="p">,</span> <span class="s1">&#39;Bearer &#39;</span> <span class="o">+</span> <span class="nx">config</span><span class="p">.</span><span class="nx">token</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-08-31T18:47:05+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 31<sup>st</sup>, 2014</time>
         
 
@@ -1250,117 +1476,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-04T16:06:40+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 4<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/android/'>android</a>, <a class='category' href='/blog/category/phonegap/'>phonegap</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>, <a class='category' href='/blog/category/xplat/'>xplat</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android/" itemprop="url">Getting Started with PhoneGap: Developing for Windows Phone and Android</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>With lots of devices and operating systems out there, developing a native application for each of these platforms might not always be an option for many businesses, because of the time, effort and money that would be required to be on all platforms. <a href="http://phonegap.com/">PhoneGap</a> is one option that could be explored in this case, which helps to develop hybrid applications that can exists on a <a href="http://phonegap.com/about/feature/">variety of platforms</a> integrating with platform specific features. <a href="http://cordova.apache.org/">Apache Cordova</a> is what powers PhoneGap and is free and open source under the <a href="http://phonegap.com/about/license/">Apache License, Version 2.0</a>.</p>
-
-<p>Setting up PhoneGap is pretty easy and direct with its integration with <a href="http://nodejs.org/">node.js</a>. Lets take a look on how to setup our project from scratch.</p>
-
-<ol>
-<li><p>Install <a href="http://nodejs.org/">node.js</a></p></li>
-<li><p>Install PhoneGap using node.js</p>
-
-<p> <strong><em>npm install –g phonegap</em></strong></p>
-
-<p> npm is the official node package manager</p>
-
-<p> -g installs the package in global scope.If you face any error while installing the package(since I happened to, I guess because I closed the console while it was installing the first time) you can try following the below steps, which helped me solve it.</p>
-
-<p> <strong>            npm list –g</strong></p>
-
-<p> If the above step shows that there is a <em>unmet dependency phonegap</em>, then you could follow the below steps</p>
-
-<p> <strong>            npm rm phonegap</strong></p>
-
-<p> <strong>            npm cache clear</strong></p>
-
-<p> Try installing PhoneGap again using <em>npm install –g phonegap</em></p></li>
-<li><p>Install Cordova
-<strong>npm install –g cordova</strong></p></li>
-<li><p>Now we have everything setup for PhoneGap project. Lets create the project. Navigate to your project root folder and create a project.</p>
-
-<p> <strong>phonegap create <appname></strong></p>
-
-<p> This will create the basic folder structure for your PhoneGap project which looks like below.</p>
-
-<p> <img class="left" src="/images/cordova_folder_structure.png" alt="cordova_folder_structure" /></p>
-
-<p> <strong>.cordova: </strong>This directory contains files related to cordova.</p>
-
-<p> <strong>merges: </strong>This directory contains platform specific assets. A sub-directory for each platform is created inside here, whenever  a new platform is created. This sub-directory mirrors the structure of the <em>www </em>directory, which allows to add platform specific files to appropriate folders.</p>
-
-<p> <strong>platforms: </strong>This directory contains native code for each of the <a href="http://docs.phonegap.com/en/edge/guide_platforms_index.md.html">supported platforms</a>. By default this is empty and we need to add the required platforms, which we will see later.</p>
-
-<p> <strong>plugins: </strong>This directory contains the <a href="https://build.phonegap.com/plugins">plugins</a> that provide extra support to interface with each of the native platforms.</p>
-
-<p> <strong>www: </strong>This directory contains the primary files that is required for your project/application. This gets copied into each of the platform specific projects in <em>platforms </em>folder whenever a build is performed. So this is where your core development would happen and all your cross-platform code would live in.</p></li>
-<li><p>Lets now create a native project, for windows phone.</p>
-
-<p> <strong>cordova platform add wp8</strong></p>
-
-<p> This will add a wp8 folder inside <em>platforms </em>and also <em>merges. </em>The one in platforms will have the native project setup with all the files in <em>www</em> folder copied into it. You can open up the sln file in Visual Studio and build and run. We have the application up and running on our first platform!
- Lets add in some code so that it makes sense as an application. We will stick on with our usual 500px api and show off some beautiful pictures. I have added jquery from nuget in Visual studio and also updated the files to show pictures from 500px, which I would not be explaining here as it is just some html/js/css..(Updated files in www folder can later be copied into the root <em>www </em>folder later. Need to figure out the correct way on how to go about this. In case you know how, please do leave a comment. Would be more than happy to learn.)</p></li>
-<li><p>Once we copy out the updated files in platform specific <em>www </em>folder into root www folder we can go ahead and add android platform.</p>
-
-<p> <strong>cordova platform add android</strong></p>
-
-<p> This creates an android folder inside <em>platforms</em> and <em>merges</em> folder. You can open up the project in your IDE(<a href="https://www.eclipse.org/downloads/">Eclipse</a>, <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or <a href="http://developer.android.com/sdk/installing/studio.html">Android Studio</a> etc) for android, build and run. We have the application up and running also on the second platform!
- For android you would need to make sure the config files are updated with the required permissions for accessing internet and also to enable <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>. By default internet permissions are enabled, you would only have to update the config for cors(<em>origin header</em>) as it defaults to ‘<em>127.0.0.1*</em>’. I have updated this to just ‘*’, inside <strong><em>res/xml/config.xml </em></strong>(since there is one config.xml inside assets/www folder too).If you are new to android platform, which I was then you can check out here on <a href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/">Setting up the development environment for phonegap on android</a>.
- At times I did have the Android emulator not moving past the &lsquo;<em>Connecting to Device</em>&rsquo; screen while running the application. I just killed all the emulators and started a fresh one from AVD (Android Virtual Device) Manager, unchecking &lsquo;launch from snapshot&rsquo; and &lsquo;save to snapshot&rsquo; options.</p></li>
-</ol>
-
-
-<p>With PhoneGap/Cordova, you can see how easy it is to have an app in various platforms of your choice. We have not seen on how to utilize any of the platform specific features of devices using PhoneGap, but I am sure that you should be able to figure out from here, now that you have all that you need up and running.</p>
-
-<p><img src="/images/Cordova_WP.jpg" alt="Cordova_WP" />
-<img src="/images/Cordova_Android.jpg" alt="Cordova_Android" /></p>
-
-<p>The source code for the sample is available <a href="https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap">here</a>. Don’t forget to update the <a href="http://developers.500px.com/">api key for 500px</a> before you run the application.
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1384,6 +1499,8 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/electronically-sign-pdf-no-more-printing-and-scanning/">Tip of the Week: Electronically Sign PDF - No More Printing and Scanning</a>
+    
     <a class="list-group-item " href="/blog/office-lens-scan-documents-with-your-phone/">Tip of the Week: Office Lens - Scan Documents With Your Phone</a>
     
     <a class="list-group-item " href="/blog/the-headphones-rule/">Tip of the Week: The Headphones Rule</a>
@@ -1391,8 +1508,6 @@ I have been a great fan of <a href="http://www.microsoft.com/en-in/download/deta
     <a class="list-group-item " href="/blog/visual-studio-dev-essentials/">Tip of the Week: Visual Studio Dev Essentials</a>
     
     <a class="list-group-item " href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
-    
-    <a class="list-group-item " href="/blog/learn-touch-typing/">Tip of the Week: Learn Touch Typing</a>
     
   </div>
 </section>
