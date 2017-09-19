@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-09-18T19:58:53+00:00</updated>
+  <updated>2017-09-19T00:01:27+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,138 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Generating a Large PDF from Website Contents - Merging PDF Files]]></title>
+    <link href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/"/>
+    <updated>2017-09-19T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii</id>
+    <content type="html"><![CDATA[<p>In the previous post, <a href="http://www.rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>, we saw how to generate a PDF from HTML and add bookmarks to the generated PDF files. The PDF file generated is for an individual section which now needs to be merged to form a single PDF file. The individual PDF files contain the relevant content for the section and related bookmarks, which needs to be combined into a single PDF file.</p>
+
+<p>One of the important things to keep intact when merging is the document hierarchy. The Sections, Sub-Categories, and Categories should align correctly so that the final bookmark tree and the Table of Contents appear correctly. It is best to maintain the list of individual PDF document streams in the same hierarchy as required. Since we know the required structure right from the UI, this can be easily achieved by using a data structure similar as shown below</p>
+
+<pre><code class="csharp">public class DocumentSection
+{
+    public MemoryStream PDFDocument {get; set;}
+
+    public List&lt;DocumentSection&gt; ChildSections {get; set;}
+
+    ... // Any additional details that you need
+}
+</code></pre>
+
+<p>The above structure allows us to maintain a tree-like structure of the document. The structure is the same as that is provided to the user to select the PDF options. I used the <a href="https://www.nuget.org/packages/iTextSharp-LGPL/">iTextSharp</a> library to merge PDF documents. To interact with the PDF, we first need to create a PdfReader object from the stream. Using the  SimpleBookmark class, we can get the existing bookmarks for the PDF.</p>
+
+<pre><code class="csharp">var pdfReader = new PdfReader(stream);
+ArrayList bookmarks = SimpleBookmark.GetBookmark(pdfReader);
+</code></pre>
+
+<p>iText representation of bookmarks is a bit complex. It represents them as an ArrayList of Hashtables. The Hashtable has keys like Action, Title, Page, Kids, etc. Kids property represents child bookmarks and is the same ArrayList type. Since it was hard to work with this structure, I created a wrapper class to interact easily with the bookmarks.</p>
+
+<pre><code class="csharp">public class Bookmark
+{
+    public Bookmark(
+        string title, string destinationType, int pageNumber, 
+        float xLeft, float yTop, float zZoom)
+    {
+        Children = new List&lt;Bookmark&gt;();
+        Title = title;
+        PageNumber = pageNumber;
+        DestinationType = destinationType ?? "XYZ";
+        XLeft = xLeft;
+        YTop = yTop;
+        ZZoom = zZoom;
+        PageBreak = false;
+    }
+
+    ... // Class properties for the constructor parameters
+
+    public ArrayList ToiTextBookmark()
+    {
+        ArrayList arrayList = new ArrayList
+        {
+            ToiTextBookmark(this),
+        };
+        return arrayList;
+    }
+
+    private Hashtable ToiTextBookmark(Bookmark bookmark)
+    {
+        var kids = new ArrayList();
+        var hashTable = new Hashtable
+        {
+            ["Action"] = "GoTo",
+            ["Title"] = bookmark.Title,
+            ["Page"] = $@"{bookmark.PageNumber} {bookmark.DestinationType} 
+                         {bookmark.XLeft} {bookmark.YTop} {bookmark.ZZoom}",
+            ["Kids"] = kids,
+        };
+
+        foreach (var childBookmark in bookmark.Children)
+        {
+            kids.Add(ToiTextBookmark(childBookmark));
+        }
+
+        return hashTable;
+    }
+}
+</code></pre>
+
+<p>Recursively iterating through the list of DocumentSections, I add all the bookmarks to a root Bookmark class. The root bookmark class represents the full bookmark of the PDF file. The PageNumber is offset using a counter variable. The counter variable is incremented by the number of pages in each of PDF section (<em>pdfReader.NumberOfPages</em>) as it gets merged to the bookmark root. This ensures that the bookmark points to the correct bookmark page in the combined PDF file.</p>
+
+<p>The individual documents are then merged by iterating through all the generated document sections. Once done we get the final PDF as a byte array which is returned to the user.</p>
+
+<pre><code class="csharp">public byte[] MergeSections(List&lt;DocumentSection&gt; documentSections, Bookmark bookmarkRoot)
+{
+    int pageNumber = 0;
+    using (var stream = new MemoryStream())
+    {
+        var document = new Document();
+        var pdfWriter = PdfWriter.GetInstance(document, stream);
+        document.Open();
+        var pdfContent = pdfWriter.DirectContent;
+        MergeSectionIntoDocument(documentSections, document, pdfContent, pdfWriter, pageNumber);
+        pdfWriter.Outlines = bookmarkRoot.ToiTextBookmark();
+        document.Close();
+        stream.Flush();
+        return stream.ToArray();
+    }
+}
+
+private void MergeSectionIntoDocument(
+    List&lt;DocumentSection&gt; documentSections,
+    Document document,
+    PdfContentByte pdfContent,
+    PdfWriter pdfWriter,
+    int pageNumber)
+{
+    foreach (var documentSection in documentSections)
+    {
+        var stream = documentSection.DocumentStream;
+        stream.Position = 0;
+        var pdfReader = new PdfReader(stream);
+
+        for (var i = 1; i &lt;= pdfReader.NumberOfPages; i++)
+        {
+            var page = pdfWriter.GetImportedPage(pdfReader, i);
+            document.SetPageSize(new iTextSharp.text.Rectangle(0.0F, 0.0F, page.Width, page.Height));
+            document.NewPage();
+            pageNumber++;
+            pdfContent.AddTemplate(page, 0, 0);
+            this.AddPageNumber(pdfContent, document, pageNumber);
+        }
+
+        if(documentSection.ChildSections.Any())
+            MergeSectionIntoDocument(documentSection.ChildSections, document, pdfContent, pdfWriter, pageNumber);
+    }
+}
+</code></pre>
+
+<p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
+
+<p>We are now able to generate a single PDF based on the website contents.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NDC Sydney 2017]]></title>
@@ -255,100 +387,6 @@ Even though this post details on why the specific site on Umbraco was restarting
 <p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
 
 <p>Hope that helps fix your application restarting problem!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Left Align Your Code For Better Readability]]></title>
-    <link href="http://rahulpnath.com/blog/left-align-your-code-for-better-readability/"/>
-    <updated>2017-07-03T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/left-align-your-code-for-better-readability</id>
-    <content type="html"><![CDATA[<p>Aesthetics of code is as important as the code you write. Aligning is an important part that contributes to the overall aesthetics of code. The importance of code aesthetics struck me while on a recent project. Below are some the code samples that I came across in the project. Traversing this code base was painful to me as the code was all over the place.</p>
-
-<pre><code class="csharp Bad Formatting">public class Account
-{
-    public long   Id                    { get; set; }
-    public string ClientId              { get; set; }
-    public long   ContactId             { get; set; }
-    public string UserName              { get; set; }
-    public string Name                  { get; set; }
-    public string Company               { get; set; }
-    public string Address               { get; set; }
-    public string BillingAddress        { get; set; }
-}
-</code></pre>
-
-<pre><code class="csharp Bad Formatting">public ConnectToServer(string username, 
-                       string password,
-                       string server,
-                       string port)
-{
-    ...
-}
-</code></pre>
-
-<p>The code has too many alignment points that attract the eye which makes it hard to read in the first place. When in isolation this might still be fine to read, but with such a style across the code base, it soon becomes a pain for your eyes and your mind. When refactoring code, it becomes even harder as you need to put in the extra effort to make sure that this fancy alignment is maintained. Let&rsquo;s take a look at how even changing a property name (<em>Company to CompanyName</em>) or function name(<em>ConnectToServer to Connect</em>) will affect the current formatting.</p>
-
-<pre><code class="csharp Renamed to CompanyName">public class Account
-{
-    ...
-    public string Name              { get; set; }
-    public string CompanyName           { get; set; }
-    public string Address           { get; set; }
-    ...
-}
-</code></pre>
-
-<pre><code class="csharp Renamed to Connect">public Connect(string username, 
-                       string password,
-                       string server,
-                       string port)
-{
-    ...
-}
-</code></pre>
-
-<p>As you can see above the formatting is now all over the place, and you need to format them into place manually. Again when in isolation this might seem like a few press of spacebar. But when the property/function that you rename is used in multiple places this soon becomes a problem. Such code formatting introduces maintenance overhead and soon falls out of place if something gets missed.</p>
-
-<h3>Better Ways To Format Code</h3>
-
-<p>Left aligning code is one of the key things that I try to follow always. Keeping the code aligned to the left makes it easier to read (assuming that you are programming in a language written from left to right). Since we read from left to right having most of the code aligned to the left means that you have more code visible. Left aligning also means that you would almost avoid the need to scroll the code editor when reading through the code horizontally.</p>
-
-<p>Let&rsquo;s take a look how left aligning the above code will look like.</p>
-
-<pre><code class="csharp Left Aligned">public class Account
-{
-    public long Id { get; set; }
-    public string ClientId { get; set; }
-    public long ContactId { get; set; }
-    public string UserName { get; set; }
-    public string Name { get; set; }
-    public string Company { get; set; }
-    public string Address { get; set; }
-    public string BillingAddress { get; set; }
-}
-</code></pre>
-
-<pre><code class="csharp Left Aligned Multiple Lines">public ConnectToServer(
-    string username, 
-    string password,
-    string server,
-    string port)
-{
-    ...
-}
-</code></pre>
-
-<pre><code class="csharp Left Aligned Single Line">public ConnectToServer(
-    string username, string password, string server, string port)
-{
-    ...
-}
-</code></pre>
-
-<p>As you can see above left aligning makes it much easier to read and also reduces the number of alignment points. This is also refactoring friendly as there are no specific space patterns that need to be maintained. As for the parameters in a single line VS parameters in multiple lines (as above), I prefer the multi-line approach, as it keeps the code further aligned to the left and also reduces the chance of getting a horizontal scroll bar. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">Column Guides</a> to remind yourself to keep the code within the acceptable horizontal space.</p>
-
-<p>Code formatting is an important aspect of coding. It is important that as a team you need to agree on some standard practices and find ways to stick to it. You can use <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">styling tools</a>, <a href="http://www.rahulpnath.com/blog/code-review/">Code Reviews</a>, etc. to make sure it does not get missed. It takes a while for any new practices to set in, but soon it will be of second nature and easy to follow.</p>
 ]]></content>
   </entry>
   

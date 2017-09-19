@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Generating a Large PDF from Website Contents - Merging PDF Files - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Dynamically generate a PDF file for a CMS Website." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Generating a Large PDF from Website Contents - Merging PDF Files" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/" />
+<meta property="og:description" content="Dynamically generate a PDF file for a CMS Website." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/pdf_generation_flow.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii" />
+<meta property="twitter:title" content="Generating a Large PDF from Website Contents - Merging PDF Files" />
+<meta property="twitter:description" content="Dynamically generate a PDF file for a CMS Website." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/pdf_generation_flow.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-09-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 19<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Generating a Large PDF from Website Contents - Merging PDF Files
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>In the previous post, <a href="http://www.rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>, we saw how to generate a PDF from HTML and add bookmarks to the generated PDF files. The PDF file generated is for an individual section which now needs to be merged to form a single PDF file. The individual PDF files contain the relevant content for the section and related bookmarks, which needs to be combined into a single PDF file.</p>
+
+<p>One of the important things to keep intact when merging is the document hierarchy. The Sections, Sub-Categories, and Categories should align correctly so that the final bookmark tree and the Table of Contents appear correctly. It is best to maintain the list of individual PDF document streams in the same hierarchy as required. Since we know the required structure right from the UI, this can be easily achieved by using a data structure similar as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DocumentSection</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MemoryStream</span> <span class="n">PDFDocument</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">ChildSections</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span> <span class="c1">// Any additional details that you need</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above structure allows us to maintain a tree-like structure of the document. The structure is the same as that is provided to the user to select the PDF options. I used the <a href="https://www.nuget.org/packages/iTextSharp-LGPL/">iTextSharp</a> library to merge PDF documents. To interact with the PDF, we first need to create a PdfReader object from the stream. Using the  SimpleBookmark class, we can get the existing bookmarks for the PDF.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'><span class="n">ArrayList</span> <span class="n">bookmarks</span> <span class="p">=</span> <span class="n">SimpleBookmark</span><span class="p">.</span><span class="n">GetBookmark</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>iText representation of bookmarks is a bit complex. It represents them as an ArrayList of Hashtables. The Hashtable has keys like Action, Title, Page, Kids, etc. Kids property represents child bookmarks and is the same ArrayList type. Since it was hard to work with this structure, I created a wrapper class to interact easily with the bookmarks.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Bookmark</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Bookmark</span><span class="p">(</span>
+</span><span class='line'>        <span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="kt">string</span> <span class="n">destinationType</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">,</span>
+</span><span class='line'>        <span class="kt">float</span> <span class="n">xLeft</span><span class="p">,</span> <span class="kt">float</span> <span class="n">yTop</span><span class="p">,</span> <span class="kt">float</span> <span class="n">zZoom</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Children</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Bookmark</span><span class="p">&gt;();</span>
+</span><span class='line'>        <span class="n">Title</span> <span class="p">=</span> <span class="n">title</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">PageNumber</span> <span class="p">=</span> <span class="n">pageNumber</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DestinationType</span> <span class="p">=</span> <span class="n">destinationType</span> <span class="p">??</span> <span class="s">&quot;XYZ&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">XLeft</span> <span class="p">=</span> <span class="n">xLeft</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">YTop</span> <span class="p">=</span> <span class="n">yTop</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ZZoom</span> <span class="p">=</span> <span class="n">zZoom</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">PageBreak</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span> <span class="c1">// Class properties for the constructor parameters</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">ArrayList</span> <span class="nf">ToiTextBookmark</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">ArrayList</span> <span class="n">arrayList</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ToiTextBookmark</span><span class="p">(</span><span class="k">this</span><span class="p">),</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">arrayList</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Hashtable</span> <span class="nf">ToiTextBookmark</span><span class="p">(</span><span class="n">Bookmark</span> <span class="n">bookmark</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">kids</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">hashTable</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Hashtable</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'><span class="na">            [&quot;Action&quot;]</span> <span class="p">=</span> <span class="s">&quot;GoTo&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Title&quot;]</span> <span class="p">=</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Title</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Page&quot;]</span> <span class="p">=</span> <span class="err">$</span><span class="s">@&quot;{bookmark.PageNumber} {bookmark.DestinationType} </span>
+</span><span class='line'><span class="s">                         {bookmark.XLeft} {bookmark.YTop} {bookmark.ZZoom}&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Kids&quot;]</span> <span class="p">=</span> <span class="n">kids</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">childBookmark</span> <span class="k">in</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Children</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">kids</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ToiTextBookmark</span><span class="p">(</span><span class="n">childBookmark</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">hashTable</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Recursively iterating through the list of DocumentSections, I add all the bookmarks to a root Bookmark class. The root bookmark class represents the full bookmark of the PDF file. The PageNumber is offset using a counter variable. The counter variable is incremented by the number of pages in each of PDF section (<em>pdfReader.NumberOfPages</em>) as it gets merged to the bookmark root. This ensures that the bookmark points to the correct bookmark page in the combined PDF file.</p>
+
+<p>The individual documents are then merged by iterating through all the generated document sections. Once done we get the final PDF as a byte array which is returned to the user.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">byte</span><span class="p">[]</span> <span class="nf">MergeSections</span><span class="p">(</span><span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span> <span class="n">Bookmark</span> <span class="n">bookmarkRoot</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">())</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Document</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfWriter</span> <span class="p">=</span> <span class="n">PdfWriter</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Open</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfContent</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">DirectContent</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">pdfWriter</span><span class="p">.</span><span class="n">Outlines</span> <span class="p">=</span> <span class="n">bookmarkRoot</span><span class="p">.</span><span class="n">ToiTextBookmark</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Flush</span><span class="p">();</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">stream</span><span class="p">.</span><span class="n">ToArray</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">MergeSectionIntoDocument</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Document</span> <span class="n">document</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">PdfContentByte</span> <span class="n">pdfContent</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">PdfWriter</span> <span class="n">pdfWriter</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">documentSection</span> <span class="k">in</span> <span class="n">documentSections</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="n">documentSection</span><span class="p">.</span><span class="n">DocumentStream</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Position</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;=</span> <span class="n">pdfReader</span><span class="p">.</span><span class="n">NumberOfPages</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">page</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">GetImportedPage</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">SetPageSize</span><span class="p">(</span><span class="k">new</span> <span class="n">iTextSharp</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="m">0.0F</span><span class="p">,</span> <span class="m">0.0F</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Height</span><span class="p">));</span>
+</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">NewPage</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">pageNumber</span><span class="p">++;</span>
+</span><span class='line'>            <span class="n">pdfContent</span><span class="p">.</span><span class="n">AddTemplate</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">AddPageNumber</span><span class="p">(</span><span class="n">pdfContent</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
+</span><span class='line'>            <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
+
+<p>We are now able to generate a single PDF based on the website contents.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents/">Generating a Large PDF from Website Contents</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/electronically-sign-pdf-no-more-printing-and-scanning/" title="Previous Post: Tip of the Week: Electronically Sign PDF - No More Printing and Scanning">&laquo; Tip of the Week: Electronically Sign PDF - No More Printing and Scanning</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2017 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/';
+        var disqus_url = 'http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>
