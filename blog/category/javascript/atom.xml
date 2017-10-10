@@ -4,7 +4,7 @@
   <title><![CDATA[Category: javascript | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/javascript/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-10-09T19:46:19+00:00</updated>
+  <updated>2017-10-10T00:01:23+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,119 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up an Electron Application using create-react-app Template]]></title>
+    <link href="http://rahulpnath.com/blog/electron-and-react/"/>
+    <updated>2017-10-10T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/electron-and-react</id>
+    <content type="html"><![CDATA[<p><a href="https://electron.atom.io/">Electron</a> is a great way to build cross-platform desktop applications using HTML, CSS and JavaScript. I was surprised when I first came across Electron to see many of the applications that I use daily was developed in electron and I never knew about it. Since then I was interested in learning more about developing an application using Electron. Recently I was playing around with an idea for a side project and decided to use Electron as I wanted a desktop application. TDK react</p>
+
+<h3>Setting up the React Application</h3>
+
+<p>With the <a href="https://github.com/facebookincubator/create-react-app">create-react-app</a> template generator, it is easy to setup and get up and running a react application. All you need to run are the below commands, and you have everything set up for a react application.</p>
+
+<pre><code class="bash">npm install -g create-react-app
+
+create_react_app electron_react
+cd electron_react
+npm start
+</code></pre>
+
+<p>The above commands will create an &lsquo;electron-react&rsquo; folder with all the code and set up the app at *<a href="http://localhost:3000*">http://localhost:3000*</a> in development mode.</p>
+
+<h3>Setting up Electron</h3>
+
+<p>Now that we have a react application setup, let us integrate electron with it. The below command installs electron package.</p>
+
+<pre><code class="bash">npm install electron
+</code></pre>
+
+<p>A <a href="https://github.com/electron/electron-quick-start">basic Electron application</a> needs just these files:</p>
+
+<ul>
+<li><em>package.json</em> - Points to the app&rsquo;s main file and lists its details and dependencies. We already have this as part of the react application.</li>
+<li><em>main.js</em> - Starts the app and creates a browser window to render HTML. This is the app&rsquo;s main process. We will add this file.</li>
+<li><em>index.html</em> - A web page to render. This is the app&rsquo;s renderer process. We already have this as part of the react application.</li>
+</ul>
+
+
+<p>Let&rsquo;s start by adding a main.js file. We will keep the code to the bare minimum. All we are doing here is adding a function <em>createWindow</em> which uses <em><a href="https://electron.atom.io/docs/api/browser-window/">BrowserWindow</a></em> from the electron package, to create a new window instance. The window loads the development server URL. We will modify this URL later to run independently without a hosted server so that it can be packaged and deployed easily. The <a href="https://electron.atom.io/docs/api/app/">app&rsquo;s</a> <a href="https://electron.atom.io/docs/api/app/#event-ready">ready</a> event is wired to create the new window.</p>
+
+<pre><code class="js main.js">const {app, BrowserWindow} = require('electron');
+
+let mainWindow;
+
+function createWindow(){
+    mainWindow = new BrowserWindow({ width: 800, height: 600});
+    const startUrl = process.env.DEV_URL;
+
+    mainWindow.loadURL(startUrl);
+
+    mainWindow.on('closed', () =&gt; mainWindow = null);
+}
+
+app.on('ready', createWindow);
+</code></pre>
+
+<p>After updating the package.json with the electron application main entry point, we are all set to run the application.</p>
+
+<pre><code class="bash package.json">"main": "src/main.js",
+</code></pre>
+
+<p>Fire up two consoles and launch the react application in one using <em>npm start</em> and the electron application in the other using <em>&lsquo;set DEV_URL=<a href="http://localhost:3000">http://localhost:3000</a> &amp;&amp; electron .&rsquo;</em></p>
+
+<p><img class="center" alt="Electron React" src="/images/electron_react.png"></p>
+
+<h3>Setting up for Deployment</h3>
+
+<p>Opening up two consoles and starting up the react server first will start becoming a pain soon. To avoid this, we can use two npm packages to start both the tasks one after the other.</p>
+
+<ul>
+<li><a href="https://www.npmjs.com/package/concurrently">concurrently</a>: Run multiple commands concurrently.</li>
+<li><a href="https://www.npmjs.com/package/wait-on">wait-on</a>: Wait for files, ports, sockets, http(s) resources to become available</li>
+</ul>
+
+
+<p>Install both the packages and modify the <em>package.json</em> as shown below.</p>
+
+<pre><code class="bash package.json">"react-start": "react-scripts start",
+"electron-dev": "set DEV_URL=http://localhost:3000 &amp;&amp; electron .",
+"start": "concurrently \"npm run react-start\" \"wait-on http://localhost:3000/ &amp;&amp; npm run electron-dev\""
+</code></pre>
+
+<p>Running <em>npm start</em> now launches the react application, waits for the server to be up and running and then launches the electron application.</p>
+
+<p>The electron app depends on the react application being hosted locally to run. Let&rsquo;s update <em>main.js</em> so that it can run from the generated output of the react application. Running <em>npm build</em> generates the website contents into the build folder.</p>
+
+<pre><code class="js main.js">...
+const path = require('path');
+const url = require('url');
+...
+ const startUrl = process.env.DEV_URL ||
+    url.format({
+      pathname: path.join(__dirname, '/../build/index.html'),
+      protocol: 'file:',
+      slashes: true
+    });
+mainWindow.loadURL(startUrl);
+...
+</code></pre>
+
+<p>Set the <em><a href="https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#building-for-relative-paths">homepage</a></em> property in package.json (<em>&ldquo;homepage&rdquo;: &ldquo;./&rdquo;</em>) to enable relative paths on the generated <em>index.html</em> file. Once this is done, we can generate the site using <em>npm run build</em> and run the electron application using <em>&lsquo;electron .&rsquo;</em>. This will launch the application from the <em>build</em> folder.</p>
+
+<p>Hope this helps you to jump start with your Electron app development using React.</p>
+
+<p><strong>References</strong></p>
+
+<ul>
+<li><a href="https://medium.freecodecamp.org/building-an-electron-application-with-create-react-app-97945861647c">How to build an Electron app using create-react-app. No webpack configuration or “ejecting” necessary.</a></li>
+<li><a href="https://github.com/facebookincubator/create-react-app">create-react-app</a></li>
+<li><a href="https://github.com/electron/electron-quick-start">Electron: Quick Start Guide</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault From Node.js]]></title>
@@ -432,111 +545,6 @@ tsc HelloWorld.ts &ndash;watch
 <li><a href="http://www.scottlogic.com/blog/2014/07/30/spa-angular-knockout.html">Single Page Applications - Angular Vs Knockout</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[KnockoutJS For XAML Developers]]></title>
-    <link href="http://rahulpnath.com/blog/knockoutjs-for-xaml-developers/"/>
-    <updated>2014-07-07T23:35:39+00:00</updated>
-    <id>http://rahulpnath.com/blog/knockoutjs-for-xaml-developers</id>
-    <content type="html"><![CDATA[<p>After a very long time since I have actually wanted to move out to web development, recently I have started developing a website as part of my personal project, along with a friend of mine. I have been into desktop/mobile development on Microsoft technologies, using XAML for a very long time. <a href="http://www.rahulpnath.com/blog/tag/mvvm/">Model-View-View Model (MVVM)</a> is a pattern that got popular because of the powerful binding engine in XAML. It is always comforting to see familiar patterns while moving into unexplored technology areas. Same is the reason I chose to explore <a href="http://knockoutjs.com/index.html">KnockoutJS</a>(KO), which simplifies dynamic JavaScript UIs with the MVVM pattern.</p>
-
-<p><img src="/MVVM_Knockoutjs.jpg" alt="MVVM Knockout" /></p>
-
-<p>KnockoutJS acts as the binding engine in XAML and binds your ViewModel(VM) with your View as shown in the figure. As you expect, like in XAML it provides a way to specify declarative-bindings on html using the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute and is also widely <a href="http://knockoutjs.com/documentation/browser-support.html">supported across different browsers</a>. The Model is the data that is populated from the server after your business logics applied,  mostly populated out of Ajax JSON calls from a web service/api. This Model data might mostly need some transformation to map to your View needs which is what exactly the ViewModel does. It transforms the Model data and wraps over it to provide features like 2-way-binding, client side validation, transformation of properties, UI specific state and a lot more</p>
-
-<p>We will see below how some of the major constructs in XAML map over to KnockoutJS.</p>
-
-<blockquote><p><em>I assume that you are a XAML developer and am not including detailed code samples for the XAML part and would be just mentioning them.</em></p></blockquote>
-
-<p><strong>1. INotifyPropertyChanged</strong></p>
-
-<p>Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110).aspx">INotifyPropertyChanged</a> interface. This is also required on web pages and is handled by KO using <em><a href="http://knockoutjs.com/documentation/observables.html">observables</a></em></p>
-
-<pre><code class="javascript">var personVM = {
-    Name: ko.observable('Rahul'),
-    Age: ko.observable(50)
-};
-</code></pre>
-
-<p>Declaring the property as an observable, makes any changes to the property immediately reflect on the bound UI elements, just like it happens on a property of a class that implements INotifyPropertyChanged.</p>
-
-<p><pre class="codepen" data-height="300" data-type="js" data-href="CuIfK" data-user="rahulpnath"><code> </code></pre>
-<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
-
-<p><strong>2. DataContext</strong></p>
-
-<p>In XAML we set the DataContext as the ViewModel to start binding the data from the ViewModel on the UI. Similarly in KO we have to call on to <em>applyBindings </em>method, passing on the ViewModel object to bind. You can see this in the above sample. You can also pass in an additional parameter indicating the part of the document that you want to explicitly bind to.</p>
-
-<p><strong>3. DataBinding</strong></p>
-
-<p>Binding the data to the UI in XAML is done declaratively using the <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110).aspx">Binding</a> syntax. Similarly in KO we use the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be <em>data-bind=&ldquo;text: Name&rdquo; . </em>You can also use the <a href="http://knockoutjs.com/documentation/with-binding.html">with binding</a> to create binding contexts for descendant elements as in XAML</p>
-
-<p><strong>4. INotifyCollectionChanged</strong></p>
-
-<p>In XAML updates to a collection is usually handled using an <a href="http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110).aspx">ObservableCollection</a>, which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use <em>observableArray</em>, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an <em>observable, </em>as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. </p>
-
-<p><pre class="codepen" data-height="300" data-type="js" data-href="FreIv" data-user="rahulpnath"><code> </code></pre>
-<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
-
-<p><strong>5. Dependent Properties</strong></p>
-
-<p>In XAML when there are properties dependent on others , to notify changes we have to explicitly call RaisePropertyChanged on all the dependent properties. A very common example is below</p>
-
-<pre><code class="csharp">private string firstName;
-public string FirstName
-{
-   get { return firstName; }
-   set
-   {
-        if (firstName!= value)
-        {
-            firstName= value;
-            OnPropertyChanged("FirstName");
-            OnPropertyChanged("FullName");
-        }
-   }
-}
-public string FullName
-{
-    get { return FirstName +" " + LastName; }
-}
-</code></pre>
-
-<p>Here whenever FirstName is updated to notify UI elements bound to FullName would be updated only if we explicitly call PropertyChanged on FullName property too. In KO this is handled using <a href="http://knockoutjs.com/documentation/computedObservables.html">computed observables</a> and is much more elegant.</p>
-
-<pre><code class="javascript">this.fullName = ko.computed(function() {
-    return this.firstName() + " " + this.lastName();
-}, this);
-</code></pre>
-
-<p><strong>6. Commanding</strong></p>
-
-<p>Commanding is how user interactions are bound to actions/functions on ViewModel, which will in turn perform something useful for the user. Like e.g. clicking a button. In KO this is handled using the same <a href="http://knockoutjs.com/documentation/click-binding.html">data-bind</a> attribute using key’s corresponding to event handlers. &#8220;</p>
-
-<pre><code class="html">&lt;button data-bind="click: performSomeAction"&gt;Click me&lt;/button&gt;
-</code></pre>
-
-<p><strong>7. Value Converters </strong></p>
-
-<p>The <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx">IValueConverter</a> interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is <a href="http://knockoutjs.com/documentation/computedObservables.html">writable computed observable</a> to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.</p>
-
-<p><pre class="codepen" data-height="300" data-type="js" data-href="dJhLm" data-user="rahulpnath"><code> </code></pre>
-<script async src="http://codepen.io:/assets/embed/ei.js"></script></p>
-
-<p>There are a lot of useful resources on the web that are freely available to get started with KnockoutJS. Some of them are listed below</p>
-
-<ul>
-<li><p><a href="http://knockoutjs.com/documentation/introduction.html">Official Documentation</a></p></li>
-<li><p><a href="http://learn.knockoutjs.com/">Learn By Doing</a></p></li>
-<li><p><a href="https://www.youtube.com/results?search_query=knockout+javascript">Videos</a></p></li>
-<li><p><a href="http://channel9.msdn.com/Search?term=knockout#ch9Search">More Videos</a></p></li>
-</ul>
-
-
-<p>Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!
-<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
   
