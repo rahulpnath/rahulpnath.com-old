@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-10-18T00:01:30+00:00</updated>
+  <updated>2017-10-18T08:12:33+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,64 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Authenticating with Azure Key Vault Using Managed Service Identity]]></title>
+    <link href="http://rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/"/>
+    <updated>2017-10-18T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity</id>
+    <content type="html"><![CDATA[<p><strong><em>How do you secure the access keys to the Key Vault itself?</em></strong>.</p>
+
+<p>If you use ClientId/Secret to authenticate with a key vault, then you are likely to end up having these in the web.config file (<a href="http://www.rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/">there still are ways around</a>) which is what we initially set out to avoid, by using Azure Key Vault. The recommended approach till now was to use certificate-based authentication so that you need to have only the thumbprint id of the certificate in the web.config and you can deploy the certificate along with the application. If you are not familiar with either way of authenticating with Key Vault, then check out this <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">article</a>. With the Secret or certificate-based authentication, we also run into the problem of credentials expiring which in turn can lead to application downtime.</p>
+
+<p>Managed Service Identity (MSI) solves this problem by allowing an Azure App Service, Azure Virtual Machines or Azure Functions to connect to Key Vault (and a few other services) without any explicit credentials in the code.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/azure/active-directory/msi-overview">Managed Service Identity</a> (MSI) makes solving this problem simpler by giving Azure services an automatically managed identity in Azure Active Directory (Azure AD). You can use this identity to authenticate to any service that supports Azure AD authentication, including Key Vault, without having any credentials in your code.</em></p></blockquote>
+
+<p>MSI can be enabled through the Azure Portal. E.g., to enable MSI for App Service, the portal has an option as shown below.</p>
+
+<p><img src="http://rahulpnath.com/images/keyvault_managed_service_identity.png" class="center" alt="Enable Managed Service Identity for Azure App Service" /></p>
+
+<p>Once enabled we can add an access policy in the key vault to give permissions to the Azure App service. Search by the app service name and assign the required access policies.</p>
+
+<p>For an application to access the key vault, we need to use <em>AzureServiceTokenProvider</em> from <a href="https://www.nuget.org/packages/Micros">Microsoft.Azure.Services.AppAuthentication</a> NuGet package. Instead of using the ClientCredential or ClientAssertionCertificate to acquire the token, we will use AzureServiceTokenProvider to acquire the token for us.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">azureServiceTokenProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AzureServiceTokenProvider</span><span class="p">();</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">keyVaultClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">(</span><span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">.</span><span class="n">AuthenticationCallback</span><span class="p">(</span><span class="n">azureServiceTokenProvider</span><span class="p">.</span><span class="n">KeyVaultTokenCallback</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>The <a href="https://azure.microsoft.com/en-us/resources/samples/app-service-msi-keyvault-dotnet/">AzureServiceTokenProvider</a> class tries the following methods to get an access token:-</em></p>
+
+<ol>
+<li><em>Managed Service Identity (MSI) - for scenarios where the code is deployed to Azure, and the Azure resource supports MSI.</em></li>
+<li><em>Azure CLI (for local development) - Azure CLI version 2.0.12 and above supports the get-access-token option. AzureServiceTokenProvider uses this option to get an access token for local development.</em></li>
+<li><em>Active Directory Integrated Authentication (for local development). To use integrated Windows authentication, your domain’s Active Directory must be federated with Azure Active Directory. Your application must be running on a domain-joined machine under a user’s domain credentials.</em></li>
+</ol>
+
+
+<h3>Local Development</h3>
+
+<p>For the AzureServiceTokenProvider to work locally we need to install the <a href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest">Azure CLI</a> and also setup an environment variable - <em>AzureServicesAuthConnectionString</em>. Depending on whether you want to use ClientId/Secret or ClientId/Certificate-based authentication the value for the environment variable changes.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>AzureServicesAuthConnectionString to RunAs=App;AppId=AppId;TenantId=TenantId;AppKey=Secret.
+</span><span class='line'>Or
+</span><span class='line'>RunAs=App;AppId=AppId;TenantId=TenantId;CertificateThumbprint=Thumbprint;CertificateStoreLocation=CurrentUser
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="http://rahulpnath.com/images/kkeyvault_msi_tenantId.png" class="center" alt="Get Tenant Id and AppId" /></p>
+
+<p>As shown above, you can get the TenantId and AppId from the App Registrations page in the Azure portal. Clicking on the Endpoints button reveals a list of URL&rsquo;s which has the TenantId GUID. The AppId is displayed against each of the AD application. Once you set the environment variable, the application will be able to connect to Key Vault without any additional configuration entries in web/app config.</p>
+
+<p>Azure Managed Service Identity makes it easier to connect to Key Vault and removes the need of having any sensitive information in the application configuration file. It also helps remove the overhead of renewing the certificate/secrets used to connect to the Vault. One less thing to worry about the application!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Text Editing - Split or Combine Multiple Lines]]></title>
@@ -1321,57 +1379,6 @@ Even though this post details on why the specific site on Umbraco was restarting
 <p>Beyond Compare has a Standard and a Pro Edition with a lot of <a href="http://www.scootersoftware.com/features.php?zz=features_list">features</a>. I have the Pro Edition license for Beyond Compare, thanks to <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">Readify</a> for the Software allowance that you get every year.</p>
 
 <p>Beyond Compare is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost daily</a>. Check it out if you have not already.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Review: Pixel, Phone by Google - Made by Google]]></title>
-    <link href="http://rahulpnath.com/blog/review-pixel/"/>
-    <updated>2017-07-12T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/review-pixel</id>
-    <content type="html"><![CDATA[<p>When it comes to mobile phones, I used to be a gadget freak and buy the latest phone as soon as it arrives in the market. But not after I got the <a href="http://www.rahulpnath.com/blog/review-two-months-and-counting-android-and-nexus-5/">Nexus 5</a>. It&rsquo;s been well over three years now and not even once did I want to switch over to something else. The phone never slowed down over these years, and the battery lasted enough for the day. I broke the Nexus screen a couple of months back and was forced to switch over to a new phone. I didn&rsquo;t have to do much market research or phone comparisons this time; as I just knew which one to pick up.</p>
-
-<p><a href="https://madeby.google.com/intl/en_au/phone/">The Pixel, Phone By Google!</a></p>
-
-<p><img src="http://rahulpnath.com/images/pixel.png" alt="Pixel" class="center" /></p>
-
-<h4><strong>Key Features</strong></h4>
-
-<p>The Pixel is the first phone in the Google Pixel hardware line and is a successor to the Nexus range of devices. The Pixel runs <a href="https://www.android.com/intl/en_au/versions/nougat-7-0/">Android-Nougat</a> with some features exclusive to it. The Pixel is very much comparable to the Nexus, with improved hardware and latest software. Below are some of the key features that I like about the phone.</p>
-
-<ul>
-<li><p><strong>Fingerprint sensor</strong> The fingerprint sensor on the back allows you to unlock the phone and specific apps and also authorize purchases. <a href="http://www.rahulpnath.com/blog/password-manager-get-one-if-you-havent-already/">1Password</a> is integrated with the sensor which enables me to unlock it using the sensor. I no longer need to type in my long master password every time I use 1Password.</p></li>
-<li><p><strong>Camera</strong> <em>Pixel takes brilliant photos in bright light, low light, and any light.</em> The camera is awesome and at times is a good replacement for your <a href="http://www.rahulpnath.com/blog/photography-learning-to-click/">DSLR</a>. With Pixel, Google also provides unlimited original quality storage for all photos and videos.</p></li>
-<li><p><strong>Google Assistant</strong> Pixel is the first phone with the <a href="https://assistant.google.com/">Google Assistant</a> built-in. It helps you manage tasks, find content on phone and the internet, perform actions, etc. just like Siri or Cortana. I have not used the assistant much and yet to find some valid use cases.</p></li>
-</ul>
-
-
-<h4><strong>Apps</strong></h4>
-
-<p> Some of the apps that I use regularly are</p>
-
-<ul>
-<li><a href="http://www.rahulpnath.com/blog/todoist-manage-your-todo-list/">Todoist</a>: My ToDo List</li>
-<li><a href="http://www.rahulpnath.com/blog/feedly-one-stop-reading-place/">Feedly</a>: For all my RSS feeds</li>
-<li><a href="http://www.rahulpnath.com/blog/pocket-offline-reading-made-easy/">Pocket</a>: For offline reading and read later</li>
-<li><a href="http://www.rahulpnath.com/blog/password-manager-get-one-if-you-havent-already/">1Password</a>: Password Manager</li>
-<li><a href="http://www.rahulpnath.com/blog/buffer-smarter-social-sharing/">Buffer</a>: To schedule articles to all social networks</li>
-<li><a href="http://www.rahulpnath.com/blog/rescue-time-track-your-time/">Rescue Time</a>: Automatically tracks where I spent time on mobile</li>
-<li><a href="http://www.rahulpnath.com/blog/three_months_to_a_half_marathon/">Strava, Runtastic &amp; Garmin Connect</a>: Tracking my runs and exercises</li>
-<li><a href="https://play.google.com/store/apps/details?id=com.amazon.kindle">Kindle</a>: Reading kindle books</li>
-<li>Twitter, Whatsapp, Messenger, Instagram, Skype &amp; Yammer :Social Networking apps</li>
-<li><a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">JotterPad</a>: Write articles for blog in markdown format</li>
-<li><a href="http://www.rahulpnath.com/blog/how-to-setup-google-indic-keyboard-on-your-android-phone/">Google Indic Keyboard</a>: Writing in my native language</li>
-<li>Gmail &amp; Outlook: Emails</li>
-<li>Youtube: Videos</li>
-</ul>
-
-
-<h4><strong>Case </strong></h4>
-
-<p>I am using the <a href="http://www.rahulpnath.com/blog/spigen-awesome-phone-cases/">Spigen Neo Hybrid</a> case for Pixel. It adds extra weight to the phone, but I am used to it from my Nexus as well. The Neo Hybrid provides military grade protection and protects the phone from most falls.</p>
-
-<p>Overall I have found the Pixel a good phone and recommend it to anyone looking out for a new phone now. The Samsung Galaxy S8 is also of the same range (slightly costlier) and worth considering if you are not too particular about having a vanilla Android experience. Which phone do you use?</p>
 ]]></content>
   </entry>
   
