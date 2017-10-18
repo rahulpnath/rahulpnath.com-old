@@ -49,6 +49,8 @@ Azure Key Vault acts as a centralized repository for all sensitive information. 
 </appSettings>
 ```
 
+> ***[Key Vault supports Managed Service Identity](http://www.rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/) which makes authenticating with it even more easier if your application is deployed in Azure. You no longer have to add any configuration related to key vault to the applications config file.***
+
 If you are using the 'client secret' to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using [Key Vault](http://www.rahulpnath.com/blog/category/azure-key-vault/) is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application. 
 
 
