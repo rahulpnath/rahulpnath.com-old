@@ -163,6 +163,103 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2009-08-06T04:33:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 6<sup>th</sup>, 2009</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/wpf/'>wpf</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/scrolling-a-disabled-listbox-in-wpf/" itemprop="url">Scrolling a Disabled Listbox in WPF</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently I had a requirement when developing an application,where i needed a listbox which was to be disabled but yet can be scrolled,so that all the contents in it was visible.Applying the property,IsEnabled=False makes the whole listbox disabled even disabling the scroll.
+I just found out a way around this.I created a custom listbox(MyScrollableListbox) with a property IsItemsEnabled.Setting this property to true,gives the normal listbox behaviour.When set to false only the ItemsPresenter of the listbox is disabled,so that scrolling is possible</p>
+
+<p>The Custom Listbox looks like this(just one property added for now)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='vbnet'><span class='line'><span class="k">Public</span> <span class="k">Class</span> <span class="nc">MyScrollableListbox</span>
+</span><span class='line'>    <span class="k">Inherits</span> <span class="n">ListBox</span>
+</span><span class='line'><span class="k">Public</span> <span class="k">Property</span> <span class="nf">IsItemsEnabled</span><span class="p">()</span> <span class="ow">As</span> <span class="kt">Boolean</span>
+</span><span class='line'> <span class="k">Get</span>
+</span><span class='line'> <span class="k">Return</span> <span class="n">GetValue</span><span class="p">(</span><span class="n">IsItemsEnabledProperty</span><span class="p">)</span>
+</span><span class='line'> <span class="k">End</span> <span class="k">Get</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">Set</span><span class="p">(</span><span class="k">ByVal</span> <span class="n">value</span> <span class="ow">As</span> <span class="kt">Boolean</span><span class="p">)</span>
+</span><span class='line'> <span class="n">SetValue</span><span class="p">(</span><span class="n">IsItemsEnabledProperty</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</span><span class='line'> <span class="k">End</span> <span class="k">Set</span>
+</span><span class='line'> <span class="k">End</span> <span class="k">Property</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">Public</span> <span class="k">Shared</span> <span class="k">ReadOnly</span> <span class="n">IsItemsEnabledProperty</span> <span class="ow">As</span> <span class="n">DependencyProperty</span> <span class="o">=</span> <span class="n">_</span>
+</span><span class='line'> <span class="n">DependencyProperty</span><span class="p">.</span><span class="n">Register</span><span class="p">(</span><span class="s">&quot;IsItemsEnabled&quot;</span><span class="p">,</span> <span class="n">_</span>
+</span><span class='line'> <span class="ow">GetType</span><span class="p">(</span><span class="kt">Boolean</span><span class="p">),</span> <span class="ow">GetType</span><span class="p">(</span><span class="n">MyScrollableListbox</span><span class="p">),</span> <span class="n">_</span>
+</span><span class='line'> <span class="k">New</span> <span class="n">FrameworkPropertyMetadata</span><span class="p">(</span><span class="k">Nothing</span><span class="p">))</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">End</span> <span class="k">Class</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the xaml(or if you are going to make it a custom control then you can give it in your Generic.xaml)</p>
+
+<p>Now if you set the property IsItemsEnabled to false the listbox will be disabled,but allowing you to scroll.</p>
+
+<p>edit: Added in <a href="http://www.codeproject.com/tips/60619/Scrollable-Disabled-ListBox-in-WPF.aspx">CodeProject</a></p>
+
+<p>Hope it helps :)</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2009-06-10T02:53:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 10<sup>th</sup>, 2009</time>
         
 
@@ -228,6 +325,8 @@ One other tool which comes handy is <a href="http://www.red-gate.com/products/re
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/text-editing-extract-data/">Tip of the Week: Text Editing - Extract Data</a>
+    
     <a class="list-group-item " href="/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Authenticating with Azure Key Vault Using Managed Service Identity</a>
     
     <a class="list-group-item " href="/blog/text-editing-split-or-combine-multiple-lines/">Tip of the Week: Text Editing - Split or Combine Multiple Lines</a>
@@ -235,8 +334,6 @@ One other tool which comes handy is <a href="http://www.red-gate.com/products/re
     <a class="list-group-item " href="/blog/electron-and-react/">Setting up an Electron Application using create-react-app Template</a>
     
     <a class="list-group-item " href="/blog/generating-a-large-pdf-from-website-contents-part-iii/">Generating a Large PDF from Website Contents - Merging PDF Files</a>
-    
-    <a class="list-group-item " href="/blog/electronically-sign-pdf-no-more-printing-and-scanning/">Tip of the Week: Electronically Sign PDF - No More Printing and Scanning</a>
     
   </div>
 </section>
