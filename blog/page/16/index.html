@@ -163,6 +163,188 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-07-07T23:35:39+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 7<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/javascript/'>javascript</a>, <a class='category' href='/blog/category/web/'>web</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/knockoutjs-for-xaml-developers/" itemprop="url">KnockoutJS For XAML Developers</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>After a very long time since I have actually wanted to move out to web development, recently I have started developing a website as part of my personal project, along with a friend of mine. I have been into desktop/mobile development on Microsoft technologies, using XAML for a very long time. <a href="http://www.rahulpnath.com/blog/tag/mvvm/">Model-View-View Model (MVVM)</a> is a pattern that got popular because of the powerful binding engine in XAML. It is always comforting to see familiar patterns while moving into unexplored technology areas. Same is the reason I chose to explore <a href="http://knockoutjs.com/index.html">KnockoutJS</a>(KO), which simplifies dynamic JavaScript UIs with the MVVM pattern.</p>
+
+<p><img src="/images/MVVM_Knockoutjs.jpg" alt="MVVM Knockout" /></p>
+
+<p>KnockoutJS acts as the binding engine in XAML and binds your ViewModel(VM) with your View as shown in the figure. As you expect, like in XAML it provides a way to specify declarative-bindings on html using the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute and is also widely <a href="http://knockoutjs.com/documentation/browser-support.html">supported across different browsers</a>. The Model is the data that is populated from the server after your business logics applied,  mostly populated out of Ajax JSON calls from a web service/api. This Model data might mostly need some transformation to map to your View needs which is what exactly the ViewModel does. It transforms the Model data and wraps over it to provide features like 2-way-binding, client side validation, transformation of properties, UI specific state and a lot more</p>
+
+<p>We will see below how some of the major constructs in XAML map over to KnockoutJS.</p>
+
+<blockquote><p><em>I assume that you are a XAML developer and am not including detailed code samples for the XAML part and would be just mentioning them.</em></p></blockquote>
+
+<p><strong>1. INotifyPropertyChanged</strong></p>
+
+<p>Notifying data bounded clients on updates to the underlying bound data is a typical scenario in XAML, where we use <a href="http://msdn.microsoft.com/en-us/library/system.componentmodel.inotifypropertychanged(v=vs.110).aspx">INotifyPropertyChanged</a> interface. This is also required on web pages and is handled by KO using <em><a href="http://knockoutjs.com/documentation/observables.html">observables</a></em></p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">personVM</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">Name</span><span class="o">:</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">observable</span><span class="p">(</span><span class="s1">&#39;Rahul&#39;</span><span class="p">),</span>
+</span><span class='line'>    <span class="nx">Age</span><span class="o">:</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">observable</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Declaring the property as an observable, makes any changes to the property immediately reflect on the bound UI elements, just like it happens on a property of a class that implements INotifyPropertyChanged.</p>
+
+<pre class="codepen" data-height="300" data-type="js" data-href="CuIfK" data-user="rahulpnath"><code> </code></pre>
+
+
+<script async src="http://codepen.io:/assets/embed/ei.js"></script>
+
+
+<p><strong>2. DataContext</strong></p>
+
+<p>In XAML we set the DataContext as the ViewModel to start binding the data from the ViewModel on the UI. Similarly in KO we have to call on to <em>applyBindings </em>method, passing on the ViewModel object to bind. You can see this in the above sample. You can also pass in an additional parameter indicating the part of the document that you want to explicitly bind to.</p>
+
+<p><strong>3. DataBinding</strong></p>
+
+<p>Binding the data to the UI in XAML is done declaratively using the <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.binding(v=vs.110).aspx">Binding</a> syntax. Similarly in KO we use the <a href="http://knockoutjs.com/documentation/binding-syntax.html">data-bind</a> attribute to bind to a registered, built-in or custom, binding handler. As opposed to XAML where we bind to different properties, in KO all bindings are mentioned in the same data-bind attribute, separated by comma. A binding in KO consists of a name value pair separated by a colon, where the name corresponds to the binding handler/the property that we are binding to and the value from the VM that we need it to be bound to. A simple example of binding to the text property of a label would be <em>data-bind=&ldquo;text: Name&rdquo; . </em>You can also use the <a href="http://knockoutjs.com/documentation/with-binding.html">with binding</a> to create binding contexts for descendant elements as in XAML</p>
+
+<p><strong>4. INotifyCollectionChanged</strong></p>
+
+<p>In XAML updates to a collection is usually handled using an <a href="http://msdn.microsoft.com/en-us/library/ms668604(v=vs.110).aspx">ObservableCollection</a>, which notifies the UI whenever an item is added/removed to the collection. Similarly in KO you can use <em>observableArray</em>, which behaves the same as ObservableCollection. It notifies the bound UI elements whenever an element is added/removed from the array. Updates or changes to individual properties on the actual objects in the array is notified to the UI only if the property is an <em>observable, </em>as in XAML. In the below sample, you can try adding an observable item or a non-observable item to the list. As soon as you add an item it reflects in the list. But selecting and editing an item will reflect in the list only if you are editing an observable item. </p>
+
+<pre class="codepen" data-height="300" data-type="js" data-href="FreIv" data-user="rahulpnath"><code> </code></pre>
+
+
+<script async src="http://codepen.io:/assets/embed/ei.js"></script>
+
+
+<p><strong>5. Dependent Properties</strong></p>
+
+<p>In XAML when there are properties dependent on others , to notify changes we have to explicitly call RaisePropertyChanged on all the dependent properties. A very common example is below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="kt">string</span> <span class="n">firstName</span><span class="p">;</span>
+</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">FirstName</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>   <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">firstName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>   <span class="k">set</span>
+</span><span class='line'>   <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">firstName</span><span class="p">!=</span> <span class="k">value</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">firstName</span><span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">OnPropertyChanged</span><span class="p">(</span><span class="s">&quot;FirstName&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">OnPropertyChanged</span><span class="p">(</span><span class="s">&quot;FullName&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">public</span> <span class="kt">string</span> <span class="n">FullName</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">FirstName</span> <span class="p">+</span><span class="s">&quot; &quot;</span> <span class="p">+</span> <span class="n">LastName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here whenever FirstName is updated to notify UI elements bound to FullName would be updated only if we explicitly call PropertyChanged on FullName property too. In KO this is handled using <a href="http://knockoutjs.com/documentation/computedObservables.html">computed observables</a> and is much more elegant.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="k">this</span><span class="p">.</span><span class="nx">fullName</span> <span class="o">=</span> <span class="nx">ko</span><span class="p">.</span><span class="nx">computed</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">firstName</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="k">this</span><span class="p">.</span><span class="nx">lastName</span><span class="p">();</span>
+</span><span class='line'><span class="p">},</span> <span class="k">this</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>6. Commanding</strong></p>
+
+<p>Commanding is how user interactions are bound to actions/functions on ViewModel, which will in turn perform something useful for the user. Like e.g. clicking a button. In KO this is handled using the same <a href="http://knockoutjs.com/documentation/click-binding.html">data-bind</a> attribute using key’s corresponding to event handlers. &#8220;</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;button</span> <span class="na">data-bind=</span><span class="s">&quot;click: performSomeAction&quot;</span><span class="nt">&gt;</span>Click me<span class="nt">&lt;/button&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>7. Value Converters </strong></p>
+
+<p>The <a href="http://msdn.microsoft.com/en-us/library/system.windows.data.ivalueconverter(v=vs.110).aspx">IValueConverter</a> interface is to create a converter that can be applied on a Binding to provide custom logic on the data that gets bounded to the UI element. For a similar functionality in KO, there is <a href="http://knockoutjs.com/documentation/computedObservables.html">writable computed observable</a> to convert to and from a specific format of data. The read and write function on the computed observable, corresponds to the Convert and ConvertBack functions on IValueConverter on XAML.</p>
+
+<pre class="codepen" data-height="300" data-type="js" data-href="dJhLm" data-user="rahulpnath"><code> </code></pre>
+
+
+<script async src="http://codepen.io:/assets/embed/ei.js"></script>
+
+
+<p>There are a lot of useful resources on the web that are freely available to get started with KnockoutJS. Some of them are listed below</p>
+
+<ul>
+<li><p><a href="http://knockoutjs.com/documentation/introduction.html">Official Documentation</a></p></li>
+<li><p><a href="http://learn.knockoutjs.com/">Learn By Doing</a></p></li>
+<li><p><a href="https://www.youtube.com/results?search_query=knockout+javascript">Videos</a></p></li>
+<li><p><a href="http://channel9.msdn.com/Search?term=knockout#ch9Search">More Videos</a></p></li>
+</ul>
+
+
+<p>Hope you find this useful to easily understand KnockoutJS, re-applying your XAML knowledge . Do drop in a comment in case you find any other similarities with XAML that I have missed mentioning here and I would be happy to add it in. I am sure I have not covered it completely!
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-06-18T00:22:37+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 18<sup>th</sup>, 2014</time>
         
 
@@ -1122,297 +1304,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-21T07:55:25+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 21<sup>st</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-incremental-loading-multiple-data-sources-inside-a-pivot/" itemprop="url">Windows Phone Series – Incremental Loading multiple data sources inside a Pivot</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>We had seen on how <a href="http://rahulpnath.com/blog/windows-phone-series-incremental-loading/">incremental loading can be done in a Windows phone</a>, so that data can be fetched as user scrolls down the available data. This is important for data sources that have a large amount of data and when all of these cannot be loaded at once. I have been getting queries on how to implement this for a Pivot control ,in which each pivot item would bind with multiple data sources or endpoints.</p>
-
-<p>An ideal example for this would be the <a href="http://developers.500px.com/">500px api</a>, where we have photos categorized into different streams and each one of them can be in a pivot item. Since we have been talking about <a href="http://rahulpnath.com/blog/tag/mvvm/">mvvm</a>, all along will implement this using MVVM.</p>
-
-<p><img src="/images/WP_IncrementalLoading.png" alt="image" /></p>
-
-<p>In the sample application here, I have created 2 projects – PCL and Windows Phone project, just for showing the code separation that can be achieved using MVVM. The PCL can be reused with Windows 8 too to develop a similar application, with a few minor tweaks. We would see how we can incrementally load each of these pivot items as and when the user scrolls down on the list of photos.</p>
-
-<p>In the MainViewModel, we create ViewModel’s for each of the PivotItem, which are instances of PhotoCollectionViewModel. Each of these PhotoCollectionViewModel represents a photo stream of 500px, which is defined as a static collection of string. You can add on to this the other streams available in the 500px api to have them displayed too.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">string</span><span class="p">[]</span> <span class="n">photoCollections</span> <span class="p">=</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="s">&quot;popular&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;upcoming&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;editors&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s">&quot;fresh_today&quot;</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="n">List</span> <span class="n">PhotoCollectionViewModels</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="nf">MainViewModel</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">PhotoCollectionViewModels</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">();</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photoCollection</span> <span class="k">in</span> <span class="n">photoCollections</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">PhotoCollectionViewModels</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">PhotoCollectionViewModel</span><span class="p">(</span><span class="n">photoCollection</span><span class="p">));</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the PhotoCollectionViewModel, we create the url from which the data needs to be  fetched from the api, along with the api consumer key, which can be obtained by <a href="http://500px.com/settings/applications">registering an application here</a> and assign the url to a IncrementalLoader, that will take care of incrementally loading the data and returning it to the ViewModel. The url has a placeholder for the current page number(<strong><em>page={0}</em></strong>) that would be populated by the IncrementalLoader on each load.</p>
-
-<p>The IncrementalLoader is a generic class that takes in url from which it has to load the data and returns the generic type that it is assigned to on each LoadNextPage request.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IncrementalLoader</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="k">where</span> <span class="n">T</span> <span class="p">:</span> <span class="k">class</span>
-</span><span class='line'><span class="err">{</span>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">BaseUrl</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">int</span> <span class="n">CurrentPageNumber</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">bool</span> <span class="n">isCurrentlyLoading</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">CurrentUrl</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">get</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kt">string</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span><span class="p">,</span> <span class="p">++</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentPageNumber</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">IncrementalLoader</span><span class="p">(</span><span class="kt">string</span> <span class="n">baseUrl</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">BaseUrl</span> <span class="p">=</span> <span class="n">baseUrl</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">LoadNextPage</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="c1">// call in progress</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">HttpClient</span> <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpClient</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// Add Microsoft.Bcl.Async nuget for await to work on PCL.</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">response</span> <span class="p">=</span> <span class="k">await</span> <span class="n">client</span><span class="p">.</span><span class="n">GetStringAsync</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">CurrentUrl</span><span class="p">);</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">serializer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">DataContractJsonSerializer</span><span class="p">(</span><span class="k">typeof</span><span class="p">(</span><span class="n">T</span><span class="p">));</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">returnObject</span> <span class="p">=</span> <span class="n">serializer</span><span class="p">.</span><span class="n">ReadObject</span><span class="p">(</span><span class="k">new</span> <span class="n">MemoryStream</span><span class="p">(</span><span class="n">Encoding</span><span class="p">.</span><span class="n">Unicode</span><span class="p">.</span><span class="n">GetBytes</span><span class="p">(</span><span class="n">response</span><span class="p">)))</span> <span class="k">as</span> <span class="n">T</span><span class="p">;</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">isCurrentlyLoading</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="n">returnObject</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the Main page, the view Model is bound to a Pivot control, which has the templates specified for displaying the list of PhotoCollectionViewModels.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Grid</span> <span class="na">x:Name=</span><span class="s">&quot;ContentPanel&quot;</span> <span class="na">Grid.Row=</span><span class="s">&quot;1&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot</span> <span class="na">Name=</span><span class="s">&quot;photoCollection&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding PhotoCollectionViewModels}&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:LongListSelector</span> <span class="na">ItemRealized=</span><span class="s">&quot;Photo_Loaded&quot;</span> <span class="na">ItemsSource=</span><span class="s">&quot;{Binding Photos}&quot;</span> <span class="na">IsGroupingEnabled=</span><span class="s">&quot;False&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:LongListSelector.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding image_url}&quot;</span> <span class="na">Margin=</span><span class="s">&quot;10&quot;</span> <span class="na">Width=</span><span class="s">&quot;500&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:LongListSelector&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot.ItemTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;phone:Pivot.HeaderTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;TextBlock</span> <span class="na">Text=</span><span class="s">&quot;{Binding Title}&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/DataTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot.HeaderTemplate&gt;</span>
-</span><span class='line'> <span class="nt">&lt;/phone:Pivot&gt;</span>
-</span><span class='line'><span class="nt">&lt;/Grid&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the ItemRealized method of the LongListSelector, we decide on whether to load the next page of data or not, based on the current item that gets realized. We load the data if the item realized is third from the last in the current list of photos.We connect the ItemRealized method to the ViewModel code in the code behind.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">Photo_Loaded</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">ItemRealizationEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">LongListSelector</span> <span class="n">longList</span> <span class="p">=</span> <span class="n">sender</span> <span class="k">as</span> <span class="n">LongListSelector</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">PhotoCollectionViewModel</span> <span class="n">vm</span> <span class="p">=</span> <span class="n">longList</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">PhotoCollectionViewModel</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">vm</span><span class="p">.</span><span class="n">LoadMorePhotos</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">Container</span><span class="p">.</span><span class="n">Content</span> <span class="k">as</span> <span class="n">Photo</span><span class="p">);</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">LoadMorePhotos</span><span class="p">(</span><span class="n">Photo</span> <span class="n">currentPhoto</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">currentPhoto</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">index</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">IndexOf</span><span class="p">(</span><span class="n">currentPhoto</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Count</span> <span class="p">-</span> <span class="m">3</span> <span class="p">&gt;</span> <span class="n">index</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span> <span class="p">=</span> <span class="k">await</span> <span class="k">this</span><span class="p">.</span><span class="n">incrementalLoader</span><span class="p">.</span><span class="n">LoadNextPage</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">photo</span> <span class="k">in</span> <span class="k">this</span><span class="p">.</span><span class="n">currentCollection</span><span class="p">.</span><span class="n">photos</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">Photos</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">photo</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Whenver a user scrolls on a pivot the corresponding, ItemRealized methods gets called from which we call on to the load the data for that PhotoCollectionViewModel. This way each of the pivots are incrementally loaded as required.</p>
-
-<p>The code for this is available <a href="https://github.com/rahulpnath/Blog/tree/master/IncrementalLoading">here</a>. Make sure you register for an application in the 500px api portal to get a consumer key that needs be updated in the solution for it to run.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1436,6 +1327,8 @@ To check if this is successfully setup, open up command prompt and type in java.
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a>
+    
     <a class="list-group-item " href="/blog/text-editing-extract-data/">Tip of the Week: Text Editing - Extract Data</a>
     
     <a class="list-group-item " href="/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Authenticating with Azure Key Vault Using Managed Service Identity</a>
@@ -1443,8 +1336,6 @@ To check if this is successfully setup, open up command prompt and type in java.
     <a class="list-group-item " href="/blog/text-editing-split-or-combine-multiple-lines/">Tip of the Week: Text Editing - Split or Combine Multiple Lines</a>
     
     <a class="list-group-item " href="/blog/electron-and-react/">Setting up an Electron Application using create-react-app Template</a>
-    
-    <a class="list-group-item " href="/blog/generating-a-large-pdf-from-website-contents-part-iii/">Generating a Large PDF from Website Contents - Merging PDF Files</a>
     
   </div>
 </section>
