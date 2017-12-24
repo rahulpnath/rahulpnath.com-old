@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scheduling Recurring Jobs With a Cool-Off Period - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Scheduling jobs at different time intervals and pausing them in between." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Scheduling Recurring Jobs With a Cool-Off Period" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/" />
+<meta property="og:description" content="Scheduling jobs at different time intervals and pausing them in between." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/scheduling_jobs.jpg" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period" />
+<meta property="twitter:title" content="Scheduling Recurring Jobs With a Cool-Off Period" />
+<meta property="twitter:description" content="Scheduling jobs at different time intervals and pausing them in between." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/scheduling_jobs.jpg" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath on Programming and life in general" />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-12-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 24<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Scheduling Recurring Jobs With a Cool-Off Period
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p><a href="https://flic.kr/p/8ys6Hs" class="center" ><img class="center" alt="Scheduling" src="/images\scheduling_jobs.jpg" /></a></p>
+
+<p>At one of my clients, they had a requirement of scheduling various rules to sent our alert messages via SMS, Email, etc. A Rule consists of below and a few other properties</p>
+
+<ul>
+<li><strong>Stored Procedure</strong>: The Stored Procedure (yes you read it correctly) to check if an alert needs to be raised</li>
+<li><strong>Polling Interval</strong>: The time interval in which a Rule needs to be checked.</li>
+<li><strong>Cool-Off Period</strong>: Time to wait before running Rule again after an alert was raised.</li>
+</ul>
+
+
+<p>All Rules are stored in a database. New rules can be added and existing ones updated via an external application. Since the client is not yet in the Cloud, using any of Azure Functions, Lambda, Web Jobs, etc. are out of the question. It needs to be a service running on-premise, so I decided to keep it as a Windows service.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'> <span class="k">public</span> <span class="k">class</span> <span class="nc">Rule</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">Id</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">StoredProc</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">TimeSpan</span> <span class="n">PollingInterval</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">TimeSpan</span> <span class="n">CoolOffPeriod</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because of my past good experiences with <a href="https://www.hangfire.io/">HangFire</a> I initially set off using that only to discover soon that it can schedule jobs only to the minute level. Even though this is a <a href="https://github.com/HangfireIO/Hangfire/issues/167">feature that has been discussed for a long time</a>, it&rsquo;s yet to be implemented. Since some of the rules are critical to the business, they want to be notified as soon as possible. This means having a polling interval in seconds for those rules.</p>
+
+<p>After reaching out to my <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">friends at Readify</a>, I decided to use <a href="https://www.quartz-scheduler.net/">Quartz.net</a>. Many had good experiences using it in the past and recommended it highly. One another option that came up was <a href="https://github.com/fluentscheduler/FluentScheduler">FluentScheduler</a>. There was no particular reason to go with Quartz.net.</p>
+
+<blockquote><p><em>Quartz.NET is a full-featured, open source job scheduling system that can be used from smallest apps to large-scale enterprise systems.</em></p></blockquote>
+
+<p>Setting up and getting started with Quartz scheduler is fast and easy. The library has a <a href="https://www.quartz-scheduler.net/documentation/index.html">well-written documentation</a>. You can update the applications configuration file to tweak various attributes of the scheduler.</p>
+
+<figure class='code'><figcaption><span>App/Web.config file</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configuration&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;configSections&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;section</span> <span class="na">name=</span><span class="s">&quot;quartz&quot;</span> <span class="na">type=</span><span class="s">&quot;System.Configuration.NameValueSectionHandler, System, Version=1.0.5000.0,Culture=neutral, PublicKeyToken=b77a5c561934e089&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/configSections&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;quartz&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;quartz.scheduler.instanceName&quot;</span> <span class="na">value=</span><span class="s">&quot;TestScheduler&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;quartz.jobStore.type&quot;</span> <span class="na">value=</span><span class="s">&quot;Quartz.Simpl.RAMJobStore, Quartz&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/quartz&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configuration&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <a href="http://www.quartz-scheduler.org/api/2.2.1/org/quartz/simpl/RAMJobStore.html">RAMJobStore</a> indicates the store to use for storing job. There are other job stores available if you want persistence of jobs anytime the application restarts.</p>
+
+<h3>Setting Up Jobs</h3>
+
+<p>Basically, there are three jobs - Alert Job, CoolOff Job, and Refresh Job - set up for the whole application. The Alert and Refresh Jobs are scheduled on application start. The CoolOff Job is triggered by the Alert Job as required. Any data that is required by the job is passed in using <a href="https://www.quartz-scheduler.net/documentation/quartz-2.x/tutorial/more-about-jobs.html#jobdatamap">JobDataMap</a>.</p>
+
+<figure class='code'><figcaption><span>Schedule an Alert Job</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">job</span> <span class="p">=</span> <span class="n">JobBuilder</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="n">AlertJob</span><span class="p">&gt;()</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">WithIdentity</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">GetJobKey</span><span class="p">())</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">WithDescription</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">Name</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SetJobData</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">trigger</span> <span class="p">=</span> <span class="n">TriggerBuilder</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Create</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">WithIdentity</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">GetTriggerKey</span><span class="p">())</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">StartNow</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">WithSimpleSchedule</span><span class="p">(</span><span class="n">a</span> <span class="p">=&gt;</span> <span class="n">a</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">WithIntervalInSeconds</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">rule</span><span class="p">.</span><span class="n">PollingInterval</span><span class="p">.</span><span class="n">TotalSeconds</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">RepeatForever</span><span class="p">())</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">scheduler</span><span class="p">.</span><span class="n">ScheduleJob</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">trigger</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Alert Jobs</strong></h4>
+
+<p>The Alert Job is responsible for checking the stored procedure and sending the alerts if required. If an alert is sent, it starts the CoolOff Job and pauses the current job instance. THe DisallowConcurrentExecution prevents multiple instances of the Job having the same key does not execute concurrently. We explicitly set the Job Key based on the Rule Id. This prevents any duplicate messages getting sent out if any of the job instances takes more time to execute than its set polling interval.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[DisallowConcurrentExecution]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">AlertJob</span> <span class="p">:</span> <span class="n">Job</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Execute</span><span class="p">(</span><span class="n">IJobExecutionContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">GetRuleFromJobData</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">message</span> <span class="p">=</span> <span class="n">GetAlertMessage</span><span class="p">(</span><span class="n">alert</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">message</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">SendMessage</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">CoolOff</span><span class="p">(</span><span class="n">alert</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">CoolOff</span><span class="p">(</span><span class="n">Rule</span> <span class="n">rule</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">job</span> <span class="p">=</span> <span class="n">JobBuilder</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="n">CoolOffJob</span><span class="p">&gt;()</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">WithIdentity</span><span class="p">(</span><span class="n">jobKey</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">WithDescription</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">MessageTitle</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">SetJobData</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">trigger</span> <span class="p">=</span> <span class="n">TriggerBuilder</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Create</span><span class="p">()</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">WithIdentity</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">GetCoolOffTriggerKey</span><span class="p">())</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">StartAt</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">GetCoolOffDateTimeOffset</span><span class="p">())</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">scheduler</span><span class="p">.</span><span class="n">PauseJob</span><span class="p">(</span><span class="n">rule</span><span class="p">.</span><span class="n">GetJobKey</span><span class="p">());</span>
+</span><span class='line'>        <span class="n">scheduler</span><span class="p">.</span><span class="n">ScheduleJob</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">trigger</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Cool-Off Job</strong></h4>
+
+<p>Cool-Off Jobs is a one time job scheduled by the Alert Job after an alert is sent successfully. The CoolOff job is scheduled to start after the Cool-Off time as configured for the alert. This triggers the job only after the set amount of time. It Resumes the original Rule Job to continue execution.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">CoolOffJob</span> <span class="p">:</span> <span class="n">IJob</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Execute</span><span class="p">(</span><span class="n">IJobExecutionContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">GetRuleFromJobData</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">ScheduleHelper</span><span class="p">.</span><span class="n">ResumeJob</span><span class="p">(</span><span class="n">alert</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Refresh Job</strong></h4>
+
+<p>The Refresh Job is a recurring job, that polls the database for any changes to the Rules themselves If any change is detected,it removes the existing schedules for the alert and adds the updated alert job.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[DisallowConcurrentExecution]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">RefreshJob</span> <span class="p">:</span> <span class="n">IJob</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Execute</span><span class="p">(</span><span class="n">IJobExecutionContext</span> <span class="n">context</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">allRules</span> <span class="p">=</span> <span class="n">GetAllRules</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">ScheduleHelper</span><span class="p">.</span><span class="n">RefreshRules</span><span class="p">(</span><span class="n">allRules</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With these three jobs, all the rules get scheduled at the start of the application and run continuously. Anytime a change is made to the rule itself, the Refresh Job refreshes it within the time interval that it is scheduled for.</p>
+
+<div class="alert alert-info">
+<b>Tip:</b>If there are a lot of rules with the same polling interval it will be good to stagger their starting time using a delayed start per job instance. Doing that will make sure that all jobs do not get polled for at the same time.
+</div>
+
+
+<p>So far I have found the Quartz library stable and reliable and have not faced any issues with it. The library is also quite flexible and adapts well to the different needs.</p>
+
+<p>Hope this helps. Merry Xmas!</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-iii/">Generating a Large PDF from Website Contents - Merging PDF Files</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents/">Generating a Large PDF from Website Contents</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/" title="Previous Post: Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests">&laquo; Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2017 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/';
+        var disqus_url = 'http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

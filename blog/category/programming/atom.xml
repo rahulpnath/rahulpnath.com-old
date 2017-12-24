@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-12-23T23:02:11+00:00</updated>
+  <updated>2017-12-24T03:21:43+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,160 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Scheduling Recurring Jobs With a Cool-Off Period]]></title>
+    <link href="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/"/>
+    <updated>2017-12-24T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period</id>
+    <content type="html"><![CDATA[<p><a href="https://flic.kr/p/8ys6Hs" class="center" ><img class="center" alt="Scheduling" src="/images\scheduling_jobs.jpg" /></a></p>
+
+<p>At one of my clients, they had a requirement of scheduling various rules to sent our alert messages via SMS, Email, etc. A Rule consists of below and a few other properties</p>
+
+<ul>
+<li><strong>Stored Procedure</strong>: The Stored Procedure (yes you read it correctly) to check if an alert needs to be raised</li>
+<li><strong>Polling Interval</strong>: The time interval in which a Rule needs to be checked.</li>
+<li><strong>Cool-Off Period</strong>: Time to wait before running Rule again after an alert was raised.</li>
+</ul>
+
+
+<p>All Rules are stored in a database. New rules can be added and existing ones updated via an external application. Since the client is not yet in the Cloud, using any of Azure Functions, Lambda, Web Jobs, etc. are out of the question. It needs to be a service running on-premise, so I decided to keep it as a Windows service.</p>
+
+<pre><code class="csharp"> public class Rule
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string StoredProc { get; set; }
+    public TimeSpan PollingInterval { get; set; }
+    public TimeSpan CoolOffPeriod { get; set; }
+    ...
+}
+</code></pre>
+
+<p>Because of my past good experiences with <a href="https://www.hangfire.io/">HangFire</a> I initially set off using that only to discover soon that it can schedule jobs only to the minute level. Even though this is a <a href="https://github.com/HangfireIO/Hangfire/issues/167">feature that has been discussed for a long time</a>, it&rsquo;s yet to be implemented. Since some of the rules are critical to the business, they want to be notified as soon as possible. This means having a polling interval in seconds for those rules.</p>
+
+<p>After reaching out to my <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">friends at Readify</a>, I decided to use <a href="https://www.quartz-scheduler.net/">Quartz.net</a>. Many had good experiences using it in the past and recommended it highly. One another option that came up was <a href="https://github.com/fluentscheduler/FluentScheduler">FluentScheduler</a>. There was no particular reason to go with Quartz.net.</p>
+
+<blockquote><p><em>Quartz.NET is a full-featured, open source job scheduling system that can be used from smallest apps to large-scale enterprise systems.</em></p></blockquote>
+
+<p>Setting up and getting started with Quartz scheduler is fast and easy. The library has a <a href="https://www.quartz-scheduler.net/documentation/index.html">well-written documentation</a>. You can update the applications configuration file to tweak various attributes of the scheduler.</p>
+
+<pre><code class="xml App/Web.config file">&lt;configuration&gt;
+  &lt;configSections&gt;
+    &lt;section name="quartz" type="System.Configuration.NameValueSectionHandler, System, Version=1.0.5000.0,Culture=neutral, PublicKeyToken=b77a5c561934e089" /&gt;
+  &lt;/configSections&gt;
+  &lt;quartz&gt;
+    &lt;add key="quartz.scheduler.instanceName" value="TestScheduler" /&gt;
+    &lt;add key="quartz.jobStore.type" value="Quartz.Simpl.RAMJobStore, Quartz" /&gt;
+  &lt;/quartz&gt;
+&lt;/configuration&gt;
+</code></pre>
+
+<p>The <a href="http://www.quartz-scheduler.org/api/2.2.1/org/quartz/simpl/RAMJobStore.html">RAMJobStore</a> indicates the store to use for storing job. There are other job stores available if you want persistence of jobs anytime the application restarts.</p>
+
+<h3>Setting Up Jobs</h3>
+
+<p>Basically, there are three jobs - Alert Job, CoolOff Job, and Refresh Job - set up for the whole application. The Alert and Refresh Jobs are scheduled on application start. The CoolOff Job is triggered by the Alert Job as required. Any data that is required by the job is passed in using <a href="https://www.quartz-scheduler.net/documentation/quartz-2.x/tutorial/more-about-jobs.html#jobdatamap">JobDataMap</a>.</p>
+
+<pre><code class="csharp Schedule an Alert Job">...
+var job = JobBuilder.Create&lt;AlertJob&gt;()
+    .WithIdentity(rule.GetJobKey())
+    .WithDescription(rule.Name)
+    .SetJobData(rule)
+    .Build();
+
+var trigger = TriggerBuilder
+    .Create()
+    .WithIdentity(rule.GetTriggerKey())
+    .StartNow()
+    .WithSimpleSchedule(a =&gt; a
+        .WithIntervalInSeconds((int)rule.PollingInterval.TotalSeconds)
+        .RepeatForever())
+    .Build();
+
+scheduler.ScheduleJob(job, trigger);
+</code></pre>
+
+<h4><strong>Alert Jobs</strong></h4>
+
+<p>The Alert Job is responsible for checking the stored procedure and sending the alerts if required. If an alert is sent, it starts the CoolOff Job and pauses the current job instance. THe DisallowConcurrentExecution prevents multiple instances of the Job having the same key does not execute concurrently. We explicitly set the Job Key based on the Rule Id. This prevents any duplicate messages getting sent out if any of the job instances takes more time to execute than its set polling interval.</p>
+
+<pre><code class="csharp">[DisallowConcurrentExecution]
+public class AlertJob : Job
+{
+    public void Execute(IJobExecutionContext context)
+    {
+        var alert = context.GetRuleFromJobData();
+        var message = GetAlertMessage(alert);
+        if(message != null)
+        {
+            SendMessage(message);
+            CoolOff(alert);
+        }    
+    }
+
+    public void CoolOff(Rule rule)
+    {
+        var job = JobBuilder.Create&lt;CoolOffJob&gt;()
+            .WithIdentity(jobKey)
+            .WithDescription(rule.MessageTitle)
+            .SetJobData(rule)
+            .Build();
+
+        var trigger = TriggerBuilder
+            .Create()
+            .WithIdentity(rule.GetCoolOffTriggerKey())
+            .StartAt(rule.GetCoolOffDateTimeOffset())
+            .Build();
+
+        scheduler.PauseJob(rule.GetJobKey());
+        scheduler.ScheduleJob(job, trigger);
+    }
+    ...
+}
+</code></pre>
+
+<h4><strong>Cool-Off Job</strong></h4>
+
+<p>Cool-Off Jobs is a one time job scheduled by the Alert Job after an alert is sent successfully. The CoolOff job is scheduled to start after the Cool-Off time as configured for the alert. This triggers the job only after the set amount of time. It Resumes the original Rule Job to continue execution.</p>
+
+<pre><code class="csharp">public class CoolOffJob : IJob
+{
+    public void Execute(IJobExecutionContext context)
+    {
+        var alert = context.GetRuleFromJobData();
+        ScheduleHelper.ResumeJob(alert);
+    }
+}
+</code></pre>
+
+<h4><strong>Refresh Job</strong></h4>
+
+<p>The Refresh Job is a recurring job, that polls the database for any changes to the Rules themselves If any change is detected,it removes the existing schedules for the alert and adds the updated alert job.</p>
+
+<pre><code class="csharp">[DisallowConcurrentExecution]
+public class RefreshJob : IJob
+{
+    public void Execute(IJobExecutionContext context)
+    {
+        var allRules = GetAllRules();
+        ScheduleHelper.RefreshRules(allRules);
+    }
+}
+</code></pre>
+
+<p>With these three jobs, all the rules get scheduled at the start of the application and run continuously. Anytime a change is made to the rule itself, the Refresh Job refreshes it within the time interval that it is scheduled for.</p>
+
+<div class="alert alert-info">
+<b>Tip:</b>If there are a lot of rules with the same polling interval it will be good to stagger their starting time using a delayed start per job instance. Doing that will make sure that all jobs do not get polled for at the same time.
+</div>
+
+
+<p>So far I have found the Quartz library stable and reliable and have not faced any issues with it. The library is also quite flexible and adapts well to the different needs.</p>
+
+<p>Hope this helps. Merry Xmas!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Generating a Large PDF from Website Contents - Merging PDF Files]]></title>
@@ -319,74 +473,6 @@ If you are using HTML to PDF libraries be aware that most of the libraries out t
 <p>The PDF layout for individual sections per category/subcategory is in HTML. The application exposes endpoints for the HTML content for the different sections. We used <a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object HTML to PDF Converter</a> to convert the HTML to PDF files. Bookmarks for the associated section are embedded in HTML. While converting to PDF, the bookmarks get added to the PDF, which later gets merged into the full bookmark tree. The generated PDF file is cached for any new requests.</p>
 
 <p>Since we have around forty categories/sub-categories, twelve section, and ten sub-sections, generating the full PDF take a while. So we generate the cache at fixed intervals and as required (when content is updated in the CMS). The above approach of generating PDF files has been working fine for us. Since the individual PDF sections are generated in isolation, it gives us the flexibility to scale the generation process as required. Combining the generated PDF files is often fast and can be cached at a different level as well to speed up the whole process.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Web App Restarting Automatically Due to Overwhelming Change Notification]]></title>
-    <link href="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/"/>
-    <updated>2017-07-24T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification</id>
-    <content type="html"><![CDATA[<p>At one of my clients, we faced a strange issue recently. The Azure Web application restarted automatically very often. The event log in the <a href="https://github.com/projectkudu/kudu/wiki/Kudu-console">Kudu console</a> showed the below error message.</p>
-
-<blockquote><p><em>2017-07-13 00:09:50,333 [P45516/D4/T171] INFO  Umbraco.Core.UmbracoApplicationBase - Application shutdown. Details: HostingEnvironment</em></p>
-
-<p><em>_shutDownMessage=Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>  <br/>
-<em>Overwhelming Change Notification in wwwroot</em>   <br/>
-<em>HostingEnvironment initiated shutdown</em>  <br/>
-<em>Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>   <br/>
-<em>Overwhelming Change Notification in wwwroot</em>   <br/>
-<em>Initialization Error</em>   <br/>
-<em>HostingEnvironment caused shutdown</em></p></blockquote>
-
-<p>As you can tell from the logs, the website is an <a href="https://umbraco.com/">Umbraco</a> CMS hosted as an Azure Web application. We noticed that the restarts were happening more when the content was getting updated through <a href="https://our.umbraco.org/documentation/getting-started/backoffice/">backoffice</a>. The error also states that the restart was caused due to <em>Overwhelming Change Notification in wwwroot</em>. This hints that there are changes that are happening under the wwwroot folder, where the site is hosted.</p>
-
-<div class="alert alert-info">
-Even though this post details on why the specific site on Umbraco was restarting, most of the contents are still applicable for any other ASP.NET MVC application.
-</div>
-
-
-<h3>fcnMode Configuration</h3>
-
-<p>A quick search got me to the <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection.fcnmode(v=vs.110">fcnMode</a>.aspx)setting under <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection(v=vs.110">httpRuntime</a>.aspx) section. An ASP.net application monitors certain files and folders under the wwwroot folder and will restart the application domain whenever it detects changes. This likely look looks the reason why the web site is restarting.</p>
-
-<p>The <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.fcnmode(v=vs.110">fcnMode enumeration</a>.aspx) can take one of the four values below. For an Umbraco application this is by <a href="http://issues.umbraco.org/issue/U4-7712">default set to <em>Single</em></a>.</p>
-
-<ul>
-<li><strong>Default</strong>: For each subdirectory, the application creates an object that monitors the subdirectory. This is the default behavior.</li>
-<li><strong>Disabled</strong>: File change notification is disabled.</li>
-<li><strong>NotSet</strong>: File change notification is not set, so the application creates an object that monitors each subdirectory. This is the default behavior.</li>
-<li><strong>Single</strong>: The application creates one object to monitor the main directory and uses this object to monitor each subdirectory.</li>
-</ul>
-
-
-<pre><code class="xml fcnMode set to Single for Umbraco application">&lt;system.web&gt;
-    ...
-    &lt;httpRuntime 
-        requestValidationMode="2.0" 
-        enableVersionHeader="false"
-        targetFramework="4.5"
-        maxRequestLength="51200" 
-        fcnMode="Single" /&gt;
-    ...
-&lt;system.web&gt;
-</code></pre>
-
-<blockquote><p><em>FCNMode creates a monitor object with a buffer size of 4KB for each folder. When FCNMode is set to Single, a single monitor object is created with a buffer size of 64KB. When there are file changes, the buffer is filled with file change information. If the buffer gets overwhelmed with too many file change notifications an “Overwhelming File Change Notifications” error will occur and the app domain will recycle. The likelihood of the buffer getting overwhelmed is higher in an environment where you are using separate file server because the folder paths are much larger.</em></p>
-
-<p>-<a href="http://www.dnnsoftware.com/community-blog/cid/154980/aspnet-file-change-notifications-and-dnn"> ASP.NET File Change Notifications and DNN</a></p></blockquote>
-
-<p>You can read more about fcnMode setting and how it affects ASP.Net applications <a href="https://shazwazza.com/post/all-about-aspnet-file-change-notification-fcn/">here</a>.</p>
-
-<h3>What&rsquo;s causing file changes?</h3>
-
-<p>Default reaction when you come across such a setting or configuration value might be to turn that off and fcnMode does allow that as well - <em>Disabled</em>. But first, it is better that we understand what is causing file changes under the wwwroot folder and see if we can address that. The <a href="https://shazwazza.com/post/fcn-file-change-notification-viewer-for-aspnet/">FCN Viewer</a> helps visualize how many files and folders are being watched in as ASP.Net application.</p>
-
-<p>In the Umbraco website, we are using a third party library <a href="http://imageprocessor.org/">ImageProcessor</a> that helps to process images dynamically. The ImageProcessor caches images and the <a href="http://imageprocessor.org/imageprocessor-web/configuration/#cacheconfig">cache location is configurable</a>. By default, it caches files under the App_Data/cache folder, which also happens to be one of the folders that the ASP.Net application monitors for changes. So anytime there are lots of files changing in the cache folder it causes the single monitor object monitoring the folders. This causes a buffer overflow and triggers an application restart due to <em>Overwhelming file change notifications</em>. However, ImageProcessor does allow moving the <a href="https://github.com/JimBobSquarePants/ImageProcessor/issues/518">cache folder outside of the wwwroot folder</a>. This causes the file not to be monitored and still work fine with the application. Since the <a href="https://twitter.com/Shazwazza/status/885770960321773568">library does not create the cache folder automatically</a>, we need to make sure that the folder specified in the config file exists.</p>
-
-<p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
-
-<p>Hope that helps fix your application restarting problem!</p>
 ]]></content>
   </entry>
   
