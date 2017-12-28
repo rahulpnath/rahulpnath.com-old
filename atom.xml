@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2017-12-27T19:19:10+00:00</updated>
+  <updated>2017-12-28T00:02:19+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,29 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: Laps in Training Mode - Garmin Watches]]></title>
+    <link href="http://rahulpnath.com/blog/laps-in-training-mode-garmin-watches/"/>
+    <updated>2017-12-28T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/laps-in-training-mode-garmin-watches</id>
+    <content type="html"><![CDATA[<p>I recently upgraded to a Garmin Fenix 3 HR from my <a href="http://www.rahulpnath.com/blog/three_months_to_a_half_marathon/">Forerunner 630</a>. After a few runs with the Fenix 3, I realized that in <a href="https://twitter.com/rahulpnath/status/928145529606873088">Training Mode it does not do auto lap</a>. I have a custom training workout for a 10k with no repeat modes in it. This workout was what I used on my FR630, and it used to auto lap at 1km. That no longer happens in the Fenix 3 HR.</p>
+
+<blockquote><p><strong>Software Details</strong></p>
+
+<p><em>Fenix 3 HR</em>: 4.70</p>
+
+<p><em>Forerunner 630</em>: 7.50(bdd586f)</p></blockquote>
+
+<p><img src="http://rahulpnath.com/images/garmin_auto_lap_training.png" alt="Garming Auto Lap Not working in Training Mode, Fenix 3 HR" /></p>
+
+<p>After googling around, I understood the auto lap under training mode is a feature only available to specific models/software versions. One of the reasoning behind it is auto lap might create issues if people are training in intervals larger than 1km. Breaking into laps at every 1km will make it harder/nearly impossible to compare their intervals. For workouts that you want auto lap at 1km (or at any custom distances), you can use Repeat feature as shown below. Setting up the workout as 10 x 1km helps to analyze the run at 1km intervals.</p>
+
+<p><img src="http://rahulpnath.com/images/garmin_auto_lap_training_repeat.png" alt="Garming Auto Lap Using Repeat, Fenix 3 HR" /></p>
+
+<p>Depending on the model/software version of your Garmin watch you might have to tweak your workout plans. Hope this helps</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Scheduling Recurring Jobs With a Cool-Off Period]]></title>
@@ -1358,85 +1381,6 @@ The <a href="http://www.grandpacificdrive.com.au/">Grand Pacific Drive</a> site 
 <p>There are many default bandwidth profiles in there, and it also allows you to add custom profiles if required. There is also an option to simulate offline mode, to test how the application behaves without an internet connection (if that applies to you). However such testing is mostly restricted to manual testing, and for automating this, you might have to look for external tools.</p>
 
 <p>Hope this helps optimize your site for lower bandwidth!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Web App Restarting Automatically Due to Overwhelming Change Notification]]></title>
-    <link href="http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/"/>
-    <updated>2017-07-24T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification</id>
-    <content type="html"><![CDATA[<p>At one of my clients, we faced a strange issue recently. The Azure Web application restarted automatically very often. The event log in the <a href="https://github.com/projectkudu/kudu/wiki/Kudu-console">Kudu console</a> showed the below error message.</p>
-
-<blockquote><p><em>2017-07-13 00:09:50,333 [P45516/D4/T171] INFO  Umbraco.Core.UmbracoApplicationBase - Application shutdown. Details: HostingEnvironment</em></p>
-
-<p><em>_shutDownMessage=Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>  <br/>
-<em>Overwhelming Change Notification in wwwroot</em>   <br/>
-<em>HostingEnvironment initiated shutdown</em>  <br/>
-<em>Directory rename change notification for &rsquo;D:\home\site\wwwroot&#8217;.</em>   <br/>
-<em>Overwhelming Change Notification in wwwroot</em>   <br/>
-<em>Initialization Error</em>   <br/>
-<em>HostingEnvironment caused shutdown</em></p></blockquote>
-
-<p>As you can tell from the logs, the website is an <a href="https://umbraco.com/">Umbraco</a> CMS hosted as an Azure Web application. We noticed that the restarts were happening more when the content was getting updated through <a href="https://our.umbraco.org/documentation/getting-started/backoffice/">backoffice</a>. The error also states that the restart was caused due to <em>Overwhelming Change Notification in wwwroot</em>. This hints that there are changes that are happening under the wwwroot folder, where the site is hosted.</p>
-
-<div class="alert alert-info">
-Even though this post details on why the specific site on Umbraco was restarting, most of the contents are still applicable for any other ASP.NET MVC application.
-</div>
-
-
-<h3>fcnMode Configuration</h3>
-
-<p>A quick search got me to the <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection.fcnmode(v=vs.110">fcnMode</a>.aspx)setting under <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.httpruntimesection(v=vs.110">httpRuntime</a>.aspx) section. An ASP.net application monitors certain files and folders under the wwwroot folder and will restart the application domain whenever it detects changes. This likely look looks the reason why the web site is restarting.</p>
-
-<p>The <a href="https://msdn.microsoft.com/en-us/library/system.web.configuration.fcnmode(v=vs.110">fcnMode enumeration</a>.aspx) can take one of the four values below. For an Umbraco application this is by <a href="http://issues.umbraco.org/issue/U4-7712">default set to <em>Single</em></a>.</p>
-
-<ul>
-<li><strong>Default</strong>: For each subdirectory, the application creates an object that monitors the subdirectory. This is the default behavior.</li>
-<li><strong>Disabled</strong>: File change notification is disabled.</li>
-<li><strong>NotSet</strong>: File change notification is not set, so the application creates an object that monitors each subdirectory. This is the default behavior.</li>
-<li><strong>Single</strong>: The application creates one object to monitor the main directory and uses this object to monitor each subdirectory.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span>fcnMode set to Single for Umbraco application</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;system.web&gt;</span>
-</span><span class='line'>    ...
-</span><span class='line'>    <span class="nt">&lt;httpRuntime</span>
-</span><span class='line'>        <span class="na">requestValidationMode=</span><span class="s">&quot;2.0&quot;</span>
-</span><span class='line'>        <span class="na">enableVersionHeader=</span><span class="s">&quot;false&quot;</span>
-</span><span class='line'>        <span class="na">targetFramework=</span><span class="s">&quot;4.5&quot;</span>
-</span><span class='line'>        <span class="na">maxRequestLength=</span><span class="s">&quot;51200&quot;</span>
-</span><span class='line'>        <span class="na">fcnMode=</span><span class="s">&quot;Single&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    ...
-</span><span class='line'><span class="nt">&lt;system.web&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p><em>FCNMode creates a monitor object with a buffer size of 4KB for each folder. When FCNMode is set to Single, a single monitor object is created with a buffer size of 64KB. When there are file changes, the buffer is filled with file change information. If the buffer gets overwhelmed with too many file change notifications an “Overwhelming File Change Notifications” error will occur and the app domain will recycle. The likelihood of the buffer getting overwhelmed is higher in an environment where you are using separate file server because the folder paths are much larger.</em></p>
-
-<p>-<a href="http://www.dnnsoftware.com/community-blog/cid/154980/aspnet-file-change-notifications-and-dnn"> ASP.NET File Change Notifications and DNN</a></p></blockquote>
-
-<p>You can read more about fcnMode setting and how it affects ASP.Net applications <a href="https://shazwazza.com/post/all-about-aspnet-file-change-notification-fcn/">here</a>.</p>
-
-<h3>What&rsquo;s causing file changes?</h3>
-
-<p>Default reaction when you come across such a setting or configuration value might be to turn that off and fcnMode does allow that as well - <em>Disabled</em>. But first, it is better that we understand what is causing file changes under the wwwroot folder and see if we can address that. The <a href="https://shazwazza.com/post/fcn-file-change-notification-viewer-for-aspnet/">FCN Viewer</a> helps visualize how many files and folders are being watched in as ASP.Net application.</p>
-
-<p>In the Umbraco website, we are using a third party library <a href="http://imageprocessor.org/">ImageProcessor</a> that helps to process images dynamically. The ImageProcessor caches images and the <a href="http://imageprocessor.org/imageprocessor-web/configuration/#cacheconfig">cache location is configurable</a>. By default, it caches files under the App_Data/cache folder, which also happens to be one of the folders that the ASP.Net application monitors for changes. So anytime there are lots of files changing in the cache folder it causes the single monitor object monitoring the folders. This causes a buffer overflow and triggers an application restart due to <em>Overwhelming file change notifications</em>. However, ImageProcessor does allow moving the <a href="https://github.com/JimBobSquarePants/ImageProcessor/issues/518">cache folder outside of the wwwroot folder</a>. This causes the file not to be monitored and still work fine with the application. Since the <a href="https://twitter.com/Shazwazza/status/885770960321773568">library does not create the cache folder automatically</a>, we need to make sure that the folder specified in the config file exists.</p>
-
-<p>Having moved the cache folder outside of the wwwroot, I no longer need to update the fcnMode setting and can leave it as intended. If you are facing application restarts as well due to overwhelming change notification in wwwroot see what is likely causing the file changes and then try and fix that instead of just setting the fcnMode to disabled.</p>
-
-<p>Hope that helps fix your application restarting problem!</p>
 ]]></content>
   </entry>
   
