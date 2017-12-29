@@ -163,6 +163,153 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 12<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/stronger-code-contracts/" itemprop="url">Make Your Code Contracts Stronger</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>How often have you gone into a class to see the implementation when consuming the class or an interface? I do this almost every other day and it&rsquo;s mostly to check how the code handles boundary conditions. What does it do when there is no value to return, does it need all parameters etc. Reading code is hard and time-consuming, even if it&rsquo;s a code that you yourself have written a few minutes back. Imagine every developer having to go into the implementation detail anytime they consume a class?    Bertrand Meyer in connection with his design of the Eiffel programming language coined the term <a href="https://en.wikipedia.org/wiki/Design_by_contract">Design By Contract</a>, an approach for designing software. The central idea of Design By Contract is to improve the contracts shared between different components in the code base. In this post, we will see how we can improve our C# code and avoid unnecessary guard statements across out code base.</p>
+
+<p><a href="http://nebula.wsimg.com/6e7b8057c7f32b90d4f144424c8a7ae1?AccessKeyId=00F174C5B1CCF865161D&disposition=0&alloworigin=1">
+<img style="box-shadow:none;" class="center" alt="Stronger Code Contracts" src="/images/strong_code_contracts.jpg"/>
+</a></p>
+
+<h3>Leaky Abstraction</h3>
+
+<p>These days in programming we tend to abstract a lot more than what we really need. <a href="http://www.rahulpnath.com/blog/category/dependency-injection/">Dependency Injection</a> and use of IOC containers have started forcing ourselves to think that everything needs to be an interface. But essentially this is not the case. But the bigger problem lies not in the abstraction, but on depending on the implementation details after abstracting. A <a href="https://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a> is an abstraction that exposes details and limitations of its underlying implementation to its users that should ideally be hidden away.</p>
+
+<blockquote><p><em>Consuming abstractions assuming a certain implementation is bad practice</em></p></blockquote>
+
+<p>Recently I came across the below code during a code review. Even though an empty string was not a valid configuration value that was not being checked here as the repository implementation returns a null when there is no entry.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">string</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="k">if</span><span class="p">(</span><span class="n">config</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is a common practice and I have myself fallen for this a lot of times. The fact that the repository returns only a null value is an abstraction detail and is not clear from the contract that it exposes. Anyone could change the repository to start returning an empty string. This will then start failing this code. When taken in isolation the code that uses &lsquo;config&rsquo; must check for null and empty to avoid invalid values. The abstraction contracts (function signatures) must convey whether it always returns a value, whether it can be empty or null. This helps remove unnecessary guarding code or makes guarding mandatory across the code base and also indicates a clear intent.</p>
+
+<p>The <a href="https://en.wikipedia.org/wiki/Robustness_principle">Robustness Principle</a> is a general design guideline for software</p>
+
+<blockquote><p><em>Be conservative in what you do, be liberal in what you accept from others (often reworded as &ldquo;Be conservative in what you send, be liberal in what you accept&rdquo;).</em></p></blockquote>
+
+<p>Applying this principle in this context, we must be conservative in what we return from our function (be it a class or interface) contract. The contract should be as explicit as possible to indicate the nature of values that it returns.</p>
+
+<h3>Stronger Return Types</h3>
+
+<p>A repository returning a string is a weak contract, as it does not clearly express the nature of value it returns. It can return either of these three values - null, an empty string or a valid configuration string. In our application, assuming that null and empty string are invalid we should be having a single representation for this state in the application. C# by its very design encourages us to use this pattern as it embraces the concept of null&rsquo;s - <a href="https://www.linkedin.com/pulse/20141126171912-7082046-tony-hoare-invention-of-the-null-reference-a-billion-dollar-mistake">the billion dollar mistake</a>. But this does not mean we are restricted by it. We can bring in concepts from other languages to help us solve this problem. In F# for example, the Option type represents presence or absence of a value. This is similar to the <a href="https://msdn.microsoft.com/en-us/library/1t3y8s4s.aspx">Nullable type in C#</a>, but not just restricted to value types. <a href="http://fsharpforfunandprofit.com/posts/the-option-type/">Option type</a> is defined as union type with two cases : Some and None. Whenever consuming an option type the compiler forces us to handle both the cases</p>
+
+<blockquote><p><em>In pure F#, <a href="https://fsharpforfunandprofit.com/posts/correctness-exhaustive-pattern-matching/">nulls cannot exist accidentally</a>. A string or object must always be assigned to something at creation, and is immutable thereafter</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='fsharp'><span class='line'><span class="k">let</span> <span class="nv">config</span> <span class="o">=</span> <span class="n">getConfig</span>
+</span><span class='line'><span class="k">match</span> <span class="n">config</span> <span class="k">with</span>
+</span><span class='line'><span class="o">|</span> <span class="n">None</span> <span class="o">-&gt;</span> <span class="n">printfn</span> <span class="s">&quot;Invalid config&quot;</span>
+</span><span class='line'><span class="o">|</span> <span class="n">Some</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="n">printgn</span> <span class="s">&quot;Valid config&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Though C# does not have anything out of the box to define optional values, we can define one of our own. The <a href="https://github.com/ploeh/Booking/blob/master/BookingDomainModel/Maybe.cs">Maybe</a> class is one such implementation of an optional concept. The name is influenced by the option type in Haskell, <a href="https://wiki.haskell.org/Maybe">Maybe</a>. There are also other implementations of Maybe but the concept remains the same - we can represent an optional type in C#.  The code contracts are stronger using Maybe as a return type. If a function always returns a value, say a string, the function contract should remain as a string. If a function cannot return a value always and can return null/empty (assuming that these are invalid values) then it returns a <em>Maybe<string></em>. This makes it clearer for consuming code on whether they should check for null/empty values.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Maybe</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">config</span> <span class="p">=</span> <span class="n">repository</span><span class="p">.</span><span class="n">GetConfig</span><span class="p">();</span>
+</span><span class='line'><span class="n">config</span><span class="p">.</span><span class="n">Do</span><span class="p">(</span><span class="k">value</span> <span class="p">=&gt;</span> <span class="n">LoadFromFile</span><span class="p">(</span><span class="k">value</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You can write different extension methods on the Maybe class, depending on how you want to process the value. In the above example, I have a Do extension method that calls on to a function with the configuration value if any exists. By explicitly stating that a value may or may not be present we have more clarity in code. No longer do we need any unnecessary null checks in the case where a value is always present. This is best achieved when agreed upon as a convention by the development team and enforced through tooling (like code analysis).</p>
+
+<h3>Value Objects</h3>
+
+<p>One of the root problem for having a lot of null/empty checks scattered across the code is <a href="http://blog.ploeh.dk/2015/01/19/from-primitive-obsession-to-domain-modelling/">Primitive Obsession</a>. Just because you can represent a value as a string, it doesn&rsquo;t mean that you always should. Enforcing structural restrictions imposed by the business is best done by encapsulating these constraints within a class, also known as a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a>. This leads to classes for representing various non-nullable values for e.g. Name, configuration, Age etc. You can use this in conjunction with <a href="https://en.wikipedia.org/wiki/Null_Object_pattern">Null Object</a> pattern if required. A value object is a class whose equality is based on the value that it holds. So two class instances with same values will be treated equally. In F# you get this by default but in C# you need to override Equals and GetHashCode functions to enforce this equality.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Configuration</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">string</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Configuration</span><span class="p">(</span><span class="kt">string</span> <span class="n">configuration</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">configuration</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">throw</span> <span class="k">new</span> <span class="nf">ArgumentNullException</span><span class="p">(</span><span class="n">nameof</span><span class="p">(</span><span class="n">configuration</span><span class="p">),</span> <span class="s">&quot;Configuration value cannot be null&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">configuration</span> <span class="p">=</span> <span class="n">configuration</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// override Equals and GetHashCode</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Modeling concepts in the domain as classes helps you to contain the domain/business constraints in a single place. This prevents the need to have null checks elsewhere in the code. Value objects being immutable helps enforce class invariants.</p>
+
+<p>The above two methods help create a stronger contract in code. As with any conventions, this is useful only when followed by the whole team. Conventions are best followed if enforced through tooling. You can create custom code analysis rules to enforce return type to be of type if any method is returning null. Even if you are introducing this into a large existing code base you can do this incrementally, by starting to enforce them on commits (if you are using git) like when <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing styling into an existing project</a>. What other contracts do you find helpful to make the code more expressive?</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-12-06T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 6<sup>th</sup>, 2016</time>
         
 
@@ -1171,204 +1318,6 @@ If you are looking for a new mouse and willing to spend a little more than usual
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-10-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 3<sup>rd</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/introducing-code-formatting-into-a-large-codebase/" itemprop="url">Introducing Code Formatting into a Large Code Base</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Code Formatting is an important aspect of writing code. If followed well it helps keep the code more readable and easy to work with. Here are some of the different aspects of formatting code and my personal preferences. I then explore options to enforce code formatting and ways to introduce it into an existing code base.</p>
-
-<p>Below are some of the popular formatting rules and those that have a high value when enforced in a project.</p>
-
-<h4><strong>Tabs vs Spaces</strong></h4>
-
-<p>One of the most debated topic in code formatting is whether to use tabs or spaces to intend code. I never knew such a debate existed until my most recent project. It had developers from different parts of the world and with different preferences. I came across the below excerpt from Jeff Atwood, to which I completely agree.</p>
-
-<blockquote><p><em>Choose tabs, choose spaces, choose whatever layout conventions make sense to you and your team. It doesn&rsquo;t actually matter which coding styles you pick. What does matter is that you, and everyone else on your team, <strong>sticks with those conventions and uses them consistently.</strong></em></p>
-
-<p><em>That said, only a moron would use tabs to format their code.</em></p>
-
-<p><em>- <a href="https://blog.codinghorror.com/death-to-the-space-infidels/">Jeff Atwood</a></em></p></blockquote>
-
-<p>Settings for these are often available at the IDE level. In Visual Studio this is available under <a href="https://msdn.microsoft.com/en-us/library/7sffa753.aspx">Options, Text Editor, All Languages, Tabs</a>. Be aware of what you choose and make sure you have the same settings across your team members.</p>
-
-<h4><strong>Horizontal Alignment</strong></h4>
-
-<p>Avoid aligning by common separators (=;,) when they occur in adjacent lines. This kind of alignment falls out of order when we rename variables or properties. It happens when you chaange property names.</p>
-
-<figure class='code'><figcaption><span>Not Refactoring friendly and needs extra effort to keep it formatted</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">LastName</span>  <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">Site</span>      <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Refactoring friendly</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">FirstName</span> <span class="p">=</span> <span class="s">&quot;Rahul&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">LastName</span> <span class="p">=</span> <span class="s">&quot;Nath&quot;</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">Site</span> <span class="p">=</span> <span class="s">&quot;www.rahulpnath.com&quot;</span>
-</span><span class='line'><span class="p">};</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Horizontal Formatting</strong></h4>
-
-<p><em>You should never have to scroll to the right</em> - I caught on with this recommendation from the book Clean Code (<a href="http://www.rahulpnath.com/blog/language-agnostic-books-for-every-developer-2/">a recommended read</a>). It is also recommended that a function should fit on the screen, without needing to scroll up or down. This encourages to keep functions short and specific.</p>
-
-<blockquote><p><em>We should strive to keep our lines short. The old Hollerith limit of 80 is a bit arbitrary, and I’m not opposed to lines edging out to 100 or even 120. But beyond that is probably just careless</em></p>
-
-<p><em>- Uncle Bob</em></p></blockquote>
-
-<p>The <a href="https://visualstudiogallery.msdn.microsoft.com/d0d33361-18e2-46c0-8ff2-4adea1e34fef">Productivity Power Tools</a> extension for Visual Studio allows adding a Column Guide. A Column Guide reminds developers their full line of code or comments may not fit on a single screen.</p>
-
-<p><img class="center" alt="Code Formatting Maximum Width Column Guide in Visual Studio using Power Tools"
-src="/images/codeformatting_column_guide.png" /></p>
-
-<h4><strong>Aligning Function Parameters</strong></h4>
-
-<p>Always try to keep the number of parameters as less as possible. In cases where there are more parameters or longer function names, the team must choose a style. There are different styling formats followed when splitting parameters to a new line.</p>
-
-<p>Allowing parameters to take the <strong><em>natural flow of IDE</em></strong> (Visual Studio) is the simplest approach. This often leads to poor readability and code cluttering.</p>
-
-<p><img class="center" alt="Function Parameters taking natural flow of IDE"
-src="/images/codeformatting_functionparameters_naturalflowide.png" /></p>
-
-<p>Breaking parameters into separate lines is important for readability. Use the Column guide to decide when to break function parameters into different lines. There are different approaches followed when splitting parameters into new lines. Keeping the first parameter on the same line as the function and then having all other <strong><em>parameters on new line aligned with the first parameter</em></strong> is another approach. This works well when viewed in the same font and resolution used when writing. When you change font or resolution this kind of formatting falls out of place.</p>
-
-<p><img class="center" alt="Function Parameters on new line aligned with first parameter"
-src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
-
-<p>A better variant of the above style is to have the parameters in the new line aligned to the left. This ensures parameters stay in the same place when changing font or resolutions. The one that I prefer is to have all parameters in a new line. This formatting works well with different font sizes and resolutions.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">int</span> <span class="nf">ThisIsALongFunctionNameWithLotsOfParameters</span><span class="p">(</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter1</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">parameter2</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">parameter3</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">string</span> <span class="n">optionalParameter</span> <span class="p">=</span> <span class="s">&quot;Test&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4><strong>Visibility Based Ordering</strong></h4>
-
-<p>It is a good practice to maintain a specific order of items within a class. Have all properties declared first, then constructors, public methods, protected methods, private methods etc. This is up to the team to  determine the order, but sticking on to it makes the code more readable.</p>
-
-<h3>Code Analysis Tools</h3>
-
-<p>Checking for styling and formatting issues in a code review requests is a boring task. It’s best to automate style checks at build time (local and server builds). Making build throw errors for styling issues forces developers to fix them. Once developers get used to the rules, writing code without any formatting issues becomes second nature.  <a href="https://stylecop.codeplex.com">StyleCop</a> is an open source static code analysis tool from Microsoft that checks C# code for conformance to StyleCop&rsquo;s recommended coding styles and a subset of Microsoft&rsquo;s .NET Framework Design Guidelines. It has a Visual Studio plugin and also integrates well with <a href="https://stylecop.codeplex.com/wikipage?title=Setting%20Up%20StyleCop%20MSBuild%20Integration">MsBuild</a>.</p>
-
-<h4><strong>Cleaning up a Large Code Base</strong></h4>
-
-<p>Introducing StyleCop (or any code format enforcement) into a large pre-existing code base is challenging. Turning the tool on would immediately throw hundreds and thousands of errors. Trying to fix them in a stretch might impact the ongoing development process. This often causes us to delay the introduction of such enforcement&rsquo;s into the project and it continues to be a technical debt.</p>
-
-<p>Taking an incremental approach, fixing one by one as and when a file is changed seems a good idea. Teams can come with the <a href="http://programmer.97things.oreilly.com/wiki/index.php/The_Boy_Scout_Rule">Boy Scout Rule</a> - &lsquo;<em>Leave the file cleaner than you find</em>&rsquo;. Every time a file is touched for a fix, run StyleCop analysis and fix the errors. Over a period of time, this will make the project clean. The only problem with this approach is developers often tend to ignore/forget running the analysis and fix them.</p>
-
-<blockquote><p><em>Trivial things like code formatting is hard to mandate within a team unless it is enforced through tooling</em></p></blockquote>
-
-<h3>Source Control Hooks</h3>
-
-<p>We can plug into various hooks that source controls give to enforce code formatting on developer machines. In git, you can add a <a href="https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks">custom pre-commit hook</a> to run the StyleCop analysis on all the staged files. <a href="https://github.com/bbadjari/stylecopcli">StyleCopcli</a> is an open source application that wraps over the StyleCop DLLs and allows running the analysis from the command line. So in the hook, I use this CLI to run StyleCop analysis on all the staged files.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='bat'><span class='line'>#!<span class="n">/bin/sh</span>
-</span><span class='line'><span class="k">echo</span> <span class="s2">&quot;Running Code Analysis&quot;</span>
-</span><span class='line'>.<span class="n">/stylecopcli/StyleCopCLI.exe</span> -cs $(git diff --cached --name-only)
-</span><span class='line'><span class="k">if</span> [ $? <span class="o">=</span> <span class="m">2</span> ]
-</span><span class='line'>    then
-</span><span class='line'>        <span class="k">echo</span> Commit Failed! Fix StyleCop Errors
-</span><span class='line'>        exit <span class="m">1</span>
-</span><span class='line'>    <span class="k">else</span>
-</span><span class='line'>        <span class="k">echo</span> No SyleCop Errors!
-</span><span class='line'>        exit <span class="m">0</span>
-</span><span class='line'>fi
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>If there are any StyleCop validation errors the commit is aborted, forcing the developer to fix it. The git hooks work fine when committing from a command line or UI tools like Source Tree. However, Visual Studio git plugin does not run the git hooks and fails to do the check.</p>
-
-<p><img class="center" alt="StyleCop git hook failing commit in console" src="/images/code_formatting_git_hook_console.png" /></p>
-
-<p><img class="center" alt="StyleCop git hook failing commit in Source Tree" src="/images/code_formatting_git_hook_sourcetree.png" /></p>
-
-<p>Over a period of time, most of the files will get cleaned and remaining can be done all at once with less effort. Once the entire code base passes all StyleCop rules, this can be enforced in the build server. This ensures that no more bad formatted code gets checked into the source control.</p>
-
-<p>Code is read more than written. So it is important to keep it readable and well-formatted. It also makes navigating code bases easier and faster. These are minor things that are often <a href="https://vimeo.com/97329157">overlooked by developers</a>, but have a high impact on productivity when followed. Do you enforce code formatting rules in your current project? What are the rules that you find important. Sound off in the comments below!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1392,6 +1341,8 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/2017-recap/">2017: What Went Well, What Didn&#8217;t and Goals</a>
+    
     <a class="list-group-item " href="/blog/laps-in-training-mode-garmin-watches/">Tip of the Week: Laps in Training Mode - Garmin Watches</a>
     
     <a class="list-group-item " href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
@@ -1399,8 +1350,6 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
     <a class="list-group-item " href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a>
     
     <a class="list-group-item " href="/blog/text-editing-extract-data/">Tip of the Week: Text Editing - Extract Data</a>
-    
-    <a class="list-group-item " href="/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Authenticating with Azure Key Vault Using Managed Service Identity</a>
     
   </div>
 </section>
