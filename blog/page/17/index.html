@@ -163,6 +163,117 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-04T16:06:40+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 4<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/android/'>android</a>, <a class='category' href='/blog/category/phonegap/'>phonegap</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>, <a class='category' href='/blog/category/xplat/'>xplat</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/getting-started-with-phonegap-developing-for-windows-phone-and-android/" itemprop="url">Getting Started with PhoneGap: Developing for Windows Phone and Android</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>With lots of devices and operating systems out there, developing a native application for each of these platforms might not always be an option for many businesses, because of the time, effort and money that would be required to be on all platforms. <a href="http://phonegap.com/">PhoneGap</a> is one option that could be explored in this case, which helps to develop hybrid applications that can exists on a <a href="http://phonegap.com/about/feature/">variety of platforms</a> integrating with platform specific features. <a href="http://cordova.apache.org/">Apache Cordova</a> is what powers PhoneGap and is free and open source under the <a href="http://phonegap.com/about/license/">Apache License, Version 2.0</a>.</p>
+
+<p>Setting up PhoneGap is pretty easy and direct with its integration with <a href="http://nodejs.org/">node.js</a>. Lets take a look on how to setup our project from scratch.</p>
+
+<ol>
+<li><p>Install <a href="http://nodejs.org/">node.js</a></p></li>
+<li><p>Install PhoneGap using node.js</p>
+
+<p> <strong><em>npm install –g phonegap</em></strong></p>
+
+<p> npm is the official node package manager</p>
+
+<p> -g installs the package in global scope.If you face any error while installing the package(since I happened to, I guess because I closed the console while it was installing the first time) you can try following the below steps, which helped me solve it.</p>
+
+<p> <strong>            npm list –g</strong></p>
+
+<p> If the above step shows that there is a <em>unmet dependency phonegap</em>, then you could follow the below steps</p>
+
+<p> <strong>            npm rm phonegap</strong></p>
+
+<p> <strong>            npm cache clear</strong></p>
+
+<p> Try installing PhoneGap again using <em>npm install –g phonegap</em></p></li>
+<li><p>Install Cordova
+<strong>npm install –g cordova</strong></p></li>
+<li><p>Now we have everything setup for PhoneGap project. Lets create the project. Navigate to your project root folder and create a project.</p>
+
+<p> <strong>phonegap create <appname></strong></p>
+
+<p> This will create the basic folder structure for your PhoneGap project which looks like below.</p>
+
+<p> <img class="left" src="/images/cordova_folder_structure.png" alt="cordova_folder_structure" /></p>
+
+<p> <strong>.cordova: </strong>This directory contains files related to cordova.</p>
+
+<p> <strong>merges: </strong>This directory contains platform specific assets. A sub-directory for each platform is created inside here, whenever  a new platform is created. This sub-directory mirrors the structure of the <em>www </em>directory, which allows to add platform specific files to appropriate folders.</p>
+
+<p> <strong>platforms: </strong>This directory contains native code for each of the <a href="http://docs.phonegap.com/en/edge/guide_platforms_index.md.html">supported platforms</a>. By default this is empty and we need to add the required platforms, which we will see later.</p>
+
+<p> <strong>plugins: </strong>This directory contains the <a href="https://build.phonegap.com/plugins">plugins</a> that provide extra support to interface with each of the native platforms.</p>
+
+<p> <strong>www: </strong>This directory contains the primary files that is required for your project/application. This gets copied into each of the platform specific projects in <em>platforms </em>folder whenever a build is performed. So this is where your core development would happen and all your cross-platform code would live in.</p></li>
+<li><p>Lets now create a native project, for windows phone.</p>
+
+<p> <strong>cordova platform add wp8</strong></p>
+
+<p> This will add a wp8 folder inside <em>platforms </em>and also <em>merges. </em>The one in platforms will have the native project setup with all the files in <em>www</em> folder copied into it. You can open up the sln file in Visual Studio and build and run. We have the application up and running on our first platform!
+ Lets add in some code so that it makes sense as an application. We will stick on with our usual 500px api and show off some beautiful pictures. I have added jquery from nuget in Visual studio and also updated the files to show pictures from 500px, which I would not be explaining here as it is just some html/js/css..(Updated files in www folder can later be copied into the root <em>www </em>folder later. Need to figure out the correct way on how to go about this. In case you know how, please do leave a comment. Would be more than happy to learn.)</p></li>
+<li><p>Once we copy out the updated files in platform specific <em>www </em>folder into root www folder we can go ahead and add android platform.</p>
+
+<p> <strong>cordova platform add android</strong></p>
+
+<p> This creates an android folder inside <em>platforms</em> and <em>merges</em> folder. You can open up the project in your IDE(<a href="https://www.eclipse.org/downloads/">Eclipse</a>, <a href="http://www.jetbrains.com/idea/">IntelliJ</a> or <a href="http://developer.android.com/sdk/installing/studio.html">Android Studio</a> etc) for android, build and run. We have the application up and running also on the second platform!
+ For android you would need to make sure the config files are updated with the required permissions for accessing internet and also to enable <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>. By default internet permissions are enabled, you would only have to update the config for cors(<em>origin header</em>) as it defaults to ‘<em>127.0.0.1*</em>’. I have updated this to just ‘*’, inside <strong><em>res/xml/config.xml </em></strong>(since there is one config.xml inside assets/www folder too).If you are new to android platform, which I was then you can check out here on <a href="http://rahulpnath.com/blog/setting-up-the-development-environment-for-phonegap-on-android/">Setting up the development environment for phonegap on android</a>.
+ At times I did have the Android emulator not moving past the &lsquo;<em>Connecting to Device</em>&rsquo; screen while running the application. I just killed all the emulators and started a fresh one from AVD (Android Virtual Device) Manager, unchecking &lsquo;launch from snapshot&rsquo; and &lsquo;save to snapshot&rsquo; options.</p></li>
+</ol>
+
+
+<p>With PhoneGap/Cordova, you can see how easy it is to have an app in various platforms of your choice. We have not seen on how to utilize any of the platform specific features of devices using PhoneGap, but I am sure that you should be able to figure out from here, now that you have all that you need up and running.</p>
+
+<p><img src="/images/Cordova_WP.jpg" alt="Cordova_WP" />
+<img src="/images/Cordova_Android.jpg" alt="Cordova_Android" /></p>
+
+<p>The source code for the sample is available <a href="https://github.com/rahulpnath/Blog/tree/master/GettingStartedOnPhoneGap">here</a>. Don’t forget to update the <a href="http://developers.500px.com/">api key for 500px</a> before you run the application.
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-04T05:49:22+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 4<sup>th</sup>, 2014</time>
         
 
@@ -1340,61 +1451,6 @@ Here is a comparison of the all the 3 methods above in order(kindle email, direc
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-08-25T16:33:08+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 25<sup>th</sup>, 2013</time>
-        
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/giveaway-get-a-license-of-your-choice-from-syncfusion/" itemprop="url">Giveaway : Get a license of your choice from Syncfusion</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often we run up into the need for third party controls to give your apps/sites that extra edge that all of us are looking for. Syncfusion provides an excellent collection of controls for various platforms, details of which you can find <a href="http://www.syncfusion.com/products?UTM_medium=rahulblogreview">here</a> .
-Syncfusion was generous enough to giveaway a license for the readers of this blog. I didn&rsquo;t want to restrict you to get a license for a platform of my choice, so its all yours. You get to choose which platform license you want out of the the 9 different option(ASP.NET, ASP.NET MVC, JavaScript, Mobile MVC, Silverlight, WinForms, Windows Phone, WinRT and WPF) on the site. So who would be that lucky one?</p>
-
-<h2><strong>How to be that lucky one?</strong></h2>
-
-<p>Check out the form below on how.</p>
-
-<p><a class="rafl" id="rc-52158e0" href="http://www.rafflecopter.com/rafl/display/52158e0/" rel="nofollow">a Rafflecopter giveaway</a><br />
-<script type="text/javascript" src="//d12vno17mo87cx.cloudfront.net/embed/rafl/cptr.js"></script></p>
-
-
-<p>Once the winner is decided you would be notified via email. Choosing the lucky one would be this blog admins responsibility. Any decision made by the admin would be final.</p>
-
-<p>Hope you are that lucky one !</p>
-
-<p><strong> Edit: </strong>Had a very good response and am really happy to announce the winners. Instead of 1 lucky winner I am planning to make it 3. The lucky 3 would be soon contacted with more details</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1418,6 +1474,8 @@ Syncfusion was generous enough to giveaway a license for the readers of this blo
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/text-editing-convert-text-casing/">Tip of the Week: Text Editing - Convert Text Casing</a>
+    
     <a class="list-group-item " href="/blog/2017-recap/">2017: What Went Well, What Didn&#8217;t and Goals</a>
     
     <a class="list-group-item " href="/blog/laps-in-training-mode-garmin-watches/">Tip of the Week: Laps in Training Mode - Garmin Watches</a>
@@ -1425,8 +1483,6 @@ Syncfusion was generous enough to giveaway a license for the readers of this blo
     <a class="list-group-item " href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
     
     <a class="list-group-item " href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a>
-    
-    <a class="list-group-item " href="/blog/text-editing-extract-data/">Tip of the Week: Text Editing - Extract Data</a>
     
   </div>
 </section>
