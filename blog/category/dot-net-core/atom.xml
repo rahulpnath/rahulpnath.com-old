@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: .net core | Rahul Nath]]></title>
+  <link href="http://rahulpnath.com/blog/category/dot-net-core/atom.xml" rel="self"/>
+  <link href="http://rahulpnath.com/"/>
+  <updated>2018-01-03T00:11:53+00:00</updated>
+  <id>http://rahulpnath.com/</id>
+  <author>
+    <name><![CDATA[Rahul Nath]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up Build and Deploy Pipeline for a .NET Core Console Application]]></title>
+    <link href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/"/>
+    <updated>2018-01-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application</id>
+    <content type="html"><![CDATA[<p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
+
+<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
+
+<h3>Setting Up TeamCity</h3>
+
+<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
+
+<p><img src="/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
+
+<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
+
+<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
+
+<pre><code class="bash">octo pack --id ApplicationName --version %build.number% --basePath published-app 
+</code></pre>
+
+<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
+
+<h3>Setting Up Octopus Deploy</h3>
+
+<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
+
+<p><img src="/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
+
+<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
+
+<pre><code class="powershell Pre Deployment Script">Stop-Process -Name dotnet -Force -ErrorAction SilentlyContinue
+</code></pre>
+
+<p>Once the package is deployed, the custom script starts up the application.</p>
+
+<pre><code class="powershell Run App">cd C:\DeploymentFolder
+Start-Process dotnet .\ApplicationName.dll
+</code></pre>
+
+<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
+]]></content>
+  </entry>
+  
+</feed>

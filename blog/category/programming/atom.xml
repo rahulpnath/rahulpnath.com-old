@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-01-02T01:26:59+00:00</updated>
+  <updated>2018-01-03T00:11:53+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,51 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up Build and Deploy Pipeline for a .NET Core Console Application]]></title>
+    <link href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/"/>
+    <updated>2018-01-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application</id>
+    <content type="html"><![CDATA[<p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
+
+<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
+
+<h3>Setting Up TeamCity</h3>
+
+<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
+
+<p><img src="/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
+
+<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
+
+<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
+
+<pre><code class="bash">octo pack --id ApplicationName --version %build.number% --basePath published-app 
+</code></pre>
+
+<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
+
+<h3>Setting Up Octopus Deploy</h3>
+
+<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
+
+<p><img src="/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
+
+<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
+
+<pre><code class="powershell Pre Deployment Script">Stop-Process -Name dotnet -Force -ErrorAction SilentlyContinue
+</code></pre>
+
+<p>Once the package is deployed, the custom script starts up the application.</p>
+
+<pre><code class="powershell Run App">cd C:\DeploymentFolder
+Start-Process dotnet .\ApplicationName.dll
+</code></pre>
+
+<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Scheduling Recurring Jobs With a Cool-Off Period]]></title>
@@ -429,50 +474,6 @@ private static void BuildBookmarkTree(PdfDocument pdfDocument, HtmlToPdfResult h
 </code></pre>
 
 <p>Once the individual PDF files are created for each of the section and category/subcategory combination, we can merge them together to generate the full PDF. We will see in the next post how to merge the bookmarks together along with shifting the PDF pages and generating Table of Contents from the bookmarks.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Generating a Large PDF from Website Contents]]></title>
-    <link href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents/"/>
-    <updated>2017-08-08T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents</id>
-    <content type="html"><![CDATA[<p>At one of my recent clients, we had a requirement to generate a PDF dynamically based on the contents of the website. The website is a Content Management System (CMS) built on top of <a href="https://umbraco.com/">Umbraco</a>. The content is grouped into different categories and sub-categories. Each category and sub-category had different sections/sub-sections under that. Some sections are optional for certain categories, and all of these are dynamic. In this post, I will walk through at high level the approach taken to solve the problem.</p>
-
-<p>The user selects the categories/sub-categories and the sections that they wish to export as PDF. On submit, a PDF needs to be generated based on the website content.</p>
-
-<pre><code class="csharp Model Structure of Domain">public class Category
-{
-    public string Name { get; set; }
-    public List&lt;Section&gt; Sections { get; set; }
-    public List&lt;Category&gt; SubCategory { get; set; }
-}
-
-public class Section
-{
-    public string Name { get; set; }
-    public List&lt;Section&gt; SubSections { get; set; }
-}
-</code></pre>
-
-<p><img src="/images/pdf_generation.png" class="center" alt="Select options to download" /></p>
-
-<p>The actual site had one more level of options (say sub-sections), so you can imagine the number of possible combinations to generate the content. The site content was huge as well, and a PDF with all options selected would be around 4000-5000 pages. So creating the PDF every time some one clicks the button was out of the question. We had to cache the generated PDF&rsquo;s and serve them as the request comes in. But the challenge was how to manage the cache so that we can build up the PDF based on the options selected.</p>
-
-<div class="alert alert-info">
-If you are using HTML to PDF libraries be aware that most of the libraries out there (<a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object</a>, <a href="http://www.evopdf.com/">EvoPDF</a> etc.) <strong>does not work on Azure Web Apps</strong>. This is because of the <a href="https://github.com/projectkudu/kudu/wiki/Azure-Web-App-sandbox#pdf-generation-from-html">sandbox restrictions</a> on the applications irrespective of the Azure plan you are on. The preferred solution is to host the conversion code on a VM. If you find that an overhead (which it is) consider using the SAAS alternatives for converting HTML to PDF.
-</div>
-
-
-<p>Below is the flow diagram of the complete process of generating the PDF as a request comes. The request specifies the categories/sub-categories along with the sections that need to be in the generated PDF.</p>
-
-<p><img src="/images/pdf_generation_flow.png" class="center" alt="PDF Generation Flow" /></p>
-
-<p>We decided to create a PDF file for each section per category/subcategory selection. Once all the sections are ready, all the PDF files will be merged into one. While merging we also build up the bookmark tree and the table of contents. Inserting the table of contents page at the start of the PDF requires pushing all the page numbers to match the new ones.</p>
-
-<p>The PDF layout for individual sections per category/subcategory is in HTML. The application exposes endpoints for the HTML content for the different sections. We used <a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object HTML to PDF Converter</a> to convert the HTML to PDF files. Bookmarks for the associated section are embedded in HTML. While converting to PDF, the bookmarks get added to the PDF, which later gets merged into the full bookmark tree. The generated PDF file is cached for any new requests.</p>
-
-<p>Since we have around forty categories/sub-categories, twelve section, and ten sub-sections, generating the full PDF take a while. So we generate the cache at fixed intervals and as required (when content is updated in the CMS). The above approach of generating PDF files has been working fine for us. Since the individual PDF sections are generated in isolation, it gives us the flexibility to scale the generation process as required. Combining the generated PDF files is often fast and can be cached at a different level as well to speed up the whole process.</p>
 ]]></content>
   </entry>
   

@@ -163,6 +163,149 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-08-01T04:32:19+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 1<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/open-source/'>open source</a>, <a class='category' href='/blog/category/tools/'>tools</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/automated-deployment-of-asmspy-to-chocolatey-using-appveyor/" itemprop="url">Automated Deployment of AsmSpy to Chocolatey Using AppVeyor</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently I have been trying to contribute to open source projects, to build the habit of reading others code. I chose to start with projects that I use regularly. <a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is one such project.</p>
+
+<blockquote><p><em>AsmSpy is a Command line tool to view assembly references. It will output a list of all conflicting assembly references. That is where different assemblies in your bin folder reference different versions of the same assembly.</em></p></blockquote>
+
+<p><img class="center" alt="AsmSpy assembly conflicts" src="/images/asmspy.png" /></p>
+
+<p>I started with an <a href="https://github.com/mikehadlow/AsmSpy/pull/20">easy issue</a> to get familiar with the code and to confirm that the project owner, <a href="https://github.com/mikehadlow">Mike Hadlow</a>, accepts Pull Requests (PR). Mike was fast to approve and merge in the changes. There was a feature request to make AsmSpy available as <a href="https://chocolatey.org/">Chocolatey</a> package. Chocolatey is a package manger for Windows, to automate software management. AsmSpy, being a tool that&rsquo;s not project specific, it makes sense to deliver this via Chocolatey and makes installation easier. Mike added me as a project <a href="https://help.github.com/articles/permission-levels-for-a-user-account-repository/">collaborator</a>, which gave better control over the repository.</p>
+
+<h3>Manually Releasing the Chocolatey Package</h3>
+
+<p>AsmSpy is currently distributed as a <a href="http://static.mikehadlow.com/AsmSpy.zip">zip package</a>. Chocolatey supports packaging from a URL with a PowerShell script <a href="https://github.com/chocolatey/choco/wiki/HelpersInstallChocolateyZipPackage"><em>Install-ChocolateyZipPackage</em></a>. For the first release I <a href="https://github.com/mikehadlow/AsmSpy/pull/22">used this helper script to create the Chocolatey package</a> and uploaded it to my account. After fixing a few review comments the <a href="https://chocolatey.org/packages/asmspy/1.0.0">package got published</a>.</p>
+
+<p><img class="center" alt="choco install asmspy" src="/images/asmspy_choco.png" /></p>
+
+<h3>Automating Chocolatey Releases</h3>
+
+<p>Now that I have to manage the AsmSpy Chocolatey package installations, I decided to automate the process of Chocolatey package creation and upload. Since I had used AppVeyor for <a href="http://www.rahulpnath.com/blog/automated-clickonce-deployment-of-a-wpf-application-using-appveyor/">automating Click-Once deployment</a> of <a href="https://github.com/rahulpnath/clal">CLAL</a>, I decided to use AppVeyor for this.</p>
+
+<h4><strong>The Goal</strong></h4>
+
+<p>I wanted to automatically deploy any new version of the package to Chocolatey. Any time a <a href="https://git-scm.com/book/en/v2/Git-Basics-Tagging">tagged commit</a> is made in the main branch (master) it should trigger a deployment and push the new package to Chocolatey. This will give us the flexibility to control version numbers and decide when we actually want to make a release.</p>
+
+<h4><strong>Setting up the Appveyor Project</strong></h4>
+
+<p>Since now I am a collaborator on the project, AppVeyor shows the AsmSpy GitHub repository in my AppVeyor account too. Setting up a project is really quick in AppVeyor and most of it is automatic. Any commits now to the repository triggers an automated build</p>
+
+<p><img alt="Appveyor add new project" src="/images/asmspy_appveyor_addProject.png" /></p>
+
+<p>After playing around with different Appveyor project settings and build scripts, I noticed that AppVeyor was no longer triggering builds on commit pushes in the repository. I tried deleting and adding the AppVeyor project, but with no luck.</p>
+
+<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">The <a href="https://twitter.com/appveyor">@appveyor</a> project suddenly stopped triggering auto builds on pushes.Deleted and added new project <a href="https://t.co/qfV8P2fmWN">https://t.co/qfV8P2fmWN</a> any thoughts?</p>&mdash; Rahul P Nath (@rahulpnath) <a href="https://twitter.com/rahulpnath/status/754764006976466944">July 17, 2016</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>The AppVeyor team was quick to respond and suggested a possible problem with the Webhook URL not configured under the GitHub repository. The Webhook URL for AppVeyor is available under the projects settings. Since I did not have access to the Settings page of the GitHub repository, I reached out to Mike, who promptly updated the Webhook URL for AppVeyor under GitHub project settings. This fixed the issue of builds not triggering automatically when commits are pushed to the GitHub repository.</p>
+
+<p><img alt="Github webhook url for appveyor" src="/images/asmspy_github_webhook.png"/></p>
+
+<h4><strong>Creating Chocolatey Package</strong></h4>
+
+<p>AppVeyor has <a href="https://www.appveyor.com/blog/2014/11/06/appveyor-with-a-hint-of-chocolatey">support for Chocolatey commands</a> out of the box, which makes it easy to create packages on a successful build. I added in the <a href="https://github.com/mikehadlow/AsmSpy/blob/master/AsmSpy/AsmSpy.nuspec">nuspec file</a> that defines the Chocolatey Package and added an after-build script to generate the package. AppVeyor exposes <a href="https://www.appveyor.com/docs/environment-variables">environment variables</a>, that are set for every build. In the &lsquo;after_build&rsquo; scripts I trigger Chocolatey packaging only if the build is triggered by a commit with a tag (APPVEYOR_REPO_TAG_NAME). Every build generates the zip package that can be used to test the current build.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">version</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">1.0.{build}</span>
+</span><span class='line'><span class="l-Scalar-Plain">build</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">verbosity</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">minimal</span>
+</span><span class='line'><span class="l-Scalar-Plain">after_build</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">cmd</span><span class="p-Indicator">:</span> <span class="p-Indicator">&gt;-</span>
+</span><span class='line'>    <span class="no">7z a asmspy.zip .\AsmSpy\bin\Debug\AsmSpy.exe</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME choco pack .\AsmSpy\AsmSpy.nuspec --version %APPVEYOR_REPO_TAG_NAME%</span>
+</span><span class='line'>    <span class="no">if defined APPVEYOR_REPO_TAG_NAME appveyor PushArtifact asmspy.%APPVEYOR_REPO_TAG_NAME%.nupkg -DeploymentName ReleaseNuget</span>
+</span><span class='line'><span class="l-Scalar-Plain">artifacts</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">asmspy.zip</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Zip Package</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">path</span><span class="p-Indicator">:</span> <span class="s">&#39;\AsmSpy\bin\*.nupkg&#39;</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Nuget Package</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4><strong>Setting up Chocolatey Environment</strong></h4>
+
+<p>Since Chocolatey is built on top of NuGet infrastructure, it supports deployment to it like you would do for a NugGet package. The <a href="https://www.appveyor.com/docs/deployment/nuget">NuGet deployment provider</a> publishes packages to a NuGet feed. All you need to provide is the feed URL and the API key and the package to deploy. I created a NuGet deployment environment with the chocolatey NuGet URL, my account API key and the Artifact to deploy.</p>
+
+<p><img  alt="AppVeyor Chocolatey environment" src="/images/asmspy_appveyor_environment.png"/></p>
+
+<p>The projects build setting is configured to deploy to the Environment created above for a build triggered by a commit with a tag.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">deploy</span><span class="p-Indicator">:</span>
+</span><span class='line'><span class="p-Indicator">-</span> <span class="l-Scalar-Plain">provider</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">Environment</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">name</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">AsmSpy Chocolatey</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">on</span><span class="p-Indicator">:</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">branch</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">master</span>
+</span><span class='line'>    <span class="l-Scalar-Plain">APPVEYOR_REPO_TAG</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>From now on any tagged commit is pushed into the master branch on the repository it will trigger a release into Chocolatey. I have not tested this yet as there were no updates to the tool. I might trigger a test release sometime soon to see if it all works well end to end. Since with this automated deployment, we no longer use the zip URL to download the package in Chocolatey. The exe gets bundled along with the package. There might be some extra build scripts required to support the upgrade scenario for Chocolatey. <strikethrough>I will update the post after the first deployment using this new pipeline!</strikethrough>. From version <a href="https://chocolatey.org/packages/asmspy/1.2.0">1.2.0</a> it uses this new pipeline</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-25T06:07:21+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 25<sup>th</sup>, 2016</time>
         
 
@@ -1731,113 +1874,6 @@ The <em><a href="https://github.com/Azure/azure-content/blob/master/articles/res
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-05-18T12:38:24+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 18<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/make-it-easy-for-the-new-person-joining-your-team-have-a-project-ramp-up-plan/" itemprop="url">Make it Easy for the New Person Joining the Team - Have a Project Ramp up Plan</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently I was in a discussion with my friend/colleague on conducting a few ramp up sessions for the new hires in our team. The discussion went as below,</p>
-
-<blockquote><p><em>Me: We should hold a few sessions to make the new guys in team more comfortable</em></p>
-
-<p><em>Friend: It&rsquo;s too early for it. We should let them find their own way and not &lsquo;spoon-feed&rsquo; them with information.</em></p>
-
-<p><em>Me: But we are not &lsquo;spoon-feeding&rsquo; them, we are just making their learning process faster and giving then an overview on how all the technology fits together in our world of things.</em></p>
-
-<p><em>Friend: But &lsquo;I did not have any ramp up when I joined, and I felt it was better to have learned it on my own, though it took a lot more time.</em></p></blockquote>
-
-<p><a href="http://www.mindtickle.com/wp-content/uploads/2014/02/new_employee_orientation_business_strategy_research.png" class="center" title="Image, from http://www.mindtickle.com/wp-content/uploads/2014/02/new_employee_orientation_business_strategy_research.png"><img src="/images\rampup_plan.png" class="center" alt="Rampup Plan"></a></p>
-
-<p>Just like there are company-wide induction/onboarding sessions, I have always felt that project specific onboarding plans are also required and help new hires be part of the team and be more productive with their day-to-day activities faster. As mentioned in this <a href="http://www.fastcompany.com/3029820/work-smart/infographic-the-real-ways-to-hold-on-to-new-hires/3">article</a>, <em>New hires care more about effective job training and clear guidelines, and it&rsquo;s time you provide that for them.</em> It&rsquo;s best to have a plan in place when you have someone new joining your team and you along with the team are the best people to put that plan together.</p>
-
-<h3>Boy Scout Rule</h3>
-
-<p>The Boy Scouts have a <a href="http://programmer.97things.oreilly.com/wiki/index.php/The_Boy_Scout_Rule">rule</a> - <em>&ldquo;Always leave the campground cleaner than you found it.&rdquo;</em>  New hires are like &lsquo;new camp group&rsquo; at a campground, so it&rsquo;s the duty of the &lsquo;existing team&rsquo; there to make it a good experience for them.</p>
-
-<blockquote><p><em>&lsquo;Refactor&rsquo; your experiences to make it better for the next person who is about to take on the same journey</em></p></blockquote>
-
-<p>It&rsquo;s not that my friend was intentionally trying not to pass on any information, but he felt that learning on their own would be better. Even I agree with him that learning on your own is far better than &lsquo;spoon-feeding&rsquo; - but a ramp up plan is not spoon-feeding. A ramp up plan is only to speed up the learning process and to make it more comfortable for someone joining new.</p>
-
-<h3>When to create the plan?</h3>
-
-<p>The need for such a plan is there only when there has been enough progress made on the project, after which there is someone new joining the team. So when a new hire is scheduled to join is a good time to create the &lsquo;draft&rsquo; plan. Once the new hire has gone through it and updated back with his own experiences it could become the first version of the plan, which can then be confidently shared to anyone joining after as it has worked for at least one person.</p>
-
-<h3>What should be there in the plan</h3>
-
-<p><em>It depends!</em></p>
-
-<p>It&rsquo;s totally up to the team to decide what should be there in the plan. Some of the things that I usually have are</p>
-
-<ul>
-<li><p><strong>Overview of the project and what problem it is trying to solve</strong></p>
-
-<p>It&rsquo;s really important that everyone on the team knows what the application is trying to solve and have a common goal to work towards. It&rsquo;s not just about the code we write but about the problem we are solving and that needs to be clearly defined. I would record a video, when this is done the first time and share it with anyone joining after that, as most of the core concepts of a project rarely change. There could be a follow-up session post watching the video, to also have a quick walk through and fill any missing gaps.</p></li>
-<li><p><strong>Introduction to various technologies used in the project and how everything fits together</strong></p>
-
-<p>Technology changes so fast these days that it is nearly impossible to stay updated with all the available options. So a walk through of the different technologies and pointers to resources that worked for you and the team will be of help. If there are any specific libraries, frameworks getting used, an introduction to those should also help.</p></li>
-<li><p><strong>Release cycle and Release management</strong>
-Every project has its own model of delivering the end product and everyone on the team should understand this process well. Having a continuous build is becoming more common these days and helps reduce the complexity of release. An end to end walk-through of the deployment process helps understand the application better and provides exposure to all the moving parts in the system.</p></li>
-<li><p><strong>Environment/Machine setup</strong>
-Software installation is one of the biggest pain when setting up a new machine for a project, especially with having specific versions of the software. Having a documented list of all the project dependencies (hardware and software) makes setting the project environment easy. It&rsquo;s preferable to have these <a href="https://chocolatey.org/">scripted</a>. Have a common place, where you can find links to all the various environments (dev, at,prod etc) and related resources.</p></li>
-<li><p><strong>Patterns and Conventions</strong>
-Every project has its own conventions and certain core patterns that are followed. It&rsquo;s good to have these patterns available for reference so that it helps understand the code better and helps reduce code-review cycles. Than having one big boring document, what I prefer more is to have multiple blog articles targeting each of those. I try to generalize commonly used patterns in the projects that I have worked on and create blog posts. This also helps generate content for <a href="http://www.rahulpnath.com/blog/get-started-with-your-blog/">your blog</a>.</p></li>
-<li><p><strong>Tips &amp; Tricks</strong>
-This could range from how to easily navigate the code base, scripts to do some commonly occurring task and general things to keep an eye for.</p></li>
-</ul>
-
-
-<p>These are just some of the things I generally try to include in a ramp up plan but as said it totally depends on the team and the project.</p>
-
-<h3>Sharing the plan</h3>
-
-<p>Depending on the plan, if it has confidential information, you could split this into two (or more) different documents and share it at different phases of onboarding. Once a new hire is confirmed it&rsquo;s good to share the parts which do not have any confidential information. Technology stack, conventions used, machine setup (<a href="https://en.wikipedia.org/wiki/Bring_your_own_device">BYOD</a>) are usually not confidential and can be shared well before actual employment. Once all employment agreements are in place the rest too can be shared. It&rsquo;s also a good idea to have some walk-through of the plan itself to make it easier to follow.</p>
-
-<h3>Iterate and Improve</h3>
-
-<p>Updating back with the experiences of the people using the plan is important to keep it current and valuable. Suggesting improvements and updates should be an item in the plan so that this does not get missed. To make updates manageable, the plan must be accessible to all and preferably version controlled if they are documents.</p>
-
-<p>What are your thoughts on having a ramp up plan?</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1861,6 +1897,8 @@ This could range from how to easily navigate the code base, scripts to do some c
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
+    
     <a class="list-group-item " href="/blog/text-editing-convert-text-casing/">Tip of the Week: Text Editing - Convert Text Casing</a>
     
     <a class="list-group-item " href="/blog/2017-recap/">2017: What Went Well, What Didn&#8217;t and Goals</a>
@@ -1868,8 +1906,6 @@ This could range from how to easily navigate the code base, scripts to do some c
     <a class="list-group-item " href="/blog/laps-in-training-mode-garmin-watches/">Tip of the Week: Laps in Training Mode - Garmin Watches</a>
     
     <a class="list-group-item " href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
-    
-    <a class="list-group-item " href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a>
     
   </div>
 </section>

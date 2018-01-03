@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-01-02T01:26:59+00:00</updated>
+  <updated>2018-01-03T00:11:53+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up Build and Deploy Pipeline for a .NET Core Console Application]]></title>
+    <link href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/"/>
+    <updated>2018-01-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application</id>
+    <content type="html"><![CDATA[<p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
+
+<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
+
+<h3>Setting Up TeamCity</h3>
+
+<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
+
+<p><img src="http://rahulpnath.com/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
+
+<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
+
+<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>octo pack --id ApplicationName --version %build.number% --basePath published-app
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
+
+<h3>Setting Up Octopus Deploy</h3>
+
+<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
+
+<p><img src="http://rahulpnath.com/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
+
+<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
+
+<figure class='code'><figcaption><span>Pre Deployment Script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Stop-Process</span> <span class="n">-Name</span> <span class="n">dotnet</span> <span class="n">-Force</span> <span class="n">-ErrorAction</span> <span class="n">SilentlyContinue</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the package is deployed, the custom script starts up the application.</p>
+
+<figure class='code'><figcaption><span>Run App</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">cd</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">DeploymentFolder</span>
+</span><span class='line'><span class="nb">Start-Process</span> <span class="n">dotnet</span> <span class="p">.\</span><span class="n">ApplicationName</span><span class="p">.</span><span class="n">dll</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Text Editing - Convert Text Casing]]></title>
@@ -1322,47 +1374,6 @@ If you are using HTML to PDF libraries be aware that most of the libraries out t
 <p>The PDF layout for individual sections per category/subcategory is in HTML. The application exposes endpoints for the HTML content for the different sections. We used <a href="https://www.essentialobjects.com/Products/EOPdf/Default.aspx">Essential Object HTML to PDF Converter</a> to convert the HTML to PDF files. Bookmarks for the associated section are embedded in HTML. While converting to PDF, the bookmarks get added to the PDF, which later gets merged into the full bookmark tree. The generated PDF file is cached for any new requests.</p>
 
 <p>Since we have around forty categories/sub-categories, twelve section, and ten sub-sections, generating the full PDF take a while. So we generate the cache at fixed intervals and as required (when content is updated in the CMS). The above approach of generating PDF files has been working fine for us. Since the individual PDF sections are generated in isolation, it gives us the flexibility to scale the generation process as required. Combining the generated PDF files is often fast and can be cached at a different level as well to speed up the whole process.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Chocolatey - Install Softwares With Ease]]></title>
-    <link href="http://rahulpnath.com/blog/chocolatey-install-softwares-with-ease/"/>
-    <updated>2017-08-04T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/chocolatey-install-softwares-with-ease</id>
-    <content type="html"><![CDATA[<p><img src="http://rahulpnath.com/images/chocolatey.png" alt="Chocolatey - Package Manager for Windows" class="center" ></p>
-
-<p><a href="https://chocolatey.org/">Chocolatey</a> is a package manager for Windows. Chocolatey is a central store of applications, tools, and other packages. It allows you to install them on your computer from the command line. Let’s look at an example to make things more clear. Let’s say I want to install the Google Chrome Browser on my system. Below is how I would go about installing it.</p>
-
-<blockquote><p><strong>Installing Google Chrome (Without Chocolatey)</strong></p>
-
-<ol>
-<li>Bing for Google Chrome (Assuming that you are on Windows and open up Internet Explorer and search for Google Chrome)</li>
-<li>Click the relevant link from the Search Results</li>
-<li>Hit the Download Chrome button</li>
-<li>Wait for the installer to download and open that to install.</li>
-</ol>
-
-
-<p><strong>Installing Google Chrome (With Chocolatey)</strong></p>
-
-<ol>
-<li>Run &lsquo;<em>choco install googlechrome</em>&rsquo; from command line</li>
-</ol>
-</blockquote>
-
-<p>Installing with Chocolatey is quick and easy. You no longer need to go around searching the web for the software that you want to install. If you are unsure of the package name (e.g. googlechrome), you can search the entire packages library. This is possible from the command line using &lsquo;<em>choco search</em>.&rsquo; Or you can also search on their <a href="https://chocolatey.org/packages">website</a>.</p>
-
-<p>Run the below script from the command line to <a href="https://chocolatey.org/install">install Chocolatey Package Manager</a>. Once installed you can start managing applications through the command line using Chocolatey.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>@<span class="s2">&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot;</span> -NoProfile -ExecutionPolicy Bypass -Command <span class="s2">&quot;iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://chocolatey.org/install.ps1&#39;))&quot;</span> <span class="o">&amp;&amp;</span> SET <span class="s2">&quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Other than installing and searching packages, Chocolatey also supports a lot of other commands to manage applications including un-installation. The entire commands supported are available <a href="https://chocolatey.org/docs/commandslist">here</a>. Instead, you can get the details in your command line using &lsquo;<em>choco -h</em>.&rsquo;</p>
-
-<p>Hope that helps you save some time when you next want to install something.</p>
 ]]></content>
   </entry>
   

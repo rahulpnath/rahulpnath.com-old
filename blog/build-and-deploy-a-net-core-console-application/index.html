@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Tip of the Week: Quick Launch in Visual Studio - Rahul Nath</title>
+  <title>Setting up Build and Deploy Pipeline for a .NET Core Console Application - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Quickly navigate in Visual Studio using Quick Launch (Ctrl + Q)" />
+<meta name="description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/quick-launch-in-visual-studio">
+  <link rel="canonical" href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="Tip of the Week: Quick Launch in Visual Studio" />
+<meta property="og:title" content="Setting up Build and Deploy Pipeline for a .NET Core Console Application" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/quick-launch-in-visual-studio/" />
-<meta property="og:description" content="Quickly navigate in Visual Studio using Quick Launch (Ctrl + Q)" />
+<meta property="og:url" content="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" />
+<meta property="og:description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-<meta property="og:image" content="http://www.rahulpnath.com/images/visualstudio_quicklaunch_zoomed.png" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/net_core_teamcity.png" />
 
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/quick-launch-in-visual-studio" />
-<meta property="twitter:title" content="Tip of the Week: Quick Launch in Visual Studio" />
-<meta property="twitter:description" content="Quickly navigate in Visual Studio using Quick Launch (Ctrl + Q)" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application" />
+<meta property="twitter:title" content="Setting up Build and Deploy Pipeline for a .NET Core Console Application" />
+<meta property="twitter:description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
 <meta property="twitter:creator" content="rahulpnath" />
-<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/visualstudio_quicklaunch_zoomed.png" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/net_core_teamcity.png" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-02-02T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 2<sup>nd</sup>, 2017</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-01-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2018</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+    <a class='category' href='/blog/category/dot-net-core/'>.net core</a>, <a class='category' href='/blog/category/programming/'>programming</a>
   
 </span>
 
@@ -175,24 +175,57 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Tip of the Week: Quick Launch in Visual Studio
+        Setting up Build and Deploy Pipeline for a .NET Core Console Application
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p><img alt="Visual Studio Quick Launch" src="/images/visualstudio_quicklaunch.png" /></p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
 
-<p>As a .NET developer, I spent the majority of my time in Visual Studio. Knowing to navigate fast within the IDE or quickly find what I want is important. Many times finding specific settings or navigating to individual windows can take a while, especially if you are not familiar with it and don&rsquo;t know exactly where to look. Visual Studio has a quick launch toolbar that is designed exactly for this. Be it opening the Package Manager Console or changing the font style you can use the quick launch to search and navigate to it.</p>
+<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
 
-<blockquote><p><em>You can use <a href="https://msdn.microsoft.com/en-us/library/hh417697.aspx">Quick Launch</a> to quickly search and execute actions for IDE assets such as options, templates, menus. You can&rsquo;t use Quick Launch to search for code and symbols. The Quick Launch search box is located at the top-right corner of the menu bar and is accessible by choosing the <strong>Ctrl+Q</strong> keys.</em></p></blockquote>
+<h3>Setting Up TeamCity</h3>
 
-<p>The added advantage is that you can use the quick launch bar to <strong><em>learn new keyboard shortcuts</em></strong>. Searching for an item also shows the keyboard shortcut for it next to it. Over time you can remember the direct keyboard shortcut and avoid quick launch as well.</p>
+<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
 
-<p><img alt="Visual Studio Quick Launch learn keyboard shortcuts" src="/images/visualstudio_quicklaunch_keyboardShortcuts.png" /></p>
+<p><img src="/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
 
-<p>Knowing the tools that you use is an important part of development. Able to navigate fast within the IDE enables to remove any time wasted poking around the IDE. Use that time to read and write code.</p>
+<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
+
+<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>octo pack --id ApplicationName --version %build.number% --basePath published-app
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
+
+<h3>Setting Up Octopus Deploy</h3>
+
+<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
+
+<p><img src="/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
+
+<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
+
+<figure class='code'><figcaption><span>Pre Deployment Script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Stop-Process</span> <span class="n">-Name</span> <span class="n">dotnet</span> <span class="n">-Force</span> <span class="n">-ErrorAction</span> <span class="n">SilentlyContinue</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once the package is deployed, the custom script starts up the application.</p>
+
+<figure class='code'><figcaption><span>Run App</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">cd</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">DeploymentFolder</span>
+</span><span class='line'><span class="nb">Start-Process</span> <span class="n">dotnet</span> <span class="p">.\</span><span class="n">ApplicationName</span><span class="p">.</span><span class="n">dll</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
 </div>
 
 
@@ -225,18 +258,6 @@
   
     <li>
     	<p>
-      		<a href="/blog/using-git-locally-in-a-tfvc-repository/">Tip of the Week: Using Git Locally in a TFVC Repository</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
-      		<a href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
       		<a href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
   		</p>
     </li>
@@ -244,6 +265,18 @@
     <li>
     	<p>
       		<a href="/blog/generating-a-large-pdf-from-website-contents-part-iii/">Generating a Large PDF from Website Contents - Merging PDF Files</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>
   		</p>
     </li>
   
@@ -255,7 +288,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/quick-launch-in-visual-studio/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/quick-launch-in-visual-studio/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" >Tweet</a>
   
   
   
@@ -267,10 +300,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/avoid-state-mutation/" title="Previous Post: Avoid State Mutation">&laquo; Avoid State Mutation</a></li>
+            <li class="previous"><a href="/blog/text-editing-convert-text-casing/" title="Previous Post: Tip of the Week: Text Editing - Convert Text Casing">&laquo; Tip of the Week: Text Editing - Convert Text Casing</a></li>
             
-            
-            <li class="next"><a href="/blog/how-i-lost-13-kilos-in-one-and-half-months/" title="Next Post: How I Lost 13 Kilos in One and Half Months">How I Lost 13 Kilos in One and Half Months &raquo;</a></li>
             
           </ul>
         
@@ -315,8 +346,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/quick-launch-in-visual-studio/';
-        var disqus_url = 'http://rahulpnath.com/blog/quick-launch-in-visual-studio/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/';
+        var disqus_url = 'http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/';
         var disqus_script = 'embed.js';
       
     (function () {
