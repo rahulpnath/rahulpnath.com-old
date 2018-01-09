@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Setting up Build and Deploy Pipeline for a .NET Core Console Application - Rahul Nath</title>
+  <title>Trips for the (Long) Weekend Around Sydney - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
+<meta name="description" content="Looking to stay overnight for a short vacation. Here are a list of places around Sydney." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#, India" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application">
+  <link rel="canonical" href="http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="Setting up Build and Deploy Pipeline for a .NET Core Console Application" />
+<meta property="og:title" content="Trips for the (Long) Weekend Around Sydney" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" />
-<meta property="og:description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
+<meta property="og:url" content="http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney/" />
+<meta property="og:description" content="Looking to stay overnight for a short vacation. Here are a list of places around Sydney." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-<meta property="og:image" content="http://www.rahulpnath.com/images/net_core_teamcity.png" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/port_macquarie.jpg" />
 
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application" />
-<meta property="twitter:title" content="Setting up Build and Deploy Pipeline for a .NET Core Console Application" />
-<meta property="twitter:description" content="Automatically deploy and run a console application using TeamCity and Octopus Deploy." />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney" />
+<meta property="twitter:title" content="Trips for the (Long) Weekend Around Sydney" />
+<meta property="twitter:description" content="Looking to stay overnight for a short vacation. Here are a list of places around Sydney." />
 <meta property="twitter:creator" content="rahulpnath" />
-<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/net_core_teamcity.png" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/port_macquarie.jpg" />
 
 <script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
 
@@ -159,13 +159,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-01-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2018</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-01-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 9<sup>th</sup>, 2018</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/dot-net-core/'>.net core</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+    <a class='category' href='/blog/category/travelogue/'>travelogue</a>
   
 </span>
 
@@ -175,57 +175,61 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        Setting up Build and Deploy Pipeline for a .NET Core Console Application
+        Trips for the (Long) Weekend Around Sydney
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p>A while back I had written about various <a href="http://www.rahulpnath.com/blog/one-day-trips-around-sydney/">one-day trip options around Sydney</a>. Here is a list of places that we traveled around Sydney during long weekend breaks with a day or two overnight stays.</p>
 
-<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
+<blockquote><p><a href="https://en.wikipedia.org/wiki/Wikipedia:Too_long;_didn%27t_read"><strong>TLDR;</strong></a></p>
 
-<h3>Setting Up TeamCity</h3>
+<ul>
+<li><a href="http://www.rahulpnath.com/blog/three-day-trip-to-coffs-harbour-from-sydney/">Coffs Harbour</a></li>
+<li><a href="https://www.portmacquarieinfo.com.au/">Port Macquarie</a></li>
+<li><a href="http://www.grandpacificdrive.com.au/">Grand Pacific Drive</a></li>
+<li><a href="https://www.visitnsw.com/destinations/blue-mountains?nst=0">Blue Mountains</a></li>
+<li><a href="https://visitcanberra.com.au/">Canberra</a></li>
+</ul>
+</blockquote>
 
-<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
+<h3><a href="http://www.rahulpnath.com/blog/three-day-trip-to-coffs-harbour-from-sydney/">Coffs Harbour</a></h3>
 
-<p><img src="/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
+<p><a href="http://www.rahulpnath.com/blog/three-day-trip-to-coffs-harbour-from-sydney/">Coffs Harbour</a> is one of the places that I liked the most of all my trips. It&rsquo;s been almost a year since I made my trip and the memories are still fresh. The beaches are great, especially the Jetty Beach. The rainforest walk in Dorrigo was the best I have had to date, especially because of the rain the night before. Coffs Harbour is perfect for a 3-4 days trip and there are a lot of places to visit around.</p>
 
-<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
+<p><img alt="Jetty Beach, Coffs Harbour" src="/images/coffs_harbour_jetty_beach_toys.jpg" /></p>
 
-<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
+<h3><a href="https://www.portmacquarieinfo.com.au/">Port Macquarie</a></h3>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>octo pack --id ApplicationName --version %build.number% --basePath published-app
-</span></code></pre></td></tr></table></div></figure>
+<p>We headed off to Port Macquarie to celebrate Gauthams birthday. Gautham likes strawberries a lot which was why we chose Port Macquarie. <a href="http://www.ricardoes.com/">Ricardoes Tomatoes &amp; Strawberries</a> is located just ten minutes north of Port Macquarie and provides a unique experience for picking your own strawberries. You can spend around 2-3 hours here and make sure you don&rsquo;t miss the scones from the cafe. Port Macquarie is also a great place for whale watching and we headed off on an early morning trip to be with the whales. The boat ride (<a href="https://www.portjet.com.au/">PortJet</a>) in itself is an experience and to our luck, we were able to see around 3 whales up close. We also went to Dooragan National Park, Kattang, Perpendicular Point and Charles Hamsey lookout.</p>
 
+<p><img alt="Whale watching and Strawberry picking, Port Macquarie" src="/images/port_macquarie.jpg" /></p>
 
-<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
+<h3><a href="http://www.grandpacificdrive.com.au/">Grand Pacific Drive</a></h3>
 
-<h3>Setting Up Octopus Deploy</h3>
+<p>The Grand Pacific Drive makes a great one day trip as well as a multi-day trip for those who want to take their time along this stretch of land. Starting from Royal National Park and stretching all the way to Sapphire Coast, this makes a great drive with beautiful scenery and also a lot of places to visit. The <a href="http://www.grandpacificdrive.com.au/">Grand Pacific Drive</a> site has all the details that you need to plan your trip. It also has a trip planner that makes planning easier. If you want to cover most of the places along the way during a single trip, it is best to give it 2-3 days. During my trip, I stopped over at Wollongong and only made my way till Kiama.</p>
 
-<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
+<p><a href="http://www.grandpacificdrive.com.au/">
+    <img src="/images/sydney_trip_gpd.png" class="center" alt="Grand Pacific Drive" />
+</a></p>
 
-<p><img src="/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
+<h3><a href="https://www.visitnsw.com/destinations/blue-mountains?nst=0">Blue Mountains</a></h3>
 
-<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
+<p>Just 90 minutes from Sydney by car, the Blue Mountains has a lot of attractions worth visiting, making it a good place for an extended weekend trip. Wentworth Falls, Echo Point, and Three Sisters are some of the popular lookouts. <a href="https://www.scenicworld.com.au/">Scenic World</a> offers some good rides and entertainment for kids. I liked the worlds steepest incline railway ride in particular. The entry tickets are a bit overpriced though.</p>
 
-<figure class='code'><figcaption><span>Pre Deployment Script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Stop-Process</span> <span class="n">-Name</span> <span class="n">dotnet</span> <span class="n">-Force</span> <span class="n">-ErrorAction</span> <span class="n">SilentlyContinue</span>
-</span></code></pre></td></tr></table></div></figure>
+<p><img alt="Three Sisters, Blue Mountains" class="center" src="/images/three_sisters_blue_mountains.jpg" /></p>
 
+<p>Jenolan Caves is another one hour drive from the Blue Mountains and is a must-do. It&rsquo;s great for people of all ages and if you have kids they will love it. Make sure you check the different <a href="http://www.jenolancaves.org.au/">cave options</a> and choose one that fits the people in your group. Booking a spot in advance might help and make sure you arrive on time. The drive up there might be a bit slower so give enough buffer time before your cave walk starts.</p>
 
-<p>Once the package is deployed, the custom script starts up the application.</p>
+<h3><a href="https://visitcanberra.com.au/">Canberra</a></h3>
 
-<figure class='code'><figcaption><span>Run App</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">cd</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">DeploymentFolder</span>
-</span><span class='line'><span class="nb">Start-Process</span> <span class="n">dotnet</span> <span class="p">.\</span><span class="n">ApplicationName</span><span class="p">.</span><span class="n">dll</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>Unlike Sydney, Canberra is a planned city and you can tell that from the moment you enter it. It&rsquo;s a beautiful little city with lots of variety of things to visit. We started off with the <a href="https://www.cockingtongreen.com.au/">Cockington Green Gardens</a> followed by the <a href="http://nationaldinosaurmuseum.com.au/">National Dinosaur museum</a>. You can spend almost half a day with these and try out the <a href="https://visitcanberra.com.au/eat-and-drink/57031e8c5d234a7604ea80b2/the-hamlet">Hamlet, Food Trucks</a>. The <a href="https://www.aph.gov.au/Visit_Parliament">Parliment House</a> and <a href="https://www.awm.gov.au/">Australian War Memorial</a> is also worth visiting. If you time your visit during September-October you can also see the <a href="https://visitcanberra.com.au/events/56b23aea266140594567dbbe/floriade">Floriade</a> - the tulip flower festival.</p>
 
+<p><img alt="Floriade Tulip Festival, Canberra" class="center" src="/images/canberra_tulip_festival.jpg" /></p>
 
-<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
+<p>Nelson Bay, Hunter Valley, Orange, Port Stephens etc are some of the places that are on our list but could not make it yet. I moved over to Brisbane end of last year and not sure when I will have another chance to explore more around Sydney. But I have new places to look forward to now - Exploring Brisbane!</p>
 </div>
 
 
@@ -258,25 +262,13 @@
   
     <li>
     	<p>
-      		<a href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
+      		<a href="/blog/one-day-trips-around-sydney/">One Day Trips Around Sydney</a>
   		</p>
     </li>
   
     <li>
     	<p>
-      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-iii/">Generating a Large PDF from Website Contents - Merging PDF Files</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
-      		<a href="/blog/ndc-sydney-2017/">NDC Sydney 2017</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
-      		<a href="/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>
+      		<a href="/blog/three-day-trip-to-coffs-harbour-from-sydney/">Three Day Trip to Coffs Harbour from Sydney</a>
   		</p>
     </li>
   
@@ -288,7 +280,7 @@
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney/" >Tweet</a>
   
   
   
@@ -300,10 +292,8 @@
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/text-editing-convert-text-casing/" title="Previous Post: Tip of the Week: Text Editing - Convert Text Casing">&laquo; Tip of the Week: Text Editing - Convert Text Casing</a></li>
+            <li class="previous"><a href="/blog/build-and-deploy-a-net-core-console-application/" title="Previous Post: Setting up Build and Deploy Pipeline for a .NET Core Console Application">&laquo; Setting up Build and Deploy Pipeline for a .NET Core Console Application</a></li>
             
-            
-            <li class="next"><a href="/blog/trips-for-the-long-weekend-around-sydney/" title="Next Post: Trips for the (Long) Weekend Around Sydney">Trips for the (Long) Weekend Around Sydney &raquo;</a></li>
             
           </ul>
         
@@ -348,8 +338,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/';
-        var disqus_url = 'http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney/';
+        var disqus_url = 'http://rahulpnath.com/blog/trips-for-the-long-weekend-around-sydney/';
         var disqus_script = 'embed.js';
       
     (function () {
