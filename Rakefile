@@ -181,7 +181,7 @@ task :new_draft_tip, :title do |t, args|
     post.puts "primaryImage: "
     post.puts "---"
   end
-  task(:todoist_template).invoke(title)
+ 
 end
 
 # usage rake todoist_template
