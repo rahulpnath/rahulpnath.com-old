@@ -23,7 +23,7 @@ Below is a transcript of a chat with one of my readers whom I have never met. It
 
 <img src="{{site.images_root}}/share_and_inspire_chat.png" alt="Share and Inspire" class="center">
 
-Social media plays a great role in spreading information these days. When you see people in your own friend's circle start doing things that you have always wanted to, it gives you an extra push to give it a try.  THere might be some people who feel you are sharing too much of things that don't interest them. For those, there is always an option to un-follow, mute, filter etc. Don't let that thought stop you from sharing things that you do. 
+Social media plays a great role in spreading information these days. When you see people in your own friend's circle start doing things that you have always wanted to, it gives you an extra push to give it a try. There might be some people who feel you are sharing too much of things that don't interest them. For those, there is always an option to un-follow, mute, filter etc. Don't let that thought stop you from sharing things that you do. 
 
 Such a small act of sharing, even things that you might have seen someone do could add up and be of big impact to someone else, often referred to as the [Butterfly Effect](https://www.hanselman.com/blog/TheButterflyEffectOfTechnologyCommunity.aspx).
 
