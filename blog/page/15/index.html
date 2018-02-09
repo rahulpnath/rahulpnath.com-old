@@ -163,6 +163,92 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-05-03T22:43:55+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 3<sup>rd</sup>, 2015</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/design/'>design</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/when-your-architecture-screams-technology/" itemprop="url">When your Architecture Screams Technology!</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>In todays world the problem&rsquo;s that are solved by technology are innumerous and it is not just a single system that the customer is looking for. They usually need multiple systems solving different problems around their core domain. But as developers, we usually get carried away by the technology aspect of it, giving lesser importance to the problem or domain itself. Whenever we have multiple systems targeting the same core domain of the customer, we see that what gets reused across these systems are the &lsquo;<a href="https://msdn.microsoft.com/en-in/library/ee658105.aspx">Crosscutting concerns</a>&rsquo; like Caching, Authentication, Logging, Exception Management etc. But is this what really should be getting shared? Are our customer trying to solve these crosscutting issues? Should it not be their core domain logics and rules and validations that get shared. The Architecture Screams Technology preventing anything else but these crosscutting concerns (which are not technology specific) the only thing that is shareable across systems.</p>
+
+<h3>Common Traits of Technology Coupling</h3>
+
+<p>There are a lot of traits that indicate this dependency on technology and makes a system modeled around technology stand out from the one modeled around the domain. Below are some of the things that I have figured out are very strong hints indicating a tight coupling with the technology. The earlier we identify such smells the better we are to retract and get ourselves align to the needs of the domain and not the technology.</p>
+
+<p><strong>Solution Folders and Projects</strong></p>
+
+<p>Take a look at your solution directory from the top level and what do you infer that it is all about. Does it have folders reflecting technology stacks like ASP.Net, Web API, WPF, Ruby, NHibernate etc or does it reflect the domain space that you are trying to solve like Shipping, Stock Management, Customer Relations? This should give the first hint on what the Architecture of your application reflects. But you could easily get tricked here as &lsquo;what you see might not be what it is&rsquo;, so lets take a step in.
+Before we do you might ask, Are we not building a web-site for the customer so what is wrong in having the structure indicate that? We are building a solution that solves certain problems for our customer, it is only that it is getting delivered or accessed via a web-site. Tomorrow this might be delivered via a mobile application or a rich desktop client or even a console application so having it tightly bound to web delivery mechanism is only going to hinder us on the way forward.</p>
+
+<p><strong>Single Large Interface Project</strong></p>
+
+<p>Having all the interfaces used across the application to be in a single interfaces project is something that I have come across quite often and this clearly indicates that something is definitely wrong here. As mentioned in <a href="http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">Agile Principles, Patterns, and Practices in C#</a> by <a href="https://twitter.com/unclebobmartin">Uncle Bob</a>, Interfaces should belong to the clients and should stay close to them. If multiple clients needs to use the same interface then probably you could move them out into a common library. But all interfaces in a single project possibly means you have more of <a href="http://martinfowler.com/bliki/HeaderInterface.html">Header Interfaces</a> and not <a href="http://blog.ploeh.dk/2013/01/10/RoleInterfaceRoleHint/">Role interfaces</a> as that would primarily be specific to the clients that use them. Also watch out for the references that these projects have and whether they have any technology specific references which would possibly indicate a <a href="http://en.wikipedia.org/wiki/Leaky_abstraction">leaky abstraction</a>.</p>
+
+<p><strong>Single Large Entities Project</strong></p>
+
+<p>Same as interfaces, this is another common thing that is quite common and might possible indicate a problem in the way a domain is modeled. In a complex domain it is highly likely that an entity is not the same everywhere and is very context specific. A customer might have a different meaning in the context of Shipping and totally different in context of Customer Relations, but having a single customer that is acts as a super set for all these contexts is a problem. Also having all the entities together probably means that enough thought has not been put into separating what parts of the system changes together and what does not. This is a clear indication of poorly modeled domain. On top of this if you are using any kind of O/RM technologies to map these to the database then it just adds on to your problems when you use a single large context to map to the database.</p>
+
+<p><strong>No Explicit boundaries</strong></p>
+
+<p>It&rsquo;s very likely that the application talks across difference boundaries and interacts with different systems. Some of them might be external, like a third party service and some other are internal, most commonly a database. If you see the same entities that are passed along at all these boundaries then its very likely that you have a leaky abstraction, which again would get reflected by looking at the reference folder of Entities/Interfaces project. This kind of abstractions tend to break the entire system when any of these boundaries changes, causing a  rippling effect in the code.</p>
+
+<p><strong>Source Control Commit History</strong></p>
+
+<p>Looking at the previous commits in your source control you can tell if your dependencies are well managed and if there are a lot of technology coupling. If you have commits that have large number of files associated especially one&rsquo;s modified then it again means that you have a lot of leaking abstractions. This leak could be a technology leak or even a function leak, where the abstractions are not well contained which causes a ripple effect when anything associated changes.</p>
+
+<p><strong>Anemic Domain Model</strong></p>
+
+<p>This is one of the most common and greatest indication of technology coupling and lack of proper modeling of the problem domain. Open up any of the classes in your entities project and all you see are properties with getters and setters with hardly any function in them. Object Oriented Programming brought data and functions together, but hardly do we see them together. We either have classes that act as data bags or classes that use these data classes to perform transactions over them. <a href="http://www.martinfowler.com/bliki/AnemicDomainModel.html">Anemic Domain Model </a> works fine for applications that perform basic <a href="http://en.wikipedia.org/wiki/Create,_read,_update_and_delete">CRUD</a> operations and with very less business logic in them, but as complexity grows it becomes very difficult to maintain and extend. Anemia in the entities is the biggest reason why we end up having only cross-cutting features to be shared across applications for the same domain.</p>
+
+<h3>Onion Architecture</h3>
+
+<p>Technology should be only seen as enablers for solving the problems and it should never get in way of the original problem. Onion Architecture or Hexagonal Architecture try to solve this problem of keeping the domain model clean and separate and have the technology dependency point into it. This enables switching out the technology specific implementations at any point and also enabling us to reuse the core domain components across various systems or hosts.</p>
+
+<blockquote><p>&ldquo;The overriding rule that makes this architecture work is <em>The Dependency Rule</em>. This rule says that source code dependencies can only point inwards. Nothing in an inner circle can know anything at all about something in an outer circle. In particular, the name of something declared in an outer circle must not be mentioned by the code in the an inner circle. That includes, functions, classes. variables, or any other named software entity.&rdquo;</p></blockquote>
+
+<p><a href="http://bit.ly/cleanarchitecture" class="center" title="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"><img src="/images/clean_architecture.jpg" class="center" alt="Image By Uncle Bob, from http://bit.ly/cleanarchitecture"></a></p>
+
+<p>Screaming technology is a common thing in many a projects and it is not really a big problem when the domain you are trying to solve is not that complex. But usually that is not the case and we have very complex domain logics, multiple systems targeting for different areas and highly volatile requirements. These are just some of the most common indications that I have come across that indicate a tightly coupled solution. The <a href="http://www.objectmentor.com/resources/articles/CoffeeMaker.pdf">Mark IV Special Coffee Maker</a> problem presented by Uncle Bob in his <a href="Agile%20Principles,%20Patterns,%20and%20Practices%20in%20C#](http://www.amazon.in/gp/product/0131857258/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0131857258&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=VVMXRINDZWYFRWP4">book</a>, presents us with an interesting modeling problem, shows some most common errors, why they are errors and possible ways to tackle them. That just helps to get started to think on the right path, to tackle issues in larger domains, methodologies like <a href="http://www.amazon.in/gp/product/0321125215/ref=as_li_tl?ie=UTF8&amp;camp=3626&amp;creative=24822&amp;creativeASIN=0321125215&amp;linkCode=as2&amp;tag=rahulpnath-21&amp;linkId=F6WJ7JK5CYQOIJV6">Domain Driven Design</a> would help us to solve the actual domain problems.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-04-25T11:46:09+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 25<sup>th</sup>, 2015</time>
         
 
@@ -1384,185 +1470,6 @@
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2015-01-01T18:33:14+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 1<sup>st</sup>, 2015</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/language-agnostic-books-for-every-developer/" itemprop="url">Language Agnostic Books For Every Developer</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Reading is inevitable to keep up to date with the latest technologies and rapid changes happening in the programming world. But technology is nothing but a tool for getting things done. What one has to understand are the concepts and principles underlying these technology and the core principles of development. These are to be gained through <a href="http://www.rahulpnath.com/blog/an-enterprise-it-project-experience/">our own experiences</a> and also from the learnings and the experiences of others. Books are a great source of such experiences, and this post is a list of those that I have found interesting and helpful. I have not read all these nor was I able to fully understand whatever I have. These books are to be read/referred to multiple times, practiced and adopted into our work. It&rsquo;s also worth referring other books from the same author&rsquo;s or other writings as they are among the pioneers in our industry.</p>
-
-<p>The books would speak for themselves and I don&rsquo;t think I can do justice writing a summary to any of these. So I have decided to just list them down here(in no specific order). It&rsquo;s worth having a personal copy of each one of these in your bookshelves. (mine is still short of some of them).</p>
-
-<p><div>
-      <div class="row">
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/0735619670/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0735619670&linkCode=as2&tag=rahulpnath-20&linkId=6EBVFQ44LVCQC3VW">
-            <img src="/images/books_codecomplete.jpg" data-holder-rendered="true" style="display: block;" >
-             </a>
-            <div class="caption">
-              <h5><strong>Code Complete</strong></h5>
-            </div>
-          </div>
-        </div>
-       <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-          <a href="http://www.amazon.com/gp/product/0321146530/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321146530&linkCode=as2&tag=rahulpnath-20&linkId=UFKBUSTB43PNRS76" >
-            <img src="/images/books_tdd.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Test Driven Development</strong></h5>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0131489062/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131489062&linkCode=as2&tag=rahulpnath-20&linkId=2IKSKNFHUIXAC3V4" >
-            <img src="/images/books_applyinguml.jpeg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Applying UML and Patterns</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-     <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0321125215/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321125215&linkCode=as2&tag=rahulpnath-20&linkId=LGNNMURUNPIQJ22Q" >
-            <img src="/images/books_ddd.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>Domain Driven Design</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-       </div>
-      <div class="row">
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0596805829/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0596805829&linkCode=as2&tag=rahulpnath-20&linkId=BAC6OAIRWSGB4ZBB" >
-            <img src="/images/books_restinpractice.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>Rest in Practice</strong></h5>
-            </div>
-          </div>
-        </div>
-      <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/020161622X/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=020161622X&linkCode=as2&tag=rahulpnath-20&linkId=I6W7QKVDPXSBR37P" >
-            <img src="/images/books_pragmaticprogrammer.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>The Pragmatic Programmer</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0201485672/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0201485672&linkCode=as2&tag=rahulpnath-20&linkId=VPJIMQDT3AENNVY6" >
-            <img src="/images/books_refactoring.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>Refactoring</strong></h5>
-            </div>
-          </div>
-        </div>
-    <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0321193687/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321193687&linkCode=as2&tag=rahulpnath-20&linkId=HXUV2APJ7YOHRIZY" >
-            <img src="/images/books_umldistilled.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-            <div class="caption">
-              <h5><strong>UML Distilled</strong></h5>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="row">   <br/>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0201835959/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0201835959&linkCode=as2&tag=rahulpnath-20&linkId=HKH5I6Q3Y6IYSCI5" >
-            <img src="/images/books_mythicalmanmonth.jpg" data-holder-rendered="true" style="display: block;">
-            </a>
-            <div class="caption">
-              <h5><strong>The Mythical Man-Month</strong></h5>         <br/>
-            </div>
-          </div>
-        </div>
-      <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-            <a href="http://www.amazon.com/gp/product/0262510871/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0262510871&linkCode=as2&tag=rahulpnath-20&linkId=7YASXOZAUG7JDUDI" >
-            <img src="/images/books_sicp.jpg" data-holder-rendered="true" style="display: block;">
-             </a>
-            <div class="caption">
-              <h5><strong>Structure and Interpretaion of Computer Programs</strong></h5>
-            </div>
-          </div>
-        </div>
-       <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-           <a href="http://www.amazon.com/gp/product/0131857258/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0131857258&linkCode=as2&tag=rahulpnath-20&linkId=SQ27A44S24WSXQK4" >
-            <img src="/images/books_agilepatterns.jpg" data-holder-rendered="true" style="display: block;">
-           </a>
-           <div class="caption">
-              <h5><strong>Agile Principles, Patterns and Practices</strong></h5>      <br/>
-            </div>
-          </div>
-        </div>
-        <div class="col-sm-6 col-md-3">
-          <div class="thumbnail">
-         <a href="http://www.amazon.com/gp/product/0321127420/ref=as_li_tl?ie=UTF8&camp=1789&creative=390957&creativeASIN=0321127420&linkCode=as2&tag=rahulpnath-20&linkId=UR5IBEFV64BK5FYG" >
-            <img src="/images/books_poeaa.jpg" data-holder-rendered="true" style="display: block;">
-          </a>
-            <div class="caption">
-              <h5><strong>Patterns of Enterprise Application and Architecture</strong></h5>          <br/>
-            </div>
-          </div>
-        </div>    <br/>
-      </div></p>
-
-<p>Hope you start of this year off with some nice readings and gift yourself with some these master pieces. I am sure that I have not covered all of them and there are still more to be &lsquo;chewed and digested&rsquo;. Do drop in with a comment on Which books have helped you be better in programming.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1586,6 +1493,8 @@
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/share-and-inspire/">Share and Inspire</a>
+    
     <a class="list-group-item " href="/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/">Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines</a>
     
     <a class="list-group-item " href="/blog/trips-for-the-long-weekend-around-sydney/">Trips for the (Long) Weekend Around Sydney</a>
@@ -1593,8 +1502,6 @@
     <a class="list-group-item " href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
     
     <a class="list-group-item " href="/blog/text-editing-convert-text-casing/">Tip of the Week: Text Editing - Convert Text Casing</a>
-    
-    <a class="list-group-item " href="/blog/2017-recap/">2017: What Went Well, What Didn&#8217;t and Goals</a>
     
   </div>
 </section>
