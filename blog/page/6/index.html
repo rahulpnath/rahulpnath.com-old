@@ -163,6 +163,153 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-01T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 1<sup>st</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-from-azure-functions/" itemprop="url">Azure Key Vault From Azure Functions</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><em><a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-overview">Azure Functions</a> is a solution for easily running small pieces of code, or &ldquo;functions,&rdquo; in the cloud. You can write just the code you need for the problem at hand, without worrying about a whole application or the infrastructure to run it. Functions can make development even more productive, and you can use your development language of choice, such as C#, F#, Node.js, Python or PHP. Pay only for the time your code runs and trust Azure to scale as needed. Azure Functions lets you develop serverless applications on Microsoft Azure.</em></p>
+
+<p>Even when developing with Azure Functions you want to keep your sensitive data protected. Like for example if the function needs to connect to a database you might want to get the connection string from <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>. If you are new to Azure Key Vault check out <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">these posts to get started</a>. In this post, we will explore how we can consume objects in Azure Key Vault from an Azure Function.</p>
+
+<p><strong>Create Azure Function App</strong>: Let&rsquo;s first create an Azure Function App from the Azure portal. Under <em>New - Compute - Function App</em> you can create a new Azure Function.</p>
+
+<p><img src="/images/azureFunction_new.png" alt="" class="center" /></p>
+
+<p>Enter the details of the new function app and press Create. Each function app has an associated storage account. You can choose an existing one or create a new one.</p>
+
+<p><img src="/images/azureFunction_create.png" alt="" class="center" /></p>
+
+<p>You can view all Azure Functions Apps in the subscription under <em>More services - Function Apps</em></p>
+
+<p><img src="/images/azureFunction_all.png" alt="" class="center" /></p>
+
+<p><strong>Create Function</strong>: To create a function you can create from an existing template or create a custom function. In this example, I will use a timer based function in C#.</p>
+
+<p><img src="/images/azureFunction_createFunction.png" alt="" class="center" /></p>
+
+<p>In the <em>run.csx</em> file add in the code for the function. The below code fetches the secret value from the Key Vault and logs it. You need to provide the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Azure AD Application Id and secret</a> to authenticate with it. Alternatively you can also use <a href="http://www.rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">certificate based authentication to authenticate with the Key Vault</a>. Make sure you add in the relevant <em>using</em> statements for the KeyVault client Azure Active Directory Authentication libraries (ADAL).</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.Azure.KeyVault</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Microsoft.IdentityModel.Clients.ActiveDirectory</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">applicationId</span> <span class="p">=</span> <span class="s">&quot;AD Application Id&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="k">private</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">applicationSecret</span> <span class="p">=</span> <span class="s">&quot;AD Application Secret&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">async</span> <span class="k">static</span> <span class="n">Task</span> <span class="nf">Run</span><span class="p">(</span><span class="n">TimerInfo</span> <span class="n">myTimer</span><span class="p">,</span> <span class="n">TraceWriter</span> <span class="n">log</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">keyClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">KeyVaultClient</span><span class="p">(</span><span class="k">async</span> <span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="n">resource</span><span class="p">,</span> <span class="n">scope</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">adCredential</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">applicationId</span><span class="p">,</span> <span class="n">applicationSecret</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">authenticationContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationContext</span><span class="p">(</span><span class="n">authority</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="p">(</span><span class="k">await</span> <span class="n">authenticationContext</span><span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="n">resource</span><span class="p">,</span> <span class="n">adCredential</span><span class="p">)).</span><span class="n">AccessToken</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secretIdentifier</span> <span class="p">=</span> <span class="s">&quot;https://rahulkeyvault.vault.azure.net/secrets/mySecretName&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="k">await</span> <span class="n">keyClient</span><span class="p">.</span><span class="n">GetSecretAsync</span><span class="p">(</span><span class="n">secretIdentifier</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">log</span><span class="p">.</span><span class="n">Info</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;C# Timer trigger function executed at: {secret}&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/azureFunction_code.png" alt="" class="center" /></p>
+
+<p>Since the KeyVaultClient and the ADAL libraries are NuGet packages, we need to specify these as dependencies for the Azure Function. To use NuGet packages, create a <em>project.json</em> file in the functions folder. Add in both the NuGet packages name and required version.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="nt">&quot;frameworks&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;net46&quot;</span><span class="p">:{</span>
+</span><span class='line'>      <span class="nt">&quot;dependencies&quot;</span><span class="p">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;Microsoft.Azure.KeyVault&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;Microsoft.IdentityModel.Clients.ActiveDirectory&quot;</span><span class="p">:</span> <span class="s2">&quot;2.14.201151115&quot;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>   <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/azureFunction_nuget.png" alt="" class="center" /></p>
+
+<p>Executing the function, retrieves the secret details from the Key Vault and logs it as shown below.</p>
+
+<p><img src="/images/azureFunction_run.png" alt="" class="center" /></p>
+
+<p>Hope this helps you to get started with Key Vault in Azure Functions and keep your sensitive data secure.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 24<sup>th</sup>, 2017</time>
         
 
@@ -993,63 +1140,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-03-23T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 23<sup>rd</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/rescue-time-track-your-time/" itemprop="url">Tip of the Week: Rescue Time - Track Your Time</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img alt="Rescue Time - My dashboard for March,2017" src="/images/rescuetime.png" /></p>
-
-<p>Tracking is essential for measuring progress. Depending on your area of focus tracking tools differ. If it is a time-based activity that you are tracking a simple watch can suffice the need. But this can soon become an overhead. <a href="https://www.rescuetime.com/">Rescue Time</a> helps track time spent on a computer or mobile devices.</p>
-
-<blockquote><p><em>Rescue Time is a  personal analytics service that shows you how you spend your time and provides tools to help you be more productive.</em></p></blockquote>
-
-<p>Rescue time runs in the background and helps you track the applications and websites that you use. Most of the applications are categorized automatically; However, it also allows manual categorization. Rescue Time lets you edit an activity and assign it to various categories and set productivity levels. So if you are spending more time on an application configured as <em>very productive</em> then your overall productivity pulse is higher for the day.</p>
-
-<p><img alt="Rescue Time - Edit Activity" src="/images/rescuetime_edit_activity.png" /></p>
-
-<p>Once you have your time tracked you can then adapt yourself to be more productive. Various reports are provided to visualize the data collected. The <a href="https://www.rescuetime.com/rescuetime-pro">premium version</a> offers a lot more features to help improve productivity. I am currently on the Free Plan. Rescue Time helps inspect your current behaviors and patterns at work. Once you have the details, you can understand where your time is spent and improve on it as required. Rescue Time is available for <a href="https://www.rescuetime.com/get_rescuetime">computer and mobile devices</a>. Hope this helps track your time and become more productive!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1073,6 +1163,8 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/https-for-free-and-why-you-should-care/">HTTPS For Free and Why You Should Care</a>
+    
     <a class="list-group-item " href="/blog/share-and-inspire/">Share and Inspire</a>
     
     <a class="list-group-item " href="/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/">Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines</a>
@@ -1080,8 +1172,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
     <a class="list-group-item " href="/blog/trips-for-the-long-weekend-around-sydney/">Trips for the (Long) Weekend Around Sydney</a>
     
     <a class="list-group-item " href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
-    
-    <a class="list-group-item " href="/blog/text-editing-convert-text-casing/">Tip of the Week: Text Editing - Convert Text Casing</a>
     
   </div>
 </section>
