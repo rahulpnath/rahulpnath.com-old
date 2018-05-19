@@ -17,6 +17,11 @@ group :development do
   gem 'rb-fsevent', '~> 0.9'
   gem 'stringex', '~> 1.4.0'
   gem 'kramdown', '1.3'
+  gem 'ffi', '1.9.21'
+  gem 'rb-fsevent', '0.10.2'
+  gem 'rack', '1.6.8'
+  get 'classifier', '1.3.4'
+  gem 'rack-protection', '1.5.3'
 end
 
 gem 'sinatra', '~> 1.4.2'
