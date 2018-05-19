@@ -20,7 +20,7 @@ group :development do
   gem 'ffi', '1.9.21'
   gem 'rack', '1.6.8'
   gem 'classifier', '1.3.4'
-  gem 'rack-protection', '1.5.3'
+  gem 'rack-protection', '~> 1.5.5'
 end
 
 gem 'sinatra', '~> 1.4.2'
