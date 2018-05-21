@@ -163,6 +163,61 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 21<sup>st</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/security/'>security</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/authy-sync-two-factor-authentication-across-devices/" itemprop="url">Tip of the Week: Authy - Sync Two Factor Authentication Across Devices</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><a href="https://en.wikipedia.org/wiki/Multi-factor_authentication">Two Factor Authentication</a> (2FA) is becoming more and more common these days and is a good way to protect your accounts from getting into the wrong hands. SMS and App based 2FA are more common with the day to day services that we use, like Gmail, Outlook, Facebook etc. Enabling 2FA the user is prompted for a number that gets sent to them via phone or generated using an application, in addition to the username and password, when logging in. Enabling 2FA protects your account a level further. Even if an attacker has your credentials from a data breach, they would still need access to your phone to log in to your account. Using an app to generate the codes is more preferable than using SMS as it does not require internet connectivity or mobile service.</p>
+
+<p>Until lately I have been using <a href="https://support.google.com/accounts/answer/1066447?hl=en&amp;ref_topic=2954345">Google Authenticator</a> to generate codes for all the accounts that I have 2FA enabled. The app does work well on a single mobile device but becomes a pain when you want to switch phones or lose the phone. You could potentially be locked out of your accounts if you lose the phone and don&rsquo;t have the backup codes available.</p>
+
+<p><img src="/images/authy_preview.png" alt="Authy" class="center" /></p>
+
+<p><a href="https://authy.com/features/">Authy</a> is one of the best-rated 2FA application which targets exactly the issues with Google Authenticator. It is easy to setup, can be secured via TouchId/Password, supports encrypted backups and syncs across multiple applications and devices. Once setup any code that you add to your app gets synced through Authy servers and is all encrypted and secured. Authy has applications for the <a href="https://authy.com/download/">mobile, desktop and also has a plugin for Chrome browser</a>. You can also manage devices from the account and revoke a device if it gets lost or is not used anymore. <a href="https://authy.com/blog/authy-vs-google-authenticator/">Authy vs Google Authentication post</a> covers in detail all the differences between the two and the advantages of using Authy.</p>
+
+<p>Check out <a href="https://authy.com/features/">Authy</a> and do setup 2FA if you are not already!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-05-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 19<sup>th</sup>, 2018</time>
         
 
@@ -1068,77 +1123,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-12-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 11<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/" itemprop="url">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>I was recently playing around with <a href="https://www.messagemedia.com.au/">MessageMedia API</a> trying to <a href="https://developers.messagemedia.com/code/messages-api-documentation/">send SMS and get the status of the SMS sent</a>. Sending the SMS and getting the status of the last sent SMS always happened in succession when testing it manually. Once I send the message, I waited for the API response, grabbed the message id from the response and used that to form the get status request.</p>
-
-<p><a href="https://www.getpostman.com/">Postman</a> is a useful tool if you are building or testing APIs. It allows to create, send and manage API requests.</p>
-
-<p><img src="/images/postman_chaining_requests.png" alt="Postman Chaining Requests" /></p>
-
-<p>I added two requests and saved it to a collection in Postman - one to Send Message and other to Get Message status. I have created an environment variable for holding the message id. For the request that sends a message, the below Test snippet is added. It parses the response body of the request and extracts the message id of the last send message. This is then saved to the environment variable. The <a href="https://www.getpostman.com/docs/postman/scripts/test_scripts">Test</a> snippet is always run after performing the request.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">jsonData</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">responseBody</span><span class="p">);</span>
-</span><span class='line'><span class="nx">postman</span><span class="p">.</span><span class="nx">setEnvironmentVariable</span><span class="p">(</span><span class="s2">&quot;messageId&quot;</span><span class="p">,</span> <span class="nx">jsonData</span><span class="p">.</span><span class="nx">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">message_id</span><span class="p">);</span>
-</span><span class='line'><span class="nx">tests</span><span class="p">[</span><span class="s2">&quot;Success&quot;</span><span class="p">]</span><span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Get message request uses the messageId from the environment variables to construct its URL. The URL looks like below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>https://api.messagemedia.com/v1/messages/{{messageId}}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When executing this request, it fetches the messageId from the environment variable, which is set by the previous request. You no longer have to copy message id manually and use it in the URL. This is how we chain the data from one request to another request. Chaining requests is also useful in automated testing using Postman. Hope this helps!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1162,6 +1146,8 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/authy-sync-two-factor-authentication-across-devices/">Tip of the Week: Authy - Sync Two Factor Authentication Across Devices</a>
+    
     <a class="list-group-item " href="/blog/https-for-free-and-why-you-should-care/">HTTPS For Free and Why You Should Care</a>
     
     <a class="list-group-item " href="/blog/share-and-inspire/">Share and Inspire</a>
@@ -1169,8 +1155,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
     <a class="list-group-item " href="/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/">Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines</a>
     
     <a class="list-group-item " href="/blog/trips-for-the-long-weekend-around-sydney/">Trips for the (Long) Weekend Around Sydney</a>
-    
-    <a class="list-group-item " href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
     
   </div>
 </section>

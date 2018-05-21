@@ -163,6 +163,57 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-16T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 16<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/finding-keyboard-shortcuts-on-websites/" itemprop="url">Tip of the Week: Finding Keyboard Shortcuts on Websites</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img alt="Keyboard Shortcuts" src="/images/keyboard_shortcuts.jpg" /></p>
+
+<p>I prefer to use the keyboard to navigate within sites I use frequently. Keyboard enables to navigate faster within site and perform tasks quicker. The <a href="http://www.rahulpnath.com/blog/review-six-months-and-counting-logitech-mx-master/">Logitech MX Master</a> mouse provides a lot of capabilities to navigate. But I find the keyboard faster to perform repetitive actions - like posting a new status update on social media sites, managing tasks in Jira, TFS online, GitHub, responding to emails, Todoist, etc. Finding keyboard shortcuts on these various sites can itself be a daunting task. One might need to google to get the shortcuts or find the relevant documentation on the site. Luckily most of the popular sites today display a pop-up modal with all the keyboard shortcuts for the site when pressing <strong>Shift + ?</strong>. Note that this might not work on all the sites out there. But for most of the common ones that I use l, I find it working.</p>
+
+<p>So the next time you spend a lot of time on a website try hitting <strong>Shift + ?</strong> to look for supported keyboard shortcuts.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 11<sup>th</sup>, 2017</time>
         
 
@@ -1298,133 +1349,6 @@ The series of events mentioned below were modified to fit into the conversationa
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 21<sup>st</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/accessing-azure-key-vault-from-azure-runbook/" itemprop="url">Accessing Azure Key Vault From Azure Runbook</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
-
-<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
-
-<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
-
-<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
-
-<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
-
-<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
-
-<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
-
-<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
-
-<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
-
-<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$connectionName</span> <span class="p">=</span> <span class="s2">&quot;AzureRunAsConnection&quot;</span>
-</span><span class='line'><span class="k">try</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c"># Get the connection &quot;AzureRunAsConnection &quot;</span>
-</span><span class='line'>    <span class="nv">$servicePrincipalConnection</span><span class="p">=</span><span class="nb">Get-AutomationConnection</span> <span class="n">-Name</span> <span class="nv">$connectionName</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="s2">&quot;Logging in to Azure...&quot;</span>
-</span><span class='line'>    <span class="nb">Add-AzureRmAccount</span> <span class="p">`</span>
-</span><span class='line'>        <span class="n">-ServicePrincipal</span> <span class="p">`</span>
-</span><span class='line'>        <span class="n">-TenantId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">TenantId</span> <span class="p">`</span>
-</span><span class='line'>        <span class="n">-ApplicationId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="p">`</span>
-</span><span class='line'>        <span class="n">-CertificateThumbprint</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">CertificateThumbprint</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'><span class="k">catch</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="nv">$servicePrincipalConnection</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="nv">$ErrorMessage</span> <span class="p">=</span> <span class="s2">&quot;Connection $connectionName not found.&quot;</span>
-</span><span class='line'>        <span class="k">throw</span> <span class="nv">$ErrorMessage</span>
-</span><span class='line'>    <span class="p">}</span> <span class="k">else</span><span class="p">{</span>
-</span><span class='line'>        <span class="nb">Write-Error</span> <span class="n">-Message</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
-</span><span class='line'>        <span class="k">throw</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1448,6 +1372,8 @@ The series of events mentioned below were modified to fit into the conversationa
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/authy-sync-two-factor-authentication-across-devices/">Tip of the Week: Authy - Sync Two Factor Authentication Across Devices</a>
+    
     <a class="list-group-item " href="/blog/https-for-free-and-why-you-should-care/">HTTPS For Free and Why You Should Care</a>
     
     <a class="list-group-item " href="/blog/share-and-inspire/">Share and Inspire</a>
@@ -1455,8 +1381,6 @@ The series of events mentioned below were modified to fit into the conversationa
     <a class="list-group-item " href="/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/">Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines</a>
     
     <a class="list-group-item " href="/blog/trips-for-the-long-weekend-around-sydney/">Trips for the (Long) Weekend Around Sydney</a>
-    
-    <a class="list-group-item " href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
     
   </div>
 </section>
