@@ -6,7 +6,7 @@ categories:
 - Security
 - Programming 
 tags: 
-date: 2017-05-28
+date: 2018-05-28
 completedDate: 2018-05-26 07:17:09 +1000
 keywords: 
 description: Some key takeaways from the security conference held in Gold Coast.
