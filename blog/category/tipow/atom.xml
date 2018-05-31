@@ -4,7 +4,7 @@
   <title><![CDATA[Category: tipow | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/tipow/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-05-31T00:01:21+00:00</updated>
+  <updated>2018-05-31T02:36:09+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,29 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Tip of the Week: Check If You Have Been Hacked!]]></title>
+    <link href="http://rahulpnath.com/blog/check-if-you-have-been-hacked/"/>
+    <updated>2018-05-31T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/check-if-you-have-been-hacked</id>
+    <content type="html"><![CDATA[<p><img src="/images/password_manager.jpg" alt ="https://pixabay.com/en/data-security-keyboard-computer-1590455/" class="center" /></p>
+
+<p>With more and more data breaches happening it is possible that your personal information and passwords are already compromised. If you have been lazy and reusing passwords (just like me until a while back) across multiple sites then it is good to check if your password is already compromised. It necessarily need not be one of your social media account or bank account that needs to be compromised for an attacker to get your credentials. If you have been reusing passwords across sites, it might be that one site where security is not given much importance for that gets breached, exposing your credentials to the attacker or anyone who has the breached data. Often hackers use this information to try and enumerate other sites, social network, bank logins to try and login assuming the behaviour of password reuse.</p>
+
+<blockquote><p><em>Check your <a href="https://haveibeenpwned.com/">email</a> or <a href="https://haveibeenpwned.com/Passwords">password</a> to see if any has been part of a data breach.</em></p></blockquote>
+
+<p>To check if you have been part of a data breach you can use the service <a href="https://haveibeenpwned.com/">haveibeenpwned</a>. If you have been part of any data breaches, then it will show you the details. In addition to that, you can also use the <a href="https://haveibeenpwned.com/Passwords">Pwned Passwords</a> list to check if the password that you use has been part of any data breaches. It&rsquo;s good to change your password if you find yours in there. If you are worried about entering your password in haveibeenpwned site, the good thing is that it uses <a href="https://www.troyhunt.com/ive-just-launched-pwned-passwords-version-2/">k-anonymity model</a>, which means that your full password is not sent across the wire.</p>
+
+<h3>Next Steps</h3>
+
+<ul>
+<li>Update your passwords on all sites that you use if you have been reusing passwords. If you don&rsquo;t have much time to do this in one shot, you can do this incrementally as and when you next visit them.</li>
+<li>Make sure you have unique passwords for each of the site. <a href="https://www.troyhunt.com/only-secure-password-is-one-you-cant/">A good password is one that you cannot remember</a>. So if you are not using a <a href="https://rahulpnath.com/blog/password-manager-get-one-if-you-havent-already/">Password Manager</a> it&rsquo;s a good idea to start using. If you don&rsquo;t want to spend money on a password manager, you can always use a <a href="https://www.lastpass.com/password-generator">random password generator</a> to generate one for you. Remembering that password might be hard, you could either write it down or save it in the browser (not that I am recommending it over getting a Password Manager, but better than reusing passwords).</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Authy - Sync Two Factor Authentication Across Devices]]></title>
@@ -96,36 +119,6 @@ Select * From Table5
 <p><img src="/images/garmin_auto_lap_training_repeat.png" alt="Garming Auto Lap Using Repeat, Fenix 3 HR" /></p>
 
 <p>Depending on the model/software version of your Garmin watch you might have to tweak your workout plans. Hope this helps</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests]]></title>
-    <link href="http://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/"/>
-    <updated>2017-12-11T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests</id>
-    <content type="html"><![CDATA[<p>I was recently playing around with <a href="https://www.messagemedia.com.au/">MessageMedia API</a> trying to <a href="https://developers.messagemedia.com/code/messages-api-documentation/">send SMS and get the status of the SMS sent</a>. Sending the SMS and getting the status of the last sent SMS always happened in succession when testing it manually. Once I send the message, I waited for the API response, grabbed the message id from the response and used that to form the get status request.</p>
-
-<p><a href="https://www.getpostman.com/">Postman</a> is a useful tool if you are building or testing APIs. It allows to create, send and manage API requests.</p>
-
-<p><img src="/images/postman_chaining_requests.png" alt="Postman Chaining Requests" /></p>
-
-<p>I added two requests and saved it to a collection in Postman - one to Send Message and other to Get Message status. I have created an environment variable for holding the message id. For the request that sends a message, the below Test snippet is added. It parses the response body of the request and extracts the message id of the last send message. This is then saved to the environment variable. The <a href="https://www.getpostman.com/docs/postman/scripts/test_scripts">Test</a> snippet is always run after performing the request.</p>
-
-<pre><code class="javascript">var jsonData = JSON.parse(responseBody);
-postman.setEnvironmentVariable("messageId", jsonData.messages[0].message_id);
-tests["Success"]= true;
-</code></pre>
-
-<p>The Get message request uses the messageId from the environment variables to construct its URL. The URL looks like below.</p>
-
-<p>
-<code>text
-https://api.messagemedia.com/v1/messages/{{messageId}}
-</code>
-</p>
-
-<p>When executing this request, it fetches the messageId from the environment variable, which is set by the previous request. You no longer have to copy message id manually and use it in the URL. This is how we chain the data from one request to another request. Chaining requests is also useful in automated testing using Postman. Hope this helps!</p>
 ]]></content>
   </entry>
   
