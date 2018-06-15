@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-15T00:02:17+00:00</updated>
+  <updated>2018-06-15T06:09:55+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,101 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault As A Connected Service in Visual Studio 2017]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/"/>
+    <updated>2018-06-15T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017</id>
+    <content type="html"><![CDATA[<p>Visual Studio (VS) now supports adding <a href="https://rahulpnath.com/blog/category/azure-key-vault/">Azure Key Vault</a> as a <a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service">Connected Service</a>, for Web Projects ( ASP.NET Core or any ASP.NET project). Enabling this from the Connected Service makes it easier for you to get started with Azure Key Vault. Below are the prerequisites to use the Connected Service feature</p>
+
+<blockquote><p><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service#prerequisites">Prerequisites</a></p>
+
+<ul>
+<li>An Azure subscription. If you do not have one, you can sign up for a free account.</li>
+<li>Visual Studio 2017 version 15.7 with the Web Development workload installed. Download it now.</li>
+<li>An ASP.NET 4.7.1 or ASP.NET Core 2.0 web project open.</li>
+</ul>
+</blockquote>
+
+<p><img class =" center" src="/images/keyVault_connectedService.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>When selecting &lsquo;Secure Secrets with Azure Key Vault&rsquo; option from the list of Connected Services provided it takes you to a new page within Visual Studio with your Azure Subscription associated with Visual Studio Account and gives you the ability to add a Key Vault to it. VS does generate some defaults for the Vault Name, Resource Group, Location and the Pricing Tier which you can edit as per your requirement. Once you confirm to the <em>Add</em> the Key Vault, VS provisions the Key Vault with the selected configuration and modifies some things in your project.</p>
+
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-what-happened">Changes Made to your ASP.NET project</a></li>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-core-what-happened">Changes made to your ASP.NET Core project</a></li>
+</ul>
+
+
+<p><img class =" center" src="/images/keyVault_connectedService_createKeyVault.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>In short, VS adds</p>
+
+<ul>
+<li>a bunch of NuGet packages to access Azure Key Vault</li>
+<li>Adds in the Keyvault Url details</li>
+<li>In ASP.NET Web project VS modifies the configuration file to add in the AzureKeyVaultConfigBuilder as shown below.</li>
+</ul>
+
+
+<pre><code class="xml Web.config">&lt;configuration&gt;
+&lt;configSections&gt;
+&lt;section
+      name="configBuilders"
+      type="System.Configuration.ConfigurationBuildersSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      restartOnExternalChanges="false"
+      requirePermission="false" /&gt;
+&lt;/configSections&gt;
+&lt;configBuilders&gt;
+&lt;builders&gt;
+&lt;add
+      name="AzureKeyVault"
+      vaultName="webapplication-47-dev-kv"
+      type="Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral"
+      vaultUri="https://WebApplication-47-dev-kv.vault.azure.net" /&gt;
+&lt;/builders&gt;
+&lt;/configBuilders&gt;
+</code></pre>
+
+<p>To start using Azure Key Vault from your application we first need to add some Secrets to the Key Vault created by Visual Studio. You can add a secret to the portal using multiple ways, the most straightforward being <a href="https://rahulpnath.com/blog/managing-key-vault-through-azure-portal/">using the Azure Portal</a>. Once you add the Secret to the Key Vault, update the configuration file with the Secret names. Below is how you would do for an ASP.NET Web Project. (<em>MySecret</em> and <em>VersionedSecret</em> keys)</p>
+
+<div class="alert alert-warning">
+Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSettings tag. This tells the Configuraion Manager to use the configured AzureKeyVaultConfigBuilder
+</div>
+
+
+<pre><code class="xml">&lt;appSettings configBuilders="AzureKeyVault"&gt;
+      &lt;add key="webpages:Version" value="3.0.0.0" /&gt;
+      &lt;add key="webpages:Enabled" value="false" /&gt;
+      &lt;add key="ClientValidationEnabled" value="true" /&gt;
+      &lt;add key="UnobtrusiveJavaScriptEnabled" value="true" /&gt;
+      &lt;add key="MySecret" value="dummy1"/&gt;
+      &lt;add key="VersionedSecret" value="dummy2"/&gt;
+&lt;/appSettings&gt;
+</code></pre>
+
+<p>The values <em>dummy*</em> are just dummy values and will be overridden at runtime from the Secret Values created in the Key Vault. If the Secret with the corresponding name does not exist in Key Vault, then the <em>dummy</em> values will be used.</p>
+
+<h3>Authentication</h3>
+
+<p>When VS creates the Vault, it adds in the user logged into VS to the Access Policies list. When running the application, the AzureKeyVaultConfigBuilder uses the same details to authenticate with the Key Vault.</p>
+
+<blockquote><p>If you are not logged in as the same user or not logged in at all the provider will not be able to authenticate with the Key Vault and will fallback to use the dummy values in the configuration file.</p></blockquote>
+
+<p><img class =" center" src="/images/keyVault_connectedService_AccessPolicies.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<h3>Secrets and Versioning</h3>
+
+<p>The <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> requests to get all the Secrets in the Key Vault at application startup using the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecrets/getsecrets">Secrets endoint</a>. This call returns all the Secrets in the Key Vault. For whatever keys in the AppSettings that has a match with a Secret in the vault, a request is made to get the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecret/getsecret">Secret details</a>, which returns the actual Secret value for the keys. Below are the traces of the calls going out captured using <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p><img class =" center" src="/images/keyVault_connectedService_requests.png" alt="AzureKeyVaultConfigBuilder Fiddler Traces " /></p>
+
+<p>It looks like at the moment the AzureKeyVaultConfigBuilder get only the latest version of the Secrets. As you can tell from one of my Secret names (VersionedSecret), I have created two versions for the Secret, and the config builder picks the latest version. I don&rsquo;t see a way right now whereby I can specify a specific secret version.</p>
+
+<p>The Visual Studio Connected Services makes it easy to get started with Azure Key Vault and move your secrets to a more secure store, than having it around in your <a href="https://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/">configuration files</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Authenticating with Azure Key Vault Using Managed Service Identity]]></title>
@@ -428,82 +523,6 @@ public async static Task Run(TimerInfo myTimer, TraceWriter log)
 <p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
 
 <p>Hope this helps!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault From Azure Functions]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions/"/>
-    <updated>2017-05-01T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions</id>
-    <content type="html"><![CDATA[<p><em><a href="https://docs.microsoft.com/en-us/azure/azure-functions/functions-overview">Azure Functions</a> is a solution for easily running small pieces of code, or &ldquo;functions,&rdquo; in the cloud. You can write just the code you need for the problem at hand, without worrying about a whole application or the infrastructure to run it. Functions can make development even more productive, and you can use your development language of choice, such as C#, F#, Node.js, Python or PHP. Pay only for the time your code runs and trust Azure to scale as needed. Azure Functions lets you develop serverless applications on Microsoft Azure.</em></p>
-
-<p>Even when developing with Azure Functions you want to keep your sensitive data protected. Like for example if the function needs to connect to a database you might want to get the connection string from <a href="http://www.rahulpnath.com/blog/getting-started-with-azure-key-vault/">Azure Key Vault</a>. If you are new to Azure Key Vault check out <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">these posts to get started</a>. In this post, we will explore how we can consume objects in Azure Key Vault from an Azure Function.</p>
-
-<p><strong>Create Azure Function App</strong>: Let&rsquo;s first create an Azure Function App from the Azure portal. Under <em>New - Compute - Function App</em> you can create a new Azure Function.</p>
-
-<p><img src="/images/azureFunction_new.png" alt="" class="center" /></p>
-
-<p>Enter the details of the new function app and press Create. Each function app has an associated storage account. You can choose an existing one or create a new one.</p>
-
-<p><img src="/images/azureFunction_create.png" alt="" class="center" /></p>
-
-<p>You can view all Azure Functions Apps in the subscription under <em>More services - Function Apps</em></p>
-
-<p><img src="/images/azureFunction_all.png" alt="" class="center" /></p>
-
-<p><strong>Create Function</strong>: To create a function you can create from an existing template or create a custom function. In this example, I will use a timer based function in C#.</p>
-
-<p><img src="/images/azureFunction_createFunction.png" alt="" class="center" /></p>
-
-<p>In the <em>run.csx</em> file add in the code for the function. The below code fetches the secret value from the Key Vault and logs it. You need to provide the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Azure AD Application Id and secret</a> to authenticate with it. Alternatively you can also use <a href="http://www.rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">certificate based authentication to authenticate with the Key Vault</a>. Make sure you add in the relevant <em>using</em> statements for the KeyVault client Azure Active Directory Authentication libraries (ADAL).</p>
-
-<pre><code class="csharp">using System;
-using Microsoft.Azure.KeyVault;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-
-private const string applicationId = "AD Application Id";
-private const string applicationSecret = "AD Application Secret";
-
-public async static Task Run(TimerInfo myTimer, TraceWriter log)
-{
-    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
-    {
-        var adCredential = new ClientCredential(applicationId, applicationSecret);
-        var authenticationContext = new AuthenticationContext(authority, null);
-        return (await authenticationContext.AcquireTokenAsync(resource, adCredential)).AccessToken;
-    });
-
-    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
-    var secret = await keyClient.GetSecretAsync(secretIdentifier);
-
-    log.Info($"C# Timer trigger function executed at: {secret}"); 
-}
-</code></pre>
-
-<p><img src="/images/azureFunction_code.png" alt="" class="center" /></p>
-
-<p>Since the KeyVaultClient and the ADAL libraries are NuGet packages, we need to specify these as dependencies for the Azure Function. To use NuGet packages, create a <em>project.json</em> file in the functions folder. Add in both the NuGet packages name and required version.</p>
-
-<pre><code class="json">{
-  "frameworks": {
-    "net46":{
-      "dependencies": {
-        "Microsoft.Azure.KeyVault": "1.0.0",
-        "Microsoft.IdentityModel.Clients.ActiveDirectory": "2.14.201151115"
-      }
-    }
-   }
-}
-</code></pre>
-
-<p><img src="/images/azureFunction_nuget.png" alt="" class="center" /></p>
-
-<p>Executing the function, retrieves the secret details from the Key Vault and logs it as shown below.</p>
-
-<p><img src="/images/azureFunction_run.png" alt="" class="center" /></p>
-
-<p>Hope this helps you to get started with Key Vault in Azure Functions and keep your sensitive data secure.</p>
 ]]></content>
   </entry>
   

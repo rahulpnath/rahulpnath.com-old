@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-15T00:02:17+00:00</updated>
+  <updated>2018-06-15T06:09:55+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,130 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure Key Vault As A Connected Service in Visual Studio 2017]]></title>
+    <link href="http://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/"/>
+    <updated>2018-06-15T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017</id>
+    <content type="html"><![CDATA[<p>Visual Studio (VS) now supports adding <a href="https://rahulpnath.com/blog/category/azure-key-vault/">Azure Key Vault</a> as a <a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service">Connected Service</a>, for Web Projects ( ASP.NET Core or any ASP.NET project). Enabling this from the Connected Service makes it easier for you to get started with Azure Key Vault. Below are the prerequisites to use the Connected Service feature</p>
+
+<blockquote><p><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service#prerequisites">Prerequisites</a></p>
+
+<ul>
+<li>An Azure subscription. If you do not have one, you can sign up for a free account.</li>
+<li>Visual Studio 2017 version 15.7 with the Web Development workload installed. Download it now.</li>
+<li>An ASP.NET 4.7.1 or ASP.NET Core 2.0 web project open.</li>
+</ul>
+</blockquote>
+
+<p><img class =" center" src="http://rahulpnath.com/images/keyVault_connectedService.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>When selecting &lsquo;Secure Secrets with Azure Key Vault&rsquo; option from the list of Connected Services provided it takes you to a new page within Visual Studio with your Azure Subscription associated with Visual Studio Account and gives you the ability to add a Key Vault to it. VS does generate some defaults for the Vault Name, Resource Group, Location and the Pricing Tier which you can edit as per your requirement. Once you confirm to the <em>Add</em> the Key Vault, VS provisions the Key Vault with the selected configuration and modifies some things in your project.</p>
+
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-what-happened">Changes Made to your ASP.NET project</a></li>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-core-what-happened">Changes made to your ASP.NET Core project</a></li>
+</ul>
+
+
+<p><img class =" center" src="http://rahulpnath.com/images/keyVault_connectedService_createKeyVault.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>In short, VS adds</p>
+
+<ul>
+<li>a bunch of NuGet packages to access Azure Key Vault</li>
+<li>Adds in the Keyvault Url details</li>
+<li>In ASP.NET Web project VS modifies the configuration file to add in the AzureKeyVaultConfigBuilder as shown below.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>Web.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configuration&gt;</span>
+</span><span class='line'><span class="nt">&lt;configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;section</span>
+</span><span class='line'>      <span class="na">name=</span><span class="s">&quot;configBuilders&quot;</span>
+</span><span class='line'>      <span class="na">type=</span><span class="s">&quot;System.Configuration.ConfigurationBuildersSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&quot;</span>
+</span><span class='line'>      <span class="na">restartOnExternalChanges=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>      <span class="na">requirePermission=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;configBuilders&gt;</span>
+</span><span class='line'><span class="nt">&lt;builders&gt;</span>
+</span><span class='line'><span class="nt">&lt;add</span>
+</span><span class='line'>      <span class="na">name=</span><span class="s">&quot;AzureKeyVault&quot;</span>
+</span><span class='line'>      <span class="na">vaultName=</span><span class="s">&quot;webapplication-47-dev-kv&quot;</span>
+</span><span class='line'>      <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span>
+</span><span class='line'>      <span class="na">vaultUri=</span><span class="s">&quot;https://WebApplication-47-dev-kv.vault.azure.net&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/builders&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configBuilders&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To start using Azure Key Vault from your application we first need to add some Secrets to the Key Vault created by Visual Studio. You can add a secret to the portal using multiple ways, the most straightforward being <a href="https://rahulpnath.com/blog/managing-key-vault-through-azure-portal/">using the Azure Portal</a>. Once you add the Secret to the Key Vault, update the configuration file with the Secret names. Below is how you would do for an ASP.NET Web Project. (<em>MySecret</em> and <em>VersionedSecret</em> keys)</p>
+
+<div class="alert alert-warning">
+Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSettings tag. This tells the Configuraion Manager to use the configured AzureKeyVaultConfigBuilder
+</div>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;webpages:Version&quot;</span> <span class="na">value=</span><span class="s">&quot;3.0.0.0&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;webpages:Enabled&quot;</span> <span class="na">value=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ClientValidationEnabled&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;UnobtrusiveJavaScriptEnabled&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;MySecret&quot;</span> <span class="na">value=</span><span class="s">&quot;dummy1&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;VersionedSecret&quot;</span> <span class="na">value=</span><span class="s">&quot;dummy2&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The values <em>dummy*</em> are just dummy values and will be overridden at runtime from the Secret Values created in the Key Vault. If the Secret with the corresponding name does not exist in Key Vault, then the <em>dummy</em> values will be used.</p>
+
+<h3>Authentication</h3>
+
+<p>When VS creates the Vault, it adds in the user logged into VS to the Access Policies list. When running the application, the AzureKeyVaultConfigBuilder uses the same details to authenticate with the Key Vault.</p>
+
+<blockquote><p>If you are not logged in as the same user or not logged in at all the provider will not be able to authenticate with the Key Vault and will fallback to use the dummy values in the configuration file.</p></blockquote>
+
+<p><img class =" center" src="http://rahulpnath.com/images/keyVault_connectedService_AccessPolicies.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<h3>Secrets and Versioning</h3>
+
+<p>The <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> requests to get all the Secrets in the Key Vault at application startup using the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecrets/getsecrets">Secrets endoint</a>. This call returns all the Secrets in the Key Vault. For whatever keys in the AppSettings that has a match with a Secret in the vault, a request is made to get the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecret/getsecret">Secret details</a>, which returns the actual Secret value for the keys. Below are the traces of the calls going out captured using <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p><img class =" center" src="http://rahulpnath.com/images/keyVault_connectedService_requests.png" alt="AzureKeyVaultConfigBuilder Fiddler Traces " /></p>
+
+<p>It looks like at the moment the AzureKeyVaultConfigBuilder get only the latest version of the Secrets. As you can tell from one of my Secret names (VersionedSecret), I have created two versions for the Secret, and the config builder picks the latest version. I don&rsquo;t see a way right now whereby I can specify a specific secret version.</p>
+
+<p>The Visual Studio Connected Services makes it easy to get started with Azure Key Vault and move your secrets to a more secure store, than having it around in your <a href="https://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/">configuration files</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Prettier - An Opinionated Code Formatter]]></title>
@@ -1288,31 +1412,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
 <p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
 
 <p>We are now able to generate a single PDF based on the website contents.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Electronically Sign PDF - No More Printing and Scanning]]></title>
-    <link href="http://rahulpnath.com/blog/electronically-sign-pdf-no-more-printing-and-scanning/"/>
-    <updated>2017-09-09T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/electronically-sign-pdf-no-more-printing-and-scanning</id>
-    <content type="html"><![CDATA[<p>Very often I need to sign forms, receipts, invoices in PDF format and send them across to someone else. Printing the PDF, signing them physically and scanning them back (of course using <a href="http://www.rahulpnath.com/blog/office-lens-scan-documents-with-your-phone/">Office Lens</a>) is how I used to do this until a while back. Since I don&rsquo;t have a printer at home, I always had to wait till I reach office. Also, I did not like wasting paper and ink just to put a signature.</p>
-
-<p>Adobe PDF reader allows us to &lsquo;Fill and Sign&rsquo; documents. Using this option we can add signatures without needing to print them. Follow the below steps to set up your Adobe Reader to sign any document.</p>
-
-<p><strong>1.</strong> Sign on a white paper and take a picture. Upload the picture onto your computer and crop the image using your favorite <a href="http://www.rahulpnath.com/blog/paint-dot-net/">image editor</a>. You should have something similar as shown below.</p>
-
-<p><img src="http://rahulpnath.com/images/pdf_signature.png" alt="Your Signature" class="center" /></p>
-
-<p><strong>2.</strong> Open the PDF file that you need to sign with <a href="https://get.adobe.com/reader/">Adobe Reader</a>.</p>
-
-<p><strong>3.</strong> Open &lsquo;Fill and Sign&rsquo; option. You can do this either from the &lsquo;Tools Pane&rsquo; (Shift + F4 on windows) or the menu &lsquo;View -> Tools -> Fill and Sign.&rsquo;</p>
-
-<p><strong>4.</strong> Under the Sign option, you can choose a signature image. Choose the image you created before and save.</p>
-
-<p><img src="http://rahulpnath.com/images/adobe_add_sign.png" alt="Add your Signature" class="center" /></p>
-
-<p>You are all set to sign documents now. Anytime you want to sign a document, choose &lsquo;Fill and Sign&rsquo; and you will see your signature under the Sign button. Click the signature and place it anywhere on the document that you want to sign. No more printing and scanning them back again.</p>
 ]]></content>
   </entry>
   
