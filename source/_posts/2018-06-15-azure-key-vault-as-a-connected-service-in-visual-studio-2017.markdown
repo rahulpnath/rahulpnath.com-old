@@ -78,7 +78,7 @@ The values _dummy\*_ are just dummy values and will be overridden at runtime fro
 
 When VS creates the Vault, it adds in the user logged into VS to the Access Policies list. When running the application, the AzureKeyVaultConfigBuilder uses the same details to authenticate with the Key Vault.
 
-> If you are not logged in as the same user or not logged in at all the provider will not be able to authenticate with the Key Vault and will fallback to use the dummy values in the configuration file.
+> If you are not logged in as the same user or not logged in at all the provider will not be able to authenticate with the Key Vault and will fallback to use the dummy values in the configuration file. Alternatively you could specify [connection option avaiable for AzureServiceTokenProvider](https://docs.microsoft.com/en-us/azure/key-vault/service-to-service-authentication#connection-string-support)
 
 <img class =" center" src="{{site.images_root}}/keyVault_connectedService_AccessPolicies.png" alt="Visual Studio, Azure Key Vault Connected Services" />
 
