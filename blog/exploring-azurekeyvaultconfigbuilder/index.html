@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Exploring AzureKeyVaultConfigBuilder - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Various usage scenarios of Azure Key Vault as a Visual Studio Connected Service" />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Exploring AzureKeyVaultConfigBuilder" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/" />
+<meta property="og:description" content="Various usage scenarios of Azure Key Vault as a Visual Studio Connected Service" />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/AzureKeyVaultConfigBuilder_config.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder" />
+<meta property="twitter:title" content="Exploring AzureKeyVaultConfigBuilder" />
+<meta property="twitter:description" content="Various usage scenarios of Azure Key Vault as a Visual Studio Connected Service" />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/AzureKeyVaultConfigBuilder_config.png" />
+
+<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js"></script>
+
+<link href="/assets/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+<link href="/assets/bootstrap/dist/css/bootstrap-theme.min.css" rel="stylesheet" type="text/css">
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-22T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 22<sup>nd</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Exploring AzureKeyVaultConfigBuilder
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Over the last weekend, I was playing around with <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Visual Studio Connected Services support for Azure Key Vault</a>. The new feature allows seamless integration of ASP.NET Web applications with Azure Key Vault, making it as simple as using the ConfigurationManager to retrieve the Secrets from the Key Vault - just like you would retrieve it from the config file.</p>
+
+<p><img src="/images/AzureKeyVaultConfigBuilder_config.png" class="center" ></p>
+
+<p>In this post, we will look detailed into the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> class that allows the seamless integration provided by Connected Services. As we saw in the previous post when you add <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Key Vault as a Connected Service</a>, it modifies the applications configuration file to add in the AzureKeyVaultConfigBuilder references.</p>
+
+<div class="alert alert-warning">
+Make sure to update the <b><i>Microsoft.Configuration.ConfigurationBuilders.Azure</i></b> and <b><i>Microsoft.Configuration.ConfigurationBuilders.Base</i></b> Nuget packages to the latest version.
+</div>
+
+
+<h3>Loading Connection String and App Settings</h3>
+
+<p>The AzureKeyVaultConfigBuilder can be specified on both <a href="https://msdn.microsoft.com/en-us/library/ms228154.aspx">appsettings</a> and <a href="https://msdn.microsoft.com/en-us/library/bf7sd233(v=vs.100).aspx">connectionString</a> element using the <em>configBuilders</em> attribute.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> ...
+</span><span class='line'> <span class="nt">&lt;/appSettings&gt;</span>
+</span><span class='line'> <span class="nt">&lt;connectionStrings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> ...
+</span><span class='line'> <span class="nt">&lt;/connectionStrings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Accessing Multiple Key Vaults</h3>
+
+<p>The configBuilders element supports comma-separated list of builders. Using this feature, we can specify multiple Vaults as a source for our secrets. Note how we pass in <em>&lsquo;keyVault1,keyVault2&rsquo;</em> to configBuilders option below.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configBuilders&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;builders&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span>
+</span><span class='line'>        <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>        <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>        <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nt">&lt;add</span>
+</span><span class='line'>        <span class="na">name=</span><span class="s">&quot;keyVault2&quot;</span>
+</span><span class='line'>        <span class="na">vaultName=</span><span class="s">&quot;keyVault2&quot;</span>
+</span><span class='line'>        <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/builders&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/configBuilders&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;keyVault1,keyVault2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  ...
+</span><span class='line'>  <span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the same key has a value in multiple sources, then the value from the last builder in the list takes precedence. (But I assume you would not need that feature!)</p>
+
+<h3>Modes</h3>
+
+<p>All config builders have the options of setting a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#mode">mode</a>, which allows three options.</p>
+
+<blockquote><ul>
+<li><p><em>Strict</em> - This is the default. In this mode, the config builder will only operate on well-known key/value-centric configuration sections. It will enumerate each key in the section, and if a matching key is found in the external source, it will replace the value in the resulting config section with the value from the external source.</p></li>
+<li><p><em>Greedy</em> - This mode is closely related to Strict mode, but instead of being limited to keys that already exist in the original configuration, the config builders will dump all key/value pairs from the external source into the resulting config section.</p></li>
+<li><p><em>Expand</em> - This last mode operates on the raw XML before it gets parsed into a config section object. It can be thought of as a simple expansion of tokens in a string. Any part of the raw XML string that matches the pattern ${token} is a candidate for token expansion. If no corresponding value is found in the external source, then the token is left alone.</p></li>
+</ul>
+</blockquote>
+
+<p>In short when set to <em>Strict</em> it matches the names in configuration file to Secrets in the Vault&rsquo;s configured. If it does not find corresponding Secret it ignores that key. When set to <em>Greedy</em>, irrespective of what keys are there in the configuration file, it makes all the secrets available in the Vaults specified via Configuration. <strong>This to me sounds like magic and would not prefer to do in an application that I build.</strong></p>
+
+<h3>Greedy Mode Filtering and Formatting Secrets</h3>
+
+<p>When using Greedy mode, we can filter on the list of keys that are made available by using the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#prefix">prefix</a> option. Only Secret Names starting with the prefix is made available in the configuration. The other secrets are ignored. This feature can be used in conjunction with <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#stripprefix">stripPrefix</a> option. When stripPrefix is set to true (defaults to false), the Secret is made available in the configuration after stripping off the prefix.</p>
+
+<p>For e.g. if we have a Secret with the name <em>connectionString-MyConnection</em>, having the below configuration will add the connection string with name <em>MyConnection</em>.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;add</span>
+</span><span class='line'>  <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>  <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>  <span class="na">prefix=</span><span class="s">&quot;connectionString-&quot;</span>
+</span><span class='line'>  <span class="na">stripPrefix=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>  <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">connectionString</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">ConnectionStrings</span><span class="p">[</span><span class="s">&quot;MyConnection&quot;</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>Use prefix and stripPrefix in conjunction with the Greedy mode. For keys mentioned in the config it will try to match it with the prefix appended to the key name</em></p>
+
+<h3>Preloading Secrets</h3>
+
+<p>By default, the Key Vault Config Builder is set to preload the available Secrets in key vault. By doing this the config builder knows the list of configuration values that the key vault can resolve. For preloading the Secrets, the config builder uses the <em>List</em> call on Secrets. If you don&rsquo;t have list access on Secrets you can turn this feature off using the <em>preloadSecretNames</em> configuration option. At the time of writing the config builder version (1.0.1) throws an exception when preloading Secrets in turned on and List policy is not available on the Vault. I have raised a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/pull/24">PR to fix</a> this issue, which if accepted would no longer throw the exception and would invalidate this configuration option.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;builders&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span>
+</span><span class='line'>    <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>    <span class="na">preloadSecretNames=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>    <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Authentication Modes</h3>
+
+<p>The connectionString attribute allows you to specify the authentication mechanism with Key Vault. By default when using the Connected Service to create the key vault it adds the Visual Studio user to the access policies of the Key Vault. When connecting it uses the same. But this does not help you in a large team scenario. Most likely the Vault will be created under your organization subscription and you might want to share the same vault between all developers in the team. You could add the users individually and give them the appropriate access policies, but this might soon become cumbersome for a large team. Instead of using the <a href="https://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Client Id/Secret or Certificate</a> authentication along with <a href="https://rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Managed Service Identity</a> configuration for localhost works the best. The configuration provider will then use the <em>AzureServicesAuthConnectionString</em> value from environment variable to connect to the key vault.</p>
+
+<figure class='code'><figcaption><span>Local System</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>Set AzureServicesAuthConnectionString Environment variable
+</span><span class='line'>RunAs=App;AppId=AppId;TenantId=TenantId;AppKey=Secret.
+</span><span class='line'>Or
+</span><span class='line'>RunAs=App;AppId=AppId;TenantId=TenantId;CertificateThumbprint=Thumbprint;CertificateStoreLocation=CurrentUser
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see the AzureKeyVaultConfigBuilder does provide good integration with Key Vault and makes using the Key Vault seamless. It does have a few issues, especially around <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues/20">handling different Secret versions</a>, which might be fixed in future releases.</p>
+
+<p><em>PS: At the time of writing there were a few issues that I had found while playing around. You can follow up on the individual issues on <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+author%3Arahulpnath+">Github</a>. Fingers crossed hope at least one of my PR&rsquo;s makes its way through to master!</em></p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Azure Key Vault As A Connected Service in Visual Studio 2017</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Authenticating with Azure Key Vault Using Managed Service Identity</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/signing-a-pdf-file-using-azure-key-vault/">Signing a PDF File Using Azure Key Vault</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-from-node-dot-js/">Azure Key Vault From Node.js</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/" title="Previous Post: Azure Key Vault As A Connected Service in Visual Studio 2017">&laquo; Azure Key Vault As A Connected Service in Visual Studio 2017</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2018 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/';
+        var disqus_url = 'http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script src="/assets/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="/javascripts/modernizr-2.0.js"></script>
+
+
+  </body>
+</html>

@@ -163,6 +163,281 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-09-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 19<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/generating-a-large-pdf-from-website-contents-part-iii/" itemprop="url">Generating a Large PDF from Website Contents - Merging PDF Files</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>In the previous post, <a href="http://www.rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>, we saw how to generate a PDF from HTML and add bookmarks to the generated PDF files. The PDF file generated is for an individual section which now needs to be merged to form a single PDF file. The individual PDF files contain the relevant content for the section and related bookmarks, which needs to be combined into a single PDF file.</p>
+
+<p>One of the important things to keep intact when merging is the document hierarchy. The Sections, Sub-Categories, and Categories should align correctly so that the final bookmark tree and the Table of Contents appear correctly. It is best to maintain the list of individual PDF document streams in the same hierarchy as required. Since we know the required structure right from the UI, this can be easily achieved by using a data structure similar as shown below</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DocumentSection</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">MemoryStream</span> <span class="n">PDFDocument</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">ChildSections</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span> <span class="c1">// Any additional details that you need</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above structure allows us to maintain a tree-like structure of the document. The structure is the same as that is provided to the user to select the PDF options. I used the <a href="https://www.nuget.org/packages/iTextSharp-LGPL/">iTextSharp</a> library to merge PDF documents. To interact with the PDF, we first need to create a PdfReader object from the stream. Using the  SimpleBookmark class, we can get the existing bookmarks for the PDF.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'><span class="n">ArrayList</span> <span class="n">bookmarks</span> <span class="p">=</span> <span class="n">SimpleBookmark</span><span class="p">.</span><span class="n">GetBookmark</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>iText representation of bookmarks is a bit complex. It represents them as an ArrayList of Hashtables. The Hashtable has keys like Action, Title, Page, Kids, etc. Kids property represents child bookmarks and is the same ArrayList type. Since it was hard to work with this structure, I created a wrapper class to interact easily with the bookmarks.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Bookmark</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">Bookmark</span><span class="p">(</span>
+</span><span class='line'>        <span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="kt">string</span> <span class="n">destinationType</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">,</span>
+</span><span class='line'>        <span class="kt">float</span> <span class="n">xLeft</span><span class="p">,</span> <span class="kt">float</span> <span class="n">yTop</span><span class="p">,</span> <span class="kt">float</span> <span class="n">zZoom</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">Children</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Bookmark</span><span class="p">&gt;();</span>
+</span><span class='line'>        <span class="n">Title</span> <span class="p">=</span> <span class="n">title</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">PageNumber</span> <span class="p">=</span> <span class="n">pageNumber</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">DestinationType</span> <span class="p">=</span> <span class="n">destinationType</span> <span class="p">??</span> <span class="s">&quot;XYZ&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">XLeft</span> <span class="p">=</span> <span class="n">xLeft</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">YTop</span> <span class="p">=</span> <span class="n">yTop</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">ZZoom</span> <span class="p">=</span> <span class="n">zZoom</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">PageBreak</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span> <span class="c1">// Class properties for the constructor parameters</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">ArrayList</span> <span class="nf">ToiTextBookmark</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">ArrayList</span> <span class="n">arrayList</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">ToiTextBookmark</span><span class="p">(</span><span class="k">this</span><span class="p">),</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">arrayList</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Hashtable</span> <span class="nf">ToiTextBookmark</span><span class="p">(</span><span class="n">Bookmark</span> <span class="n">bookmark</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">kids</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">hashTable</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Hashtable</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'><span class="na">            [&quot;Action&quot;]</span> <span class="p">=</span> <span class="s">&quot;GoTo&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Title&quot;]</span> <span class="p">=</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Title</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Page&quot;]</span> <span class="p">=</span> <span class="err">$</span><span class="s">@&quot;{bookmark.PageNumber} {bookmark.DestinationType} </span>
+</span><span class='line'><span class="s">                         {bookmark.XLeft} {bookmark.YTop} {bookmark.ZZoom}&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="na">            [&quot;Kids&quot;]</span> <span class="p">=</span> <span class="n">kids</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">childBookmark</span> <span class="k">in</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Children</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">kids</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ToiTextBookmark</span><span class="p">(</span><span class="n">childBookmark</span><span class="p">));</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">hashTable</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Recursively iterating through the list of DocumentSections, I add all the bookmarks to a root Bookmark class. The root bookmark class represents the full bookmark of the PDF file. The PageNumber is offset using a counter variable. The counter variable is incremented by the number of pages in each of PDF section (<em>pdfReader.NumberOfPages</em>) as it gets merged to the bookmark root. This ensures that the bookmark points to the correct bookmark page in the combined PDF file.</p>
+
+<p>The individual documents are then merged by iterating through all the generated document sections. Once done we get the final PDF as a byte array which is returned to the user.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">byte</span><span class="p">[]</span> <span class="nf">MergeSections</span><span class="p">(</span><span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span> <span class="n">Bookmark</span> <span class="n">bookmarkRoot</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">())</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Document</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfWriter</span> <span class="p">=</span> <span class="n">PdfWriter</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Open</span><span class="p">();</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfContent</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">DirectContent</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">pdfWriter</span><span class="p">.</span><span class="n">Outlines</span> <span class="p">=</span> <span class="n">bookmarkRoot</span><span class="p">.</span><span class="n">ToiTextBookmark</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
+</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Flush</span><span class="p">();</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">stream</span><span class="p">.</span><span class="n">ToArray</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">MergeSectionIntoDocument</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">Document</span> <span class="n">document</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">PdfContentByte</span> <span class="n">pdfContent</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">PdfWriter</span> <span class="n">pdfWriter</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">documentSection</span> <span class="k">in</span> <span class="n">documentSections</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="n">documentSection</span><span class="p">.</span><span class="n">DocumentStream</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Position</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;=</span> <span class="n">pdfReader</span><span class="p">.</span><span class="n">NumberOfPages</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">page</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">GetImportedPage</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">SetPageSize</span><span class="p">(</span><span class="k">new</span> <span class="n">iTextSharp</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="m">0.0F</span><span class="p">,</span> <span class="m">0.0F</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Height</span><span class="p">));</span>
+</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">NewPage</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">pageNumber</span><span class="p">++;</span>
+</span><span class='line'>            <span class="n">pdfContent</span><span class="p">.</span><span class="n">AddTemplate</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">AddPageNumber</span><span class="p">(</span><span class="n">pdfContent</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
+</span><span class='line'>            <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
+
+<p>We are now able to generate a single PDF based on the website contents.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-09-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 9<sup>th</sup>, 2017</time>
         
 
@@ -864,85 +1139,6 @@ If you are using HTML to PDF libraries be aware that most of the libraries out t
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-08-04T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 4<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/chocolatey-install-softwares-with-ease/" itemprop="url">Tip of the Week: Chocolatey - Install Softwares With Ease</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><img src="/images/chocolatey.png" alt="Chocolatey - Package Manager for Windows" class="center" ></p>
-
-<p><a href="https://chocolatey.org/">Chocolatey</a> is a package manager for Windows. Chocolatey is a central store of applications, tools, and other packages. It allows you to install them on your computer from the command line. Let’s look at an example to make things more clear. Let’s say I want to install the Google Chrome Browser on my system. Below is how I would go about installing it.</p>
-
-<blockquote><p><strong>Installing Google Chrome (Without Chocolatey)</strong></p>
-
-<ol>
-<li>Bing for Google Chrome (Assuming that you are on Windows and open up Internet Explorer and search for Google Chrome)</li>
-<li>Click the relevant link from the Search Results</li>
-<li>Hit the Download Chrome button</li>
-<li>Wait for the installer to download and open that to install.</li>
-</ol>
-
-
-<p><strong>Installing Google Chrome (With Chocolatey)</strong></p>
-
-<ol>
-<li>Run &lsquo;<em>choco install googlechrome</em>&rsquo; from command line</li>
-</ol>
-</blockquote>
-
-<p>Installing with Chocolatey is quick and easy. You no longer need to go around searching the web for the software that you want to install. If you are unsure of the package name (e.g. googlechrome), you can search the entire packages library. This is possible from the command line using &lsquo;<em>choco search</em>.&rsquo; Or you can also search on their <a href="https://chocolatey.org/packages">website</a>.</p>
-
-<p>Run the below script from the command line to <a href="https://chocolatey.org/install">install Chocolatey Package Manager</a>. Once installed you can start managing applications through the command line using Chocolatey.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>@<span class="s2">&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot;</span> -NoProfile -ExecutionPolicy Bypass -Command <span class="s2">&quot;iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://chocolatey.org/install.ps1&#39;))&quot;</span> <span class="o">&amp;&amp;</span> SET <span class="s2">&quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Other than installing and searching packages, Chocolatey also supports a lot of other commands to manage applications including un-installation. The entire commands supported are available <a href="https://chocolatey.org/docs/commandslist">here</a>. Instead, you can get the details in your command line using &lsquo;<em>choco -h</em>.&rsquo;</p>
-
-<p>Hope that helps you save some time when you next want to install something.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -966,6 +1162,8 @@ If you are using HTML to PDF libraries be aware that most of the libraries out t
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/exploring-azurekeyvaultconfigbuilder/">Exploring AzureKeyVaultConfigBuilder</a>
+    
     <a class="list-group-item " href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Azure Key Vault As A Connected Service in Visual Studio 2017</a>
     
     <a class="list-group-item " href="/blog/prettier-an-opinionated-code-formatter/">Tip of the Week: Prettier - An Opinionated Code Formatter</a>
@@ -973,8 +1171,6 @@ If you are using HTML to PDF libraries be aware that most of the libraries out t
     <a class="list-group-item " href="/blog/check-if-you-have-been-hacked/">Tip of the Week: Check If You Have Been Hacked!</a>
     
     <a class="list-group-item " href="/blog/ndc-security-2018-overview-and-key-takeaways/">NDC Security 2018 - Overview and Key Takeaways</a>
-    
-    <a class="list-group-item " href="/blog/authy-sync-two-factor-authentication-across-devices/">Tip of the Week: Authy - Sync Two Factor Authentication Across Devices</a>
     
   </div>
 </section>

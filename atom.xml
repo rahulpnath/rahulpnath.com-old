@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-22T00:01:23+00:00</updated>
+  <updated>2018-06-22T09:14:46+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,163 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Exploring AzureKeyVaultConfigBuilder]]></title>
+    <link href="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/"/>
+    <updated>2018-06-22T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder</id>
+    <content type="html"><![CDATA[<p>Over the last weekend, I was playing around with <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Visual Studio Connected Services support for Azure Key Vault</a>. The new feature allows seamless integration of ASP.NET Web applications with Azure Key Vault, making it as simple as using the ConfigurationManager to retrieve the Secrets from the Key Vault - just like you would retrieve it from the config file.</p>
+
+<p><img src="http://rahulpnath.com/images/AzureKeyVaultConfigBuilder_config.png" class="center" ></p>
+
+<p>In this post, we will look detailed into the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> class that allows the seamless integration provided by Connected Services. As we saw in the previous post when you add <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Key Vault as a Connected Service</a>, it modifies the applications configuration file to add in the AzureKeyVaultConfigBuilder references.</p>
+
+<div class="alert alert-warning">
+Make sure to update the <b><i>Microsoft.Configuration.ConfigurationBuilders.Azure</i></b> and <b><i>Microsoft.Configuration.ConfigurationBuilders.Base</i></b> Nuget packages to the latest version.
+</div>
+
+
+<h3>Loading Connection String and App Settings</h3>
+
+<p>The AzureKeyVaultConfigBuilder can be specified on both <a href="https://msdn.microsoft.com/en-us/library/ms228154.aspx">appsettings</a> and <a href="https://msdn.microsoft.com/en-us/library/bf7sd233(v=vs.100).aspx">connectionString</a> element using the <em>configBuilders</em> attribute.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> ...
+</span><span class='line'> <span class="nt">&lt;/appSettings&gt;</span>
+</span><span class='line'> <span class="nt">&lt;connectionStrings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'> ...
+</span><span class='line'> <span class="nt">&lt;/connectionStrings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Accessing Multiple Key Vaults</h3>
+
+<p>The configBuilders element supports comma-separated list of builders. Using this feature, we can specify multiple Vaults as a source for our secrets. Note how we pass in <em>&lsquo;keyVault1,keyVault2&rsquo;</em> to configBuilders option below.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configBuilders&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;builders&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span>
+</span><span class='line'>        <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>        <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>        <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nt">&lt;add</span>
+</span><span class='line'>        <span class="na">name=</span><span class="s">&quot;keyVault2&quot;</span>
+</span><span class='line'>        <span class="na">vaultName=</span><span class="s">&quot;keyVault2&quot;</span>
+</span><span class='line'>        <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/builders&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/configBuilders&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;keyVault1,keyVault2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  ...
+</span><span class='line'>  <span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the same key has a value in multiple sources, then the value from the last builder in the list takes precedence. (But I assume you would not need that feature!)</p>
+
+<h3>Modes</h3>
+
+<p>All config builders have the options of setting a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#mode">mode</a>, which allows three options.</p>
+
+<blockquote><ul>
+<li><p><em>Strict</em> - This is the default. In this mode, the config builder will only operate on well-known key/value-centric configuration sections. It will enumerate each key in the section, and if a matching key is found in the external source, it will replace the value in the resulting config section with the value from the external source.</p></li>
+<li><p><em>Greedy</em> - This mode is closely related to Strict mode, but instead of being limited to keys that already exist in the original configuration, the config builders will dump all key/value pairs from the external source into the resulting config section.</p></li>
+<li><p><em>Expand</em> - This last mode operates on the raw XML before it gets parsed into a config section object. It can be thought of as a simple expansion of tokens in a string. Any part of the raw XML string that matches the pattern ${token} is a candidate for token expansion. If no corresponding value is found in the external source, then the token is left alone.</p></li>
+</ul>
+</blockquote>
+
+<p>In short when set to <em>Strict</em> it matches the names in configuration file to Secrets in the Vault&rsquo;s configured. If it does not find corresponding Secret it ignores that key. When set to <em>Greedy</em>, irrespective of what keys are there in the configuration file, it makes all the secrets available in the Vaults specified via Configuration. <strong>This to me sounds like magic and would not prefer to do in an application that I build.</strong></p>
+
+<h3>Greedy Mode Filtering and Formatting Secrets</h3>
+
+<p>When using Greedy mode, we can filter on the list of keys that are made available by using the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#prefix">prefix</a> option. Only Secret Names starting with the prefix is made available in the configuration. The other secrets are ignored. This feature can be used in conjunction with <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#stripprefix">stripPrefix</a> option. When stripPrefix is set to true (defaults to false), the Secret is made available in the configuration after stripping off the prefix.</p>
+
+<p>For e.g. if we have a Secret with the name <em>connectionString-MyConnection</em>, having the below configuration will add the connection string with name <em>MyConnection</em>.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;add</span>
+</span><span class='line'>  <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>  <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>  <span class="na">prefix=</span><span class="s">&quot;connectionString-&quot;</span>
+</span><span class='line'>  <span class="na">stripPrefix=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>  <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">connectionString</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">ConnectionStrings</span><span class="p">[</span><span class="s">&quot;MyConnection&quot;</span><span class="p">];</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>Use prefix and stripPrefix in conjunction with the Greedy mode. For keys mentioned in the config it will try to match it with the prefix appended to the key name</em></p>
+
+<h3>Preloading Secrets</h3>
+
+<p>By default, the Key Vault Config Builder is set to preload the available Secrets in key vault. By doing this the config builder knows the list of configuration values that the key vault can resolve. For preloading the Secrets, the config builder uses the <em>List</em> call on Secrets. If you don&rsquo;t have list access on Secrets you can turn this feature off using the <em>preloadSecretNames</em> configuration option. At the time of writing the config builder version (1.0.1) throws an exception when preloading Secrets in turned on and List policy is not available on the Vault. I have raised a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/pull/24">PR to fix</a> this issue, which if accepted would no longer throw the exception and would invalidate this configuration option.</p>
+
+<figure class='code'><figcaption><span>Configuration File</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;builders&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;add</span>
+</span><span class='line'>    <span class="na">name=</span><span class="s">&quot;keyVault1&quot;</span>
+</span><span class='line'>    <span class="na">preloadSecretNames=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>    <span class="na">vaultName=</span><span class="s">&quot;keyVault1&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Authentication Modes</h3>
+
+<p>The connectionString attribute allows you to specify the authentication mechanism with Key Vault. By default when using the Connected Service to create the key vault it adds the Visual Studio user to the access policies of the Key Vault. When connecting it uses the same. But this does not help you in a large team scenario. Most likely the Vault will be created under your organization subscription and you might want to share the same vault between all developers in the team. You could add the users individually and give them the appropriate access policies, but this might soon become cumbersome for a large team. Instead of using the <a href="https://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Client Id/Secret or Certificate</a> authentication along with <a href="https://rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Managed Service Identity</a> configuration for localhost works the best. The configuration provider will then use the <em>AzureServicesAuthConnectionString</em> value from environment variable to connect to the key vault.</p>
+
+<figure class='code'><figcaption><span>Local System</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>Set AzureServicesAuthConnectionString Environment variable
+</span><span class='line'>RunAs=App;AppId=AppId;TenantId=TenantId;AppKey=Secret.
+</span><span class='line'>Or
+</span><span class='line'>RunAs=App;AppId=AppId;TenantId=TenantId;CertificateThumbprint=Thumbprint;CertificateStoreLocation=CurrentUser
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>As you can see the AzureKeyVaultConfigBuilder does provide good integration with Key Vault and makes using the Key Vault seamless. It does have a few issues, especially around <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues/20">handling different Secret versions</a>, which might be fixed in future releases.</p>
+
+<p><em>PS: At the time of writing there were a few issues that I had found while playing around. You can follow up on the individual issues on <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+author%3Arahulpnath+">Github</a>. Fingers crossed hope at least one of my PR&rsquo;s makes its way through to master!</em></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault As A Connected Service in Visual Studio 2017]]></title>
@@ -1175,243 +1332,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
 <li><a href="https://github.com/electron/electron-quick-start">Electron: Quick Start Guide</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Generating a Large PDF from Website Contents - Merging PDF Files]]></title>
-    <link href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/"/>
-    <updated>2017-09-19T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii</id>
-    <content type="html"><![CDATA[<p>In the previous post, <a href="http://www.rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>, we saw how to generate a PDF from HTML and add bookmarks to the generated PDF files. The PDF file generated is for an individual section which now needs to be merged to form a single PDF file. The individual PDF files contain the relevant content for the section and related bookmarks, which needs to be combined into a single PDF file.</p>
-
-<p>One of the important things to keep intact when merging is the document hierarchy. The Sections, Sub-Categories, and Categories should align correctly so that the final bookmark tree and the Table of Contents appear correctly. It is best to maintain the list of individual PDF document streams in the same hierarchy as required. Since we know the required structure right from the UI, this can be easily achieved by using a data structure similar as shown below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">DocumentSection</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="n">MemoryStream</span> <span class="n">PDFDocument</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">ChildSections</span> <span class="p">{</span><span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">...</span> <span class="c1">// Any additional details that you need</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The above structure allows us to maintain a tree-like structure of the document. The structure is the same as that is provided to the user to select the PDF options. I used the <a href="https://www.nuget.org/packages/iTextSharp-LGPL/">iTextSharp</a> library to merge PDF documents. To interact with the PDF, we first need to create a PdfReader object from the stream. Using the  SimpleBookmark class, we can get the existing bookmarks for the PDF.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
-</span><span class='line'><span class="n">ArrayList</span> <span class="n">bookmarks</span> <span class="p">=</span> <span class="n">SimpleBookmark</span><span class="p">.</span><span class="n">GetBookmark</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>iText representation of bookmarks is a bit complex. It represents them as an ArrayList of Hashtables. The Hashtable has keys like Action, Title, Page, Kids, etc. Kids property represents child bookmarks and is the same ArrayList type. Since it was hard to work with this structure, I created a wrapper class to interact easily with the bookmarks.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Bookmark</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="nf">Bookmark</span><span class="p">(</span>
-</span><span class='line'>        <span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="kt">string</span> <span class="n">destinationType</span><span class="p">,</span> <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">,</span>
-</span><span class='line'>        <span class="kt">float</span> <span class="n">xLeft</span><span class="p">,</span> <span class="kt">float</span> <span class="n">yTop</span><span class="p">,</span> <span class="kt">float</span> <span class="n">zZoom</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">Children</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">Bookmark</span><span class="p">&gt;();</span>
-</span><span class='line'>        <span class="n">Title</span> <span class="p">=</span> <span class="n">title</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">PageNumber</span> <span class="p">=</span> <span class="n">pageNumber</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">DestinationType</span> <span class="p">=</span> <span class="n">destinationType</span> <span class="p">??</span> <span class="s">&quot;XYZ&quot;</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">XLeft</span> <span class="p">=</span> <span class="n">xLeft</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">YTop</span> <span class="p">=</span> <span class="n">yTop</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">ZZoom</span> <span class="p">=</span> <span class="n">zZoom</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">PageBreak</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">...</span> <span class="c1">// Class properties for the constructor parameters</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="n">ArrayList</span> <span class="nf">ToiTextBookmark</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">ArrayList</span> <span class="n">arrayList</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">ToiTextBookmark</span><span class="p">(</span><span class="k">this</span><span class="p">),</span>
-</span><span class='line'>        <span class="p">};</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">arrayList</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">private</span> <span class="n">Hashtable</span> <span class="nf">ToiTextBookmark</span><span class="p">(</span><span class="n">Bookmark</span> <span class="n">bookmark</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">kids</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="p">();</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">hashTable</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Hashtable</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'><span class="na">            [&quot;Action&quot;]</span> <span class="p">=</span> <span class="s">&quot;GoTo&quot;</span><span class="p">,</span>
-</span><span class='line'><span class="na">            [&quot;Title&quot;]</span> <span class="p">=</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Title</span><span class="p">,</span>
-</span><span class='line'><span class="na">            [&quot;Page&quot;]</span> <span class="p">=</span> <span class="err">$</span><span class="s">@&quot;{bookmark.PageNumber} {bookmark.DestinationType} </span>
-</span><span class='line'><span class="s">                         {bookmark.XLeft} {bookmark.YTop} {bookmark.ZZoom}&quot;</span><span class="p">,</span>
-</span><span class='line'><span class="na">            [&quot;Kids&quot;]</span> <span class="p">=</span> <span class="n">kids</span><span class="p">,</span>
-</span><span class='line'>        <span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">childBookmark</span> <span class="k">in</span> <span class="n">bookmark</span><span class="p">.</span><span class="n">Children</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">kids</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">ToiTextBookmark</span><span class="p">(</span><span class="n">childBookmark</span><span class="p">));</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">return</span> <span class="n">hashTable</span><span class="p">;</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Recursively iterating through the list of DocumentSections, I add all the bookmarks to a root Bookmark class. The root bookmark class represents the full bookmark of the PDF file. The PageNumber is offset using a counter variable. The counter variable is incremented by the number of pages in each of PDF section (<em>pdfReader.NumberOfPages</em>) as it gets merged to the bookmark root. This ensures that the bookmark points to the correct bookmark page in the combined PDF file.</p>
-
-<p>The individual documents are then merged by iterating through all the generated document sections. Once done we get the final PDF as a byte array which is returned to the user.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="kt">byte</span><span class="p">[]</span> <span class="nf">MergeSections</span><span class="p">(</span><span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span> <span class="n">Bookmark</span> <span class="n">bookmarkRoot</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-</span><span class='line'>    <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MemoryStream</span><span class="p">())</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Document</span><span class="p">();</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfWriter</span> <span class="p">=</span> <span class="n">PdfWriter</span><span class="p">.</span><span class="n">GetInstance</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="n">stream</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Open</span><span class="p">();</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfContent</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">DirectContent</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
-</span><span class='line'>        <span class="n">pdfWriter</span><span class="p">.</span><span class="n">Outlines</span> <span class="p">=</span> <span class="n">bookmarkRoot</span><span class="p">.</span><span class="n">ToiTextBookmark</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">document</span><span class="p">.</span><span class="n">Close</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Flush</span><span class="p">();</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">stream</span><span class="p">.</span><span class="n">ToArray</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">MergeSectionIntoDocument</span><span class="p">(</span>
-</span><span class='line'>    <span class="n">List</span><span class="p">&lt;</span><span class="n">DocumentSection</span><span class="p">&gt;</span> <span class="n">documentSections</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">Document</span> <span class="n">document</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">PdfContentByte</span> <span class="n">pdfContent</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">PdfWriter</span> <span class="n">pdfWriter</span><span class="p">,</span>
-</span><span class='line'>    <span class="kt">int</span> <span class="n">pageNumber</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">documentSection</span> <span class="k">in</span> <span class="n">documentSections</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">stream</span> <span class="p">=</span> <span class="n">documentSection</span><span class="p">.</span><span class="n">DocumentStream</span><span class="p">;</span>
-</span><span class='line'>        <span class="n">stream</span><span class="p">.</span><span class="n">Position</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-</span><span class='line'>        <span class="kt">var</span> <span class="n">pdfReader</span> <span class="p">=</span> <span class="k">new</span> <span class="n">PdfReader</span><span class="p">(</span><span class="n">stream</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">for</span> <span class="p">(</span><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span> <span class="n">i</span> <span class="p">&lt;=</span> <span class="n">pdfReader</span><span class="p">.</span><span class="n">NumberOfPages</span><span class="p">;</span> <span class="n">i</span><span class="p">++)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">page</span> <span class="p">=</span> <span class="n">pdfWriter</span><span class="p">.</span><span class="n">GetImportedPage</span><span class="p">(</span><span class="n">pdfReader</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
-</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">SetPageSize</span><span class="p">(</span><span class="k">new</span> <span class="n">iTextSharp</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">Rectangle</span><span class="p">(</span><span class="m">0.0F</span><span class="p">,</span> <span class="m">0.0F</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="n">page</span><span class="p">.</span><span class="n">Height</span><span class="p">));</span>
-</span><span class='line'>            <span class="n">document</span><span class="p">.</span><span class="n">NewPage</span><span class="p">();</span>
-</span><span class='line'>            <span class="n">pageNumber</span><span class="p">++;</span>
-</span><span class='line'>            <span class="n">pdfContent</span><span class="p">.</span><span class="n">AddTemplate</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
-</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">AddPageNumber</span><span class="p">(</span><span class="n">pdfContent</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">.</span><span class="n">Any</span><span class="p">())</span>
-</span><span class='line'>            <span class="n">MergeSectionIntoDocument</span><span class="p">(</span><span class="n">documentSection</span><span class="p">.</span><span class="n">ChildSections</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">pdfContent</span><span class="p">,</span> <span class="n">pdfWriter</span><span class="p">,</span> <span class="n">pageNumber</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
-
-<p>We are now able to generate a single PDF based on the website contents.</p>
 ]]></content>
   </entry>
   

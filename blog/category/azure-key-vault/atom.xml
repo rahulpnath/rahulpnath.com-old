@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure key vault | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure-key-vault/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-22T00:01:23+00:00</updated>
+  <updated>2018-06-22T09:14:46+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,117 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Exploring AzureKeyVaultConfigBuilder]]></title>
+    <link href="http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder/"/>
+    <updated>2018-06-22T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/exploring-azurekeyvaultconfigbuilder</id>
+    <content type="html"><![CDATA[<p>Over the last weekend, I was playing around with <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Visual Studio Connected Services support for Azure Key Vault</a>. The new feature allows seamless integration of ASP.NET Web applications with Azure Key Vault, making it as simple as using the ConfigurationManager to retrieve the Secrets from the Key Vault - just like you would retrieve it from the config file.</p>
+
+<p><img src="/images/AzureKeyVaultConfigBuilder_config.png" class="center" ></p>
+
+<p>In this post, we will look detailed into the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> class that allows the seamless integration provided by Connected Services. As we saw in the previous post when you add <a href="https://rahulpnath.com/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Key Vault as a Connected Service</a>, it modifies the applications configuration file to add in the AzureKeyVaultConfigBuilder references.</p>
+
+<div class="alert alert-warning">
+Make sure to update the <b><i>Microsoft.Configuration.ConfigurationBuilders.Azure</i></b> and <b><i>Microsoft.Configuration.ConfigurationBuilders.Base</i></b> Nuget packages to the latest version.
+</div>
+
+
+<h3>Loading Connection String and App Settings</h3>
+
+<p>The AzureKeyVaultConfigBuilder can be specified on both <a href="https://msdn.microsoft.com/en-us/library/ms228154.aspx">appsettings</a> and <a href="https://msdn.microsoft.com/en-us/library/bf7sd233(v=vs.100).aspx">connectionString</a> element using the <em>configBuilders</em> attribute.</p>
+
+<pre><code class="xml Configuration File"> &lt;appSettings configBuilders="AzureKeyVault"&gt;
+ ...
+ &lt;/appSettings&gt;
+ &lt;connectionStrings configBuilders="AzureKeyVault"&gt;
+ ...
+ &lt;/connectionStrings&gt;
+</code></pre>
+
+<h3>Accessing Multiple Key Vaults</h3>
+
+<p>The configBuilders element supports comma-separated list of builders. Using this feature, we can specify multiple Vaults as a source for our secrets. Note how we pass in <em>&lsquo;keyVault1,keyVault2&rsquo;</em> to configBuilders option below.</p>
+
+<pre><code class="xml Configuration File">&lt;configBuilders&gt;
+    &lt;builders&gt;
+      &lt;add
+        name="keyVault1"
+        vaultName="keyVault1"
+        type="Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral" /&gt;
+
+      &lt;add
+        name="keyVault2"
+        vaultName="keyVault2"
+        type="Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral" /&gt;
+    &lt;/builders&gt;
+  &lt;/configBuilders&gt;
+  &lt;appSettings configBuilders="keyVault1,keyVault2"&gt;
+  ...
+  &lt;/appSettings&gt;
+</code></pre>
+
+<p>If the same key has a value in multiple sources, then the value from the last builder in the list takes precedence. (But I assume you would not need that feature!)</p>
+
+<h3>Modes</h3>
+
+<p>All config builders have the options of setting a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#mode">mode</a>, which allows three options.</p>
+
+<blockquote><ul>
+<li><p><em>Strict</em> - This is the default. In this mode, the config builder will only operate on well-known key/value-centric configuration sections. It will enumerate each key in the section, and if a matching key is found in the external source, it will replace the value in the resulting config section with the value from the external source.</p></li>
+<li><p><em>Greedy</em> - This mode is closely related to Strict mode, but instead of being limited to keys that already exist in the original configuration, the config builders will dump all key/value pairs from the external source into the resulting config section.</p></li>
+<li><p><em>Expand</em> - This last mode operates on the raw XML before it gets parsed into a config section object. It can be thought of as a simple expansion of tokens in a string. Any part of the raw XML string that matches the pattern ${token} is a candidate for token expansion. If no corresponding value is found in the external source, then the token is left alone.</p></li>
+</ul>
+</blockquote>
+
+<p>In short when set to <em>Strict</em> it matches the names in configuration file to Secrets in the Vault&rsquo;s configured. If it does not find corresponding Secret it ignores that key. When set to <em>Greedy</em>, irrespective of what keys are there in the configuration file, it makes all the secrets available in the Vaults specified via Configuration. <strong>This to me sounds like magic and would not prefer to do in an application that I build.</strong></p>
+
+<h3>Greedy Mode Filtering and Formatting Secrets</h3>
+
+<p>When using Greedy mode, we can filter on the list of keys that are made available by using the <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#prefix">prefix</a> option. Only Secret Names starting with the prefix is made available in the configuration. The other secrets are ignored. This feature can be used in conjunction with <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders#stripprefix">stripPrefix</a> option. When stripPrefix is set to true (defaults to false), the Secret is made available in the configuration after stripping off the prefix.</p>
+
+<p>For e.g. if we have a Secret with the name <em>connectionString-MyConnection</em>, having the below configuration will add the connection string with name <em>MyConnection</em>.</p>
+
+<pre><code class="xml Configuration File">&lt;add
+  name="keyVault1"
+  vaultName="keyVault1"
+  prefix="connectionString-"
+  stripPrefix="true"
+  type="Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral" /&gt;
+</code></pre>
+
+<pre><code class="csharp">var connectionString = ConfigurationManager.ConnectionStrings["MyConnection"];
+</code></pre>
+
+<p><em>Use prefix and stripPrefix in conjunction with the Greedy mode. For keys mentioned in the config it will try to match it with the prefix appended to the key name</em></p>
+
+<h3>Preloading Secrets</h3>
+
+<p>By default, the Key Vault Config Builder is set to preload the available Secrets in key vault. By doing this the config builder knows the list of configuration values that the key vault can resolve. For preloading the Secrets, the config builder uses the <em>List</em> call on Secrets. If you don&rsquo;t have list access on Secrets you can turn this feature off using the <em>preloadSecretNames</em> configuration option. At the time of writing the config builder version (1.0.1) throws an exception when preloading Secrets in turned on and List policy is not available on the Vault. I have raised a <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/pull/24">PR to fix</a> this issue, which if accepted would no longer throw the exception and would invalidate this configuration option.</p>
+
+<pre><code class="xml Configuration File">&lt;builders&gt;
+    &lt;add
+    name="keyVault1"
+    preloadSecretNames="false"
+    vaultName="keyVault1"
+</code></pre>
+
+<h3>Authentication Modes</h3>
+
+<p>The connectionString attribute allows you to specify the authentication mechanism with Key Vault. By default when using the Connected Service to create the key vault it adds the Visual Studio user to the access policies of the Key Vault. When connecting it uses the same. But this does not help you in a large team scenario. Most likely the Vault will be created under your organization subscription and you might want to share the same vault between all developers in the team. You could add the users individually and give them the appropriate access policies, but this might soon become cumbersome for a large team. Instead of using the <a href="https://rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Client Id/Secret or Certificate</a> authentication along with <a href="https://rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Managed Service Identity</a> configuration for localhost works the best. The configuration provider will then use the <em>AzureServicesAuthConnectionString</em> value from environment variable to connect to the key vault.</p>
+
+<pre><code class="text Local System">Set AzureServicesAuthConnectionString Environment variable
+RunAs=App;AppId=AppId;TenantId=TenantId;AppKey=Secret.
+Or
+RunAs=App;AppId=AppId;TenantId=TenantId;CertificateThumbprint=Thumbprint;CertificateStoreLocation=CurrentUser
+</code></pre>
+
+<p>As you can see the AzureKeyVaultConfigBuilder does provide good integration with Key Vault and makes using the Key Vault seamless. It does have a few issues, especially around <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues/20">handling different Secret versions</a>, which might be fixed in future releases.</p>
+
+<p><em>PS: At the time of writing there were a few issues that I had found while playing around. You can follow up on the individual issues on <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+author%3Arahulpnath+">Github</a>. Fingers crossed hope at least one of my PR&rsquo;s makes its way through to master!</em></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Key Vault As A Connected Service in Visual Studio 2017]]></title>
@@ -432,97 +543,6 @@ client.getSecret(secretUrl, function (err, result) {
 </code></pre>
 
 <p>To run the application first run <em>npm install</em> to install all the required packages and then execute the js file using <em>node main.js</em>. It fetches the secret value from the key vault using the certificate or secret authenticator. Hope this helps you to get started with Azure Key Vault from Node.js.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Azure Key Vault From Azure Functions - Certificate Based Authentication]]></title>
-    <link href="http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/"/>
-    <updated>2017-05-25T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/azure-key-vault-from-azure-functions-certificate-based-authentication</id>
-    <content type="html"><![CDATA[<p>In the previous post we saw how to connect to <a href="/blog/azure-key-vault-from-azure-functions/">Azure Key Vault from Azure Functions</a>. We used the <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Application Id and Secret to authenticate with the Azure AD Application</a>. Since the general recommendation is to use certificate-based authentication, in this post, we will see how we can use certificates to authenticate from within an Azure Function.</p>
-
-<p>First, we need to create an Azure AD application and set it up to use certificate-based authentication. Create a new service principal for the AD application and associate that with the Azure Key Vault. Authorize the AD application with the permissions required. In this case, I am providing all access to keys and secrets.</p>
-
-<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
-$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificate.Import($certificateFilePath)
-$rawCertificateData = $certificate.GetRawCertData()
-$credential = [System.Convert]::ToBase64String($rawCertificateData)
-$startDate= [System.DateTime]::Now
-$endDate = $startDate.AddYears(1)
-$adApplication = New-AzureRmADApplication -DisplayName "CertAdApplication" -HomePage  "http://www.test.com" -IdentifierUris "http://www.test.com" -CertValue $credential  -StartDate $startDate -EndDate $endDate
-
-$servicePrincipal = New-AzureRmADServicePrincipal -ApplicationId $adApplication.ApplicationId
-
-Set-AzureRmKeyVaultAccessPolicy -VaultName 'RahulKeyVault' -ServicePrincipalName $servicePrincipal.ServicePrincipalNames[0] -PermissionsToSecrets all -PermissionToKeys all 
-</code></pre>
-
-<p>Create an Azure Function App under your subscription as shown below. You can also use the same application created in the previous post (if you did create one).</p>
-
-<p><img src="/images/azureFunction_newFunctionApp.png" alt="Azure Function New App" class="center" /></p>
-
-<p>In the Function Apps page, select the app just created. Add a new function like in the last post. Selecting the Function App shows the available set of actions. Under the <em>Platform Features</em> tab we can upload the SSL certificates first and then update the Application Certificates to make the certificate available for the function.</p>
-
-<p><img src="/images/azureFunction_PlatformFeatures.png" alt="Azure Function Platform Features" class="center" /></p>
-
-<p>Upload the certificate by selecting it from your folder system.</p>
-
-<p><img src="/images/azureFunction_addCertificate.png" alt="Azure Function Upload Certificate" class="center" /></p>
-
-<p>For the certificate to be available for use in the Azure Functions an entry should be present in Application Settings. Under <em>Application Settings</em> in the <em>Platform Features</em> tab add App settings key and value - <em>WEBSITE_LOAD_CERTIFICATES</em> and the certificate thumbprint This makes the certificate available for consumption within the function. Multiple thumbprints can be specified comma separated if required.</p>
-
-<p><img src="/images/azureFunction_AppSetting.png" alt="Azure Function Certificates App Settings" class="center" /></p>
-
-<p>Using a certificate to authenticate with the Key Vault is the same as we have <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">seen before</a>.</p>
-
-<pre><code class="csharp">using System;
-using Microsoft.Azure.KeyVault;
-using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-
-private const string applicationId = "AD Application ID";
-private const string certificateThumbprint = "Certificate Thumbprint";
-
-public async static Task Run(TimerInfo myTimer, TraceWriter log)
-{
-    var keyClient = new KeyVaultClient(async (authority, resource, scope) =&gt;
-{
-    var authenticationContext = new AuthenticationContext(authority, null);
-    X509Certificate2 certificate;
-    X509Store store = new X509Store(StoreName.My, StoreLocation.CurrentUser);
-    try
-    {
-        store.Open(OpenFlags.ReadOnly);
-        X509Certificate2Collection certificateCollection = store.Certificates.Find(X509FindType.FindByThumbprint, certificateThumbprint, false);
-        if (certificateCollection == null || certificateCollection.Count == 0)
-        {
-            throw new Exception("Certificate not installed in the store");
-        }
-
-        certificate = certificateCollection[0];
-    }
-    finally
-    {
-        store.Close();
-    }
-
-    var clientAssertionCertificate = new ClientAssertionCertificate(applicationId, certificate);
-    var result = await authenticationContext.AcquireTokenAsync(resource, clientAssertionCertificate);
-    return result.AccessToken;
-});
-
-    var secretIdentifier = "https://rahulkeyvault.vault.azure.net/secrets/mySecretName";
-    var secret = await keyClient.GetSecretAsync(secretIdentifier);
-
-    log.Info($"Secret Value: {secret}"); 
-}
-</code></pre>
-
-<p>Make sure you add in the <em>project.json</em> as seen in the <a href="/blog/azure-key-vault-from-azure-functions/">previous post</a> to enable the required NuGet packages. The Azure function now uses the certificate to authenticate with Key Vault and retrieve the secret.</p>
-
-<p>Hope this helps!</p>
 ]]></content>
   </entry>
   
