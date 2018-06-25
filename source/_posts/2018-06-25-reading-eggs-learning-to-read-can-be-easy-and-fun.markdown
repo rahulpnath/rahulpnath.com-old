@@ -24,6 +24,6 @@ A couple of months back Gautham (my son) started playing [Reading Eggs](https://
 > - Parents can access detailed progress reports as well as hundreds of full-colour downloadable activity sheets that correspond with the lessons in the program.
 > - The program includes over 2000 online books for kids – each ending with a comprehension quiz that assesses your child’s understanding.
 
-Each level explores different letters/word combinations and has a knowledge quiz at the end of it to pass to the next level. _Using the five essential keys to reading success, the program unlocks all aspects of learning to read for your child, focusing on a core curriculum of phonics and phonemic awareness, sight words, vocabulary, comprehension, and reading for meaning._
+Each level explores different letters/word combinations and has a knowledge quiz at the end of it to pass to the next level. _The program unlocks all aspects of learning to read for your child, focusing on a core curriculum of phonics and phonemic awareness, sight words, vocabulary, comprehension, and reading for meaning._
 
-Do you give the app a try if you have kids at home!
+Do give the app a try if you have kids at home!
