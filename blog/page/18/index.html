@@ -163,6 +163,130 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-04-17T23:56:17+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/nuget/'>nuget</a>, <a class='category' href='/blog/category/open-source/'>open source</a>, <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/windows-phone-series-image-caching-library-jetimageloader/" itemprop="url">Windows Phone Series: Image Caching Library - JetImageLoader</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Recently on a client project, I had a requirement to cache images locally on the phone and then load it from there from subsequent requests. Initially I had plans for custom implementing this using sqlite and custom code. While googling for this, I came across an awesome custom library that solved my problem with just a few lines of code – <a href="https://github.com/artem-zinnatullin/jet-image-loader">JetImageLoader</a> by <a href="https://github.com/artem-zinnatullin">Artem</a>. This is available via nuget, making it easy to install</p>
+
+<p><a href="http://www.nuget.org/packages/WP-JetImagLoader/0.8.5"><img src="/images/WP-JetImagLoader.png" alt="WP-JetImagLoader" /></a></p>
+
+<p>Integrating this library into any existing project is even easier and is just about using a converter on your Image datatemplate as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Image</span> <span class="na">Source=</span><span class="s">&quot;{Binding UserAvatarUrl, Converter={StaticResource JetImageLoaderConverter}}&quot;</span><span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>You would need to add a custom converter and add this as part of the resource. There is a sample for this on Github where the <a href="https://github.com/artem-zinnatullin/jet-image-loader">project source</a> also lives.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderImplementation</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;</span> <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WeakMemoryCache</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="n">stream</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="k">readonly</span> <span class="n">BaseStorageCache</span> <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LimitedStorageCache</span><span class="p">(</span><span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">(),</span> <span class="s">&quot;\\image_cache&quot;</span><span class="p">,</span> <span class="k">new</span> <span class="n">SHA1CacheFileNameGenerator</span><span class="p">(),</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">1024</span> <span class="p">*</span> <span class="m">10</span><span class="p">);&lt;/</span><span class="n">p</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">JetImageLoaderConfig</span><span class="p">.</span><span class="n">Builder</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">IsLogEnabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">CacheMode</span> <span class="p">=</span> <span class="n">CacheMode</span><span class="p">.</span><span class="n">MemoryAndStorageCache</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">DownloaderImpl</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HttpWebRequestDownloader</span><span class="p">(),</span>
+</span><span class='line'>            <span class="n">MemoryCacheImpl</span> <span class="p">=</span> <span class="n">MemoryCacheImpl</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">StorageCacheImpl</span> <span class="p">=</span> <span class="n">StorageCacheImpl</span>
+</span><span class='line'>        <span class="p">}.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">JetImageLoaderConverter</span> <span class="p">:</span> <span class="n">BaseJetImageLoaderConverter</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">JetImageLoaderConfig</span> <span class="nf">GetJetImageLoaderConfig</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">JetImageLoaderImplementation</span><span class="p">.</span><span class="n">GetJetImageLoaderConfig</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="kt">object</span> <span class="nf">Convert</span><span class="p">(</span><span class="kt">object</span> <span class="k">value</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Type</span> <span class="n">targetType</span><span class="p">,</span> <span class="kt">object</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">System</span><span class="p">.</span><span class="n">Globalization</span><span class="p">.</span><span class="n">CultureInfo</span> <span class="n">culture</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">base</span><span class="p">.</span><span class="n">Convert</span><span class="p">(</span><span class="k">value</span><span class="p">,</span> <span class="n">targetType</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">culture</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is all you need to do to have all the images that are bound with the converter to be cached locally on to the Memory and storage. You could also choose to cache it to only memory or storage. Do check this out in case you want to have images cached locally.</p>
+
+<p>The nuget is for Windows 8 library, but there is also a version for <a href="https://github.com/artem-zinnatullin/jet-image-loader/tree/master/JetImageLoader.Wp7">WP7.1 avaialble on Github</a> (which apparently is a pull request from me, indeed my very first on Github that got merged)</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-03-10T16:08:29+00:00"  data-updated="true" itemprop="datePublished dateCreated">Mar 10<sup>th</sup>, 2014</time>
         
 
@@ -1556,71 +1680,6 @@ Navigation is basically a platform specific feature and we would not want to bri
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2013-09-17T13:31:58+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 17<sup>th</sup>, 2013</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/get-started-with-your-blog/" itemprop="url">Get started with your blog</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>If you are a programmer and don’t have a blog, then there is no better time than now to start one. <a href="http://channel9.msdn.com/Shows/HanselminutesOn9/Hanselminutes-on-9-Social-Networking-for-Developers-Part-1-Every-Developer-Needs-a-Blog">Every developer should have a blog</a>, for a very simple reason – <strong>Otherwise all your work is just going wasted!.</strong> I can bet that the best of your code or ideas would either be in some old email that you hardly have access to or archived or in some backup hard-disk waiting to be formatted or already formatted and all gone. All the thought, research and creativity that you would have spent would be lying just wasted and with little or no use. Having an online presence has really become a necessity in today&rsquo;s connected world, and a blog is the best place to show your presence. I started off answering <a href="http://rahulpnath.com/blog/stars-do-count/">mdsn forums</a> and then figured that most of the people had similar questions and I was giving the same answers many a times, which gave me the thought of blogging answers and posting links to them. So anytime someone asks you something or you do something awesome blog it, so that your work does not get wasted and more people would find it useful. As with the <a href="http://en.wikipedia.org/wiki/Rule_of_three_(computer_programming">rule of three</a>) for refactoring, with blogging it’s just rule of one – <em><strong>blog it always </strong>(</em>even this blog is because some one asked me after I recently moved on to a self hosted blog<em>).</em>
-I have had a taste of blogspot and WordPress blog web hosting service,  before moving on to a self-hosted blog here. I think you would have guessed which one I would suggest you to get if you are starting your blog – a self hosted one. Indeed there is some effort that goes in to maintain the blog, but its worth every effort that you put.</p>
-
-<p>I use WordPress as the blogging software and am running it on a Linux server (had to change over from windows, as there were a lot of compatibility issues that I faced). WordPress is a very popular blogging engine and so has an immense collection of themes, plug-in and add-on that are available to enhance yours and your readers experience. Once you get your wordpress installed on your self hosted domain, which should be as easy as clicking a button, install the below plugin’s.</p>
-
-<ol>
-<li><p>The first thing would be to <strong>connect with </strong><a href="http://jetpack.me/"><strong>jetpack</strong></a>. This would give you a lot of features including stats, social integration, publicize options and many more.</p></li>
-<li><p>Connect with <a href="http://akismet.com/"><strong>akismet</strong></a> using the <a href="http://wordpress.org/plugins/akismet/">plug-in</a> for preventing/moderating spam comments. Akismet provides a free subscription for personal users.</p></li>
-<li><p><a href="http://feedburner.google.com/"><strong>Claim your feed</strong></a> and put it on your blog. You can again use a <a href="http://wordpress.org/plugins/feedburner-form/">feedburner-form</a> if you want.</p></li>
-<li><p>Integrate with<strong> </strong><a href="http://www.google.com/analytics/"><strong>Google analytics</strong></a>, if you want more detailed statistics than the one provided with jetpack. Once you get your code, you can use the <a href="http://wordpress.org/plugins/googleanalytics/">plug-in</a> to integrate with your site. This will add the necessary code in all your pages header.</p></li>
-<li><p>Make sure you have a <strong>backup plan</strong>, as you would not want all your data to vanish off if something happens with the hosting server. You could either use vaultpress or use freely available plug-in to back up to popular cloud storage like Dropbox, Skydrive or Google drive.</p></li>
-<li><p>Get a <strong>good theme</strong> for your blog, there a lot of free and paid ones out there.</p></li>
-</ol>
-
-
-<p>Now that you have most of the things setup, it’s time for you to put up your first page, <a href="http://rahulpnath.com/blog/about/">About me</a>. This is very important as it gives a sense of credibility to your readers, so make sure you have one. For creating content on to your blog, you can either use the online editor or use some offline editor. Personally I use <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows live writer</a>. I love using this and all my blogs are written using this. The one plug-in that you would want to get, if you are a developer is <a href="http://precode.codeplex.com/">PreCode</a>, which makes inserting code really easy.
-There are a lot more things that your blog would need, you would soon find that out and when you do, please leave a note of it in the comments section below. Happy Blogging!</p>
-
-<p><strong>Edit</strong>: Couple of people were asking about getting started with a free blog. <a href="http://wordpress.com/">Wordpress.com</a> or <a href="https://www.tumblr.com/">Tumblr</a> would be a very good option to start with. Personally I used Wordpress as I felt that better. The advantage with tumblr over wordpress is that you can <a href="http://www.tumblr.com/docs/en/custom_domains">link your custom domain name with tumblr for free</a> while <a href="http://en.support.wordpress.com/domains/map-existing-domain/">worpress charges for linking a custom domain</a>. (You would need to pay for the custom domain in either cases). But then I ended up hosting all myself after moving away from Wordpress.com.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1644,6 +1703,8 @@ There are a lot more things that your blog would need, you would soon find that 
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
+    
     <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
     
     <a class="list-group-item " href="/blog/exploring-azurekeyvaultconfigbuilder/">Exploring AzureKeyVaultConfigBuilder</a>
@@ -1651,8 +1712,6 @@ There are a lot more things that your blog would need, you would soon find that 
     <a class="list-group-item " href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Azure Key Vault As A Connected Service in Visual Studio 2017</a>
     
     <a class="list-group-item " href="/blog/prettier-an-opinionated-code-formatter/">Tip of the Week: Prettier - An Opinionated Code Formatter</a>
-    
-    <a class="list-group-item " href="/blog/check-if-you-have-been-hacked/">Tip of the Week: Check If You Have Been Hacked!</a>
     
   </div>
 </section>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: testing | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/testing/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-26T00:01:25+00:00</updated>
+  <updated>2018-06-26T02:08:15+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,97 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated API Testing Using Postman Collection Runner]]></title>
+    <link href="http://rahulpnath.com/blog/automated-api-testing-using-postman-collection-runner/"/>
+    <updated>2018-06-26T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/automated-api-testing-using-postman-collection-runner</id>
+    <content type="html"><![CDATA[<p>A while back we looked at how we can use <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Postman to chain multiple requests to speed up out Manual API Testing</a>. For those who are not familiar with <a href="https://www.getpostman.com/">Postman</a>, it is an application that assists in API testing and development, which I see as sitting a level top of a tool like <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p>In this post, we will see how we can use Postman to test some basic CRUD operations over an API using a feature called <a href="http://blog.getpostman.com/2016/11/22/postmans-new-collection-runner/">Postman Runner</a>. Using this still involves some manual intervention. However, we can automate them using a combination of different tools.</p>
+
+<h3>Setting Up the API</h3>
+
+<p>To start with I create a simple API endpoint using the out of the box Web API project from Visual Studio 2017. It is a Values Controller which stores key-value pairs to which you can send GET, POST, DELETE requests. Below is the API implementation. It is a simple in-memory implementation and does not use any persistent store. However, the tests would not change much even if the store was to be persistent. The importance here is not in the implementation of the API, but how you can use Postman to add some quick tests.</p>
+
+<pre><code class="csharp ValuesController">public class ValuesController : ApiController
+{
+    static Dictionary&lt;int, string&gt; values = new Dictionary&lt;int, string&gt;();
+
+    public IEnumerable&lt;string&gt; Get()
+    {
+        return values.Values;
+    }
+
+    public IHttpActionResult Get(int id)
+    {
+        if (values.ContainsKey(id))
+            return Ok(values[id]);
+
+        return NotFound();
+    }
+
+    public IHttpActionResult Post(int id, [FromBody]string value)
+    {
+        values[id] = value;
+        return Ok();
+    }
+
+    public IHttpActionResult Delete(int id)
+    {
+        if (!values.ContainsKey(id))
+            return NotFound();
+
+        values.Remove(id);
+        return Ok();
+    }
+}
+</code></pre>
+
+<h3>Setting Up Postman</h3>
+
+<p>To start with we will create a new Collection in Postman to hold our tests for the Values Controller - I have named it &lsquo;<em>Values CRUD - Test</em>&rsquo;. The collection is a container for all the API requests that we are going to write. First, we will add all the request definitions into postman which we can later reorder for the tests.</p>
+
+<p><img src="/images/postman_request.png" alt="Postman Request" class="center" /></p>
+
+<blockquote><p>The <em><strong>/</strong></em> in the URL are parameters defined as part of the selected Environment. Environments in Postman allow you to switch between different application environments like Development, Test, Production. You can configure different values for each environment and Postman will send the requests as per the configuration.</p></blockquote>
+
+<p>Below are the environment variables for my local environment. You can define as many environments as you want and switch between them.</p>
+
+<p><img src="/images/postman_environment.png" alt="Postman Environment" class="center" /></p>
+
+<p>Now that I have all the request definitions for the API added let&rsquo;s add some tests to verify our API functionality.</p>
+
+<h3>Writing The First Test</h3>
+
+<p>Postman allows executing scripts before and after running API requests. We did see this in the <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">API Chaining post</a> where we grabbed the <em>messageId</em> from the POST request and added it to the environment variable for use in the subsequent requests. Similarly, we can also add scripts to verify that the API request returns expected results, status code, etc.</p>
+
+<p>Let&rsquo;s first write a simple test on our GET API request that it returns a 200 OK response when called. The below test uses the <a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference">Postmans PM API</a> to assert that status code of the response is 200. Check the <em><a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference#response-assertion-api-in-test-scripts">Response Assertion API in test scripts</a></em> to see the other assertion options available like <em>pm.response.to.have.status</em>. The tests are under the Tests section similar to where wrote the scripts to chain API requests. When executing the API request, the Tests tab shows the successful test run for the particular request.</p>
+
+<pre><code class="javascript 200 Status Code">pm.test("Status code is 200", function() {
+  pm.response.to.have.status(200);
+});
+</code></pre>
+
+<p><img src="/images/postman_tests.png" alt="Postman Tests" class="center" /></p>
+
+<p>Similarly, you can also write <em>Pre-request Script</em> to set variables or perform any other operation. Below I am setting the <em>Value</em> environment variable to &ldquo;Test&rdquo;. You could generate a random value here or set a random id, or set an identifier that does not already exists. It&rsquo;s test/application specific, so leave it you to decide what works best for you.</p>
+
+<pre><code class="javascript Pre-request Script.">pm.environment.set("Value", "Test");
+</code></pre>
+
+<h3>Collection Runner</h3>
+
+<p>The collection runner allows you to manage multiple API requests and run them as a set. Once completed it shows a summary of all the tests included within each request and details of tests that passed/failed in the run. You can target the Runner to run against your environment of choice.</p>
+
+<p><img src="/images/postman_collection_runner.png" alt="Postman Collection Runner" class="center" /></p>
+
+<p>Running these tests still involves some manual effort of selecting environments and running them. However using <a href="https://www.npmjs.com/package/newman">Newman</a>, you can run Postman Collections from the command line, which means even in your build pipeline.</p>
+
+<p>Using Postman, we can quickly test our API&rsquo;s across multiple environments. The Collection Runner also shows an excellent visual summary of the tests and helps us in API development. However, I found these tests to violate the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>. You need to repeat the same API request structure if you have to use them in a different context. Like in the example above I had to create two <em>Get Value By Id</em> requests to test for the value existing and also for when it does not exists. You could use some conditional looping inside the scripts, but then that makes your tests complicated and gets into the loop of how to test your tests. Postman does allow you to export the API request to the language of your choice. So once you have the basic schema, you can export them and write tests that compose them. I find Postman tests and the Runner a quick way to start testing your API endpoints and then for more complicated cases use a stronger programming language. Having the tests in Postman also allows us to have an API spec in place and can be useful to play around with the API.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Semantic Comparison: Improve Test Assertions]]></title>
@@ -640,47 +731,6 @@ public void CustomerControllerGetWithNoCustomerReturnsNotFound(
 <p>The tests above uses <a href="http://blog.nikosbaxevanis.com/2012/07/31/autofixture-xunit-net-and-auto-mocking/">InlineAutoMoqData attribute</a> which is a customized xUnit data attribute that uses Moq framework to inject dependencies. The Mock<ICustomerRepository> represents a mocked interface implementation. Behavior is setup on the mock using the Setup method. By using <a href="http://blog.ploeh.dk/2010/03/17/AutoFixtureFreeze/">Frozen</a> attribute for the Mock parameter, we tell AutoFixture to create only one instance of the mocked object and then use the same instance for any future requests of that type. This forces the same instance of the repository to be injected into the CustomerController class as well when it asks for a ICustomerRepository to AutoFixture.</p>
 
 <p>Creating test data is an important aspect of any test. Making sure that you minimize the dependencies on the implementation detail is important to make your tests more robust. This allows the code to be refactored as long as some of the core contracts that we are testing remain the same. AutoFixture helps minimize the code in <a href="http://xunitpatterns.com/Four%20Phase%20Test.html">Fixture Setup phase</a>, which otherwise tends to grow bigger. Hope this helps you with your tests!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Simulating delays in HTTP Calls For Manual Tests]]></title>
-    <link href="http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests/"/>
-    <updated>2017-01-09T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/simulating-delays-in-http-calls-for-manual-tests</id>
-    <content type="html"><![CDATA[<p>At one of my clients, we were facing an issue of missing some part of a form data when processing a <em>Submit</em> request on the form. As per the current design, the form autosaves data to the database as and when user types in. When the user finally submits the form to be processed the Controller gets all the relevant data from the database and sends for processing. But we noticed that the processing requests missed parts of data in the request send for processing even though the database had those values. This was a clear case where the forms submit request got processed even before all the forms data was saved. The UI was enabling the Submit button right after all the UI validations were made and asynchronously firing off saves to the database.</p>
-
-<p>Let&rsquo;s not go into the design discussion of whether the UI should be sending in all the data to be processed as part of the Submit request as opposed to just sending a reference id and have the controller get all the data from the database (which it is currently doing). The quick fix for this problem was to enable the submit button only after all the asynchronous save requests (the ones for autosave) came back with a success response. The fix was simple but testing this was a challenge.</p>
-
-<blockquote><p><em>We wanted to delay a few HTTP requests to check how the UI behaved</em></p></blockquote>
-
-<p>When using automated tests there are a lot of frameworks that can help delay requests. But in this case, we were relying on manual tests.</p>
-
-<h3>Using Fiddler to Delay Requests</h3>
-
-<p><a href="http://www.telerik.com/fiddler">Fiddler</a> is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost every other day</a>. In Fiddler, we can create rules on web requests and modify how they are handled and responded. Most of the functionality is available under the <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">AutoResponder</a> tab. We had seen earlier how to <a href="http://www.rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/">compose web requests and also simulate error conditions in Fiddler</a>. Here we will see how to use Fiddler to delay request/response time. In Fiddler, we can either delay the request itself being sent to the server or delay the handover of response back to the calling application once it is received from the server.</p>
-
-<h4><strong>Delay</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#delay">delay</a> on a request we can specify the time to delay sending the request to the server. The value is specified in milliseconds. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set (in this case an EXACT match with a URL) fiddler delays sending this request to the server by the set amount of time.</p>
-
-<blockquote><p><em>Delay sending request to the server by #### of milliseconds</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request the URL (1) into the AutoResponder tab (2) and from the dropdown (3) under the Rule Editor choose delay and set the delay time. Click Save (4). Make sure that the request and rules are enabled (5 &amp; 6).</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_delay.png"/></p>
-
-<h4><strong>Latency</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">latency</a> on a request we can specify the delay before a response is received. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set fiddler sends the requests to the server immediately. Once the response is received it delays passing the response back to the calling application by the set delay time in milliseconds.</p>
-
-<blockquote><p><em>Induce a delay (latency) before a response is returned.</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request URL (1) into the AutoResponder tab (2). Right click on the URL and select &lsquo;Set Latency&rsquo; (3). Enter the latency time in milliseconds and OK. Make sure that rules and latency options are enabled (4 &amp; 5)</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_latency.png"/></p>
-
-<p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
 ]]></content>
   </entry>
   

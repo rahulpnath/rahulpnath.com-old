@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-06-26T00:01:25+00:00</updated>
+  <updated>2018-06-26T02:08:15+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,136 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Automated API Testing Using Postman Collection Runner]]></title>
+    <link href="http://rahulpnath.com/blog/automated-api-testing-using-postman-collection-runner/"/>
+    <updated>2018-06-26T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/automated-api-testing-using-postman-collection-runner</id>
+    <content type="html"><![CDATA[<p>A while back we looked at how we can use <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Postman to chain multiple requests to speed up out Manual API Testing</a>. For those who are not familiar with <a href="https://www.getpostman.com/">Postman</a>, it is an application that assists in API testing and development, which I see as sitting a level top of a tool like <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p>In this post, we will see how we can use Postman to test some basic CRUD operations over an API using a feature called <a href="http://blog.getpostman.com/2016/11/22/postmans-new-collection-runner/">Postman Runner</a>. Using this still involves some manual intervention. However, we can automate them using a combination of different tools.</p>
+
+<h3>Setting Up the API</h3>
+
+<p>To start with I create a simple API endpoint using the out of the box Web API project from Visual Studio 2017. It is a Values Controller which stores key-value pairs to which you can send GET, POST, DELETE requests. Below is the API implementation. It is a simple in-memory implementation and does not use any persistent store. However, the tests would not change much even if the store was to be persistent. The importance here is not in the implementation of the API, but how you can use Postman to add some quick tests.</p>
+
+<figure class='code'><figcaption><span>ValuesController</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ValuesController</span> <span class="p">:</span> <span class="n">ApiController</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">values</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Get</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">values</span><span class="p">.</span><span class="n">Values</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">ContainsKey</span><span class="p">(</span><span class="n">id</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nf">Ok</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">NotFound</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Post</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="p">[</span><span class="n">FromBody</span><span class="p">]</span><span class="kt">string</span> <span class="k">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">values</span><span class="p">[</span><span class="n">id</span><span class="p">]</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">Ok</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Delete</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">values</span><span class="p">.</span><span class="n">ContainsKey</span><span class="p">(</span><span class="n">id</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nf">NotFound</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">values</span><span class="p">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">Ok</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Setting Up Postman</h3>
+
+<p>To start with we will create a new Collection in Postman to hold our tests for the Values Controller - I have named it &lsquo;<em>Values CRUD - Test</em>&rsquo;. The collection is a container for all the API requests that we are going to write. First, we will add all the request definitions into postman which we can later reorder for the tests.</p>
+
+<p><img src="http://rahulpnath.com/images/postman_request.png" alt="Postman Request" class="center" /></p>
+
+<blockquote><p>The <em><strong>/</strong></em> in the URL are parameters defined as part of the selected Environment. Environments in Postman allow you to switch between different application environments like Development, Test, Production. You can configure different values for each environment and Postman will send the requests as per the configuration.</p></blockquote>
+
+<p>Below are the environment variables for my local environment. You can define as many environments as you want and switch between them.</p>
+
+<p><img src="http://rahulpnath.com/images/postman_environment.png" alt="Postman Environment" class="center" /></p>
+
+<p>Now that I have all the request definitions for the API added let&rsquo;s add some tests to verify our API functionality.</p>
+
+<h3>Writing The First Test</h3>
+
+<p>Postman allows executing scripts before and after running API requests. We did see this in the <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">API Chaining post</a> where we grabbed the <em>messageId</em> from the POST request and added it to the environment variable for use in the subsequent requests. Similarly, we can also add scripts to verify that the API request returns expected results, status code, etc.</p>
+
+<p>Let&rsquo;s first write a simple test on our GET API request that it returns a 200 OK response when called. The below test uses the <a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference">Postmans PM API</a> to assert that status code of the response is 200. Check the <em><a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference#response-assertion-api-in-test-scripts">Response Assertion API in test scripts</a></em> to see the other assertion options available like <em>pm.response.to.have.status</em>. The tests are under the Tests section similar to where wrote the scripts to chain API requests. When executing the API request, the Tests tab shows the successful test run for the particular request.</p>
+
+<figure class='code'><figcaption><span>200 Status Code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">pm</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Status code is 200&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">pm</span><span class="p">.</span><span class="nx">response</span><span class="p">.</span><span class="nx">to</span><span class="p">.</span><span class="nx">have</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="http://rahulpnath.com/images/postman_tests.png" alt="Postman Tests" class="center" /></p>
+
+<p>Similarly, you can also write <em>Pre-request Script</em> to set variables or perform any other operation. Below I am setting the <em>Value</em> environment variable to &ldquo;Test&rdquo;. You could generate a random value here or set a random id, or set an identifier that does not already exists. It&rsquo;s test/application specific, so leave it you to decide what works best for you.</p>
+
+<figure class='code'><figcaption><span>Pre-request Script.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">pm</span><span class="p">.</span><span class="nx">environment</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;Value&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Collection Runner</h3>
+
+<p>The collection runner allows you to manage multiple API requests and run them as a set. Once completed it shows a summary of all the tests included within each request and details of tests that passed/failed in the run. You can target the Runner to run against your environment of choice.</p>
+
+<p><img src="http://rahulpnath.com/images/postman_collection_runner.png" alt="Postman Collection Runner" class="center" /></p>
+
+<p>Running these tests still involves some manual effort of selecting environments and running them. However using <a href="https://www.npmjs.com/package/newman">Newman</a>, you can run Postman Collections from the command line, which means even in your build pipeline.</p>
+
+<p>Using Postman, we can quickly test our API&rsquo;s across multiple environments. The Collection Runner also shows an excellent visual summary of the tests and helps us in API development. However, I found these tests to violate the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>. You need to repeat the same API request structure if you have to use them in a different context. Like in the example above I had to create two <em>Get Value By Id</em> requests to test for the value existing and also for when it does not exists. You could use some conditional looping inside the scripts, but then that makes your tests complicated and gets into the loop of how to test your tests. Postman does allow you to export the API request to the language of your choice. So once you have the basic schema, you can export them and write tests that compose them. I find Postman tests and the Runner a quick way to start testing your API endpoints and then for more complicated cases use a stronger programming language. Having the tests in Postman also allows us to have an API spec in place and can be useful to play around with the API.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun]]></title>
@@ -1164,45 +1294,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
 <p>As shown above, you can get the TenantId and AppId from the App Registrations page in the Azure portal. Clicking on the Endpoints button reveals a list of URL&rsquo;s which has the TenantId GUID. The AppId is displayed against each of the AD application. Once you set the environment variable, the application will be able to connect to Key Vault without any additional configuration entries in web/app config.</p>
 
 <p>Azure Managed Service Identity makes it easier to connect to Key Vault and removes the need of having any sensitive information in the application configuration file. It also helps remove the overhead of renewing the certificate/secrets used to connect to the Vault. One less thing to worry about the application!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Text Editing - Split or Combine Multiple Lines]]></title>
-    <link href="http://rahulpnath.com/blog/text-editing-split-or-combine-multiple-lines/"/>
-    <updated>2017-10-13T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/text-editing-split-or-combine-multiple-lines</id>
-    <content type="html"><![CDATA[<p>As a developer, I often end up needing to manipulate text. Sometimes this text can get quite large, and it might take a while to do it manually. If you have a text editor under your <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tool belt</a>, it often helps in situations like that. Let&rsquo;s looks at one of the common scenarios that I come across and how we can solve that using a text editor. I use <a href="https://www.sublimetext.com/">Sublime Text</a> as my go-to editor for such text editing hacks, but you can do this in any text editor that supports <a href="https://en.wikipedia.org/wiki/Simultaneous_editing">simultaneous editing</a>.</p>
-
-<p>Let&rsquo;s say I just get a list of comma separated values and need to insert double (or single) quotes around each value to use in a SQL query. To demonstrate this, I ended up going to <a href="https://www.random.org/integers/">random.org</a> to generate a list of random values and had to use the same technique that I was to demonstrate as in the SQL query case. I generated 12 random numbers, and the site gave a tab separated list of values, as shown below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>91    66    31    11    90
-</span><span class='line'>80    1    24    48    61
-</span><span class='line'>61    66
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>I now need to convert this into a comma-separated list. Let&rsquo;s see how we can go about doing this.</p>
-
-<ol>
-<li>Select the recurring character pattern. In this case, it is the tab space.</li>
-<li>Select all occurrences of the pattern. (Alt + F3 - Find All in Sublime)</li>
-<li>Act on all the occurrences. In this case, I want to remove them, so I use <em>Del</em></li>
-<li>Since I want to introduce a comma between each of the numbers, I first split them into multiple lines using <em>Enter</em>. Now I have all the numbers on a separate line.</li>
-<li>Select all the numbers and insert a cursor at the end of each. ( Ctrl + Shift + L)</li>
-<li>Insert comma. We still have the cursor at the end of all lines, so just pressing <em>Delete</em> again combines all the lines into one. Remove the trailing comma.</li>
-</ol>
-
-
-<div style="text-align: center;">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/nDDWviJ5xHM" frameborder="0" allowfullscreen></iframe>
-</div>
-
-
-<p>Though this is a specific example, I hope you get the general idea on how to go about manipulating text, to split and combine as required. I hope you will be able to insert double (or single) quotes around each value in the comma separated values that we have now, to use in a SQL query!</p>
 ]]></content>
   </entry>
   
