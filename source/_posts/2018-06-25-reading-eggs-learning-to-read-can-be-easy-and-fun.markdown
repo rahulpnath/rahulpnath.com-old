@@ -4,6 +4,7 @@ title: "Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun"
 comments: true
 categories: 
 - TipOW
+- Parenting
 tags: 
 date: 2018-06-25
 completedDate: 2018-06-24 05:25:43 +1000
