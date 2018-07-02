@@ -163,6 +163,89 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-05-26T15:46:09+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 26<sup>th</sup>, 2014</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure/'>azure</a>, <a class='category' href='/blog/category/blogging/'>blogging</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-web-sites-moving-wordpress-to-cloud/" itemprop="url">Azure Web Sites: Moving Wordpress to Cloud</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>It’s been almost an year since I have moved to this custom hosted blog and is nearing its renewal with my current host, Godaddy. Now that Azure has full support for Web Sites which enables you to deploy web applications on a scalable and reliable cloud infrastructure and being a FTE(Full Time Employee), I have the privilege of a free <a href="http://azure.microsoft.com/en-us/pricing/member-offers/msdn-benefits-b/">msdn account that offers 150$ free credit on azure</a>, I have decided on to move to Azure for my blog. You could also try this with <a href="http://azure.microsoft.com/en-us/pricing/free-trial/">a free Azure trial that offers you 200$ credit for all the services</a></p>
+
+<p><strong>Setting up Wordpress</strong> on Azure is very easy and is just a matter of few clicks from the <a href="https://manage.windowsazure.com">Management Portal</a>. You can find the detailed steps to get this done <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-php-web-site-gallery/">here</a>. By default Azure Web Sites are installed in the root directory of IIS. To move this into a sub-folder of your choice, you can use any FTP client(FileZilla). The connection details can be obtained from the Management Portal as shown in the below screen shot.</p>
+
+<p><img src="/images/PortalQuickglance.jpg" alt="Portal Quick glance" /> <img src="/images/PortalQuickglance1.jpg" alt="Portal Quick glance 1" /></p>
+
+<p><strong>Mapping your custom domain </strong>to the new wordpress site is about adding a <a href="http://azure.microsoft.com/en-us/documentation/articles/web-sites-custom-domain-name/">CName record for awverify or www</a> in your Domain dashboard provided by the domain registrar. Once you have the required CName entries you can map the custom domain in the portal using the ‘Manage Domains’ option.</p>
+
+<p><img src="/images/CustomDomain.jpg" alt="Custom Domain" /></p>
+
+<p><strong>Restoring your content </strong>from my current host was easy as I am using <a href="http://vaultpress.com">Vaultpress</a> for my site backup and it provides an option to <a href="http://help.vaultpress.com/restore-to-a-new-site/">backup to a different web site too</a>. If not you could also use <a href="http://www.davebost.com/2013/07/11/moving-a-wordpress-blog-to-windows-azure-transferring-your-content">FTP to move your current site content which is detailed out here</a>. Once the content is restored you would need to update the Wordpress Url and Site address url in the General Settings of your blog dashboard. You could also update this directly on the MySQL database in the <em>wp_options</em> table(<em>home</em> and <em>siteurl</em> property). To connect to the database you would get the connection string details from the portal and you can use <a href="http://www.mysql.com/products/workbench/">MySQL Workbench</a> to connect to it. You might have to recheck your permalink setting on the Wordpress dashboard to ensure that it is the same as you were using earlier.</p>
+
+<p><img src="/images/AzureGeneralSettings.jpg" alt="General Settings" /></p>
+
+<p>Now you are up an running your blog on Azure!!</p>
+
+<p><strong>Things to look out for:</strong></p>
+
+<p><strong>1</strong>. Make sure that all your blog links use your custom domain and not <yourdomain>.azurewebsite.net.</p>
+
+<p><strong>2</strong>. I had my Jetpack commenting system broken as I had moved the blog to a subdirectory. To correct this you would need to disconnect jetpack from the wordpress account and reconnect it. You can do this from the Wordpress dashboard. If reconnecting throws some error, then connect to your SQL database and delete of the entries that starts with jetpack in the <em>wp_options</em> table.(Make sure you have a db backup before you do this). Reconnecting after that should work fine</p>
+
+<p><strong>3. </strong>If you see any error indicating there is a Redirect loop error, this is mostly because you would be redirecting a no-www request to the www sub domain. In this case make sure that the siteurl and home property in wp_options table also has www in the urls. Otherwise it will keep redirecting itself between no-www and www creating a redirect loop.</p>
+
+<p><strong>Edit:
+4. </strong>If you face any error while trying to connect to the azure hosted web site from <a href="http://www.microsoft.com/en-in/download/details.aspx?id=8621">Windows Live Writer</a>(WLW), this most likely is because it uses <a href="http://codex.wordpress.org/XML-RPC_Support">xmlrpc.php</a> for publishing posts to the site and this is accessed over the https enpoint. Since https is not setup for the custom domain, accessing xmlrpc.php over https would present you with the below certificate error.</p>
+
+<p><img src="/images/wlw_https_error.jpg" alt="Https error" /></p>
+
+<p>You could either configure your ssl bindings in azure portal, under the <a href="http://ruslany.net/2013/07/how-to-setup-ip-ssl-on-windows-azure-web-sites/">Configure tab under your website</a>. SSL bindings to custom domains can only be used in Basic or Standard mode. If yours is not in basic or standard mode as mine, you can workaround this by either configuring the blog in WLW using your *.azurewebsites.net url.</p>
+
+<p><strong>Azure Plans &amp; Pricing</strong></p>
+
+<p>If you do not have a free account, you might be thinking of the costs that would be really incurred for you to move on to Azure. In short Azure Web Sites is offered in four tiers: <strong>Free</strong>, <strong>Shared (Preview)</strong>, <strong>Basic</strong> and <strong>Standard</strong>. The pricing details for each of these is available in detail <a href="http://azure.microsoft.com/en-us/pricing/details/web-sites/">here</a>. To have a custom domain name mapping you would at least need to choose Shared mode. For more information on how to choose the right plan for you, Scott Hanselman has a very good article on <a href="http://www.hanselman.com/blog/PennyPinchingInTheCloudWhenDoAzureWebsitesMakeSense.aspx">Penny Pinching in the cloud.</a></p>
+
+<p>Do you plan to move to Azure Web Sites some time soon?
+<a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-04-17T23:56:17+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 17<sup>th</sup>, 2014</time>
         
 
@@ -1413,273 +1496,6 @@ To check if this is successfully setup, open up command prompt and type in java.
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2014-01-07T16:05:28+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 7<sup>th</sup>, 2014</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/windows-phone/'>windows phone</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/mvvm-a-windows-phone-scenario-part-2/" itemprop="url">MVVM – A Windows Phone Scenario – Part 2</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>We had looked into many of the common MVVM scenarios, that we come across while developing windows phone applications in <a href="http://rahulpnath.com/blog/mvvm-a-windows-phone-scenario/">MVVM – A Windows Phone Scenario.</a> We will see some more that we were left off, in this post.</p>
-
-<p><strong>5. Page Navigations and Parameters</strong></p>
-
-<p>For almost all the application, we would need to transfer the control from one page to another, so that the user can navigate through the various contents on the application. In a MVVM application, these navigations would be basically triggered from the ViewModel, as it is there where we need to know where the next control should go to.
-Navigation is basically a platform specific feature and we would not want to bring in any dependency between a platform specific feature and our ViewModels. So the best way here is to <em>inverse the dependency</em>, using an interface and inject the dependency via an IoC container. Will call the interface here as <em>INavigationService </em>as given below, and the implementation <em>NavigationService</em>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">interface</span> <span class="n">INavigationService</span>
-</span><span class='line'> <span class="p">{</span>
-</span><span class='line'> <span class="k">void</span> <span class="nf">Navigate</span><span class="p">(</span><span class="kt">string</span> <span class="n">uri</span><span class="p">);</span>
-</span><span class='line'> <span class="k">void</span> <span class="nf">Navigate</span><span class="p">(</span><span class="kt">string</span> <span class="n">uri</span><span class="p">,</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameters</span><span class="p">);</span>
-</span><span class='line'> <span class="k">void</span> <span class="nf">PerformActionOnUIThread</span><span class="p">(</span><span class="n">Action</span> <span class="n">action</span><span class="p">);</span>
-</span><span class='line'> <span class="k">void</span> <span class="nf">GoBack</span><span class="p">();</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">NavigationService</span> <span class="p">:</span> <span class="n">INavigationService</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Navigate</span><span class="p">(</span><span class="kt">string</span> <span class="n">uri</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">UIDispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="p">((</span><span class="n">PhoneApplicationFrame</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">RootVisual</span><span class="p">).</span><span class="n">Navigate</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">UriKind</span><span class="p">.</span><span class="n">Relative</span><span class="p">));</span>
-</span><span class='line'>            <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">Navigate</span><span class="p">(</span><span class="kt">string</span> <span class="n">uri</span><span class="p">,</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">StringBuilder</span> <span class="n">uriBuilder</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">uriBuilder</span><span class="p">.</span><span class="n">Append</span><span class="p">(</span><span class="n">uri</span><span class="p">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">parameters</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span> <span class="n">parameters</span><span class="p">.</span><span class="n">Count</span> <span class="p">&gt;</span> <span class="m">0</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">uriBuilder</span><span class="p">.</span><span class="n">Append</span><span class="p">(</span><span class="s">&quot;?&quot;</span><span class="p">);</span>
-</span><span class='line'>            <span class="kt">bool</span> <span class="n">prependAmp</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>            <span class="k">foreach</span> <span class="p">(</span><span class="n">KeyValuePair</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameterPair</span> <span class="k">in</span> <span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="n">prependAmp</span><span class="p">)</span>
-</span><span class='line'>                <span class="p">{</span>
-</span><span class='line'>                    <span class="n">uriBuilder</span><span class="p">.</span><span class="n">Append</span><span class="p">(</span><span class="s">&quot;&amp;&quot;</span><span class="p">);</span>
-</span><span class='line'>                <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>                <span class="n">uriBuilder</span><span class="p">.</span><span class="n">AppendFormat</span><span class="p">(</span><span class="s">&quot;{0}={1}&quot;</span><span class="p">,</span> <span class="n">parameterPair</span><span class="p">.</span><span class="n">Key</span><span class="p">,</span> <span class="n">parameterPair</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
-</span><span class='line'>                <span class="n">prependAmp</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>            <span class="p">}</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">uri</span> <span class="p">=</span> <span class="n">uriBuilder</span><span class="p">.</span><span class="n">ToString</span><span class="p">();</span>
-</span><span class='line'>        <span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">UIDispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="p">((</span><span class="n">PhoneApplicationFrame</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">RootVisual</span><span class="p">).</span><span class="n">Navigate</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">UriKind</span><span class="p">.</span><span class="n">Relative</span><span class="p">));</span>
-</span><span class='line'>        <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">PerformActionOnUIThread</span><span class="p">(</span><span class="n">Action</span> <span class="n">action</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">UIDispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">action</span><span class="p">.</span><span class="n">Invoke</span><span class="p">());</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">GoBack</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">UIDispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="p">((</span><span class="n">PhoneApplicationFrame</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">RootVisual</span><span class="p">).</span><span class="n">GoBack</span><span class="p">();</span>
-</span><span class='line'>        <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is just a sample implementation that you can use. The <em>DispatcherHelper </em>used here is from MVVMLight, which needs to be initialized when the application starts. This can be in the App.xaml.cs in the application constructor</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">Initialize</span><span class="p">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here in the above example the parameters are considered to be primitive data-types, which is why it is added as query parameters to the navigation uri. In case you want to have complex parameters passed between pages, you could have a property on the INavigationService, which can be set when calling the Naivgate method. This values can be retrieved when the OnNavigatedTo in the ViewModel.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">object</span> <span class="n">Parameters</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">void</span> <span class="nf">Navigate</span><span class="p">(</span><span class="kt">string</span> <span class="n">uri</span><span class="p">,</span> <span class="kt">object</span> <span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="n">Parameters</span> <span class="p">=</span> <span class="n">parameters</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">DispatcherHelper</span><span class="p">.</span><span class="n">UIDispatcher</span><span class="p">.</span><span class="n">BeginInvoke</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="p">((</span><span class="n">PhoneApplicationFrame</span><span class="p">)</span><span class="n">Application</span><span class="p">.</span><span class="n">Current</span><span class="p">.</span><span class="n">RootVisual</span><span class="p">).</span><span class="n">Navigate</span><span class="p">(</span><span class="k">new</span> <span class="n">Uri</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">UriKind</span><span class="p">.</span><span class="n">Relative</span><span class="p">));</span>
-</span><span class='line'>        <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The NavigationService needs to be registered with the MVVM IoC in ViewModelLocator (or anywhere else), and then you could either constructor inject it or create an instance in the BaseViewModel class, so that all ViewModels has a reference to this for navigation.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">SimpleIoc</span><span class="p">.</span><span class="n">Default</span><span class="p">.</span><span class="n">Register</span><span class="p">&lt;</span><span class="n">INavigationService</span><span class="p">,</span> <span class="n">NavigationService</span><span class="p">&gt;();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When developing applications for both Windows phone and Windows 8 or x-platform, your ViewModels would remain the same and the NavigationService implementations only would change, and would be accordingly injected into the IoC, when the application starts. So for any platform specific features/dependencies this would be the approach that you would need to choose to minimize the dependencies for your ViewModel. Other cases that I can think of right now is for Push Notifications, where each platform would have their own implementations for registering and raising notifications. So you would use the same approach to <em>inverse the dependencies.</em></p>
-
-<p><strong>6. Page Events</strong></p>
-
-<p>Most of the processing/data loading work in done usually on the OnNavigatedTo of the page. To hook to this event in the ViewModel, we would go ahead and introduce some base classes so that we can reuse this in all over ViewModels. We have a application specific base class for the PhoneApplicationPage. We override the <em>OnNavigatedTo</em> event here and call on to the application specific base ViewModel’s OnNavigatedTo event. For any ViewModel to hook into this event just needs to override this method on the ViewModel, as shown in the sample below</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">abstract</span> <span class="k">class</span> <span class="nc">ApplicationPageBase</span><span class="p">:</span> <span class="n">PhoneApplicationPage</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnNavigatedTo</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="n">Windows</span><span class="p">.</span><span class="n">Navigation</span><span class="p">.</span><span class="n">NavigationEventArgs</span> <span class="n">e</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">base</span><span class="p">.</span><span class="n">OnNavigatedTo</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">DataContext</span> <span class="k">as</span> <span class="n">ApplicationViewModelBase</span><span class="p">).</span><span class="n">OnPageNavigatedTo</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">NavigationContext</span><span class="p">.</span><span class="n">QueryString</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ApplicationViewModelBase</span><span class="p">:</span> <span class="n">ViewModelBase</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">virtual</span> <span class="k">void</span> <span class="nf">OnPageNavigatedTo</span><span class="p">(</span><span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">parameters</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="c1">// Override this in any of the ViewModel to hook to the OnNavigatedTo event on the page</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Similarly for any of the other page events also you could create it in the page base class and call the corresponding function on the ViewModel base.</p>
-
-<p><strong>7. Application Bar</strong></p>
-
-<p>I have already put out a detailed post on how to implement an application bar using MVVM. It details out 2 approaches one using Messenger and another having the applciation bar as a service. Check it out at  - <a href="http://rahulpnath.com/blog/windows-phone-series-mvvm-and-applicationbar/">Windows Phone Series – MVVM and ApplicationBar</a></p>
-
-<p>We have seen most of the basic scenarios that we normally come across while developing an application for windows phone and on how MVVM can be applied to that, so that we can make the best out of it. With lots of devices getting out there and having the need to have your application on all platform demands the maximum reuse, so that you can be out there quickly. MVVM plays a very important role in structuring your code making this possible. Even while developing cross platform application using <a href="http://xamarin.com/">Xamarin</a>, MVVM can be used to advantage so that all the application logic is neatly abstracted away from UI.</p>
-
-<p>Do comment in on any of the missed scenarios that you normally come across while developing applications for the Windows platform.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1703,6 +1519,8 @@ Navigation is basically a platform specific feature and we would not want to bri
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
+    
     <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
     
     <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
@@ -1710,8 +1528,6 @@ Navigation is basically a platform specific feature and we would not want to bri
     <a class="list-group-item " href="/blog/exploring-azurekeyvaultconfigbuilder/">Exploring AzureKeyVaultConfigBuilder</a>
     
     <a class="list-group-item " href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Azure Key Vault As A Connected Service in Visual Studio 2017</a>
-    
-    <a class="list-group-item " href="/blog/prettier-an-opinionated-code-formatter/">Tip of the Week: Prettier - An Opinionated Code Formatter</a>
     
   </div>
 </section>

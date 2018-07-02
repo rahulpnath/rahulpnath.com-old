@@ -163,6 +163,68 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-02-16T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 16<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/tipow/'>tipow</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/screenshots-with-snagit/" itemprop="url">Tip of the Week: Screenshots with Snagit</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>I have been using <a href="https://www.techsmith.com/screen-capture.html">Snagit</a> for over one and half years and been loving it. Snagit gives you a way to create and edit screenshots or record videos to show a process, provide detailed feedback, or share information with the people who need it most. It tucks away neatly to the side of your screen and is there up and ready when you want to grab a screen capture or record a quick video. The screen capture is easily triggered using keyboard shortcuts (Ctrl + Alt + S by default). Once captured, it takes you to the Snagit editor where you can add a lot more details to the captured image.</p>
+
+<p><img alt="Snagit" class="center" src="/images/snagit.gif" /></p>
+
+<p>Some of the  features that I often use are:</p>
+
+<ul>
+<li><strong>Blur (or Redact)</strong>: Use to hide or disguise sensitive information. Often my screenshots contain sensitive content which I want to blur.</li>
+<li><strong>Step</strong>: Add a series of numbers or letters to label steps or items in a capture. This feature helps in guiding a step by step process in a screenshot.</li>
+<li><strong>Crop</strong>: Common feature in all image editors.</li>
+<li><strong>Spotlight &amp; Magnify</strong>: Magnify, blur or dim a selected area of the picture. This feature is useful to highlight specific parts of the image.</li>
+<li><strong>Callouts, Text, and Arrows</strong>: Again pretty much standard with most image editors.</li>
+</ul>
+
+
+<p>Snagit has been a great fit for blogging and makes creating screenshots easy. Communicating with images is much faster with these great features. If you take a lot of screenshots give <a href="https://www.techsmith.com/download/snagit/">Snagit a try</a>, you will love it!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-02-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Feb 9<sup>th</sup>, 2017</time>
         
 
@@ -1155,85 +1217,6 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 9<sup>th</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/testing/'>testing</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/simulating-delays-in-http-calls-for-manual-tests/" itemprop="url">Simulating delays in HTTP Calls For Manual Tests</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>At one of my clients, we were facing an issue of missing some part of a form data when processing a <em>Submit</em> request on the form. As per the current design, the form autosaves data to the database as and when user types in. When the user finally submits the form to be processed the Controller gets all the relevant data from the database and sends for processing. But we noticed that the processing requests missed parts of data in the request send for processing even though the database had those values. This was a clear case where the forms submit request got processed even before all the forms data was saved. The UI was enabling the Submit button right after all the UI validations were made and asynchronously firing off saves to the database.</p>
-
-<p>Let&rsquo;s not go into the design discussion of whether the UI should be sending in all the data to be processed as part of the Submit request as opposed to just sending a reference id and have the controller get all the data from the database (which it is currently doing). The quick fix for this problem was to enable the submit button only after all the asynchronous save requests (the ones for autosave) came back with a success response. The fix was simple but testing this was a challenge.</p>
-
-<blockquote><p><em>We wanted to delay a few HTTP requests to check how the UI behaved</em></p></blockquote>
-
-<p>When using automated tests there are a lot of frameworks that can help delay requests. But in this case, we were relying on manual tests.</p>
-
-<h3>Using Fiddler to Delay Requests</h3>
-
-<p><a href="http://www.telerik.com/fiddler">Fiddler</a> is an HTTP debugging proxy server application, that captures HTTP and HTTPS traffic and displays to the user. It is one of the <a href="http://www.rahulpnath.com/blog/tools-that-I-use/">tools that I use almost every other day</a>. In Fiddler, we can create rules on web requests and modify how they are handled and responded. Most of the functionality is available under the <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">AutoResponder</a> tab. We had seen earlier how to <a href="http://www.rahulpnath.com/blog/using-fiddler-to-help-in-manual-testing/">compose web requests and also simulate error conditions in Fiddler</a>. Here we will see how to use Fiddler to delay request/response time. In Fiddler, we can either delay the request itself being sent to the server or delay the handover of response back to the calling application once it is received from the server.</p>
-
-<h4><strong>Delay</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#delay">delay</a> on a request we can specify the time to delay sending the request to the server. The value is specified in milliseconds. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set (in this case an EXACT match with a URL) fiddler delays sending this request to the server by the set amount of time.</p>
-
-<blockquote><p><em>Delay sending request to the server by #### of milliseconds</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request the URL (1) into the AutoResponder tab (2) and from the dropdown (3) under the Rule Editor choose delay and set the delay time. Click Save (4). Make sure that the request and rules are enabled (5 &amp; 6).</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_delay.png"/></p>
-
-<h4><strong>Latency</strong></h4>
-
-<p>By setting <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#latency">latency</a> on a request we can specify the delay before a response is received. When a request that <a href="http://docs.telerik.com/fiddler/KnowledgeBase/AutoResponder#matching-rules">matches</a> the condition set fiddler sends the requests to the server immediately. Once the response is received it delays passing the response back to the calling application by the set delay time in milliseconds.</p>
-
-<blockquote><p><em>Induce a delay (latency) before a response is returned.</em></p></blockquote>
-
-<p>Drag&#8217;n Drop the request URL (1) into the AutoResponder tab (2). Right click on the URL and select &lsquo;Set Latency&rsquo; (3). Enter the latency time in milliseconds and OK. Make sure that rules and latency options are enabled (4 &amp; 5)</p>
-
-<p><img class="center" alt="Posts per month - 2016" src="/images/fiddler_latency.png"/></p>
-
-<p>Using these options we delayed all the autosave requests going off the form. This delayed saving the data in the database and the forms Submit request once processed did not have all the required data. It also helped us test after the fix and helped ensure that the submit button was enabled only after all form data was saved. In both the above examples, I chose EXACT match condition to set the delay/latency. This will delay only the specific requests. To modify all the requests you can use a different regex match condition. To simulate a random time delay or latency among different requests you can even use <a href="http://docs.telerik.com/fiddler/KnowledgeBase/FiddlerScript/ModifyRequestOrResponse">Fiddler Scripting</a> and set the delay time using a random number. This helps simulate a slow internet connection scenario and test how the application responds to it.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1257,6 +1240,8 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
+    
     <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
     
     <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
@@ -1264,8 +1249,6 @@ Snacks: Anytime I feel hungry I have one of these - Nuts (Almonds, walnuts, sunf
     <a class="list-group-item " href="/blog/exploring-azurekeyvaultconfigbuilder/">Exploring AzureKeyVaultConfigBuilder</a>
     
     <a class="list-group-item " href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/">Azure Key Vault As A Connected Service in Visual Studio 2017</a>
-    
-    <a class="list-group-item " href="/blog/prettier-an-opinionated-code-formatter/">Tip of the Week: Prettier - An Opinionated Code Formatter</a>
     
   </div>
 </section>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: testing | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/testing/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-07-01T00:01:29+00:00</updated>
+  <updated>2018-07-02T00:01:52+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Your Postman API Specs]]></title>
+    <link href="http://rahulpnath.com/blog/manage-your-postman-api-specs/"/>
+    <updated>2018-07-02T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/manage-your-postman-api-specs</id>
+    <content type="html"><![CDATA[<p>In the previous post, we explored how to use <a href="Automated%20API%20Testing%20Using%20Postman%20Collection%20Runner">Postman for testing API endpoints</a>. Postman is an excellent tool to manage API specs as well, so that you can try API requests individually to see how things are working. It also acts as documentation for all your API endpoints and serves as a good starting point for someone new to the team. When it comes to managing the API specs for your application, there are a few options that we have and let&rsquo;s explore what they are.</p>
+
+<h3>Organizing API Specs</h3>
+
+<p>Postman supports the concept of <a href="https://www.getpostman.com/docs/v6/postman/collections/creating_collections">Collections</a>, which are nothing but a Folder to group of saved API requests/Specs. Collections support nesting which means you can add Folders within a collection to further group them. As you can see below the <em>MyApplication</em> and <em>Postman Echo</em> are collections, and there are subfolders inside them which in turn contains API requests. The multi-level hierarchy helps you to organize your requests the way you want to.</p>
+
+<p><img src="/images/postman_collections.png" alt="Postman Collections" class ="center"></p>
+
+<h3>Sharing API Specs</h3>
+
+<p>Any Collection that you create in Postman is automatically synced to Postman Cloud if you are logged in with an account. It allows you to share collections through a link. With <a href="https://www.getpostman.com/pricing">paid version of Postman</a> you get to create <a href="https://www.getpostman.com/workspaces">team workspaces</a>, which means a team can collaborate on the shared versions. It allows easy sharing of specs across your team and manages them in a centralized place.</p>
+
+<p>However, if you are not logged in or don&rsquo;t have a paid version of Postman, you can maintain the specs along with your Source Code. Postman allows you to <a href="https://www.getpostman.com/docs/v6/postman/collections/sharing_collections#sharing-as-a-file">export Collections and share specs as a JSON file</a>. You can then check this file into your source code repository. Other team members can Import the exported file to get the latest specs. The only disadvantage with this is that you need to make sure to export/import every time you/other team members make a change to the JSON file. However, I have seen this approach work well in teams and one way we made sure that the JSON file was up to date is to have to update the API spec as a Work Item and which required to be <a href="https://rahulpnath.com/blog/code-review/">peer reviewed</a>(through Pull Requests)</p>
+
+<h3>Managing Environments</h3>
+
+<p>Typically any application/API would be deployed to multiple environments (like localhost, Development, Testing, Production, etc.) and you would want to switch between these environments to test your API endpoints seamlessly. Postman makes this easy by using the <a href="https://www.getpostman.com/docs/v6/postman/environments_and_globals/manage_environments">Environment Feature</a>.</p>
+
+<p><img src="/images/postman_environment.png" alt="Postman Environment" class="center" /></p>
+
+<p>Again as with Collections, Environments are also synced to Postman Cloud when you are logged in. It makes all your environments available to all your team seamlessly. However, if you are not logged in you can again export the environments as a JSON file and then share that out of band (in a secure manner as this might have sensitive information like tokens, keys, etc.) with your team.</p>
+
+<h3>Publishing API Specs</h3>
+
+<p>Postman allows you to <a href="https://www.getpostman.com/docs/v6/postman/api_documentation/publishing_public_docs">publish API specs</a> (even to a custom URL), which can act like your API Documentation. You can publish it per environments and also easily execute them. Publishing is available only if you log in to an account as it requires the API Specs and environment details in the first place.</p>
+
+<p><img src="/images/postman_published.png" alt="Postman Published" class="center" /></p>
+
+<h3>Security Considerations</h3>
+
+<p>When using the sync feature of Postman (logged in to the application with Postman account), it is <a href="https://www.getpostman.com/docs/v6/postman_for_publishers/run_button/security">recommended</a> that you do not have any sensitive information (like passwords/tokens) as part of the API request spec/Collection. These should be extracted out as Environment variables and stored as part of the appropriate environment.</p>
+
+<p>If you are logged in, all the data that you add to it is automatically synced, which means it will be living in Postman&rsquo;s cloud server. This might not be a desirable option for every company but looks like there is no option to turn sync off at the Collection level. The only way to not sync collections is to not log into an account in Postman.</p>
+
+<div class="alert alert-warning">
+    <i>
+    If you are logged into Postman then any collection that you create is automatically synced to Postman server. Only way to <a href="https://support.getpostman.com/hc/en-us/articles/203492852-How-do-I-disable-Sync-">prevent sync</a> is not to log in
+    </i>
+</div>
+
+
+<p>We have seen the options by which you can share API collections and environments amongst your team even if you are logged in. However, one thing to be aware of is if any of your team members are logged into Postman and imports a collection shared via Repository/out of band methods, it will be synced to Postman server. So at the organization/team level, you would need ways to prevent this from happening if it is essential for you. Best is to have your API&rsquo;s designed in such a way that you do not have to expose such sensitive information, which anyways is a better practice.</p>
+
+<p>Hope this allows to manage your API specs better!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Automated API Testing Using Postman Collection Runner]]></title>
@@ -503,234 +555,6 @@ public void IntroductoryTest(
 <p>Hope this helps with your testing!</p>
 
 <p><em>I am happy to have <a href="https://github.com/AutoFixture/AutoFixture/pulls?q=is:pr+is:closed+author:rahulpnath">contributed</a> (minor) to such a great library.</em></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Populating Data for Tests]]></title>
-    <link href="http://rahulpnath.com/blog/populating-data-for-tests/"/>
-    <updated>2017-03-07T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/populating-data-for-tests</id>
-    <content type="html"><![CDATA[<p>Populating data for tests is the section of the test that usually ends up making tests more coupled with the code that it is testing. Coupling makes tests more fragile and refactoring code harder because of breaking tests. We should try to avoid coupling with the implementation details when writing tests. Let us see a few options that we have to populate test data and constructing object graphs (chain of objects branched off from the root object). I use <a href="https://xunit.github.io/">xUnit.net</a> as my test framework, but you can use these techniques in your choice of framework.</p>
-
-<p><a href="http://xunitpatterns.com/Data-Driven%20Test.html" class="center" title="Image from xUnit Test Patterns"><img class="center" alt="Populating Test Data" src="/images\test_data.gif" /></a></p>
-
-<p>Let&rsquo;s start with some simple tests on a Customer class shown below.</p>
-
-<pre><code class="csharp">public class Customer
-{
-    public Guid Id { get; set; }
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string FullName
-    {
-        get { return FirstName + " " + LastName; }
-    }
-
-    public Address Address { get; set; }
-}
-</code></pre>
-
-<p>Let&rsquo;s say we need to test that the FullName property returns as expected. We will use a <em>Theory</em> type tests for testing different combinations of first and last name. xUnit.net includes support for two different major types of unit tests: facts and theories</p>
-
-<blockquote><p><em>Facts are tests which are always true. They test invariant conditions.</em></p>
-
-<p><em>Theories are tests which are only true for a particular set of data.</em></p></blockquote>
-
-<p>Theories allow us to create parameterized tests with which we can run a given test with different parameter options. Like in this example we need to test the Customer class with different set of First and Last Name combinations. As you can see below the test is attributed with Theory Attribute, and we use the InlineData attribute to pass static values to the test. Using these parameters we are now able to test for different combinations of first and last names. The test populates only the required properties on Customer object for testing FullName.</p>
-
-<pre><code class="csharp">[Theory]
-[InlineData("Adobe", "Photoshop", "Adobe Photoshop")]
-[InlineData("Visual", "Studio", "Visual Studio")]
-[InlineData("Rode", "Podcaster", "Rode Podcaster")]
-public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected)
-{
-    // Fixture setup
-    var customer = new Customer() { FirstName = firstName, LastName = lastName };
-    // Exercise system
-    var actual = customer.FullName;
-    // Verify outcome
-    Assert.Equal(expected, actual);
-    // Teardown
-}
-</code></pre>
-
-<blockquote><p><em>Tests help refine the public API as they are the first consumers</em></p></blockquote>
-
-<p>The tests above acts as a clue indicating that the three properties - FirstName, LastName, FullName are related and go hand-in-hand. These tests are a strong indication that these properties can be grouped together into a class and possibly tested separately. We can extract these properties into a <a href="http://www.rahulpnath.com/blog/thinking-beyond-primitive-values-value-objects/">Value Object</a> for e.g. Name. I will not go into the implementation details of that, and I hope you can do that you own.</p>
-
-<p>The above tests still have a high dependency on the code that it is testing - <strong><em>the constructor</em></strong>. Imagine if we had a lot of such tests that constructs the Consumer class inline in the setup phase. All tests will break if the class constructor changes. We saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring to remove constructor dependency</a> how to remove such dependencies and make the tests independent of the constructor dependencies.  We can introduce Object Mother or Test Data Builder pattern as mentioned in the article. Optimizing further we can also use <a href="https://github.com/AutoFixture/AutoFixture">AutoFixture</a> to generate test data. Moving into these patterns or AutoFixture brings in an added benefit as well; the rest of properties on the Customer class also gets populated by default.</p>
-
-<h3>Explicitly Setting Properties</h3>
-
-<p>By introducing AutoFixture, we no longer need to create the Customer object explicitly. We can use the Fixture class generate a Customer class for us. Using AutoFixture, this can be achieved in at least two ways (I am not sure if there are more ways of doing this).</p>
-
-<pre><code class="csharp Using Fixture class">[Theory]
-[InlineData("Adobe", "Photoshop", "Adobe Photoshop")]
-[InlineData("Visual", "Studio", "Visual Studio")]
-[InlineData("Rode", "Podcaster", "Rode Podcaster")]
-public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected)
-{
-    // Fixture setup
-    var fixture = new Fixture();
-    var customer = fixture.Build&lt;Customer&gt;()
-        .With(a =&gt; a.FirstName, firstName)
-        .With(a =&gt; a.LastName, lastName)
-        .Create();
-    // Exercise system
-    var actual = customer.FullName;
-    // Verify outcome
-    Assert.Equal(expected, actual);
-    // Teardown
-}
-</code></pre>
-
-<pre><code class="csharp Using Injected Object">[Theory]
-[InlineAutoData("Adobe", "Photoshop", "Adobe Photoshop")]
-[InlineAutoData("Visual", "Studio", "Visual Studio")]
-[InlineAutoData("Rode", "Podcaster", "Rode Podcaster")]
-public void CustomerFullNameReturnsExpected(string firstName, string lastName, string expected, Customer customer)
-{
-    // Fixture setup
-    customer.FirstName = firstName;
-    customer.LastName = lastName;
-    // Exercise system
-    var actual = customer.FullName;
-    // Verify outcome
-    Assert.Equal(expected, actual);
-    // Teardown
-}
-</code></pre>
-
-<p>In both cases, we explicitly set the required properties. The above test is similar to the previous test that we wrote without AutoFixture. But no longer are we dependent on the constructor. In the second way of using AutoFixture I used <em>InlineAutoData</em> attribute, that is part of <em>Ploeh.AutoFixture.Xunit2</em>. This attribute automatically does the fixture initialization and injects the Customer object for us. For all the values that it can match from the inline parameter list, it uses the provided values. It starts generating random values once all the parameters passed inline are used. In this case, only Customer object is created by AutoFixture.</p>
-
-<h3>AutoFixture and Immutable types</h3>
-
-<p>When using immutable types or properties with private setters, we cannot set the property value after it is created.</p>
-
-<blockquote><p><em>AutoFixture was originally build as a tool for Test-Driven Development (TDD), and TDD is all about feedback. In the spirit of GOOS, you should listen to your tests. If the tests are hard to write, you should consider your API design. AutoFixture tends to amplify that sort of feedback.</em></p>
-
-<p>-<em><a href="http://stackoverflow.com/a/20816487/1948745">Mark Seemann</a> (creator of AutoFixture)</em></p></blockquote>
-
-<p>In these cases, the suggested approach is something closer to the manual <a href="http://www.natpryce.com/articles/000714.html">Test Data Builder</a> we saw in the <a href="http://www.rahulpnath.com/blog/refactoring-test-code-removing-constructor-dependency/">refactoring example</a>. We can either have an explicit test data builder class or define extension methods on the immutable type such that it changes just the specified property and returns all other values same, as shown below.</p>
-
-<pre><code class="csharp">public class Name
-{
-    public readonly string FirstName;
-    public readonly string LastName;
-    public string FullName
-    {
-        get
-        {
-            return FirstName + " " + LastName;
-        }
-    }
-
-    public Name(string firstName, string lastName)
-    {
-        // Enforce parameter constraints
-        FirstName = firstName;
-        LastName = lastName;
-    }
-
-    public Name WithFirstName(string firstName)
-    {
-        return new Name(firstName, this.LastName);
-    }
-}
-</code></pre>
-
-<p>As shown the <em>WithFirstName</em> method returns a new Name class with just the first name changed. Again we do not need these <em>WithXXX</em> methods for all the properties. Only when there is a need to change any of the property values as part of the requirement do we need to introduce such methods and even test it. This again drives to the above point of using tests to guide the API design, from the feedback.</p>
-
-<h3>Customization</h3>
-
-<p>In cases where we have validations in constructor to hold the class constraints, we cannot rely on the random values generated by AutoFixture. For example.
-- The string should be at least ten characters in length for a Name class
-- Start date should be less than the End date for a date range class</p>
-
-<p>Without any custom code if we are to rely on AutoFixture to generate us, such classes, the tests will not be predictable. Depending on the random value that AutoFixture generates it might create a valid instance or throw an exception. To make this consistent, we can add Customization to ensure predictability.</p>
-
-<p>For the DateRange class below we can add the following Customization.</p>
-
-<pre><code class="csharp">public class DateRange
-{
-    public readonly DateTime EndDate;
-    public readonly DateTime StartDate;
-
-    public DateRange(DateTime startDate, DateTime endDate)
-    {
-        if (endDate &lt; startDate)
-            throw new Exception("End date cannot be less than the start date");
-
-        StartDate = startDate;
-        EndDate = endDate;
-    }
-}
-</code></pre>
-
-<pre><code class="csharp DateRange Customization">public class DateRangeCustomization : ICustomization
-{
-    public void Customize(IFixture fixture)
-    {
-        fixture.Customizations.Add(new DateRangeSpecimenBuilder());
-    }
-}
-
-public class DateRangeSpecimenBuilder : ISpecimenBuilder
-{
-    public object Create(object request, ISpecimenContext context)
-    {
-        var requestAsType = request as Type;
-        if (typeof(DateRange).Equals(requestAsType))
-        {
-            var times = context.CreateMany&lt;DateTime&gt;();
-            return new DateRange(times.Min(), times.Max());
-        }
-
-        return new NoSpecimen();
-    }
-}
-</code></pre>
-
-<p>The customization gets invoked every time a DateRange object is requested using the fixture. It then invokes this custom code that we have added in and creates a valid DateRange object. For the tests use the customization as part of the fixture either using a custom data attribute or explicitly adding the customization into the Fixture class.</p>
-
-<h3>Mocking behavior</h3>
-
-<p><a href="http://xunitpatterns.com/Mock%20Object.html">Mock Objects</a> is a popular way to unit test classes in isolation. For the external dependencies that a <a href="http://xunitpatterns.com/SUT.html">System Under Test</a> (SUT) has, the dependencies are mocked using a mocking framework. In these cases, we can setup the external dependencies to return different values as we expect for different tests and test the logic of the SUT and how it responds. Such tests are usually more coupled with the implementation as we have to setup the mocks prior. So we need to have an understanding of the return values expected from dependencies and the parameters expected by the dependencies. I use Moq framework for mocking, and AutoFixture has a library that helps integrate well with it.</p>
-
-<pre><code class="csharp">public HttpResponseMessage Get(Guid id)
-{
-    var customer = CustomerRepository.Get(id);
-
-    if (customer == null)
-        return Request.CreateResponse(HttpStatusCode.NotFound, "Customer not Found with id " + id);
-
-    return Request.CreateResponse(HttpStatusCode.OK, customer);
-}
-</code></pre>
-
-<pre><code class="csharp">[Theory]
-[InlineAutoMoqData]
-public void CustomerControllerGetWithNoCustomerReturnsNotFound(
-    Guid customerId,
-    [Frozen]Mock&lt;ICustomerRepository&gt; customerRepository,
-    CustomerController sut)
-{
-    // Fixture setup
-    customerRepository.Setup(a =&gt; a.Get(customerId)).Returns(null);
-    var expected = HttpStatusCode.NotFound;
-
-    // Exercise system
-    var actual = sut.Get(customerId).StatusCode;
-
-    // Verify outcome
-    Assert.Equal(expected, actual);
-}
-</code></pre>
-
-<p>The tests above uses <a href="http://blog.nikosbaxevanis.com/2012/07/31/autofixture-xunit-net-and-auto-mocking/">InlineAutoMoqData attribute</a> which is a customized xUnit data attribute that uses Moq framework to inject dependencies. The Mock<ICustomerRepository> represents a mocked interface implementation. Behavior is setup on the mock using the Setup method. By using <a href="http://blog.ploeh.dk/2010/03/17/AutoFixtureFreeze/">Frozen</a> attribute for the Mock parameter, we tell AutoFixture to create only one instance of the mocked object and then use the same instance for any future requests of that type. This forces the same instance of the repository to be injected into the CustomerController class as well when it asks for a ICustomerRepository to AutoFixture.</p>
-
-<p>Creating test data is an important aspect of any test. Making sure that you minimize the dependencies on the implementation detail is important to make your tests more robust. This allows the code to be refactored as long as some of the core contracts that we are testing remain the same. AutoFixture helps minimize the code in <a href="http://xunitpatterns.com/Four%20Phase%20Test.html">Fixture Setup phase</a>, which otherwise tends to grow bigger. Hope this helps you with your tests!</p>
 ]]></content>
   </entry>
   
