@@ -163,6 +163,77 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-12-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 11<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/tipow/'>tipow</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/postman-chaining-requests-to-speed-up-manual-api-tests/" itemprop="url">Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>I was recently playing around with <a href="https://www.messagemedia.com.au/">MessageMedia API</a> trying to <a href="https://developers.messagemedia.com/code/messages-api-documentation/">send SMS and get the status of the SMS sent</a>. Sending the SMS and getting the status of the last sent SMS always happened in succession when testing it manually. Once I send the message, I waited for the API response, grabbed the message id from the response and used that to form the get status request.</p>
+
+<p><a href="https://www.getpostman.com/">Postman</a> is a useful tool if you are building or testing APIs. It allows to create, send and manage API requests.</p>
+
+<p><img src="/images/postman_chaining_requests.png" alt="Postman Chaining Requests" /></p>
+
+<p>I added two requests and saved it to a collection in Postman - one to Send Message and other to Get Message status. I have created an environment variable for holding the message id. For the request that sends a message, the below Test snippet is added. It parses the response body of the request and extracts the message id of the last send message. This is then saved to the environment variable. The <a href="https://www.getpostman.com/docs/postman/scripts/test_scripts">Test</a> snippet is always run after performing the request.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">jsonData</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">responseBody</span><span class="p">);</span>
+</span><span class='line'><span class="nx">postman</span><span class="p">.</span><span class="nx">setEnvironmentVariable</span><span class="p">(</span><span class="s2">&quot;messageId&quot;</span><span class="p">,</span> <span class="nx">jsonData</span><span class="p">.</span><span class="nx">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">message_id</span><span class="p">);</span>
+</span><span class='line'><span class="nx">tests</span><span class="p">[</span><span class="s2">&quot;Success&quot;</span><span class="p">]</span><span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The Get message request uses the messageId from the environment variables to construct its URL. The URL looks like below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>https://api.messagemedia.com/v1/messages/{{messageId}}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When executing this request, it fetches the messageId from the environment variable, which is set by the previous request. You no longer have to copy message id manually and use it in the URL. This is how we chain the data from one request to another request. Chaining requests is also useful in automated testing using Postman. Hope this helps!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-10-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 19<sup>th</sup>, 2017</time>
         
 
@@ -1125,85 +1196,6 @@
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-08-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 21<sup>st</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/programming/'>programming</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/ndc-sydney-2017/" itemprop="url">NDC Sydney 2017</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Last week was a busy one at <a href="http://ndcsydney.com/">NDC Sydney</a> and was happy to be back there <a href="http://www.rahulpnath.com/blog/ndc-sydney/">for the second time</a>.The conference was three days long with 117 speakers, 37 technologies, and 151 talks. Some of the popular speakers were <a href="https://fsharpforfunandprofit.com/">Scott Wlaschin</a>, <a href="http://odetocode.com/about/scott-allen">Scott Allen</a>,<a href="https://www.troyhunt.com/">Troy Hunt</a>, <a href="https://twitter.com/DamianEdwards">Damian Edwards</a>, <a href="http://blog.stevensanderson.com/">Steve Sanderson</a> and <a href="http://ndcsydney.com/speakers/">a lot more</a>.</p>
-
-<p><img class="center" alt="NDC Sydney" src="/images/ndc_sydney_2017.png" /></p>
-
-<h3>Sessions</h3>
-
-<p>Each talk is one hour long and <a href="http://ndcsydney.com/agenda/">eight talks happen at the same time</a>. Below are the talks I attended:</p>
-
-<ul>
-<li><a href="http://ndcsydney.com/talk/keynote-using-eeg-and-machine-learning-to-perform-lie-detection/">Keynote: Using EEG and Machine Learning to Perform Lie Detection</a></li>
-<li><a href="http://ndcsydney.com/talk/a-teams-transition-to-continuous-delivery-1/">A teams transition to Continuous Delivery</a></li>
-<li><a href="http://ndcsydney.com/talk/docker-from-scratch/">Docker, FROM scratch</a></li>
-<li><a href="http://ndcsydney.com/talk/technical-debt/">The Technical Debt Prevention Clinic</a></li>
-<li><a href="http://ndcsydney.com/talk/how-to-start-and-run-a-software-lifestyle-business/">How to start and run a software lifestyle business</a></li>
-<li><a href="http://ndcsydney.com/talk/asynchronous-programming-from-the-ground-up/">Asynchronous Programming From The Ground Up</a></li>
-<li><a href="http://ndcsydney.com/talk/building-docker-applications-with-net-tooling-cross-platform-support-and-migration/">Building Docker Applications with .NET - tooling, cross platform support and migration</a></li>
-<li><a href="http://ndcsydney.com/talk/hack_your_career/">Hack Your Career</a></li>
-<li><a href="http://ndcsydney.com/talk/writing-high-performance-code-in-net/">Writing high performance code in .NET</a></li>
-<li><a href="http://ndcsydney.com/talk/growing-serverless-code-with-azure-functions-and-f/">Growing Serverless code with Azure Functions and F#</a></li>
-<li><a href="http://ndcsydney.com/talk/the-websites-down-stories-and-lessons-on-keeping-your-website-up/">&ldquo;The website&rsquo;s down!&rdquo; Stories and lessons on keeping your website up</a></li>
-<li><a href="http://ndcsydney.com/talk/self-aware-applications-automatic-production-monitoring/">Self-Aware Applications: Automatic Production Monitoring</a></li>
-<li><a href="http://ndcsydney.com/talk/domain-modeling-made-functional/">Domain Modeling Made Functional</a></li>
-<li><a href="http://ndcsydney.com/talk/interactive-c-development-with-roslyn/">Interactive C# Development with Roslyn</a></li>
-<li><a href="http://ndcsydney.com/talk/building-resilient-applications-in-microsoft-azure/">Building Resilient Applications In Microsoft Azure</a></li>
-<li><a href="http://ndcsydney.com/talk/functional-design-patterns/">Functional Design Patterns</a></li>
-<li><a href="http://ndcsydney.com/talk/logic-vs-side-effects-functional-goodness-you-dont-hear-about/">Logic vs. side effects: functional goodness you don&rsquo;t hear about</a></li>
-<li><a href="http://ndcsydney.com/talk/how-one-team-built-their-first-microservice/">How one team built their first microservice</a></li>
-</ul>
-
-
-<p>All sessions are recorded and are <a href="https://vimeo.com/ndcconferences">available here</a>. The Sydney 2017 ones will soon be there. Overall it was a good event but did not match the one last year. Last year there were more of the popular speakers and the talk content was also more interesting. But still, I am glad that NDC Sydney is still happening, and it gives a good exposure and networking possibilities for developers. Thanks to Readify for sponsoring my tickets and it’s one of the <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">good things about working with Readify</a>.</p>
-
-<p>Hope to see you next year as well!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1227,6 +1219,8 @@
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/ok-i-have-got-https-what-next/">Ok I Have Got HTTPS! What Next?</a>
+    
     <a class="list-group-item " href="/blog/kumon-books-creative-workbooks/">Tip of the Week: Kumon Books - Creative Workbooks</a>
     
     <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
@@ -1234,8 +1228,6 @@
     <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
     
     <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
-    
-    <a class="list-group-item " href="/blog/exploring-azurekeyvaultconfigbuilder/">Exploring AzureKeyVaultConfigBuilder</a>
     
   </div>
 </section>

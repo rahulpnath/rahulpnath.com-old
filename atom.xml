@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-07-08T00:01:46+00:00</updated>
+  <updated>2018-07-09T00:01:12+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,43 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Ok I Have Got HTTPS! What Next?]]></title>
+    <link href="http://rahulpnath.com/blog/ok-i-have-got-https-what-next/"/>
+    <updated>2018-07-09T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/ok-i-have-got-https-what-next</id>
+    <content type="html"><![CDATA[<p>Security is of more and more a concern these days and we <a href="https://rahulpnath.com/blog/https-for-free-and-why-you-should-care/">saw why it&rsquo;s important to move on to HTTPs</a>. Hope you have already moved on to HTTPS, If not right now is a perfect time - this is one of the things that you should not be putting off for later. Also, do check out the <a href="https://httpsiseasy.com/">HTTPS is Easy</a> series by Troy Hunt on how simple it is to get onboard with HTTPS. Most of the things mentioned here, I started exploring after getting introduced to it by <a href="https://scotthelme.co.uk/">Scott Helme</a> and <a href="https://www.troyhunt.com/">Troy Hunt</a> at the <a href="https://rahulpnath.com/blog/ndc-security-2018-overview-and-key-takeaways/">NDC Security conference</a>.</p>
+
+<p><a href="https://securityheaders.com/?q=rahulpnath.com&followRedirects=on">
+    <img
+        src="http://rahulpnath.com/images/https_next.png"
+        alt="Security Report Summary from SecurityHeaders.com"
+        class="center" />
+</a></p>
+
+<p>Once you have moved on to HTTPS you might be thinking is that it? Or is there still more that I need to be doing? An excellent place to start is <a href="https://securityheaders.com/">SecurityHeaders.com</a>, which analyses security headers on your website and provides a rating score for the site. The site also gives a short description of the various headers, appropriate links to explore more about them. Some of the headers are easy to add and immediately provides added security to your website.</p>
+
+<div class="alert alert-warning">
+Just because you have an A+ Rating (or a good rating) does not mean that your site is not vulnerable to any attacks. These are just some guidelines to help you along the way to tighten up your website security.
+</div>
+
+
+<blockquote><p><em>I have been trying to walk the talk here - implementing these headers one by one on this blog as and when I am writing this</em></p></blockquote>
+
+<p>In this post will walk through some of the headers that I added to this blog. I am planning to write this as a multi-series article, with each article specific to a header/other feature, why I added it and how I went about adding and verifying it.</p>
+
+<ul>
+<li>HTTP Strict-Transport-Security (HSTS/STS)</li>
+<li>Content-Security-Policy (CSP)</li>
+<li>Subresource Integrity</li>
+<li>Development Tools</li>
+</ul>
+
+
+<p>I will be updating the links to the relevant posts here as I publish them and will add to the list as and when I come across new topics. One of the tricky thing with security is that very often something new comes up. The best we can do is to proactively do things that we can do to support and protect ourselves.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Kumon Books - Creative Workbooks]]></title>
@@ -1223,39 +1260,6 @@ FSharp was again on and off this year. Apart from a <a href="http://www.rahulpna
 <p>So far I have found the Quartz library stable and reliable and have not faced any issues with it. The library is also quite flexible and adapts well to the different needs.</p>
 
 <p>Hope this helps. Merry Xmas!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Postman - Chaining Requests to Speed Up Manual API Tests]]></title>
-    <link href="http://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/"/>
-    <updated>2017-12-11T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests</id>
-    <content type="html"><![CDATA[<p>I was recently playing around with <a href="https://www.messagemedia.com.au/">MessageMedia API</a> trying to <a href="https://developers.messagemedia.com/code/messages-api-documentation/">send SMS and get the status of the SMS sent</a>. Sending the SMS and getting the status of the last sent SMS always happened in succession when testing it manually. Once I send the message, I waited for the API response, grabbed the message id from the response and used that to form the get status request.</p>
-
-<p><a href="https://www.getpostman.com/">Postman</a> is a useful tool if you are building or testing APIs. It allows to create, send and manage API requests.</p>
-
-<p><img src="http://rahulpnath.com/images/postman_chaining_requests.png" alt="Postman Chaining Requests" /></p>
-
-<p>I added two requests and saved it to a collection in Postman - one to Send Message and other to Get Message status. I have created an environment variable for holding the message id. For the request that sends a message, the below Test snippet is added. It parses the response body of the request and extracts the message id of the last send message. This is then saved to the environment variable. The <a href="https://www.getpostman.com/docs/postman/scripts/test_scripts">Test</a> snippet is always run after performing the request.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">jsonData</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">parse</span><span class="p">(</span><span class="nx">responseBody</span><span class="p">);</span>
-</span><span class='line'><span class="nx">postman</span><span class="p">.</span><span class="nx">setEnvironmentVariable</span><span class="p">(</span><span class="s2">&quot;messageId&quot;</span><span class="p">,</span> <span class="nx">jsonData</span><span class="p">.</span><span class="nx">messages</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">message_id</span><span class="p">);</span>
-</span><span class='line'><span class="nx">tests</span><span class="p">[</span><span class="s2">&quot;Success&quot;</span><span class="p">]</span><span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The Get message request uses the messageId from the environment variables to construct its URL. The URL looks like below.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>https://api.messagemedia.com/v1/messages/{{messageId}}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When executing this request, it fetches the messageId from the environment variable, which is set by the previous request. You no longer have to copy message id manually and use it in the URL. This is how we chain the data from one request to another request. Chaining requests is also useful in automated testing using Postman. Hope this helps!</p>
 ]]></content>
   </entry>
   
