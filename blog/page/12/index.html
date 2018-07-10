@@ -163,6 +163,100 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-19T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 19<sup>th</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/keeping-sensitive-configuration-data-out-of-source-control/" itemprop="url">Keeping Sensitive Configuration Data Out of Source Control</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Most applications today deals with some form of sensitive information. The most commonly seen are database connection strings, API keys, token etc. The web.config seems the best place to have these values, but it definitely is not. In most cases it gets pushed into the source control systems as well. If it is a private repository then you at least have one level of security on top of it. It still exposes sensitive information to anyone who has access to the repository. It’s worse when the <a href="http://www.internetnews.com/blog/skerner/github-search-exposes-passwords.html">repository is public</a>.</p>
+
+<p><img alt="Keep sensitive data out of source control" src="/images/sensitivedata_source_control.png" /></p>
+
+<p>There are different ways you can  avoid pushing sensitive data into source control. In this post, I will explore options that I am familiar with.</p>
+
+<blockquote><p><em>Use configuration files as template definitions for the configuration data your application requires. Have the actual values stored elsewhere</em></p></blockquote>
+
+<h3>Azure App Settings</h3>
+
+<p>If you are deploying your application as a Web App on Azure, you can store <a href="https://azure.microsoft.com/en-us/blog/windows-azure-web-sites-how-application-strings-and-connection-strings-work/">application settings and connection strings in Azure</a>. At runtime, Windows Azure Web Sites automatically retrieves these values for you and makes them available to code running in your website. This removes the need for having sensitive data in the configuration file.</p>
+
+<p><img alt="Azure App Settings and Connection Strings" src="/images/sensitiveData_azure_app_settings.png" /></p>
+
+<h3>Release Management Tools</h3>
+
+<p>Release management tools like Octopus Deploy, Microsoft Release Management, that performs configuration transformation. It supports creating different environments (development, production) and corresponding configurations. On creating a package for an environment, it applies the corresponding environment configurations</p>
+
+<p><img alt="Release Management Tools - Octopus Deploy" src="/images/sensitiveData_releaseManagement_tool_octopus.png" /></p>
+
+<p>Packaging embeds the configuration value into the configuration file. This makes it available to anyone who has access to the host systems.</p>
+
+<h3>Azure Key Vault</h3>
+
+<p>Azure Key Vault acts as a centralized repository for all sensitive information. Key vault stores cryptographic keys and Secrets and makes them available over a HTTP Api. The objects (keys and secrets) in key vault has unique identifier to retrieve them. Check <a href="http://www.rahulpnath.com/blog/azure-key-vault-in-a-real-world-application/">Azure Key Vault in real world application</a> for more details on how to achieve this. A client application can <a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">authenticate with Azure Key Vault using a ClientID/secret or ClientID/certificate</a>. Using certificate to authenticate is the preferred approach. To get Keys/Secret from key vault all you need is the AD Application Id, the client secret or certificate identifier and the key/secret names. The certificate itself can be deployed separately into the application host.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='XML'><span class='line'><span class="nt">&lt;appSettings&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;KeyVaultUrl&quot;</span> <span class="na">value=</span><span class="s">&quot;https://testvaultrahul.vault.azure.net&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADApplicationId&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ADCertificateThumbprint&quot;</span> <span class="na">value=</span><span class="s">&quot;&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;DbConnectionString&quot;</span> <span class="na">value=</span><span class="s">&quot;SqlConnectionString&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;add</span> <span class="na">key =</span><span class="s">&quot;ApiToken&quot;</span> <span class="na">value=</span><span class="s">&quot;ApiToken/cfedea84815e4ca8bc19cf8eb943ee13&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><strong><em><a href="http://www.rahulpnath.com/blog/authenticating-with-azure-key-vault-using-managed-service-identity/">Key Vault supports Managed Service Identity</a> which makes authenticating with it even more easier if your application is deployed in Azure. You no longer have to add any configuration related to key vault to the applications config file.</em></strong></p></blockquote>
+
+<p>If you are using the &lsquo;client secret&rsquo; to authenticate then the configuration file will have the Secret. In either cases, you should follow either of the previous approaches to keep the Application Id and authentication information out of configuration. The advantage of using <a href="http://www.rahulpnath.com/blog/category/azure-key-vault/">Key Vault</a> is that it is a centralized  repository for all your sensitive data, across different applications. You can also restrict access permissions per application.</p>
+
+<p>These are some approaches to keep sensitive information out of source control. What approach do you use? Irrespective of the approach you use, make sure that you don’t check them in!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 12<sup>th</sup>, 2016</time>
         
 
@@ -1542,148 +1636,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-07-01T00:45:05+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 1<sup>st</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/dot-net/'>.net</a>, <a class='category' href='/blog/category/tools/'>tools</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/could-not-load-file-or-assembly-or-one-of-its-dependencies/" itemprop="url">Web Application Occasionally Throwing &#8216;Could not Load File or Assembly or one of its Dependencies&#8217; Exception</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>We were facing a strange &lsquo;could not load DLL issue&rsquo;, when building and running multiple host projects in Visual Studio (VS 2015), side by side. We had 2 host projects - an NServiceBus worker role project (a console application) and a Web application and a few other projects, a couple of which are shared between both the host projects. It often happened in our team, when running the IIS-hosted Web application, it threw the error :</p>
-
-<p> <span style='color:red'><em>Could not load file or assembly &lsquo;Newtonsoft.Json&rsquo; or one of its dependencies. The located assembly&rsquo;s manifest definition does not match the assembly reference. </em></span>.</p>
-
-<p>The bin folder of the Web application did have a Newtonsoft.Json DLL, but of a different version of it than what was specified in the packages.config/csproj file. On a rebuild, the correct DLL version gets placed into the bin folder and everything works fine. Though the exception was observed by most of the team members, it did not happen always, which was surprising</p>
-
-<blockquote><p><em>Knowing what exactly caused the issue, I created a sample project to demonstrate it for this blog post. All screenshots and code samples are of the sample application.</em></p></blockquote>
-
-<h3>Using AsmSpy to find conflicting assemblies</h3>
-
-<p><a href="https://github.com/mikehadlow/AsmSpy">AsmSpy</a> is a command-line tool to view conflicting assembly references in a given folder. This is helpful to find the different assemblies that refer to different versions of the same assembly in the given folder. Using AsmSpy, on the bin folder of the web application, it showed the conflicting  Newtonsoft.Json DLL references by different projects in the solution. There were three different versions of Newtonsoft Nuget package referred in the whole solution. The web project referred to an older version than the shared project and the worker project.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>asmspy WebApplication1\bin\ nonsystem
-</span><span class='line'>
-</span><span class='line'>Detailing only conflicting assembly references.
-</span><span class='line'>Reference: Newtonsoft.Json
-</span><span class='line'>   7.0.0.0 by SharedLibrary
-</span><span class='line'>   6.0.0.0 by WebApplication1
-</span><span class='line'>   4.5.0.0 by WebGrease
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>The assembly binding redirects for both the host projects were correct and using the version of the package that it referred to in the packages.config and project (csproj) file.</p>
-
-<h3>Using MsBuild Structured Log to find conflicting writes</h3>
-
-<p>Using the <a href="https://github.com/KirillOsenkov/MSBuildStructuredLog">Msbuild Structured Log Viewer</a> to analyze what was happening with the build, I noticed the below &lsquo;<em>DoubleWrites</em>&rsquo; happening with Newtonsoft DLL. The double writes list shows all the folders from where the DLL was getting written into the bin folder of the project getting building. In the MSBuild Structured log viewer, a DLL pops up only when there are more than one places from where a DLL is getting written, hence the name &lsquo;<em>Double writes</em>. This is a problem as there is a possibility of one write overriding other, depending on the order of writes, causing DLL version conflicts (which is exactly what&rsquo;s happening here).</p>
-
-<p><img src="/images/doubleWrite_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>But in this specific case, the log captured above does not show the full problem but hints us of a potential problem. The build capture when building the whole solution (sln) shows that there are 2 writes happening from 2 different Newtonsoft package folders, which shows a potential conflict (<em>as shown above</em>). This does not explain the specific error we are facing with the Web application. Running the tool on just the Web application project (csproj), it does not show any DoubleWrites (<em>as shown below</em>).</p>
-
-<p><img class="left" src="/images/doubleWrite_proj_msbuildLogViewer.png" alt="Double Write Dll conflict" /></p>
-
-<p>This confirms that there is something happening with the Web application bin outputs when we build the worker/shared dependency project.</p>
-
-<h3>Building Web application in Visual Studio</h3>
-
-<p>When building a solution with a Web application project in Visual Studio (VS), I noticed that VS copies all the files from the bin folder of referred projects into the bin of the Web application project. This happens even if you build the shared project alone, as VS notices a change in the files of a dependent project and copies it over. So in this particular case, every time we build the dependent shared project or the worker project (which in turn triggers a build on the shared project), it ended up changing the files in shared projects bin folder, triggering VS to copy it over to the Web application&rsquo;s bin folder. This auto copy happens only for the Web application project and not for the Console/WPF project. (<a href="https://twitter.com/rahulpnath/status/745841691979022336">Yet to find</a> what causes this auto copy on VS build)</p>
-
-<figure>
-    <img src="/images/doubleWrite_dll_conflict.jpg" alt="Double Write Dll conflict" />
-    <figcaption><em>Bin folder of Web application and Console application after building Shared project</em></figcaption>
-</figure>
-
-
-<p></p>
-
-<p>Since <strong><em><a href="https://msdn.microsoft.com/en-us/library/aa984582(v=vs.71).aspx">CopyLocal</a></em></strong>, by default was true for the shared project, Newtonsoft DLLs were also getting copied into the shared project bin and in turn into Web applications bin (by VS). Since the Web application did not build during the above rebuild, it now has a conflicting DLL version of Newtonsoft in its bin folder, that does not match the assembly version it depends on, hence throws the exception, the next time I load the Web application from IIS.</p>
-
-<p>I confirmed with other team members on the repro steps for this issue</p>
-
-<ul>
-<li>Get the latest code and do a full rebuild from VS</li>
-<li>Launch Web app works fine</li>
-<li>Rebuild just one of the dependent projects that have Newtonsoft DLL dependency (which has CopyLocal set to true)</li>
-<li>Launch Web app throws the error!</li>
-</ul>
-
-
-<p>It was a consistent repro with the above steps.</p>
-
-<p>To fix the issue, I can choose either to update the Newtonsoft Package version across all the projects in the solution, or set CopyLocal to false, to prevent the DLL getting copied into the bin folder of the shared project and end up copied to Web application bin. <strong><em>I chose to set CopyLocal to false in this specific case.</em></strong></p>
-
-<h3>The Sample Application</h3>
-
-<p>Now that we know what exactly causes the issue, it is easy to create a <a href="https://github.com/rahulpnath/Blog/tree/master/DoubleWrites">sample application</a> to reproduce this issue.</p>
-
-<ul>
-<li>Create a Web application project and add NuGet package reference to older version of Newtonsoft</li>
-<li>Create a console application/WPF application with a newer version of Newtonsoft Package.</li>
-<li>Create a shared library project with a newer version of Newtonsoft Nuget package. Add this shared project as  a project reference to both Web application and console/WPF application.</li>
-</ul>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WebApplication1</span> <span class="n">-Version</span> <span class="n">6</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
-</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">SharedLibrary</span> <span class="n">-Version</span> <span class="n">7</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">1</span>
-</span><span class='line'><span class="n">Install-Package</span> <span class="n">Newtonsoft</span><span class="p">.</span><span class="n">Json</span> <span class="n">-ProjectName</span> <span class="n">WpfApplication1</span> <span class="n">-Version</span> <span class="n">8</span><span class="p">.</span><span class="n">0</span><span class="p">.</span><span class="n">3</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Follow the build repro steps above to reproduce the error. Change CopyLocal or update NuGet references and see issue gets resolved.</p>
-
-<p>Hope this helps in case you come across a similar issue!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1707,6 +1659,8 @@ keeping the abstraction level consistent.</em></p></blockquote>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/http-strict-transport-security-sts-or-hsts/">HTTP Strict Transport Security (STS or HSTS)</a>
+    
     <a class="list-group-item " href="/blog/ok-i-have-got-https-what-next/">Ok I Have Got HTTPS! What Next?</a>
     
     <a class="list-group-item " href="/blog/kumon-books-creative-workbooks/">Tip of the Week: Kumon Books - Creative Workbooks</a>
@@ -1714,8 +1668,6 @@ keeping the abstraction level consistent.</em></p></blockquote>
     <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
     
     <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
-    
-    <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
     
   </div>
 </section>

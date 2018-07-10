@@ -163,6 +163,104 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-09T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 9<sup>th</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/fsharp/'>fsharp</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/tools/'>tools</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/todoist-template-transformer-transform-tasks-to-x-days-from-now/" itemprop="url">Todoist Template Transformer - Transform Tasks to &#8216;X&#8217; Days From Now</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p><img src="/images/todoist_templates.png" alt="Todoist Templates" class="center" /></p>
+
+<p><a href="https://blog.todoist.com/2015/11/19/new-way-to-create-todoist-templates/">Todoist Templates</a> is a simple way to create tasks for any of your recurring activities. Be it blogging, cooking, or any of your activities. With Todoist Templates, you can turn any project into a checklist that you can easily duplicate later. I have been using <a href="http://www.rahulpnath.com/blog/todoist-manage-your-todo-list/">Todoist</a> for a long time and find it useful to keep track of tasks (both personal and at work)</p>
+
+<h4><strong>Problem</strong></h4>
+
+<p>I <a href="http://www.rahulpnath.com/blog/experimenting-with-pomodoro-technique/">plan my tasks</a> for the upcoming week on Sunday morning. I pull in tasks for the upcoming week, and some of these tasks are template based. For e.g. for writing a blog post, I have the below template</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+</span><span class='line'>task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Draft Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Refine Body,4,2,Rahul (3565260),,today,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
+</span><span class='line'>task,&quot;BlogTopic: Images, Proof Read and Publish&quot;,4,2,Rahul (3565260),,tomorrow,en,Australia/Melbourne
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The dates on the template are relative to the day that you import the template in Todoist. So if I pull in the template on a Sunday, the tasks will start on Sunday. This is not something that I want; I want them to start on a Monday. Alternatively, I can update the template to start from tomorrow. Even in that case, I will always have to know the exact start day relative to the day that I intend to pull in. I usually plan for the tasks on a Sunday but still, like the flexibility to pull in tasks any day of the week.</p>
+
+<h3>Todoist Template Transformer</h3>
+
+<p>The Todoist Template Transformer takes in a date and template path and adjusts all tasks in the template to start relative to the passed in date. In the above example, if I want to blog on Wednesday, I will input the Wednesday date and the template file path. The first two tasks will start on Wednesday and the third and fourth on Thursday. Running the transformer on a Sunday (07-May-2017) with the next Wednesday (10-May-2017) below is the new template</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bat'><span class='line'>TodoistTemplateTransformer.exe -startDate <span class="s2">&quot;10-May-2017&quot;</span> -templateFile <span class="s2">&quot;Blog Template.csv&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='text'><span class='line'>TYPE,CONTENT,PRIORITY,INDENT,AUTHOR,RESPONSIBLE,DATE,DATE_LANG,TIMEZONE
+</span><span class='line'>task,Blog: BlogTopic,4,1,Rahul (3565260),,,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Draft Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Refine Body,4,2,Rahul (3565260),,in 3 days,en,Australia/Melbourne
+</span><span class='line'>task,BlogTopic: Intro and Conclusion,4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
+</span><span class='line'>task,&quot;BlogTopic: Images, Proof Read and Publish&quot;,4,2,Rahul (3565260),,in 4 days,en,Australia/Melbourne
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This utility is written in FSharp the <a href="https://github.com/rahulpnath/todoisttemplatetransformer">source code is available here</a> if you are interested. I am still in the initial stages of learning FSharp, so if you have any suggestions to improve the code, please raise a Pull Request or drop in a comment.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-05-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">May 3<sup>rd</sup>, 2017</time>
         
 
@@ -1065,103 +1163,6 @@ f.lux adjusts the screen to the room you are in and the time of the day. You can
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-04-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 3<sup>rd</sup>, 2017</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/three_months_to_a_half_marathon/" itemprop="url">How I Went From Couch to Half Marathon in Twelve Weeks</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>It&rsquo;s about three months since I started running. I just completed my first half marathon and thought of putting together on how I have been going on with my running. I had a lot of questions myself when I started running, so hope this helps someone else taking the same journey.</p>
-
-<div class="alert alert-warning">
-<strong>DISCLAIMER!</strong> Just to make sure I get it right, I am not a doctor nor a professional runner. The below are just my personal experiences and has worked for me. If you feel you have a medical problem or are in need of professional help, please contact a professional. Always consult a doctor before starting a new diet or exercise program.
-</div>
-
-
-<h3>Tracking</h3>
-
-<p>I started running using the <a href="https://play.google.com/store/apps/details?id=com.runtastic.android&amp;hl=en">Runtastic</a> application on my <a href="http://www.rahulpnath.com/blog/review-two-months-and-counting-android-and-nexus-5/">android phone</a>. The free version app offers most of the required features to start running. I upgraded to their <a href="https://www.runtastic.com/en/premium-membership">Premium version</a> primarily for <a href="https://www.runtastic.com/en/results">Runtastic Results</a>(more on it below).</p>
-
-<p>Once I got regular with my runs I wanted better tracking, mainly to monitor heart rate. I was unsure of what a heart rate monitor would provide and if at all there is any value in getting one. I reached out to my runner friends, and all of them had one. Most of them had a Garmin, and a few had Fitbit. Until then I was planning to get the <a href="https://www.fitbit.com/au/charge2">Fitbit Charge 2</a> which comes with <a href="http://www.digitaltrends.com/wearables/whats-inside-fitness-tracker-anyway/#ixzz4cBARwI9q">optical heart rate monitoring</a>. It primarily uses an optical sensor and senses the heart rate from the wrist. The Garmin&rsquo;s make watches that are more <a href="https://buy.garmin.com/en-AU/AU/cIntoSports-cRunning-p1.html">specific for runners</a>, and since the majority of my friends owned Garmin, I decided on to get one of the Garmin Forerunner series.</p>
-
-<p>One of the shops near to where I live was running a promotional offer on the <a href="https://buy.garmin.com/en-AU/AU/p/516105">Garmin Forerunner 630 Bundle</a>. But this model comes with a <a href="https://buy.garmin.com/en-AU/AU/p/530376">Heart Rate Monitor (HRM) Strap</a>. The strap needs to be worn around the chest during the run. Strap v Optical HRM added a new dimension of confusion to the whole tracker story. I reached out to my <a href="https://twitter.com/rahulpnath/status/835320810734694400">runner friends again</a> and surprisingly all of them had models of Garmin that uses an HRM Strap.</p>
-
-<p><a href="https://www.wareable.com/garmin/garmin-forerunner-630-review">
-<img alt="Garmin Forerunner 630 Bundle" class="center" src="/images/running_forerunner630.jpg" />
-</a></p>
-
-<p>The Garmin Forerunner 630 is a GPS SmartWatch with Advanced Running Metrics. It provides all the data a runner needs (and a lot more than what I need). Paired with HRM monitor it helps measure cadence, vertical oscillation and additional running dynamics like ground contact time balance, stride length and vertical ratio. I still don&rsquo;t understand all the data that it shows but find the GPS tracking, heart rate monitoring and zones, training plans and custom workouts a great help to my runs. Garmin also integrates well with <a href="https://www.strava.com/athletes/rahulpnath">Strava</a> where most of my other friends are there. The watch has a companion app on the phone and also a <a href="http://connect.garmin.com">website</a> which helps visualize the data.</p>
-
-<h3>Exercise</h3>
-
-<p><a href="https://www.runtastic.com/en/results">Runtastic Results</a> provides a 12-week bodyweight training plan with the <a href="https://www.runtastic.com/en/premium-membership">premium subscription</a>. I am on week five of the training. It took a while for me to get started but now I try not to miss it. The free version of the app has all exercises available as stand-alone exercises. You can use these if you don&rsquo;t want to get the premium subscription.</p>
-
-<p><img alt="Runtastic Results" class="center" src="/images/running_runtastic_results.png" /></p>
-
-<p>I am following a diet to lose weight, and I weigh now 78 (±1) kilos and has been on that for around one month. I was around 95 when I started out with the <a href="http://www.rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/">running and diet</a>.</p>
-
-<h3>Training</h3>
-
-<p>During the first few weeks of running, I was mostly doing free runs and trying to cover the maximum distance possible. The tracked information was useful in isolation to a specific run, and I did not do anything to improve. I then started on a beginner training plan with Runtastic
-to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b066/training-plans/747577">Run 50 min after 6 weeks</a>. This put me into the mode to compare my runs with the previous and work to improve on them. Now and then I wanted to stop the plan and continue with my normal run as I felt the plan wasn&rsquo;t working. But I decided to <a href="http://www.rahulpnath.com/blog/psm-learnings/">stick to the process</a> until the end. On completion of the training, I was able to run continuously for fifty minutes, and that was a measurable improvement for me.</p>
-
-<p><img alt="Runtastic Training Plan Certificate" src="/images/running_runtastic_certificate.png" /></p>
-
-<p>My friend and colleague <a href="https://www.strava.com/athletes/12340841">Tony</a> is an avid runner. To improve on the pace, he advised starting shorter interval training. To improve pace, fix the pace to what you want to achieve and run for a specified interval (time or distance). Garmin enables you to create a custom workout setting various parameters on the run. The custom workout helps to keep up with your goals during the run.</p>
-
-<p><img alt="Garmin Custom Workout" class="center" src="/images/running_garmin_workout.jpg" /></p>
-
-<p>Running at a constant pace is important to help cover longer distances. Initially, I used to run with all my energy. So my pace often spiked and then fell and then spiked again. If you are training to improve your speed, it&rsquo;s hard to tell whether there is an improvement in speed unless you run at a constant (little variation) in speed. Check out the graph that plots your pace to check the pace variations. Most running applications show this information.</p>
-
-<h3>Breathing</h3>
-
-<p>Proper breathing is one the key things with running. I did not give much importance to breathing at first. I found it very hard to run long distances without stopping in between by following a random breathing pattern. There are different suggestions on breathing style. I found the article <a href="http://www.runnersworld.com/running-tips/running-on-air-breathing-technique">Running On Air: Breathing Technique</a> helpful and try to follow the pattern mentioned there (quoted below).</p>
-
-<blockquote><p><em>The singular point of all rhythmic breathing patterns is this: Exhale on alternate footstrikes as you run. You never want to continually exhale on the same foot. The rhythmic breathing patterns I recommend call for a longer inhale than exhale. Why the longer inhale? Your diaphragm and other breathing muscles contract during inhalation, which brings stability to your core. These same muscles relax during exhalation, decreasing stability. With the goal of injury prevention in mind, it&rsquo;s best to hit the ground more often when your body is at its most stable—during inhalation. Let&rsquo;s start with a 5-count or 3:2 pattern of rhythmic breathing, which will apply to most of your running. Inhale for three steps and exhale for two.</em></p></blockquote>
-
-<p>I particularly liked the reference to yoga and meditation in the article. It gave the realization that running is a form of meditation. Establishing a breathing rhythm helped me run longer distances comfortably and without losing breath. If you want to get a deeper understanding of breath and how it affects our life I recommend reading the book <a href="http://amzn.to/2nkIlUQ">Science Of Breath</a>.</p>
-
-<p>I ran my first <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b066/sport-sessions/58d587fdd03a4c443e6d656c">Half Marathon</a> on 25th of March. I did at a casual pace to understand what it takes to run one. I tried to keep my pace between 6:15 - 6:30 min/km and was able to finish it at 6:19 min/km. It took me 2:13:11 hours and I am glad that I did not stop even once. It was more a mental game to stay at it than anything physical, and I am happy that I could finish it successfully! Hope this helps someone else as well starting off with running. Sound off in the comments if this helps you or some tips if you are already a runner!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1185,6 +1186,8 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/http-strict-transport-security-sts-or-hsts/">HTTP Strict Transport Security (STS or HSTS)</a>
+    
     <a class="list-group-item " href="/blog/ok-i-have-got-https-what-next/">Ok I Have Got HTTPS! What Next?</a>
     
     <a class="list-group-item " href="/blog/kumon-books-creative-workbooks/">Tip of the Week: Kumon Books - Creative Workbooks</a>
@@ -1192,8 +1195,6 @@ to <a href="https://www.runtastic.com/en/users/4b76cfab-734e-1658-b5e4-600759a3b
     <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
     
     <a class="list-group-item " href="/blog/automated-api-testing-using-postman-collection-runner/">Automated API Testing Using Postman Collection Runner</a>
-    
-    <a class="list-group-item " href="/blog/reading-eggs-learning-to-read-can-be-easy-and-fun/">Tip of the Week: Reading Eggs - Learning To Read Can Be Easy And Fun</a>
     
   </div>
 </section>

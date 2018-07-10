@@ -4,7 +4,7 @@
   <title><![CDATA[Category: security | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/security/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-07-09T00:01:12+00:00</updated>
+  <updated>2018-07-10T00:01:22+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,60 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[HTTP Strict Transport Security (STS or HSTS)]]></title>
+    <link href="http://rahulpnath.com/blog/http-strict-transport-security-sts-or-hsts/"/>
+    <updated>2018-07-10T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/http-strict-transport-security-sts-or-hsts</id>
+    <content type="html"><![CDATA[<p><em>This article is part of a series of articles - <a href="/blog/ok-i-have-got-https-what-next/">Ok I have got HTTPS! What Next?</a>. In this post, we explore how to use HSTS security header and the issues it solves.</em></p>
+
+<p>When you enter a domain name in the browser without specifying the protocol (HTTP or HTTPS) the browser by default sends the first request over HTTP. For a server that supports only HTTPS, when it sees such a request, it redirects the request over to HTTPS. The server responds to the client with a <em>302 Redirect</em>, redirecting the client to HTTPS, from which on the browser starts requesting over HTTPS. As you can see here, the very first request that the client makes is over an insecure channel (HTTP), so is also vulnerable to attacks. You could be prone to man-in-the-middle (MITM) attack, and someone could spoof that request and point you to a different site, inject malicious scripts, etc. <strong>The first insecure HTTP request is made everytime you enter the domain name in the browser or make an explicit call over HTTP.</strong></p>
+
+<p><img src="/images/hsts_tofu.png" alt="Trust on First Use" class="center"></p>
+
+<blockquote><p><em>The HTTP <strong>Strict-Transport-Security</strong> response header (often abbreviated as HSTS) lets a website tell browsers that it should only be accessed using HTTPS, instead of using HTTP</em></p></blockquote>
+
+<p>By using the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security">HTTP Strict Transport Security</a> (HSTS) header on your response headers, you are instructing the browser to make calls over HTTPS instead of HTTP for your site.</p>
+
+<pre><code class="text Syntax">Strict-Transport-Security: max-age=&lt;expire-time&gt;
+Strict-Transport-Security: max-age=&lt;expire-time&gt;; includeSubDomains
+Strict-Transport-Security: max-age=&lt;expire-time&gt;; preload
+</code></pre>
+
+<p>There are a few directives that you can set on the header which determines how the browser uses the header. By just setting the header with a <em>max-age</em> (required) directive, you tell the browser the <em>time in seconds that the browser should remember that a site is only to be accessed using HTTPS</em>. By default, the setting affects only the current subdomain. Additionally, you can set the <em>includeSubDomains</em> directive to apply this rule to all subdomain of the site. <strong>Before including all subdomains make sure those are served over HTTPS as well so that you do end up blocking your other sites on the same domain (if any).</strong></p>
+
+<p>As you can see with the HSTS header specified, the browser now only makes one insecure request (the one that it makes everytime the cache expires or the very first request). Once it has established a successful connection with the server, all further requests are over HTTPS for the <em>max_age</em> (cache expiry) set. <strong>With the HSTS header the surface area of the attack gets reduced to just one request as compared to all initial requests going over HTTP (when we did not have the HSTS header).</strong></p>
+
+<p>To verify the HSTS header setting has been applied for your website open your browser in Incognito/In-Private browsing mode. It is to make sure that the browser acts as if it is seeing the site for the very first time (as HSTS header caches do not get shared across regular/incognito sessions)</p>
+
+<blockquote><p><em>The HSTS header settings do not get shared across between the regular and incognito browsing session (at least in Chrome and think this is the same for other browsers as well).</em></p></blockquote>
+
+<p>Open the Developer tools window and monitor the Network requests made by the browser. Request your website over HTTP (either explicitly or just entering the domain name) in this case my blog <a href="http://rahulpnath.com">http://rahulpnath.com</a>. As you can see the very first request go over HTTP and the server returns a <em>301 Moved Permanently</em> status with the https version of the site. For any subsequent requests over HTTP, the browser returns a <em>307 Internal Redirect</em>. This redirect happens within the boundary of your browser and redirects to the HTTPS site. You can use <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a> to verify that this request does not cross the browser boundary. (The request does not get to Fiddler.)</p>
+
+<p><img src="/images/hsts_without_preload.png" alt="HSTS without preload" class ="center" /></p>
+
+<p>We could still argue that there is still a potential threat with the very first request sent over HTTP which is still vulnerable to MITM attack. To solve that we can use the <em>preload</em> directive and submit out domain to an <a href="https://hstspreload.org/">HSTS Preload list</a>, which when successfully added, propagates to the source code of Browsers.</p>
+
+<blockquote><p><em>Most major browsers (Chrome, Firefox, Opera, Safari, IE 11 and Edge) also have HSTS preload lists based on the Chrome list.</em></p></blockquote>
+
+<p>The Browsers hardcode these domains from the preload approved list into their source code (e.g., here is <a href="https://chromium.googlesource.com/chromium/src/net/+/master/http/transport_security_state_static.json">Chrome&rsquo;s list</a>) and gets shipped with their releases. You can check for the preloaded site in the browser as well. Again for chrome navigate to <em>chrome://net-internals/#hsts</em> and query for the HSTS domain.</p>
+
+<p><img src="/images/hsts_preload_static_json.png" alt="HSTS preloaded site hardcoded" class ="center" /></p>
+
+<p>If STS is not set at all or you have not made the very first request to the server (when preload is false) querying for the domain returns &lsquo;Not Found.&rsquo; Below are two variations that you can see depending on whether you have <em>preload</em> set or not. The <em>dynamic_*_*</em> indicates that STS is set after the first load of the site and the <em>static_*_*</em> indicates that it is set from the preload list.</p>
+
+<blockquote><p><em>If you are wondering why this blog does not have _static_*_*</em> set it is because the preload list that it is part of has not yet made into a stable version of Chrome. However, the preload site does show that it is currently preloaded (probably in a beta version at the time of writing)._</p></blockquote>
+
+<p><img src="/images/chrome_hsts_preload.png" alt="Verifying HSTS preload" class ="center" /></p>
+
+<p>With the preload set and your domain hardcoded into the preload list and available as part of the browser version you are on, any request made over HTTP is redirected internally (307) to HTTPS without even going to the server. It means <strong>we have entirely got rid of the first untrusted HTTP request.</strong></p>
+
+<p><img src="/images/hsts_internal_redirect_scott.png" alt="HSTS preload request flow" class ="center" /></p>
+
+<p>Have you already got HSTS set on your site?</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Ok I Have Got HTTPS! What Next?]]></title>
@@ -148,74 +202,6 @@ There are incidents of massive data breaches because of vulnerabilities in third
 <p><a href="https://authy.com/features/">Authy</a> is one of the best-rated 2FA application which targets exactly the issues with Google Authenticator. It is easy to setup, can be secured via TouchId/Password, supports encrypted backups and syncs across multiple applications and devices. Once setup any code that you add to your app gets synced through Authy servers and is all encrypted and secured. Authy has applications for the <a href="https://authy.com/download/">mobile, desktop and also has a plugin for Chrome browser</a>. You can also manage devices from the account and revoke a device if it gets lost or is not used anymore. <a href="https://authy.com/blog/authy-vs-google-authenticator/">Authy vs Google Authentication post</a> covers in detail all the differences between the two and the advantages of using Authy.</p>
 
 <p>Check out <a href="https://authy.com/features/">Authy</a> and do setup 2FA if you are not already!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[HTTPS For Free and Why You Should Care]]></title>
-    <link href="http://rahulpnath.com/blog/https-for-free-and-why-you-should-care/"/>
-    <updated>2018-05-19T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/https-for-free-and-why-you-should-care</id>
-    <content type="html"><![CDATA[<p>If you are here and reading this probably you have a website and is serving it over HTTP. If you are unsure of whether your site needs HTTPS or not, don&rsquo;t think twice - <strong>YES, YOUR SITE NEEDS HTTPS</strong>.</p>
-
-<p>If you are not convinced check out <a href="https://doesmysiteneedhttps.com/">https://doesmysiteneedhttps.com/</a>. One of the main reasons that I have seen (including me) why people have shied away from having HTTPS on sites was cost. And this post explains how to get HTTPS for free. But make sure you are getting it for the correct reasons and you know exactly what you are getting</p>
-
-<div class="center">
-    <blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">HTTPS &amp; SSL doesn&#39;t mean &quot;trust this.&quot; It means &quot;this is private.&quot; You may be having a private conversation with Satan.</p>&mdash; Scott Hanselman (@shanselman) <a href="https://twitter.com/shanselman/status/187572289724887041?ref_src=twsrc%5Etfw">April 4, 2012</a></blockquote>
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-</div>
-
-
-<p>Depending on how you are hosting you could possibly take two routes to enable HTTPS on your site. Let&rsquo;s look at them in detail.</p>
-
-<h3>Option 1 - Get your Certificate and Add to Your Host</h3>
-
-<p>If your hosting service already allows you to upload a custom domain certificate, but you were just holding back because of the extra cost of getting a certificate, then head over to <a href="https://letsencrypt.org/">Let&rsquo;s Encrypt</a> to get your free certificate. Again depending on your hosting provider and the level of access that you have on your web server, Let&rsquo;s Encrypt has <a href="https://letsencrypt.org/getting-started/">muliple ways</a> on how you can get a certificate.</p>
-
-<blockquote><p><a href="https://letsencrypt.org/docs/faq/#general"><strong>What does it cost to use Let’s Encrypt? Is it really free?</strong></a><br/>
-<em>We do not charge a fee for our certificates. Let’s Encrypt is a nonprofit, our mission is to create a more secure and privacy-respecting Web by promoting the widespread adoption of HTTPS. Our services are free and easy to use so that every website can deploy HTTPS.</em></p>
-
-<p><em>We require support from generous sponsors, grantmakers, and individuals in order to provide our services for free across the globe. If you’re interested in supporting us please consider donating or becoming a sponsor.</em></p>
-
-<p><em>In some cases, integrators (e.g. hosting providers) will charge a nominal fee that reflects the administrative and management costs they incur to provide Let’s Encrypt certificates.</em></p></blockquote>
-
-<h3>Option 2 - CloudFlare</h3>
-
-<p>If you are like me on a shared/cheaper hosting service it is more likely that your hosting plan does not support adding SSL certificates. You will be forced to upgrade to a higher plan to upload a certificate, which in turn will cost you more. In this case, you can use <a href="https://www.cloudflare.com/">Cloudflare</a>, to enable HTTPS for free.</p>
-
-<p>Cloudflare provides lots of features for websites, but in our case, we are more interested in what the Free plan gives us. It gives us a Shared SSL Certificate and also added benefits of Global CDN.</p>
-
-<p><img src="/images/cloudflare_free_plan.png" class="center" /></p>
-
-<p>Cloudflare acts as a <a href="https://en.wikipedia.org/wiki/Reverse_proxy">reverse proxy</a> between you and the server hosting this web page, which simply means that all requests now go through Cloudflare which in turn reaches out to the web server, if it cannot find a locally cached copy. So this also means that there are now reduced number of calls to the web server as Cloudflare would serve it from its cache if already available.</p>
-
-<p>Shared SSL is what is more interesting for us as part of this blog post. What shared SSL gives us is free HTTPS for our website. We get a Domain Validated (DV) certificate, with a small catch. It is not issued to our domain but to a shared Cloudflare domain server (sni154817.cloudflaressl.com in my case). If you want a custom SSL certificate then you need to be on a paid plan.</p>
-
-<p><img src="/images/blog_ssl_certificate.png" class="center" /></p>
-
-<p>Cloudflare supports <a href="https://support.cloudflare.com/hc/en-us/articles/200170416">multiple SSL settings</a> - Off, Flexible SSL, Full SSL, Full SSL(Strict). Depending on how your host is setup you can choose one of the options. Since I am using <a href="https://azure.microsoft.com/en-au/services/app-service/web/">Azure Web Apps</a> to host, it supports https over <em>*.azurewebsites.net</em> subdomain. But since the certficate is not for my custom domain name (rahulpnath.com), I have set the SSL setting to Full SSL. Cloudfare in this case will connect over HTTPS but not validate the certificate. If your host does not support HTTPs connection (for free) you can use Flexible SSL.
-<a href="https://www.cloudflare.com/ssl/" >
-<img src="/images/cloudflare_ssl_modes.png" class="center" />
-</a></p>
-
-<p>You can also choose to enable Cloudflare with Full SSL(Strict) if you have followed Option 1 and have a custom SSL certificate for the domain. This will give you the added benefits that Cloudfare provides.</p>
-
-<h3>Enabling HSTS Preload</h3>
-
-<p>Now that you have HTTPS setup on your domain with either of the options above, we can see that the website is now accessible over HTTPS. However, when you make the very first request to the website, the request goes over HTTP which then redirects over to HTTPS, after which the communication happens over a secure channel. However, there is a risk where the very first request can be intercepted and cause undesired behaviour.</p>
-
-<blockquote><p><em><a href="https://en.wikipedia.org/wiki/Trust_on_first_use">Trust on first use</a> (TOFU), or trust upon first use (TUFU), is a security model used by client software which needs to establish a trust relationship with an unknown or not-yet-trusted endpoint.</em></p></blockquote>
-
-<p>By setting the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security">STS(Strict-Transport-Security)</a> header along with the preload directive, we can then add our domain to the <a href="https://hstspreload.org/">HSTS Preload list</a>. By adding your domain into this list it is literally getting hardcoded into source code of browsers (like for e.g <a href="https://chromium.googlesource.com/chromium/src/net/+/master/http/transport_security_state_static.json">Chrome here</a>). So anytime a request is made to a site it is checked against this hardcoded list available in memory and if present the request goes as HTTPS from the very first. You can set all subdomains for your domain as well as HSTS preloaded. Make sure you have all subdomains are served over HTTPS so that you do not lock yourself out on those sites. You can find more details on HSTS <a href="https://scotthelme.co.uk/hsts-the-missing-link-in-tls/">here</a>.</p>
-
-<p>Now that the cost factor is out of making your site support HTTPS, is there anything else that is holding you back? If speed is a concern and it worries that encryption/decryption at both ends of communication is going to slow you down take a look at this post on <a href="https://www.troyhunt.com/i-wanna-go-fast-https-massive-speed-advantage/">HTTPS&#8217; massive speed advantage</a>.
-If you are still not convinced let me give it one last shot to get you on board. Going forward most modern browsers are going to default to the web as a secure place. So instead of the present positive visual security indicators, it would start showing warnings on pages served over HTTP. That means soon your sites would start showing <span style="color:red;">Not Secure</span> if you are not moving over to HTTPS.</p>
-
-<p><a href="https://blog.chromium.org/2018/05/evolving-chromes-security-indicators.html" >
-    <img src="/images/chrome_https.png" class="center" />
-</a></p>
-
-<p>I don&rsquo;t see any reason why we should still be serving our sites over HTTP. As you can see I have moved over to the HTTPS and have added this domain to the preload list as well. Let&rsquo;s make the web secure by default!</p>
 ]]></content>
   </entry>
   
