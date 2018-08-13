@@ -4,7 +4,7 @@
   <title><![CDATA[Category: asp.net | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/asp-dot-net/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-08-13T00:01:26+00:00</updated>
+  <updated>2018-08-13T20:56:39+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -86,7 +86,7 @@ app.UseFacebookAuthentication(options);
 
 <p><strong>3. Register user</strong></p>
 
-<p>Now that the user is successfully authenticated with  the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
+<p>Now that the user is successfully authenticated with the authorization provider and we have a token, we need to register the user into our database, as we dont want to go to facebook to verify the identity for each and every request. The client can call into <em>RegisterExternal</em> method to register the user into our system. It expects us to pass a email/username for the external authenticated user, which we would have already got from the redirect url parameters. Now the external authenticated user is a valid user in our system and is allowed to make authenticated calls to the api.For the call to RegisterExternal we need to add the token that we got as part of the redirecturl as part of the Authorization header.</p>
 
 <pre><code class="javascript">var registerUser = function () {
     $.ajax({
@@ -109,20 +109,21 @@ app.UseFacebookAuthentication(options);
     });
 </code></pre>
 
-<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.
-<code>javascript
-var userInfoUrl = config.apiBaseUrl + "api/Account/UserInfo";
+<p>On successfull registeration we can get the User details by calling to the UserInfo endpoint.</p>
+
+<pre><code class="javascript">var userInfoUrl = config.apiBaseUrl + "api/Account/UserInfo";
 $.ajax({
-    url: userInfoUrl,
-    success: function (data) {
-        window.location = "#";
-    },
-    beforeSend: function (xhr) {
-        xhr.setRequestHeader('Authorization', 'Bearer ' + config.token);
-    }
+  url: userInfoUrl,
+  success: function(data) {
+    window.location = "#";
+  },
+  beforeSend: function(xhr) {
+    xhr.setRequestHeader("Authorization", "Bearer " + config.token);
+  }
 });
-</code>
-We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.
+</code></pre>
+
+<p>We can mofify the models to handle more information as required by our api. We could save the token in a local storage and retrieve it whenever a user visits the site back again. The same is the approach for integrating with the other social networks that we have. The sample using the facebook provider is availabe <a href="https://github.com/rahulpnath/Blog/tree/master/WebApiAuthentication">here</a>.
 <a href="http://www.codeproject.com" style="display:none" rel="tag">CodeProject</a></p>
 ]]></content>
   </entry>
