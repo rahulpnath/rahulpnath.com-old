@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-08-13T20:56:39+00:00</updated>
+  <updated>2018-08-14T00:01:52+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,106 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions]]></title>
+    <link href="http://rahulpnath.com/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/"/>
+    <updated>2018-08-14T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions</id>
+    <content type="html"><![CDATA[<p>I was setting up an API at one of the client&rsquo;s place recently and found that currently, they allow any origin to hit their API by setting the <a href="https://msdn.microsoft.com/en-us/library/dn450212(v=vs.113).aspx">CorsOptions.AllowAll</a> options. In this post, we will look at how to set the CORS options and restrict it to only the domains that you want your API to be accessed from.</p>
+
+<h3>What is Cross-Origin Resource Sharing (CORS)</h3>
+
+<p>Cross-Origin Resource Sharing is a way to relax the browsers <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy">Same-Origin Policy</a> whereby to tell a browser to let a web application running at one origin (domain) have permission to access selected resources from a server at a different origin. By specifying the CORS header you instruct the browser to allow all allowed domains to access your resource. Most of the time for the API endpoints you want to be explicit on the hosts that can access your API. By setting CORS, you are only restricting/allowing cross-domain access originating from a browser. <strong>Setting CORS should not be mistaken for a Security feature</strong> whereby you are restricting access from any other sources. Any requests that are formed outside of the browser like using Postman, Fiddler, etc. can still make to your API and you need appropriate authorization/authentication to make sure you are not exposing data to unintended people.</p>
+
+<p><img src="http://rahulpnath.com/images/cors.png" alt="Cross-Origin Request" class="center" ></p>
+
+<h3>Enabling in Web API</h3>
+
+<p>In Web API there are multiple ways that you can set CORS.</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.Owin.Cors/">Microsoft.Owin.Cors</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.AspNet.WebApi.Cors">Microsoft.AspNet.WebApi.Cors</a><br/>
+<em>This adds <em>System.Web.Http.Cors.dll</em> assembly to your project so can be a bit of confusion if you are looking around for the DLL in the solution</em></li>
+</ul>
+
+
+<p>In the below snippet I am using the <em>Microsoft.Owin.Cors</em> pipeline to setup CORS for the API. The code first reads the application configuration file to get a list of semicolon (;) separated hostnames which are added to the list of allowed origins in the <a href="https://docs.microsoft.com/en-us/previous-versions/aspnet/web-frameworks/dn726408(v=vs.118)">CorsPolicy</a>. By setting the corsOptions with <em>UseCors</em> extension method, the policy gets applied to all the requests coming through the website.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">allowedOriginsConfig</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;origins&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">allowedOrigins</span> <span class="p">=</span> <span class="n">allowedOriginsConfig</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;;&quot;</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">corsPolicy</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsPolicy</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">AllowAnyHeader</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">AllowAnyMethod</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">SupportsCredentials</span> <span class="p">=</span> <span class="k">true</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">origin</span> <span class="k">in</span> <span class="n">allowedOrigins</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">corsPolicy</span><span class="p">.</span><span class="n">Origins</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">origin</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">policyProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsPolicyProvider</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PolicyResolver</span> <span class="p">=</span> <span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="n">corsPolicy</span><span class="p">)</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">corsOptions</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsOptions</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PolicyProvider</span> <span class="p">=</span> <span class="n">policyProvider</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Setting Multiple CORS Policy</h3>
+
+<p>If you want to have different CORS policies based on different Controllers/route path, you can use the <em>Map</em> function to set up the CorsOptions for specific route paths. In the below example we apply a different CorsOptions to all routes that match <em>&lsquo;/api/SpecificController&rsquo;</em> and defaults to another for all other requests.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">Map</span><span class="p">(</span>
+</span><span class='line'>    <span class="s">&quot;/api/SpecificController&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">appbuilder</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">appbuilder</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions2</span><span class="p">));</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>CORS ≠ Security</h3>
+
+<p>CORS is a way to relax the Cross-Origin Policy and in no way should be seen as a security feature. By setting CORS headers what we are saying is to allow all the additional domains in the headers also to be able to access the resource from a browser environment. However setting this, does not restrict access to your API&rsquo;s from other sources like Postman, Fiddler or from any non-browser environments. Even within browser environments, older versions of Flash allows modifying and spoofing of request headers. Ensure that you are using CORS for the correct reasons and not assume that it is providing you security against unauthorized access.</p>
+
+<p>Hope this allows you to setup CORS on your API&rsquo;s!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HTTP Content Security Policy (CSP)]]></title>
@@ -1199,67 +1299,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 <p>To standardize this (preferably capitalize all), highlight one of the &lsquo;select&rsquo; keywords and highlight all occurrences of the keyword (ALT + F3). Once all occurrences of &lsquo;select&rsquo; is highlighted, bring up the <a href="http://docs.sublimetext.info/en/latest/extensibility/command_palette.html">command pallete</a> (CTRL + SHIFT + P on windows) and search for &lsquo;Convert Case&rsquo;. From the options listed choose the case that you want to convert. All selected occurrences of the keyword will now be in the selected case.</p>
 
 <p>Hope this helps you when you have a lot of text case manipulations to be done.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[2017: What Went Well, What Didn't and Goals]]></title>
-    <link href="http://rahulpnath.com/blog/2017-recap/"/>
-    <updated>2017-12-29T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/2017-recap</id>
-    <content type="html"><![CDATA[<p><img class="center" alt="Posts per month - 2016" src="http://rahulpnath.com/images/happy_new_year.png"/></p>
-
-<p><a href="http://www.rahulpnath.com/blog/2016-recap/">A year</a> has gone by so fast, and it is again time to do a year review.</p>
-
-<blockquote><p><strong>TLDR;</strong></p>
-
-<p>2017 was the transformation year. Regular exercise and healthy eating helped <a href="http://www.rahulpnath.com/blog/how-i-lost-13-kilos-in-one-and-half-months/">loose around 20 kilos</a>. Lots of travel and blogging made it an excellent year. Reading, Photography and Open source did not go that great. Looking forward to 2018!</p></blockquote>
-
-<h3>What went well</h3>
-
-<h4><strong>Blogging</strong></h4>
-
-<p>It has been both good and a bad year as far as this blog. Including the &lsquo;<a href="http://www.rahulpnath.com/blog/category/tipow/">Tip of the Week</a>&rsquo; series I wrote seventy-six posts this year with an average of over six posts per month. This is the good part, as it is well past the goal of a <em>minimum four posts a month</em> goal set last year. But looking at the actual posts per month graph below, it is clear that I have fallen short of it on an actual month by month basis. Up until August, I had a steady stream of posts coming in, from when it started dropping down, with even months (November) with no posts. Mainly it&rsquo;s my laziness to blame, but I can also tell reasons like Vietnam trip, Shifting to Brisbane, etc.</p>
-
-<p><img src="http://rahulpnath.com/images/2017_postpermonth.png" alt="Posts per month in the year 2017" /></p>
-
-<h4><strong>Running</strong></h4>
-
-<p>I had started running towards the end of December 2016. One of my goals for 2017 was running, and it has had a good improvement. Ran over 750 kilometers including a half marathon. I am yet to participate in any running events and am planning to in the coming year. I have also started cycling, and it is an excellent way to cross train.</p>
-
-<p><a href="https://2017.strava.com/en-us/videos/92aff78b819c502351b85b8ef27e35025cd97adf/">
-    <img src="http://rahulpnath.com/images/2017_sport.jpg" alt="Year in Sport" />
-</a></p>
-
-<h4><strong>Travel</strong></h4>
-
-<p>Did our first international holiday to Vietnam for ten days and was a great experience. Also went around Australia visiting Blue Mountains, Canberra, Port Macquarie, Brisbane and lots of <a href="http://www.rahulpnath.com/blog/one-day-trips-around-sydney/">one-day trips around Sydney</a>. Mandarin Picking, Strawberry picking and Whale watching were some of the top activities for the year.</p>
-
-<p><img src="http://rahulpnath.com/images/strawberyy_picking.jpg" alt="Strawberry Picking, Ricardoes" /></p>
-
-<h3>What didn&rsquo;t go well</h3>
-
-<ul>
-<li><p><strong>Reading</strong> Had set out with a <a href="https://www.goodreads.com/challenges/5493-2017-reading-challenge">goal of 21 books</a> but ended up finishing only ten books. Of the books I read liked <a href="https://www.amazon.com/Mindset-Psychology-Carol-S-Dweck/dp/0345472322">Mindset</a> and <a href="https://www.amazon.com/How-Win-Friends-Influence-People/dp/1439167346/">How to Win Friends and Influence People,</a> was the best.</p></li>
-<li><p><strong>Photography</strong>
-One trip every three months and post photos were one another goal. The travel part went good (see above), but my DSLR always remained in the bag. Except for a few pictures on the phone camera, there was not much photography done.</p></li>
-<li><p><strong>FSharp</strong>
-FSharp was again on and off this year. Apart from a <a href="http://www.rahulpnath.com/blog/todoist-template-transformer-transform-tasks-to-x-days-from-now/">small utility that I created for Todoist</a>, I did not do much F# work.</p></li>
-</ul>
-
-
-<h3>Goals for 2018</h3>
-
-<ul>
-<li><p><strong>Blogging</strong> Stick to 4 posts a month. Need to get back on schedule.</p></li>
-<li><p><strong>Running</strong> Attend few running events. Run a marathon.</p></li>
-<li><p><strong>Swimming</strong> Having started cycling along with running, has got me thinking about a triathlon. The only thing between is swimming, and I have no clue how to swim. Learning to swim is one of the key goals for the upcoming year. Target is to be able to swim one km.</p></li>
-<li><p><strong>Open Source</strong> Start working on a side project. Need to find a matching project first.</p></li>
-<li><p><strong>Reading</strong> Read 15 books</p></li>
-</ul>
-
-
-<p>Wishing you all a Happy and Prosperous New Year!</p>
 ]]></content>
   </entry>
   

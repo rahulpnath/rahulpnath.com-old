@@ -4,7 +4,7 @@
   <title><![CDATA[Category: web api | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/web-api/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-08-13T20:56:39+00:00</updated>
+  <updated>2018-08-14T00:01:52+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,76 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions]]></title>
+    <link href="http://rahulpnath.com/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/"/>
+    <updated>2018-08-14T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions</id>
+    <content type="html"><![CDATA[<p>I was setting up an API at one of the client&rsquo;s place recently and found that currently, they allow any origin to hit their API by setting the <a href="https://msdn.microsoft.com/en-us/library/dn450212(v=vs.113).aspx">CorsOptions.AllowAll</a> options. In this post, we will look at how to set the CORS options and restrict it to only the domains that you want your API to be accessed from.</p>
+
+<h3>What is Cross-Origin Resource Sharing (CORS)</h3>
+
+<p>Cross-Origin Resource Sharing is a way to relax the browsers <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy">Same-Origin Policy</a> whereby to tell a browser to let a web application running at one origin (domain) have permission to access selected resources from a server at a different origin. By specifying the CORS header you instruct the browser to allow all allowed domains to access your resource. Most of the time for the API endpoints you want to be explicit on the hosts that can access your API. By setting CORS, you are only restricting/allowing cross-domain access originating from a browser. <strong>Setting CORS should not be mistaken for a Security feature</strong> whereby you are restricting access from any other sources. Any requests that are formed outside of the browser like using Postman, Fiddler, etc. can still make to your API and you need appropriate authorization/authentication to make sure you are not exposing data to unintended people.</p>
+
+<p><img src="/images/cors.png" alt="Cross-Origin Request" class="center" ></p>
+
+<h3>Enabling in Web API</h3>
+
+<p>In Web API there are multiple ways that you can set CORS.</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.Owin.Cors/">Microsoft.Owin.Cors</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.AspNet.WebApi.Cors">Microsoft.AspNet.WebApi.Cors</a><br/>
+<em>This adds <em>System.Web.Http.Cors.dll</em> assembly to your project so can be a bit of confusion if you are looking around for the DLL in the solution</em></li>
+</ul>
+
+
+<p>In the below snippet I am using the <em>Microsoft.Owin.Cors</em> pipeline to setup CORS for the API. The code first reads the application configuration file to get a list of semicolon (;) separated hostnames which are added to the list of allowed origins in the <a href="https://docs.microsoft.com/en-us/previous-versions/aspnet/web-frameworks/dn726408(v=vs.118)">CorsPolicy</a>. By setting the corsOptions with <em>UseCors</em> extension method, the policy gets applied to all the requests coming through the website.</p>
+
+<pre><code class="csharp">var allowedOriginsConfig = ConfigurationManager.AppSettings["origins"];
+var allowedOrigins = allowedOriginsConfig
+    .Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+
+var corsPolicy = new CorsPolicy()
+{
+    AllowAnyHeader = true,
+    AllowAnyMethod = true,
+    SupportsCredentials = true
+};
+foreach (var origin in allowedOrigins)
+    corsPolicy.Origins.Add(origin);
+
+var policyProvider = new CorsPolicyProvider()
+{
+    PolicyResolver = (context) =&gt; Task.FromResult(corsPolicy)
+};
+var corsOptions = new CorsOptions()
+{
+    PolicyProvider = policyProvider
+};
+
+app.UseCors(corsOptions);
+</code></pre>
+
+<h3>Setting Multiple CORS Policy</h3>
+
+<p>If you want to have different CORS policies based on different Controllers/route path, you can use the <em>Map</em> function to set up the CorsOptions for specific route paths. In the below example we apply a different CorsOptions to all routes that match <em>&lsquo;/api/SpecificController&rsquo;</em> and defaults to another for all other requests.</p>
+
+<pre><code class="csharp">app.Map(
+    "/api/SpecificController",
+    (appbuilder) =&gt; appbuilder.UseCors(corsOptions2));
+...
+app.UseCors(corsOptions1);
+</code></pre>
+
+<h3>CORS ≠ Security</h3>
+
+<p>CORS is a way to relax the Cross-Origin Policy and in no way should be seen as a security feature. By setting CORS headers what we are saying is to allow all the additional domains in the headers also to be able to access the resource from a browser environment. However setting this, does not restrict access to your API&rsquo;s from other sources like Postman, Fiddler or from any non-browser environments. Even within browser environments, older versions of Flash allows modifying and spoofing of request headers. Ensure that you are using CORS for the correct reasons and not assume that it is providing you security against unauthorized access.</p>
+
+<p>Hope this allows you to setup CORS on your API&rsquo;s!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Not All That Returns JSON is RESTful: Understanding HATEOAS]]></title>

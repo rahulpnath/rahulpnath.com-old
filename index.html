@@ -163,6 +163,144 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-08-14T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Aug 14<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/web-api/'>web api</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/" itemprop="url">Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>I was setting up an API at one of the client&rsquo;s place recently and found that currently, they allow any origin to hit their API by setting the <a href="https://msdn.microsoft.com/en-us/library/dn450212(v=vs.113).aspx">CorsOptions.AllowAll</a> options. In this post, we will look at how to set the CORS options and restrict it to only the domains that you want your API to be accessed from.</p>
+
+<h3>What is Cross-Origin Resource Sharing (CORS)</h3>
+
+<p>Cross-Origin Resource Sharing is a way to relax the browsers <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy">Same-Origin Policy</a> whereby to tell a browser to let a web application running at one origin (domain) have permission to access selected resources from a server at a different origin. By specifying the CORS header you instruct the browser to allow all allowed domains to access your resource. Most of the time for the API endpoints you want to be explicit on the hosts that can access your API. By setting CORS, you are only restricting/allowing cross-domain access originating from a browser. <strong>Setting CORS should not be mistaken for a Security feature</strong> whereby you are restricting access from any other sources. Any requests that are formed outside of the browser like using Postman, Fiddler, etc. can still make to your API and you need appropriate authorization/authentication to make sure you are not exposing data to unintended people.</p>
+
+<p><img src="/images/cors.png" alt="Cross-Origin Request" class="center" ></p>
+
+<h3>Enabling in Web API</h3>
+
+<p>In Web API there are multiple ways that you can set CORS.</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Microsoft.Owin.Cors/">Microsoft.Owin.Cors</a></li>
+<li><a href="https://www.nuget.org/packages/Microsoft.AspNet.WebApi.Cors">Microsoft.AspNet.WebApi.Cors</a><br/>
+<em>This adds <em>System.Web.Http.Cors.dll</em> assembly to your project so can be a bit of confusion if you are looking around for the DLL in the solution</em></li>
+</ul>
+
+
+<p>In the below snippet I am using the <em>Microsoft.Owin.Cors</em> pipeline to setup CORS for the API. The code first reads the application configuration file to get a list of semicolon (;) separated hostnames which are added to the list of allowed origins in the <a href="https://docs.microsoft.com/en-us/previous-versions/aspnet/web-frameworks/dn726408(v=vs.118)">CorsPolicy</a>. By setting the corsOptions with <em>UseCors</em> extension method, the policy gets applied to all the requests coming through the website.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">allowedOriginsConfig</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;origins&quot;</span><span class="p">];</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">allowedOrigins</span> <span class="p">=</span> <span class="n">allowedOriginsConfig</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Split</span><span class="p">(</span><span class="k">new</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;;&quot;</span> <span class="p">},</span> <span class="n">StringSplitOptions</span><span class="p">.</span><span class="n">RemoveEmptyEntries</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">corsPolicy</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsPolicy</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">AllowAnyHeader</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">AllowAnyMethod</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="n">SupportsCredentials</span> <span class="p">=</span> <span class="k">true</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">origin</span> <span class="k">in</span> <span class="n">allowedOrigins</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">corsPolicy</span><span class="p">.</span><span class="n">Origins</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">origin</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">policyProvider</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsPolicyProvider</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PolicyResolver</span> <span class="p">=</span> <span class="p">(</span><span class="n">context</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Task</span><span class="p">.</span><span class="n">FromResult</span><span class="p">(</span><span class="n">corsPolicy</span><span class="p">)</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">corsOptions</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CorsOptions</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">PolicyProvider</span> <span class="p">=</span> <span class="n">policyProvider</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Setting Multiple CORS Policy</h3>
+
+<p>If you want to have different CORS policies based on different Controllers/route path, you can use the <em>Map</em> function to set up the CorsOptions for specific route paths. In the below example we apply a different CorsOptions to all routes that match <em>&lsquo;/api/SpecificController&rsquo;</em> and defaults to another for all other requests.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">Map</span><span class="p">(</span>
+</span><span class='line'>    <span class="s">&quot;/api/SpecificController&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="p">(</span><span class="n">appbuilder</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">appbuilder</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions2</span><span class="p">));</span>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'><span class="n">app</span><span class="p">.</span><span class="n">UseCors</span><span class="p">(</span><span class="n">corsOptions1</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>CORS ≠ Security</h3>
+
+<p>CORS is a way to relax the Cross-Origin Policy and in no way should be seen as a security feature. By setting CORS headers what we are saying is to allow all the additional domains in the headers also to be able to access the resource from a browser environment. However setting this, does not restrict access to your API&rsquo;s from other sources like Postman, Fiddler or from any non-browser environments. Even within browser environments, older versions of Flash allows modifying and spoofing of request headers. Ensure that you are using CORS for the correct reasons and not assume that it is providing you security against unauthorized access.</p>
+
+<p>Hope this allows you to setup CORS on your API&rsquo;s!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-07-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 24<sup>th</sup>, 2018</time>
         
 
@@ -1299,66 +1437,6 @@ Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSet
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-04T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 4<sup>th</sup>, 2018</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/prettier-an-opinionated-code-formatter/" itemprop="url">Tip of the Week: Prettier - An Opinionated Code Formatter</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Code Formatting is an essential aspect of writing code, and I did write about this a while back on <a href="https://rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introducing code formatting into a large code base</a>. It&rsquo;s not about what all rules you and your team use, it&rsquo;s about sticking with the conventions and using them consistently. Code Formatting rules are best when applied automatically, and the developer does not need to do anything in particular about it.</p>
-
-<p><a href="https://prettier.io/">Prettier</a> is an opinionated code formatter, which supports multiple languages and editors and easy to get started. Getting set up is as easy as just installing the <a href="https://prettier.io/docs/en/install.html">prettier package using yarn/npm</a>. There are multiple points at which you can integrate Prettier - <a href="https://prettier.io/docs/en/editors.html">in your editor</a>, <a href="https://prettier.io/docs/en/precommit.html">pre-commit hook</a> or <a href="https://prettier.io/docs/en/cli.html#list-different">CI environments</a>.</p>
-
-<div style="text-align: center;">
-<iframe width="560" height="315" src="https://www.youtube.com/embed/zgWBAKZvdFQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-</div>
-
-
-<p>Most of the IDE&rsquo;s have plugins for Prettier which makes it easy to get it into the code right from the beginning. You might need to update your IDE settings to run prettier when you save a file. For VS Code I have to set editor.formatOnSave to true to turn on this behaviour.</p>
-
-<p>As the title says, Prettier is opinionated, which is useful in many ways and removes much time wasted on unnecessary discussions. However, it does provide some <a href="https://prettier.io/docs/en/configuration.html">configuration options</a>. Check if it provides enough for you to call a meeting to decide on one of them :).</p>
-
-<p>Write prettier code!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1382,6 +1460,8 @@ Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSet
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/">Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions</a>
+    
     <a class="list-group-item " href="/blog/http-content-security-policy-csp/">HTTP Content Security Policy (CSP)</a>
     
     <a class="list-group-item " href="/blog/http-strict-transport-security-sts-or-hsts/">HTTP Strict Transport Security (STS or HSTS)</a>
@@ -1389,8 +1469,6 @@ Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSet
     <a class="list-group-item " href="/blog/ok-i-have-got-https-what-next/">Ok I Have Got HTTPS! What Next?</a>
     
     <a class="list-group-item " href="/blog/kumon-books-creative-workbooks/">Tip of the Week: Kumon Books - Creative Workbooks</a>
-    
-    <a class="list-group-item " href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
     
   </div>
 </section>
