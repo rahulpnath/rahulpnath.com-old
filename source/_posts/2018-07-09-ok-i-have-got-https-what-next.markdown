@@ -31,9 +31,9 @@ Just because you have an A+ Rating (or a good rating) does not mean that your si
 
 In this post will walk through some of the headers that I added to this blog. I am planning to write this as a multi-series article, with each article specific to a header/other feature, why I added it and how I went about adding and verifying it.
 
-- [HTTP Strict-Transport-Security (HSTS/STS)](https://rahulpnath.com/blog/http-strict-transport-security-sts-or-hsts)
+- [HTTP Strict-Transport-Security (HSTS/STS)](/blog/http-strict-transport-security-sts-or-hsts)
 - [Content-Security-Policy (CSP)](/blog/http-content-security-policy-csp/)
-- Subresource Integrity
+- [Subresource Integrity](/blog/subresource-integrity-sri/)
 - Development Tools
 
 I will be updating the links to the relevant posts here as I publish them and will add to the list as and when I come across new topics. One of the tricky thing with security is that very often something new comes up. The best we can do is to proactively do things that we can do to support and protect ourselves.
