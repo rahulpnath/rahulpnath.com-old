@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-08-27T19:08:49+00:00</updated>
+  <updated>2018-08-28T00:02:02+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,107 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Subresource Integrity (SRI)]]></title>
+    <link href="http://rahulpnath.com/blog/subresource-integrity-sri/"/>
+    <updated>2018-08-28T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/subresource-integrity-sri</id>
+    <content type="html"><![CDATA[<p><em>This article is part of a series of articles - <a href="http://rahulpnath.com/blog/ok-i-have-got-https-what-next/">Ok I have got HTTPS! What Next?</a>. In this post, we explore how to use Subresource Integrity and the issues it solves.</em></p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity">Subresource Integrity (SRI)</a> is a security feature that enables browsers to verify that files they fetch (for example, from a CDN) are delivered without unexpected manipulation. It works by allowing you to provide a cryptographic hash that a fetched file must match.</p>
+
+<p><img src="http://rahulpnath.com/images/sri.png" class="center" alt="Subresource integrity" /></p>
+
+<p>Using the integrity attribute on <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script">script</a> and <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/link">link</a> element enables browsers to verify externally linked files before loading them. The integrity attribute takes a base64-encoded hash prefixed the corresponding hash algorithm prefix(at present sha256,sha3384, sha512), as shown in the example below.</p>
+
+<figure class='code'><figcaption><span>Integrity attribute as part of the script tag</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="o">&lt;</span><span class="nx">script</span>
+</span><span class='line'>  <span class="nx">src</span><span class="o">=</span><span class="s2">&quot;https://cdnjs.cloudflare.com/ajax/libs/redux/4.0.0/redux.js&quot;</span>
+</span><span class='line'>  <span class="nx">integrity</span><span class="o">=</span><span class="s2">&quot;sha256-KLkq+W1kKUA6iR5s5Xa/tdzU0yAmXNu7qIGKR/PBoUE=&quot;</span>
+</span><span class='line'>  <span class="nx">crossorigin</span><span class="o">=</span><span class="s2">&quot;anonymous&quot;</span> <span class="o">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Generating SRI Hash</h3>
+
+<p>To generate the SRI hash for files that are accessible over a URL, you can use <a href="https://www.srihash.org/">srihash.org</a> or <a href="https://allyoucan.cloud/tools/srigenerator/">srigenerator</a> depending on what hash algorithm version you want. If you&rsquo;re going to generate it on your local files, you can use OpenSSL command-line tool (which should be part of your git bash shell if you are looking around for it, like I did)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>openssl dgst -sha256 -binary FILENAME.js <span class="p">|</span> openssl base64 -A
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Third-Party Libraries</h3>
+
+<p>For third-party libraries (js and CSS) referred via CDN, you can grab the script/link element along with the integrity attribute from the CDN sites. Here is an example below from <a href="https://cdnjs.com/">cdnjs</a>.</p>
+
+<p><img src="http://rahulpnath.com/images/sri_redux.png" alt="Generate script tag along with SRI Hash" class="center" /></p>
+
+<p>When referring third party libraries via CDN its <a href="https://www.hanselman.com/blog/CDNsFailButYourScriptsDontHaveToFallbackFromCDNToLocalJQuery.aspx">good to fall back to a local copy</a>. In cases where the CDN is unreachable or the integrity check fails it can fall back to a local copy. I chose to include the integrity attribute on the fallback copy as well.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="o">&lt;</span><span class="nx">script</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="nb">window</span><span class="p">.</span><span class="nx">jQuery</span> <span class="o">||</span>
+</span><span class='line'>    <span class="nb">document</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s1">&#39;&lt;script src=&quot;/javascripts/libs/jquery/jquery-2.0.3.min.js&quot; crossorigin=&quot;anonymous&quot; integrity=&quot;sha256-ruuHogwePywKZ7bI1vHGGs7ScbBLhkNUcSSeRjhSUko=&quot;&gt;\x3C/script&gt;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Application Specific Files</h3>
+
+<p>For application specific javascript files, you need to generate the hash everytime you modify it. You could look at integrating this with your build pipeline to make it seamless. You can use the OpenSSL command line tool as shown above to generate the hash during your application build process.</p>
+
+<h3>Inline JavaScript</h3>
+
+<p><em>The <a href="https://html.spec.whatwg.org/multipage/scripting.html#attr-script-integrity">integrity</a> attribute must not be specified when embedding a module script or when the src attribute is not specified.</em> This means that SRI cannot be used for inline javascript. Even though inline javascript should be avoided, there still are scenarios where you might use that or have dynamically generated javascript. In these cases, we can use <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src">nonce</a> attribute on script tag and whitelist that nonce in the <a href="https://rahulpnath.com/blog/http-content-security-policy-csp/">CSP Headers</a>.</p>
+
+<blockquote><p><strong>nonce-&lt;base64-value></strong> <br/>
+<em>A whitelist for specific inline scripts using a cryptographic nonce (number used once). The server must generate a unique nonce value each time it transmits a policy. It is critical to provide an unguessable nonce, as bypassing a resource’s policy is otherwise trivial. See unsafe inline script for example. Specifying nonce makes a modern browser ignore &lsquo;unsafe-inline&rsquo; which could still be set for older browsers without nonce support.</em></p></blockquote>
+
+<p>For the jquery fallback above we need a nonce attribute since this is loaded inline.</p>
+
+<figure class='code'><figcaption><span>Nonce attribute</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="o">&lt;</span><span class="nx">script</span> <span class="nx">nonce</span><span class="o">=</span><span class="s2">&quot;anF1ZXJ5ZmFsbGJhY2s=&quot;</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="nb">window</span><span class="p">.</span><span class="nx">jQuery</span> <span class="o">||</span>
+</span><span class='line'>    <span class="nb">document</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s1">&#39;&lt;script src=&quot;/javascripts/libs/jquery/jquery-2.0.3.min.js&quot; crossorigin=&quot;anonymous&quot; integrity=&quot;sha256-ruuHogwePywKZ7bI1vHGGs7ScbBLhkNUcSSeRjhSUko=&quot;&gt;\x3C/script&gt;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can then specify this nonce on the CSP headers for the script-src. The nonce value can be anything that is base64 encoded.</p>
+
+<figure class='code'><figcaption><span>Web.config CSP header</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;add</span>
+</span><span class='line'>  <span class="na">name=</span><span class="s">&quot;Content-Security-Policy&quot;</span>
+</span><span class='line'>  <span class="na">value=</span><span class="s">&quot;default-src</span> <span class="err">&#39;self&#39;;script-src</span> <span class="err">c.disquscdn.com</span> <span class="err">&#39;self&#39;</span> <span class="err">&#39;</span><span class="na">nonce-anF1ZXJ5ZmFsbGJhY2s=</span><span class="s">&#39; &#39;</span><span class="err">nonce-ZGlzcXVzc2NyaXB0&#39;;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using nonce allows us to get away with having an inline script. However, this should be avoided if possible. As you may have noticed, by having a nonce on the attribute does not validate the script contents of the associated tag. It executes anything that is within that tag. So if you have dynamic content within the script block, this can be used to your disadvantage by attackers. So use it only if it&rsquo;s absolutely necessary. However, having the nonce attribute for those cases is better so that you can limit inline javascript to those specific script tags.</p>
+
+<h3>Browser Support</h3>
+
+<p><a href="https://caniuse.com/#search=sri">Check if</a> your browser supports Subresource Integrity. Compared to a while back most of the browsers now support SRI.</p>
+
+<p><a href="https://caniuse.com/#search=sri">
+  <img src="http://rahulpnath.com/images/sri_browser.png" alt="SRI Browser Support" class="center" />
+</a></p>
+
+<p>Using SRI, we can make sure that the dependencies that we have are loaded are as expected and not modified in flight or at source by a malicious attacker. There is always a risk that you need to be willing to take when including external dependencies as they could be already having a threat embedded at the time of hash generation. For popular libraries, this is less likely. For those unpopular ones, it&rsquo;s always a good idea to take a quick look at the code to ensure it&rsquo;s not malicious. Using some tools to assist you with this is also a good idea, which we will look into in a separate article.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions]]></title>
@@ -407,9 +508,9 @@ Just because you have an A+ Rating (or a good rating) does not mean that your si
 <p>In this post will walk through some of the headers that I added to this blog. I am planning to write this as a multi-series article, with each article specific to a header/other feature, why I added it and how I went about adding and verifying it.</p>
 
 <ul>
-<li><a href="https://rahulpnath.com/blog/http-strict-transport-security-sts-or-hsts">HTTP Strict-Transport-Security (HSTS/STS)</a></li>
+<li><a href="http://rahulpnath.com/blog/http-strict-transport-security-sts-or-hsts">HTTP Strict-Transport-Security (HSTS/STS)</a></li>
 <li><a href="http://rahulpnath.com/blog/http-content-security-policy-csp/">Content-Security-Policy (CSP)</a></li>
-<li>Subresource Integrity</li>
+<li><a href="http://rahulpnath.com/blog/subresource-integrity-sri/">Subresource Integrity</a></li>
 <li>Development Tools</li>
 </ul>
 
@@ -1267,38 +1368,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 
 
 <p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Text Editing - Convert Text Casing]]></title>
-    <link href="http://rahulpnath.com/blog/text-editing-convert-text-casing/"/>
-    <updated>2018-01-02T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/text-editing-convert-text-casing</id>
-    <content type="html"><![CDATA[<p>Often when working with SQL queries, I come across the need to capitalize SQL keywords across in a large query. For, e.g., to capitalize SELECT, WHERE, FROM clauses in an SQL query. When it is a large query/stored procedure, it is faster done using some text editor. Sublime Text is my preferred editor for such kind of text manipulations.</p>
-
-<p>Sublime Text Editor comes with a few built-in text casing converters that we can use, to convert text from one case to another. Using the <a href="https://en.wikipedia.org/wiki/Simultaneous_editing">simultaneous editing</a> feature, we can combine it with case conversion and manipulate large documents easily.</p>
-
-<p><img src="http://rahulpnath.com/images/textediting_convert_case.png" alt="Convert case options in sublime text" ></p>
-
-<p>For example, let&rsquo;s say I have this below SQL query. As you can notice the SELECT and FROM keywords are cased differently across the query.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table1</span>
-</span><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table2</span>
-</span><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table3</span>
-</span><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">Table4</span>
-</span><span class='line'><span class="k">Select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table5</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To standardize this (preferably capitalize all), highlight one of the &lsquo;select&rsquo; keywords and highlight all occurrences of the keyword (ALT + F3). Once all occurrences of &lsquo;select&rsquo; is highlighted, bring up the <a href="http://docs.sublimetext.info/en/latest/extensibility/command_palette.html">command pallete</a> (CTRL + SHIFT + P on windows) and search for &lsquo;Convert Case&rsquo;. From the options listed choose the case that you want to convert. All selected occurrences of the keyword will now be in the selected case.</p>
-
-<p>Hope this helps you when you have a lot of text case manipulations to be done.</p>
 ]]></content>
   </entry>
   

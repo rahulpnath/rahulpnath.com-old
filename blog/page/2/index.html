@@ -181,6 +181,168 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-15T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 15<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/azure-key-vault-as-a-connected-service-in-visual-studio-2017/" itemprop="url">Azure Key Vault As A Connected Service in Visual Studio 2017</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Visual Studio (VS) now supports adding <a href="https://rahulpnath.com/blog/category/azure-key-vault/">Azure Key Vault</a> as a <a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service">Connected Service</a>, for Web Projects ( ASP.NET Core or any ASP.NET project). Enabling this from the Connected Service makes it easier for you to get started with Azure Key Vault. Below are the prerequisites to use the Connected Service feature</p>
+
+<blockquote><p><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-add-connected-service#prerequisites">Prerequisites</a></p>
+
+<ul>
+<li>An Azure subscription. If you do not have one, you can sign up for a free account.</li>
+<li>Visual Studio 2017 version 15.7 with the Web Development workload installed. Download it now.</li>
+<li>An ASP.NET 4.7.1 or ASP.NET Core 2.0 web project open.</li>
+</ul>
+</blockquote>
+
+<p><img class =" center" src="/images/keyVault_connectedService.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>When selecting &lsquo;Secure Secrets with Azure Key Vault&rsquo; option from the list of Connected Services provided it takes you to a new page within Visual Studio with your Azure Subscription associated with Visual Studio Account and gives you the ability to add a Key Vault to it. VS does generate some defaults for the Vault Name, Resource Group, Location and the Pricing Tier which you can edit as per your requirement. Once you confirm to the <em>Add</em> the Key Vault, VS provisions the Key Vault with the selected configuration and modifies some things in your project.</p>
+
+<ul>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-what-happened">Changes Made to your ASP.NET project</a></li>
+<li><a href="https://docs.microsoft.com/en-us/azure/key-vault/vs-key-vault-aspnet-core-what-happened">Changes made to your ASP.NET Core project</a></li>
+</ul>
+
+
+<p><img class =" center" src="/images/keyVault_connectedService_createKeyVault.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<p>In short, VS adds</p>
+
+<ul>
+<li>a bunch of NuGet packages to access Azure Key Vault</li>
+<li>Adds in the Keyvault Url details</li>
+<li>In ASP.NET Web project VS modifies the configuration file to add in the AzureKeyVaultConfigBuilder as shown below.</li>
+</ul>
+
+
+<figure class='code'><figcaption><span>Web.config</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;configuration&gt;</span>
+</span><span class='line'><span class="nt">&lt;configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;section</span>
+</span><span class='line'>      <span class="na">name=</span><span class="s">&quot;configBuilders&quot;</span>
+</span><span class='line'>      <span class="na">type=</span><span class="s">&quot;System.Configuration.ConfigurationBuildersSection, System.Configuration, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a&quot;</span>
+</span><span class='line'>      <span class="na">restartOnExternalChanges=</span><span class="s">&quot;false&quot;</span>
+</span><span class='line'>      <span class="na">requirePermission=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configSections&gt;</span>
+</span><span class='line'><span class="nt">&lt;configBuilders&gt;</span>
+</span><span class='line'><span class="nt">&lt;builders&gt;</span>
+</span><span class='line'><span class="nt">&lt;add</span>
+</span><span class='line'>      <span class="na">name=</span><span class="s">&quot;AzureKeyVault&quot;</span>
+</span><span class='line'>      <span class="na">vaultName=</span><span class="s">&quot;webapplication-47-dev-kv&quot;</span>
+</span><span class='line'>      <span class="na">type=</span><span class="s">&quot;Microsoft.Configuration.ConfigurationBuilders.AzureKeyVaultConfigBuilder, Microsoft.Configuration.ConfigurationBuilders.Azure, Version=1.0.0.0, Culture=neutral&quot;</span>
+</span><span class='line'>      <span class="na">vaultUri=</span><span class="s">&quot;https://WebApplication-47-dev-kv.vault.azure.net&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/builders&gt;</span>
+</span><span class='line'><span class="nt">&lt;/configBuilders&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>To start using Azure Key Vault from your application we first need to add some Secrets to the Key Vault created by Visual Studio. You can add a secret to the portal using multiple ways, the most straightforward being <a href="https://rahulpnath.com/blog/managing-key-vault-through-azure-portal/">using the Azure Portal</a>. Once you add the Secret to the Key Vault, update the configuration file with the Secret names. Below is how you would do for an ASP.NET Web Project. (<em>MySecret</em> and <em>VersionedSecret</em> keys)</p>
+
+<div class="alert alert-warning">
+Make sure to add <b>configBuilders=&#8221;AzureKeyVault&#8221;</b> to the appSettings tag. This tells the Configuraion Manager to use the configured AzureKeyVaultConfigBuilder
+</div>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;appSettings</span> <span class="na">configBuilders=</span><span class="s">&quot;AzureKeyVault&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;webpages:Version&quot;</span> <span class="na">value=</span><span class="s">&quot;3.0.0.0&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;webpages:Enabled&quot;</span> <span class="na">value=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;ClientValidationEnabled&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;UnobtrusiveJavaScriptEnabled&quot;</span> <span class="na">value=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;MySecret&quot;</span> <span class="na">value=</span><span class="s">&quot;dummy1&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">&quot;VersionedSecret&quot;</span> <span class="na">value=</span><span class="s">&quot;dummy2&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/appSettings&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The values <em>dummy*</em> are just dummy values and will be overridden at runtime from the Secret Values created in the Key Vault. If the Secret with the corresponding name does not exist in Key Vault, then the <em>dummy</em> values will be used.</p>
+
+<h3>Authentication</h3>
+
+<p>When VS creates the Vault, it adds in the user logged into VS to the Access Policies list. When running the application, the AzureKeyVaultConfigBuilder uses the same details to authenticate with the Key Vault.</p>
+
+<blockquote><p>If you are not logged in as the same user or not logged in at all the provider will not be able to authenticate with the Key Vault and will fallback to use the dummy values in the configuration file. Alternatively you could specify <a href="https://docs.microsoft.com/en-us/azure/key-vault/service-to-service-authentication#connection-string-support">connection option avaiable for AzureServiceTokenProvider</a></p></blockquote>
+
+<p><img class =" center" src="/images/keyVault_connectedService_AccessPolicies.png" alt="Visual Studio, Azure Key Vault Connected Services" /></p>
+
+<h3>Secrets and Versioning</h3>
+
+<p>The <a href="https://github.com/aspnet/MicrosoftConfigurationBuilders/tree/master/src/Azure">AzureKeyVaultConfigBuilder</a> requests to get all the Secrets in the Key Vault at application startup using the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecrets/getsecrets">Secrets endoint</a>. This call returns all the Secrets in the Key Vault. For whatever keys in the AppSettings that has a match with a Secret in the vault, a request is made to get the <a href="https://docs.microsoft.com/en-us/rest/api/keyvault/getsecret/getsecret">Secret details</a>, which returns the actual Secret value for the keys. Below are the traces of the calls going out captured using <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p><img class =" center" src="/images/keyVault_connectedService_requests.png" alt="AzureKeyVaultConfigBuilder Fiddler Traces " /></p>
+
+<p>It looks like at the moment the AzureKeyVaultConfigBuilder get only the latest version of the Secrets. As you can tell from one of my Secret names (VersionedSecret), I have created two versions for the Secret, and the config builder picks the latest version. I don&rsquo;t see a way right now whereby I can specify a specific secret version.</p>
+
+<p>The Visual Studio Connected Services makes it easy to get started with Azure Key Vault and move your secrets to a more secure store, than having it around in your <a href="https://rahulpnath.com/blog/keeping-sensitive-configuration-data-out-of-source-control/">configuration files</a>.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-04T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 4<sup>th</sup>, 2018</time>
         
 
@@ -848,76 +1010,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-01-02T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 2<sup>nd</sup>, 2018</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/text-editing-convert-text-casing/" itemprop="url">Tip of the Week: Text Editing - Convert Text Casing</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Often when working with SQL queries, I come across the need to capitalize SQL keywords across in a large query. For, e.g., to capitalize SELECT, WHERE, FROM clauses in an SQL query. When it is a large query/stored procedure, it is faster done using some text editor. Sublime Text is my preferred editor for such kind of text manipulations.</p>
-
-<p>Sublime Text Editor comes with a few built-in text casing converters that we can use, to convert text from one case to another. Using the <a href="https://en.wikipedia.org/wiki/Simultaneous_editing">simultaneous editing</a> feature, we can combine it with case conversion and manipulate large documents easily.</p>
-
-<p><img src="/images/textediting_convert_case.png" alt="Convert case options in sublime text" ></p>
-
-<p>For example, let&rsquo;s say I have this below SQL query. As you can notice the SELECT and FROM keywords are cased differently across the query.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table1</span>
-</span><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table2</span>
-</span><span class='line'><span class="k">select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table3</span>
-</span><span class='line'><span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">Table4</span>
-</span><span class='line'><span class="k">Select</span> <span class="o">*</span> <span class="k">From</span> <span class="n">Table5</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>To standardize this (preferably capitalize all), highlight one of the &lsquo;select&rsquo; keywords and highlight all occurrences of the keyword (ALT + F3). Once all occurrences of &lsquo;select&rsquo; is highlighted, bring up the <a href="http://docs.sublimetext.info/en/latest/extensibility/command_palette.html">command pallete</a> (CTRL + SHIFT + P on windows) and search for &lsquo;Convert Case&rsquo;. From the options listed choose the case that you want to convert. All selected occurrences of the keyword will now be in the selected case.</p>
-
-<p>Hope this helps you when you have a lot of text case manipulations to be done.</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -941,6 +1033,8 @@ If you are still not convinced let me give it one last shot to get you on board.
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/subresource-integrity-sri/">Subresource Integrity (SRI)</a>
+    
     <a class="list-group-item " href="/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/">Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions</a>
     
     <a class="list-group-item " href="/blog/http-content-security-policy-csp/">HTTP Content Security Policy (CSP)</a>
@@ -948,8 +1042,6 @@ If you are still not convinced let me give it one last shot to get you on board.
     <a class="list-group-item " href="/blog/http-strict-transport-security-sts-or-hsts/">HTTP Strict Transport Security (STS or HSTS)</a>
     
     <a class="list-group-item " href="/blog/ok-i-have-got-https-what-next/">Ok I Have Got HTTPS! What Next?</a>
-    
-    <a class="list-group-item " href="/blog/kumon-books-creative-workbooks/">Tip of the Week: Kumon Books - Creative Workbooks</a>
     
   </div>
 </section>
