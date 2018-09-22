@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-09-21T21:23:41+00:00</updated>
+  <updated>2018-09-22T00:02:18+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Working Effectively Under Constraints]]></title>
+    <link href="http://rahulpnath.com/blog/working-effectively-under-constraints/"/>
+    <updated>2018-09-22T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/working-effectively-under-constraints</id>
+    <content type="html"><![CDATA[<p>At times you might be working in environments where there are a lot of restrictions on the tools that you can use, the process that you need to follow, etc. Under these circumstances, it is essential that we stick to some core and fundamental principles and practices that we as an industry have adopted. We need to make sure that we have that in place no matter what the restrictions imposed are. Below are a few of the restrictions that I along with my team had to face at one of the clients and what we did to keep ourselves on top of it and still deliver at a higher speed.</p>
+
+<p><img src="http://rahulpnath.com/images/working_constraints.png" alt="Working under Constraints." title="Working under Constraints. Image Source - https://www.saba.com/blog/how-to-master-employee-engagement-constraints"></p>
+
+<blockquote><p><em>The issues discussed might or might not immediately relate to you, the important thing is your attitude towards such issues and finding ways around your constraints, keeping yourself productive on the long run.</em></p></blockquote>
+
+<h3>No Build Deploy Pipeline</h3>
+
+<p>When I joined the project, it amazed that we were still building/packaging the application from a local developer system and manually deploying this to the various environments (Dev, Test, UAT, and PROD).</p>
+
+<blockquote><p><em>Whenever a release was to be made one of the developers was to pause his current work, switch to the appropriate branch for the release, make sure he had the latest code base, build with the correct configuration to generate a package.</em></p></blockquote>
+
+<p>This might sound an outdated practice (as it did to me) but here I am at a client, in the year 2018 and it&rsquo;s still happening. What surprised me, even more, was that the team did have access to an <a href="https://octopus.com/">Octopus</a> server (backed by a <a href="https://jenkins.io/">Jenkins</a> build server) but since the <strong>deployment server did not have access to UAT/PROD servers</strong> they chose not to use it. You bet this was the first thing I was keen on fixing, as generating a release package from my local system would be the last thing that I want to do.</p>
+
+<p>After a quick chat with the team, we decided on the below.</p>
+
+<ul>
+<li><p><strong>Set up build/deploy pipeline up to Test environment.</strong> This would allow seamless integration while we are developing features and get it out for testing. Since we had access till the Test environment, this was hardly an hours work to get it all working.</p></li>
+<li><p>Since we did not have access to UAT/PROD and the process required us to hand over a deployment package to the concerned team, we <strong>set up a &lsquo;Packaging Project&rsquo; in Octopus.</strong> This project basically unzips the selected build package into our Dev environment server, applies the configuration transforms and zips up the folder into a deployment package. With this, we are now able to create a deployment package for any given build and for any environment. We are also having discussions to enable access to UAT/PROD servers for the deployment servers so that we can deploy automatically, all the way to production.</p></li>
+</ul>
+
+
+<p>No longer was the process dependent on a developer or a developer machine and was completely automated. For those reading this and in a similar situation but who does not have access to a build/deploy system like Jenkins/Octopus I would basically set up a simple script to pull down the source given a commit hash/branch/tfs label and perform a build and package independent of the working directory of the developer. This script could run on a shared server (if you have access to one) or worst on a developer&rsquo;s machine/VM. The fundamental thing that we are trying to achieve is to decouple it from the current working folder on a developer machine and the manual steps involved in generating a package. As long as you have an automated way to create a package irrespective of what tools/systems you use we should be safe and sound.</p>
+
+<h3>Out of Sync SQL and Code Artifacts</h3>
+
+<p>The application is heavily dependent on Stored Procedures for pulling/pushing data out of the SQL Server Database. Yes, you heard it right, Stored Procedures and ones with business logic in them, which is what makes it actually worse. Looking at how the Stored Procedures were maintained I could see that the team started off with good intentions using <a href="https://dbup.readthedocs.io/en/latest/">DbUp</a> but soon moved away from it. When I joined the process was to share SQL artifacts as attachments in the <a href="https://www.atlassian.com/software/jira">Jira</a> story/bug. The Db Administrator (DBA) would then pull that out and manage them separately in a source control repository that was not the same as the application code base.</p>
+
+<p>There was not much information on why this was the case, but the primary reason that they moved away from DbUp was that there was no visibility of the SQL scripts when running updates as it was an executable file that was the output of the DbUp project. Also, there were poor development/deployment practices that led to the ad-hoc execution of scripts in environments without actually updating the source control. This soon put the DBA out of control, and the only way to gain control back was to maintain it separately.</p>
+
+<p>Again we decided to have a quick chat with the team along with the DBA on how to improve the current process, as it was getting harder to track application package versions and the associated scripts to go with that package.</p>
+
+<ul>
+<li><p>DbUp by default embeds the SQL artifacts into the executable which removes all visibility into the actual scripts. However, this behaviour is configurable using <a href="https://dbup.readthedocs.io/en/latest/more-info/script-providers/">ScriptProviders</a>. By using the <strong>FileSystemScriptProvider, we can specify the folder from which to load the SQL scripts</strong>. Configuring the msbuild to copy out all the folder files to the output and including them into the final package was an easy change. This provided the DBA with the actual SQL artifacts, and he could review them quickly. We also started a <a href="https://rahulpnath.com/blog/code-review/">code review</a> process and began including the DBA for any changes related to SQL artifacts. This gave even more visibility to the DBA and helped catch issues right at the time of development.</p></li>
+<li><p>With automated build/deploy till Test environment in place, we <strong>no longer had to make ad-hoc changes</strong> to the databases, and everything was pushed through the source control as it was faster and more comfortable.</p></li>
+</ul>
+
+
+<p>With this few tweaks we were now in a much better state, and there was a one to one trackability between source code and SQL artifacts. It all lived as part of one package, traceable all the way to the source code commit tag auto-generated by the build system.</p>
+
+<h3>Not Invented Here Syndrome</h3>
+
+<p>With the kind of restrictions you have seen till now, you can guess the approach towards third party services and off-the-shelf products. Most of the things are still done in-house (including trying to replicate a service bus). The problem with this approach is that there is a limit as to which you can go doing that after which you probably lose out on your team or the code takes over you where you just cannot maintain it. When starting out on a new project and when the code base is still small building your own mechanisms might seem to work well. But once past that point, you no longer want to continue down the path but invest in industry proven tools. These include logging servers, service-bus/queues (if you need one), email services (especially if you want to track and do statistics on top of the emails send out).</p>
+
+<p>Biggest challenge introducing this is mostly not cost related (as there are a lot of really affordable services for every business)it&rsquo;s mostly the fear of unknown and lack of interest to venture out into unfamiliar territory. The reasons might vary for you, but try to understand the core reason that is hindering the change.</p>
+
+<blockquote><p><em>One technique that worked to get over the fear of the unknown was to introduce this slowly into the system, one at a time, giving enough time for people to get used to the change.</em></p></blockquote>
+
+<p><a href="https://getseq.net/">Seq</a> was one of the first things that we had proposed and long waiting in the wish list. The team was using <a href="https://serilog.net/">Serilog</a> to log, and all the logs were stored in SQL table making it really hard to query and monitor the logs. The infrastructure team did not want to install Seq as it was all new to them and were not sure about the additional task for managing a Seq instance. So we suggested to them to just have it on the development server and to get familiar with the application first. After a couple of days, the business was seeing a benefit with increased visibility into the logs and infrastructure team was also happy with the increased visibility into the logs. Even before a week, they were happy to install one for the test environment as well. At the time of writing we are looking at getting a Seq instance on the UAT server and soon to have a production instance as well. Getting the interested stakeholders to have a feel of the application and slowly introducing the change is a great way to get buy-in.</p>
+
+<p>Now we are trying to push for a service bus!</p>
+
+<h3>Build Server without NuGet access</h3>
+
+<p>The build server we were using was in-house hosted, and the box that it ran did not have internet access. This meant that you cannot have any external package dependencies that can be pulled at build time. We chose to include the package references along with the source code, which is anyways what <a href="https://rahulpnath.com/blog/checking-in-package-dependencies-into-source-control/">I tend to prefer more</a>. All our third-party libraries were pushed along with the source code repository, so the build machine had all the required dependencies and did not have to have internet connectivity to make a build.</p>
+
+<p>Those are just a subset of the issues that we had to run into and bet you there were so many smaller ones. At times problems are not technical in nature, but more about communication and how effectively you are able to get all the people involved to get along with each other.</p>
+
+<blockquote><p><em>Any journey to advancement is about valuing the people around you, understanding them and taking them along with the change. It&rsquo;s a journey that the team needs to make together and not a solo one.</em></p></blockquote>
+
+<p>Different people have different experiences, pain points, concerns and targets to check off. So as a team you need to understand what works for everyone and come to a collective agreement. Just getting all of the concerned parties into a room and having a healthy discussion (mainly by not being prescriptive but descriptive of the issues that you are facing) solves most of the problems.</p>
+
+<p>Do you work in a similar environment? What challenges do you face at work? Sound off in the comments!</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Subresource Integrity (SRI)]]></title>
@@ -1316,58 +1387,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 <p><img alt="Floriade Tulip Festival, Canberra" class="center" src="http://rahulpnath.com/images/canberra_tulip_festival.jpg" /></p>
 
 <p>Nelson Bay, Hunter Valley, Orange, Port Stephens etc are some of the places that are on our list but could not make it yet. I moved over to Brisbane end of last year and not sure when I will have another chance to explore more around Sydney. But I have new places to look forward to now - Exploring Brisbane!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Setting up Build and Deploy Pipeline for a .NET Core Console Application]]></title>
-    <link href="http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application/"/>
-    <updated>2018-01-03T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/build-and-deploy-a-net-core-console-application</id>
-    <content type="html"><![CDATA[<p>I was given a console application written in .NET Core 2.0 and asked to set up a continuous deployment pipeline using <a href="https://www.jetbrains.com/teamcity/">TeamCity</a> and <a href="https://octopus.com/">Octopus Deploy</a>. I struggled a bit with some parts, so thought it&rsquo;s worth putting together a post on how I went about it. If you have a better or different way of doing things, please shout out in the comments below.</p>
-
-<p>At the end of this post, we will have a console application that is automatically deployed to a server and running, anytime a change is pushed to the associated source control repository.</p>
-
-<h3>Setting Up TeamCity</h3>
-
-<p>Create a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Projects">New Project</a> and add a <a href="https://confluence.jetbrains.com/display/TCD10/Creating+and+Editing+Build+Configurations">new build configuration</a> just like you would for any other project. Since the application is in .NET Core, install the <a href="https://github.com/JetBrains/teamcity-dotnet-plugin">.NET CLI plugin</a> on the TeamCity server.</p>
-
-<p><img src="http://rahulpnath.com/images/net_core_teamcity_build_steps.png" alt="Build Steps to build .Net Core"></p>
-
-<p>The first three build steps use the .NET CLI to <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-restore?tabs=netcore2x">Restore</a>, <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-build?tabs=netcore2x">Build</a> and <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-publish?tabs=netcore2x">Publish</a> the application. Thee three steps restore the dependencies of the project, builds it and publishes all the relevant DLL&rsquo;s into the publish folder.</p>
-
-<p>The published application now needs to be packaged for deployment. In my case, deployments are managed using Octopus Deploy. For .NET projects, the preferred way of packaging for Octopus is using <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octopack">Octopack</a>. However, OctoPack does not support .NET Core projects. The recommendation is to either use <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-pack?tabs=netcore2x">dotnet pack</a> or <a href="https://octopus.com/docs/packaging-applications/creating-packages/nuget-packages/using-octo.exe">Octo.exe pack</a>. Using the latter I have set up a Command Line build step to pack the contents of the published folder into a zip (.nupkg) file.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>octo pack --id ApplicationName --version %build.number% --basePath published-app
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The NuGet package is published to the NuGet server used by Octopus. Using the <a href="https://octopus.com/docs/api-and-integration/teamcity">Octopus Deploy: Create Release</a> build step, a new release is triggered in Octopus Deploy.</p>
-
-<h3>Setting Up Octopus Deploy</h3>
-
-<p>Create a <a href="https://octopus.com/docs/deployment-process/projects">new project</a> in Octopus Deploy to manage deployments. Under the Process tab, I have two <a href="https://octopus.com/docs/deployment-process/steps">steps</a> - one to deploy the Package and another to start the application.</p>
-
-<p><img src="http://rahulpnath.com/images/net_core_octopus_deploy_process.png" alt="Octopus Deploy Process Steps"></p>
-
-<p>For the Deploy Package step I have enabled Custom Deployment Scripts and <a href="https://octopus.com/docs/deploying-applications/deploying-asp.net-core-web-applications/json-configuration-variables-feature">JSON Configuration variables</a>. Under the pre-deployment script, I stop any existing .NET applications. If multiple .NET applications are running on the box, select your application explicitly.</p>
-
-<figure class='code'><figcaption><span>Pre Deployment Script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Stop-Process</span> <span class="n">-Name</span> <span class="n">dotnet</span> <span class="n">-Force</span> <span class="n">-ErrorAction</span> <span class="n">SilentlyContinue</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Once the package is deployed, the custom script starts up the application.</p>
-
-<figure class='code'><figcaption><span>Run App</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="n">cd</span> <span class="n">C</span><span class="err">:</span><span class="p">\</span><span class="n">DeploymentFolder</span>
-</span><span class='line'><span class="nb">Start-Process</span> <span class="n">dotnet</span> <span class="p">.\</span><span class="n">ApplicationName</span><span class="p">.</span><span class="n">dll</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
 ]]></content>
   </entry>
   
