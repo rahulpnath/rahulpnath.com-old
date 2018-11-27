@@ -181,6 +181,125 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 3<sup>rd</sup>, 2017</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>, <a class='category' href='/blog/category/thoughts/'>thoughts</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/code-review/" itemprop="url">Making Code Reviews Effective</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Code review is an essential practice of the development life cycle. It helps improve the code quality, unify team practices, share knowledge, mentoring etc. over a longer period of time. It helps find mistakes that are overlooked while developing and helps improve the overall quality of the software. This helps accelerate the deployment process as changes are more likely to pass through testing.</p>
+
+<blockquote><p><em>Peer review—an activity in which people other than the author of a software deliverable examine it for defects and improvement opportunities—is one of the most powerful software quality tools available. Peer review methods include inspections, walkthroughs, peer desk checks, and other similar activities.</em></p>
+
+<p>-<a href="http://www.processimpact.com/articles/humanizing_reviews.html"><strong> Karl E. Wiegers</strong></a></p></blockquote>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/codereview_friendly.png"/></p>
+
+<p>Below are some of my thoughts on the various aspects involved in a Code Review.</p>
+
+<h3>Sending a Review</h3>
+
+<p>Before sending for a code review make sure that only the necessary files for the change are added in the review. Often it happens that when we write code there are remains of things that we tried and discarded, like new files, packages, changes to project metadata files etc. Double check and make sure that the changes are what are just required. Ensure that the code builds successfully. If there are any build scripts that your team uses, make sure that those are run and passes successfully. When submitting a code review make sure that you reference the associated work item - be it a bug, story, task etc. Add <a href="http://www.rahulpnath.com/blog/category/testing/">tests</a>. Add in a description detailing the change and any reasoning behind it to add in more context. This will help the reviewer understand the code much faster. Add in relevant people for the review and submit a request. Check out <a href="http://blog.ploeh.dk/2015/01/15/10-tips-for-better-pull-requests/">some great tips for a better-looking review request</a>.</p>
+
+<h3>Handling Review Comments</h3>
+
+<p>One of the key things in a code review and one that&rsquo;s often missed and drives people frustrated is that they try to take it all in.</p>
+
+<blockquote><p><em>Not all comments in a review needs to be addressed</em></p></blockquote>
+
+<p>If a review comment points out a mistake in logic or business functionality or conflict with other code you need to fix them, unless you think the reviewer is wrong. But for suggestions on how better to structure your code or refactor into a more readable code, naming, style formatting etc needs addressing only if you feel they are adding value. But make sure to communicate well with the reviewer and reach an agreement.</p>
+
+<p>Look at comments as a way to improve your code and help the team and business. Go in with a positive attitude. When seen as an overhead or an extra ritual, code reviews can be really painful and depressing. Make a note of commonly occurring comments or mistakes you are making and try to handle them at the time of development. Rather than mechanically going through the code review and making changes to the code, internalize on the change and try to see the benefits of a change. This helps to incorporate such suggestions in future reviews as well.</p>
+
+<h3>Responding to a Code Review</h3>
+
+<p>I usually find myself following the below three variations when coming to replying to a code review request</p>
+
+<ul>
+<li><p><strong>Comment and Wait</strong>
+I leave comments on the review but do not approve. This means that I would like to have those comments actioned and a new pull request be raised for that. This often falls into those cases where there are logic or business issues.</p></li>
+<li><p><strong>Comment and Approve</strong>
+I leave comments (if any) but also approve the code review. This means that the code <em>Looks Good To Me</em> (LGTM), but would be better with the comments addressed. These comments generally relate to better formatting, improved on naming or refactoring readability.</p></li>
+<li><p><strong>Add Relevant People</strong>
+Add in reviewers that I feel are missed and relevant for the part of the code that is changed.  This I do irrespective of the above two options if I feel someone else needs to take a look. In these cases, if it was my review that gets added in an extra reviewer I would wait to get a sign off from that person too.</p></li>
+</ul>
+
+
+<h4><strong>Business Aspect</strong></h4>
+
+<p>When reviewing code look first for the functionality that the code change addresses. It is possible that we get carried away just by the technical aspect of code and ignore the business aspect altogether. If you have <a href="https://www.leadingagile.com/2014/09/acceptance-criteria/">Acceptance Criteria</a> defined for tasks then it&rsquo;s worth reading it before doing the code review to get more context.</p>
+
+<h4><strong>Technical aspect</strong></h4>
+
+<p>Once the business aspect is covered have a look at the technical aspect of the change. Whether the code is decoupled, has the correct abstractions, follows team conventions (best if automated). Check for commonly occurring problems like improper usage of dispose pattern, magic numbers, large methods, all code flow paths not handled etc. See if the new code fits into the overall architecture of the application. Look for tests and ensure the validity of the test data. Look out for <a href="https://en.wikipedia.org/wiki/Overengineering">overengineering</a> or <a href="https://en.wikipedia.org/wiki/Not_invented_here">not invented here syndrome</a>.</p>
+
+<h4><strong>Aesthetic</strong></h4>
+
+<p>Code formatting is as important as the code itself. Code is read more often than written, so we should try and optimize code for reading. I would prefer to automate this as far as possible so that people don&rsquo;t need to look for these in reviews. I feel that is often time not well spent and also tends to lead to longer discussions (<a href="https://blog.codinghorror.com/death-to-the-space-infidels/">tabs vs Spaces</a>). When it is part of the build and automated people seldom complain about it and in a very short period of time, the formatting rules become second nature to them. If you currently do not have automated checks you can gradually <a href="http://www.rahulpnath.com/blog/introducing-code-formatting-into-a-large-codebase/">introduce formatting checks into your builds for a large code base</a>.</p>
+
+<blockquote><p><em>Don&rsquo;t go by &lsquo;It&rsquo;s done like that everywhere so I will keep it the same&rsquo;</em></p></blockquote>
+
+<p>There might be a lot of practices that is being followed over the period of time. But if you find any of the practices making it harder on a day-to-day functioning of the team, take a step towards changing the practice. I am not a fan of &lsquo;<em>clean it all at once</em>&rsquo; style of approach. I prefer to gradually introduce the change for two reasons</p>
+
+<ul>
+<li>No need to stop or allocate people to repeatedly do the same task of cleaning it everywhere. (Unless there is a very strong business justification to it)</li>
+<li>You get gradually introduced to the new way of doing things. This gives time to reflect and compare with the old way. You have time to correct yourself if the new approach is not fitting well either or causing more trouble than previous.</li>
+</ul>
+
+
+<h3>Handling Conflicts</h3>
+
+<p><img class="center" alt="Posts per month - 2016" src="/images/codereview_wtf.png"/></p>
+
+<p>Foster environments where you don&rsquo;t curb discussions or other people&rsquo;s ideas but encourage everyone to actively participate and throw around even the stupidest of an idea.</p>
+
+<blockquote><p><em>Psychological safety is a “shared belief, held by members of a team, that the group is a safe place for taking risks.” It is “a sense of confidence that the team will not embarrass, reject, or punish someone for speaking up,” Edmondson wrote in a 1999 paper. “It describes a team climate characterized by interpersonal trust and mutual respect in which people are comfortable being themselves.</em></p>
+
+<p><a href="https://www.linkedin.com/pulse/what-google-learned-from-its-quest-build-perfect-team-charles-duhigg"><strong>- Charles Duhigg</strong>, <em>What Google Learned From Its Quest to Build the Perfect Team</em></a></p></blockquote>
+
+<p>Code reviews should also be seen as a way to incorporate better practices from fellow developers and as a learning mechanism. Don&rsquo;t take comments personal, but look at it for what they are. When you have a conflicting opinion you can reply to the comment with your thoughts and cross check with the reviewer. Rarely it can happen that you have conflicting opinions on code review comments and you are not able to solve it among the people involved.  Walk up to the person (if you are co-located) or have a conversation over your teams messaging application. But make sure that it stays healthy. In case the discussion is not going the intended way you can involve senior team members or other fellow team members to seek their opinions too. If such kinds of conflicts are happening more often then the team needs to analyze the nature of review comments that these occur on, if it&rsquo;s between specific groups of people or any visible patterns and try to address them.</p>
+
+<p>When taken in isolation any practices that a team does take time. So disregard any activity just because it adds more time to your process. When seen as part of the overall development cycle and the benefits it brings to the business, Code Reviews proves to be an essential practice. Different teams tend to have different guidelines and checklists for the reviews. Follow what works best for your team. Do you do code reviews as part of your development cycle? What do you feel important in a Code Review? Sound off in the comments!</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2017-01-01T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 1<sup>st</sup>, 2017</time>
         
 
@@ -1399,103 +1518,6 @@ The series of events mentioned below were modified to fit into the conversationa
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-10-24T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Oct 24<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/maintaining-a-blogging-schedule/" itemprop="url">Maintaining a Blogging Schedule</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Consistency is important in blogging. It does not matter if you are bad at writing, have nothing to write or nobody reads your blog. What matters is whether you write on a predictable schedule - once a month, once a week, once a year, one per day etc. If you do not have a schedule you are more likely to fall off from sticking to blogging. I had <a href="http://www.rahulpnath.com/blog/own-your-urls/">written before</a>, I always struggled to write regularly. But since the start of this year, I have been blogging to a schedule (once a week) and have been successful with that. This post looks into some of the challenges that I faced and things that I have incorporated to stick to a schedule.</p>
-
-<p><a href="https://www.flickr.com/photos/12389767@N04/3097124543/">
-<img  alt="Make writing a habit - write daily" src="/images/bloggingSchedule_writedaily.jpg"/>
-</a></p>
-
-<h3>Make Writing a Habit</h3>
-
-<p>Writing posts was hard and I always procrastinated on it. It often took me more than a week to complete a post. There&rsquo;s a saying, <strong><em>If it hurts, do it more often</em></strong> - So to make writing easy I had to write more often.</p>
-
-<blockquote><p><em>I write only when inspiration strikes. Fortunately it strikes every morning at nine o&#8217;clock sharp.</em></p>
-
-<p><em>- <a href="http://www.goodreads.com/quotes/302963-i-write-only-when-inspiration-strikes-fortunately-it-strikes-every">Somerset Maugham</a></em></p></blockquote>
-
-<h4><strong>Generating Topics</strong></h4>
-
-<p>Till a year back I struggled to find topics to blog. I did not find any &lsquo;cool thing&rsquo; that was worth blogging. Not much has changed even now on doing &lsquo;cool things&rsquo;. The only thing that changed was that I decided to write every day - no matter what I do or don&rsquo;t do.</p>
-
-<blockquote><p><em>I have always struggled to find topics to blog, but then I realized all I need is to pay attention to things that I do daily</em></p></blockquote>
-
-<p>A year back I asked <a href="https://simpleprogrammer.com/about-simple-programmer/">John Somnez from SimpleProgrammer</a> the same question.</p>
-
-<p><img  alt="email to John Somnez (SimpleProgrammer) on finding a blogging schedule" src="/images/bloggingSchedule_john_email.png"/></p>
-
-<p>Though I did not get a reply from John, it kept me thinking. Late last year I started a Daily challenge of &lsquo;<em>Generating at least one blog topic a day</em>&rsquo; for a month. I did not have to write anything, just find a topic to blog and add it to a OneNote list. I did this for a month and found that I had enough topics to write on. Since the challenge did not have anything to do with writing, I did not restrict my thoughts. This is when I realized that it is not the lack of topics that I don&rsquo;t blog, but the fear of writing. That&rsquo;s when I started the &lsquo;Write Everyday&rsquo; daily challenge.</p>
-
-<h4><strong>Write Everyday</strong></h4>
-
-<p>This is one of the most important things that I found to be able to write posts regularly - <strong>Write Everyday</strong>. Yes every day, no matter what happens, I write at least one line towards a post. Since the goal is to <em>Write just one line for a blog post</em>, I hardly miss this goal. <a href="http://www.rahulpnath.com/blog/morning_routine/">Keeping the goal small and simple</a> is a trick that I picked from the book Mini Habits and find it useful. You can follow this for anything that you want to make a habit.</p>
-
-<h4><strong>Make it Visible</strong></h4>
-
-<p>Seeing something progressing to completion helps me to get it done faster. I used to write elsewhere and then copy it to my blog and publish it. This did not give me a sense of progression. I now have a <a href="/blog/optimizing-octopress-workflow-for-new-posts/">draft post workflow</a>, integrated with my blogging platform. I can preview this blog along with the draft posts on my laptop. This helps give a sense of progression and also makes the end goal visible.</p>
-
-<blockquote><p><em>Making your goal clear and visible helps you achieve it faster</em></p></blockquote>
-
-<p>I also use this to keep track of new post ideas. Whenever I find a topic to blog, I add it as a draft. I add bullet points to the post whenever I get more thoughts on that topic. Once there are enough points to write about, I work on that post.</p>
-
-<h3>Make Blogging All About Writing</h3>
-
-<p>The last thing that I want is to get stuck with mundane repetitive tasks of publishing a post to get in the way of writing. The more regular I became in writing, I started noticing a lot of repetitive tasks in my blogging workflow. When you do any activity repetitively you notice tasks that you do over and over again. I started modifying my blog engine for my needs and to reduce manual effort.</p>
-
-<h4><strong>Write in Advance</strong></h4>
-
-<p>Having posts ready to be published is helpful as it gives the flexibility to slack a bit when in need. It&rsquo;s a great feeling to have blog posts ready to be published (right now I have posts ready for a month). I modified my blogging engine to support <a href="/blog/automatic_deployment_of_future_posts_with_octopress">publishing posts on future dates</a>. This helps me set publishing dates in the future for posts and it gets automatically deployed on the day. Automating the publishing helped make blogging more about writing. I can forget about it as soon as I complete a post by specifying the date I want it to be published and be rest assured that it will get published.</p>
-
-<h4><strong>Make Writing Accessible</strong></h4>
-
-<p>You never know when you have that free time and want to blog. Maybe it&rsquo;s while traveling, or waiting in a queue or at your work desk. You might be <a href="/blog/staying-productive-offline">offline or connected</a> Making it possible to write from irrespective of the kind of device (laptop, mobile, tablet) and connectivity was key for me. I have my draft posts synchronized through Dropbox and available on all my devices. This helps use all the pockets of time that I get for myself.</p>
-
-<p>These are the things that have helped me pick a schedule and follow it. I have been successful in publishing one post per week for the past 10 months and want to keep at it going forward. Now that I am able to publish regularly, I want to improve the speed at which I write posts. Though I reduced the time from over a week to days, I still find this too long and want to reduce it to a day. Modifying the way images are added, optimized and served is also something that I am trying to optimize currently. Do you <a href="http://www.rahulpnath.com/blog/own-your-urls/">have a blog</a>? If not start one and stick to a schedule that works for you!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1519,6 +1541,8 @@ The series of events mentioned below were modified to fit into the conversationa
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Build Minutes?</a>
+    
     <a class="list-group-item " href="/blog/working-effectively-under-constraints/">Working Effectively Under Constraints</a>
     
     <a class="list-group-item " href="/blog/subresource-integrity-sri/">Subresource Integrity (SRI)</a>
@@ -1526,8 +1550,6 @@ The series of events mentioned below were modified to fit into the conversationa
     <a class="list-group-item " href="/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/">Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions</a>
     
     <a class="list-group-item " href="/blog/http-content-security-policy-csp/">HTTP Content Security Policy (CSP)</a>
-    
-    <a class="list-group-item " href="/blog/http-strict-transport-security-sts-or-hsts/">HTTP Strict Transport Security (STS or HSTS)</a>
     
   </div>
 </section>
