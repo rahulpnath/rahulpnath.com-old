@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Tip of the Week: Azure Pipelines - How to Find Remaining Build Minutes?"
+title: "Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?"
 comments: true
 categories: 
 - TipOW
