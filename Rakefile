@@ -149,7 +149,6 @@ task :new_draft, :title do |t, args|
     post.puts "primaryImage: "
     post.puts "---"
   end
-  task(:todoist_template).invoke(title)
 end
 
 # usage rake new_draft_tip[my-new-draft] or rake new_draft_tip['my new draft']
