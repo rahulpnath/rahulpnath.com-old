@@ -21,4 +21,4 @@ On the Microsoft-hosted CI/CD with 1800 minutes you might need to find the used/
 <img src="{{site.images_root}}/azure_devops_remaining_build_minutes.png" alt="Azure Devops Pipelines - Remaining Build Minutes" 
     class ="center" />
 
-Hope that helps you find the remaining build minutes for your organization!
+Hope that helps you find the remaining free build minutes for your organization!
