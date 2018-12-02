@@ -9,7 +9,7 @@ date: 2018-11-27
 completedDate: 2018-11-27 20:40:32 +1000
 keywords: 
 description: 
-primaryImage: 
+primaryImage: azure_devops_remaining_build_minutes.png
 ---
 
 With [Azure Pipelines](https://azure.microsoft.com/en-us/services/devops/pipelines/) you can continuosly build, test and deploy to any cloud platform. Azure Pipelines has multiple options to start based on your project. Even if you are developing a private application, Pipelines offers you 1 Free parallel job  with upto 1800 minutes per month  and also 1 Free self hosted with unlimited months (as it's anyway running on your infrastructure).
