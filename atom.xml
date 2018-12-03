@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-02T22:33:40+00:00</updated>
+  <updated>2018-12-03T00:02:36+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up DbUp in Azure Pipelines]]></title>
+    <link href="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/"/>
+    <updated>2018-12-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines</id>
+    <content type="html"><![CDATA[<p><a href="https://azure.microsoft.com/en-au/services/devops/pipelines/">Azure Pipelines</a> is part of the <a href="https://azure.microsoft.com/en-au/services/devops/">Azure Devops</a> offerings which enables you to continuously build test and deploy to any platform and cloud environments. It&rsquo;s been a while since this has been out and it&rsquo;s only recently that I have got a chance to play around with it at one of my clients. We use <a href="https://dbup.readthedocs.io/en/latest/">DBUp</a>, a .Net library to deploy schema changes to our SQL Server database. <em>It tracks which SQL scripts have been run already, and runs the change scripts that are needed to get your database up to date.</em></p>
+
+<p>Setting up DbUp is very easy, and you can use the script straight from the <a href="https://dbup.readthedocs.io/en/latest/">docs</a> to get started. If you are using .Net core console application VS template to setup DbUp make sure to modify the return type of the main function to use int and to return the appropriate application exit codes (as from the script in the doc.) I made the mistake of removing the return statements, only to later realize that build scripts were successfully passing even though the DbUp scripts were failing.</p>
+
+<div class="alert alert-warning">
+If you are using the .Net Core console application VS template (like I did) make sure you modify the return type of the main function in Program.cs to int. 
+</div>
+
+
+<p>In Azure Pipelines I have the build step publish the build output as a zip artifact. Using this in the release pipeline is a 2 step process</p>
+
+<h4><strong>1 - Extract Zip Package</strong></h4>
+
+<p>Using the <a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/extract-files?view=vsts">Extract Files Task</a> extract the zip package from the build artifacts. You can specify a destination folder for the files to be extracted to (as shown below).</p>
+
+<p><img src="http://rahulpnath.com/images/dbup_azure_pipelines_extract.jpg" class ="center" alt="Extract package"></p>
+
+<h4><strong>2 - Execute DbUp Package</strong></h4>
+
+<p>With the package extracted out into a folder, we can now execute the console application (using the <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-run?tabs=netcore21#description">dotnet command line</a>) by passing in the connection string as a command line argument.</p>
+
+<p><img src="http://rahulpnath.com/images/dbup_azure_pipelines_execute.jpg" class ="center" alt="Execute package"></p>
+
+<p>You now have your database deployments automated through the Azure Pipelines.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?]]></title>
@@ -1329,26 +1361,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 <blockquote><p>The <strong>Butterfly Effect</strong>: This effect grants the power to cause a hurricane in China to a butterfly flapping its wings in New Mexico. It may take a very long time, but the connection is real. If the butterfly had not flapped its wings at just the right point in space/time, the hurricane would not have happened. - <a href="http://fractalfoundation.org/resources/what-is-chaos-theory/">Chaos Theory</a></p></blockquote>
 
 <p>Share things that you do, share positive things and inspire others!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines]]></title>
-    <link href="http://rahulpnath.com/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/"/>
-    <updated>2018-01-31T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines</id>
-    <content type="html"><![CDATA[<p>Of late I have been working for multiple clients at the same time. Different clients have different development environments, which has forced me into using Virual Machines (VM&rsquo;s) for my day to day work. I will cover my actual setup and new way of working using VM&rsquo;s in a different post.</p>
-
-<p>When working on VM&rsquo;s I often have to switch to the host machine for email, chat and a few other programs that I have just on my host machine. Minimizing the VM host is time consuming and context breaking if you are working off a single screen. On a multi monitor setup you can always have VM on one screen and host on the other. This can still get tricky if you have more than one VM&rsquo;s connected.</p>
-
-<div style="text-align: center;">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/fcbqOe8LnhM" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-</div>
-
-
-<p>The <a href="https://blogs.windows.com/windowsexperience/2015/04/16/virtual-desktops-in-windows-10-the-power-of-windowsmultiplied/">Virtual Desktops</a> feature in Windows 10 is of great help in this scenario. We can move between desktops using keyboard shortcuts (Ctrl + Win + Right/Left Arrow). But with the VM running on separate Virtual Desktop any key presses gets picked up by the VM operating system and not by the host. This means that you cannot use the keyboard shortcuts to switch host desktops from inside a VM. However you can move between desktops using the Four Finger swipe gesture on your touchpad (if that is supported). These swipe gestures are picked up only by the host machine OS, unlike the keyboard shortcuts. So even when you are inside a VM, doing the four finger swipe gesture tells the host OS to switch desktops. This allows you to easily navigate between VM&rsquo;s running on different Virtual Desktops.</p>
-
-<p>Hope this helps!</p>
 ]]></content>
   </entry>
   

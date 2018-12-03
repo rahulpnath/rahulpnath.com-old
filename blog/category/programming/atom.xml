@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-02T22:33:40+00:00</updated>
+  <updated>2018-12-03T00:02:36+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Setting up DbUp in Azure Pipelines]]></title>
+    <link href="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/"/>
+    <updated>2018-12-03T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines</id>
+    <content type="html"><![CDATA[<p><a href="https://azure.microsoft.com/en-au/services/devops/pipelines/">Azure Pipelines</a> is part of the <a href="https://azure.microsoft.com/en-au/services/devops/">Azure Devops</a> offerings which enables you to continuously build test and deploy to any platform and cloud environments. It&rsquo;s been a while since this has been out and it&rsquo;s only recently that I have got a chance to play around with it at one of my clients. We use <a href="https://dbup.readthedocs.io/en/latest/">DBUp</a>, a .Net library to deploy schema changes to our SQL Server database. <em>It tracks which SQL scripts have been run already, and runs the change scripts that are needed to get your database up to date.</em></p>
+
+<p>Setting up DbUp is very easy, and you can use the script straight from the <a href="https://dbup.readthedocs.io/en/latest/">docs</a> to get started. If you are using .Net core console application VS template to setup DbUp make sure to modify the return type of the main function to use int and to return the appropriate application exit codes (as from the script in the doc.) I made the mistake of removing the return statements, only to later realize that build scripts were successfully passing even though the DbUp scripts were failing.</p>
+
+<div class="alert alert-warning">
+If you are using the .Net Core console application VS template (like I did) make sure you modify the return type of the main function in Program.cs to int. 
+</div>
+
+
+<p>In Azure Pipelines I have the build step publish the build output as a zip artifact. Using this in the release pipeline is a 2 step process</p>
+
+<h4><strong>1 - Extract Zip Package</strong></h4>
+
+<p>Using the <a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/extract-files?view=vsts">Extract Files Task</a> extract the zip package from the build artifacts. You can specify a destination folder for the files to be extracted to (as shown below).</p>
+
+<p><img src="/images/dbup_azure_pipelines_extract.jpg" class ="center" alt="Extract package"></p>
+
+<h4><strong>2 - Execute DbUp Package</strong></h4>
+
+<p>With the package extracted out into a folder, we can now execute the console application (using the <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-run?tabs=netcore21#description">dotnet command line</a>) by passing in the connection string as a command line argument.</p>
+
+<p><img src="/images/dbup_azure_pipelines_execute.jpg" class ="center" alt="Execute package"></p>
+
+<p>You now have your database deployments automated through the Azure Pipelines.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Managing Your Postman API Specs]]></title>
@@ -322,138 +354,6 @@ public class RefreshJob : IJob
 <p>So far I have found the Quartz library stable and reliable and have not faced any issues with it. The library is also quite flexible and adapts well to the different needs.</p>
 
 <p>Hope this helps. Merry Xmas!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Generating a Large PDF from Website Contents - Merging PDF Files]]></title>
-    <link href="http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii/"/>
-    <updated>2017-09-19T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-iii</id>
-    <content type="html"><![CDATA[<p>In the previous post, <a href="http://www.rahulpnath.com/blog/generating-a-large-pdf-from-website-contents-part-ii/">Generating a Large PDF from Website Contents - HTML to PDF, Bookmarks and Handling Empty Pages</a>, we saw how to generate a PDF from HTML and add bookmarks to the generated PDF files. The PDF file generated is for an individual section which now needs to be merged to form a single PDF file. The individual PDF files contain the relevant content for the section and related bookmarks, which needs to be combined into a single PDF file.</p>
-
-<p>One of the important things to keep intact when merging is the document hierarchy. The Sections, Sub-Categories, and Categories should align correctly so that the final bookmark tree and the Table of Contents appear correctly. It is best to maintain the list of individual PDF document streams in the same hierarchy as required. Since we know the required structure right from the UI, this can be easily achieved by using a data structure similar as shown below</p>
-
-<pre><code class="csharp">public class DocumentSection
-{
-    public MemoryStream PDFDocument {get; set;}
-
-    public List&lt;DocumentSection&gt; ChildSections {get; set;}
-
-    ... // Any additional details that you need
-}
-</code></pre>
-
-<p>The above structure allows us to maintain a tree-like structure of the document. The structure is the same as that is provided to the user to select the PDF options. I used the <a href="https://www.nuget.org/packages/iTextSharp-LGPL/">iTextSharp</a> library to merge PDF documents. To interact with the PDF, we first need to create a PdfReader object from the stream. Using the  SimpleBookmark class, we can get the existing bookmarks for the PDF.</p>
-
-<pre><code class="csharp">var pdfReader = new PdfReader(stream);
-ArrayList bookmarks = SimpleBookmark.GetBookmark(pdfReader);
-</code></pre>
-
-<p>iText representation of bookmarks is a bit complex. It represents them as an ArrayList of Hashtables. The Hashtable has keys like Action, Title, Page, Kids, etc. Kids property represents child bookmarks and is the same ArrayList type. Since it was hard to work with this structure, I created a wrapper class to interact easily with the bookmarks.</p>
-
-<pre><code class="csharp">public class Bookmark
-{
-    public Bookmark(
-        string title, string destinationType, int pageNumber, 
-        float xLeft, float yTop, float zZoom)
-    {
-        Children = new List&lt;Bookmark&gt;();
-        Title = title;
-        PageNumber = pageNumber;
-        DestinationType = destinationType ?? "XYZ";
-        XLeft = xLeft;
-        YTop = yTop;
-        ZZoom = zZoom;
-        PageBreak = false;
-    }
-
-    ... // Class properties for the constructor parameters
-
-    public ArrayList ToiTextBookmark()
-    {
-        ArrayList arrayList = new ArrayList
-        {
-            ToiTextBookmark(this),
-        };
-        return arrayList;
-    }
-
-    private Hashtable ToiTextBookmark(Bookmark bookmark)
-    {
-        var kids = new ArrayList();
-        var hashTable = new Hashtable
-        {
-            ["Action"] = "GoTo",
-            ["Title"] = bookmark.Title,
-            ["Page"] = $@"{bookmark.PageNumber} {bookmark.DestinationType} 
-                         {bookmark.XLeft} {bookmark.YTop} {bookmark.ZZoom}",
-            ["Kids"] = kids,
-        };
-
-        foreach (var childBookmark in bookmark.Children)
-        {
-            kids.Add(ToiTextBookmark(childBookmark));
-        }
-
-        return hashTable;
-    }
-}
-</code></pre>
-
-<p>Recursively iterating through the list of DocumentSections, I add all the bookmarks to a root Bookmark class. The root bookmark class represents the full bookmark of the PDF file. The PageNumber is offset using a counter variable. The counter variable is incremented by the number of pages in each of PDF section (<em>pdfReader.NumberOfPages</em>) as it gets merged to the bookmark root. This ensures that the bookmark points to the correct bookmark page in the combined PDF file.</p>
-
-<p>The individual documents are then merged by iterating through all the generated document sections. Once done we get the final PDF as a byte array which is returned to the user.</p>
-
-<pre><code class="csharp">public byte[] MergeSections(List&lt;DocumentSection&gt; documentSections, Bookmark bookmarkRoot)
-{
-    int pageNumber = 0;
-    using (var stream = new MemoryStream())
-    {
-        var document = new Document();
-        var pdfWriter = PdfWriter.GetInstance(document, stream);
-        document.Open();
-        var pdfContent = pdfWriter.DirectContent;
-        MergeSectionIntoDocument(documentSections, document, pdfContent, pdfWriter, pageNumber);
-        pdfWriter.Outlines = bookmarkRoot.ToiTextBookmark();
-        document.Close();
-        stream.Flush();
-        return stream.ToArray();
-    }
-}
-
-private void MergeSectionIntoDocument(
-    List&lt;DocumentSection&gt; documentSections,
-    Document document,
-    PdfContentByte pdfContent,
-    PdfWriter pdfWriter,
-    int pageNumber)
-{
-    foreach (var documentSection in documentSections)
-    {
-        var stream = documentSection.DocumentStream;
-        stream.Position = 0;
-        var pdfReader = new PdfReader(stream);
-
-        for (var i = 1; i &lt;= pdfReader.NumberOfPages; i++)
-        {
-            var page = pdfWriter.GetImportedPage(pdfReader, i);
-            document.SetPageSize(new iTextSharp.text.Rectangle(0.0F, 0.0F, page.Width, page.Height));
-            document.NewPage();
-            pageNumber++;
-            pdfContent.AddTemplate(page, 0, 0);
-            this.AddPageNumber(pdfContent, document, pageNumber);
-        }
-
-        if(documentSection.ChildSections.Any())
-            MergeSectionIntoDocument(documentSection.ChildSections, document, pdfContent, pdfWriter, pageNumber);
-    }
-}
-</code></pre>
-
-<p>To generate a Table of Contents (ToC), we can use the root bookmark information. We need to manually create a PDF page, read the bookmark text and add links to the page with the required font and styling. iText provides API&rsquo;s to create custom PDF pages.</p>
-
-<p>We are now able to generate a single PDF based on the website contents.</p>
 ]]></content>
   </entry>
   

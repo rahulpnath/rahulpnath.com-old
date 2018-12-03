@@ -181,6 +181,174 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-26T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 26<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/testing/'>testing</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/automated-api-testing-using-postman-collection-runner/" itemprop="url">Automated API Testing Using Postman Collection Runner</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>A while back we looked at how we can use <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">Postman to chain multiple requests to speed up out Manual API Testing</a>. For those who are not familiar with <a href="https://www.getpostman.com/">Postman</a>, it is an application that assists in API testing and development, which I see as sitting a level top of a tool like <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a>.</p>
+
+<p>In this post, we will see how we can use Postman to test some basic CRUD operations over an API using a feature called <a href="http://blog.getpostman.com/2016/11/22/postmans-new-collection-runner/">Postman Runner</a>. Using this still involves some manual intervention. However, we can automate them using a combination of different tools.</p>
+
+<h3>Setting Up the API</h3>
+
+<p>To start with I create a simple API endpoint using the out of the box Web API project from Visual Studio 2017. It is a Values Controller which stores key-value pairs to which you can send GET, POST, DELETE requests. Below is the API implementation. It is a simple in-memory implementation and does not use any persistent store. However, the tests would not change much even if the store was to be persistent. The importance here is not in the implementation of the API, but how you can use Postman to add some quick tests.</p>
+
+<figure class='code'><figcaption><span>ValuesController</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ValuesController</span> <span class="p">:</span> <span class="n">ApiController</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">static</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;</span> <span class="n">values</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">,</span> <span class="kt">string</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">Get</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">values</span><span class="p">.</span><span class="n">Values</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Get</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">values</span><span class="p">.</span><span class="n">ContainsKey</span><span class="p">(</span><span class="n">id</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nf">Ok</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="n">id</span><span class="p">]);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">NotFound</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Post</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="p">[</span><span class="n">FromBody</span><span class="p">]</span><span class="kt">string</span> <span class="k">value</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">values</span><span class="p">[</span><span class="n">id</span><span class="p">]</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">Ok</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IHttpActionResult</span> <span class="nf">Delete</span><span class="p">(</span><span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">values</span><span class="p">.</span><span class="n">ContainsKey</span><span class="p">(</span><span class="n">id</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">return</span> <span class="nf">NotFound</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">values</span><span class="p">.</span><span class="n">Remove</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">Ok</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Setting Up Postman</h3>
+
+<p>To start with we will create a new Collection in Postman to hold our tests for the Values Controller - I have named it &lsquo;<em>Values CRUD - Test</em>&rsquo;. The collection is a container for all the API requests that we are going to write. First, we will add all the request definitions into postman which we can later reorder for the tests.</p>
+
+<p><img src="/images/postman_request.png" alt="Postman Request" class="center" /></p>
+
+<blockquote><p>The <em><strong>/</strong></em> in the URL are parameters defined as part of the selected Environment. Environments in Postman allow you to switch between different application environments like Development, Test, Production. You can configure different values for each environment and Postman will send the requests as per the configuration.</p></blockquote>
+
+<p>Below are the environment variables for my local environment. You can define as many environments as you want and switch between them.</p>
+
+<p><img src="/images/postman_environment.png" alt="Postman Environment" class="center" /></p>
+
+<p>Now that I have all the request definitions for the API added let&rsquo;s add some tests to verify our API functionality.</p>
+
+<h3>Writing The First Test</h3>
+
+<p>Postman allows executing scripts before and after running API requests. We did see this in the <a href="https://rahulpnath.com/blog/postman-chaining-requests-to-speed-up-manual-api-tests/">API Chaining post</a> where we grabbed the <em>messageId</em> from the POST request and added it to the environment variable for use in the subsequent requests. Similarly, we can also add scripts to verify that the API request returns expected results, status code, etc.</p>
+
+<p>Let&rsquo;s first write a simple test on our GET API request that it returns a 200 OK response when called. The below test uses the <a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference">Postmans PM API</a> to assert that status code of the response is 200. Check the <em><a href="https://www.getpostman.com/docs/v6/postman/scripts/postman_sandbox_api_reference#response-assertion-api-in-test-scripts">Response Assertion API in test scripts</a></em> to see the other assertion options available like <em>pm.response.to.have.status</em>. The tests are under the Tests section similar to where wrote the scripts to chain API requests. When executing the API request, the Tests tab shows the successful test run for the particular request.</p>
+
+<figure class='code'><figcaption><span>200 Status Code</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">pm</span><span class="p">.</span><span class="nx">test</span><span class="p">(</span><span class="s2">&quot;Status code is 200&quot;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">pm</span><span class="p">.</span><span class="nx">response</span><span class="p">.</span><span class="nx">to</span><span class="p">.</span><span class="nx">have</span><span class="p">.</span><span class="nx">status</span><span class="p">(</span><span class="mi">200</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/postman_tests.png" alt="Postman Tests" class="center" /></p>
+
+<p>Similarly, you can also write <em>Pre-request Script</em> to set variables or perform any other operation. Below I am setting the <em>Value</em> environment variable to &ldquo;Test&rdquo;. You could generate a random value here or set a random id, or set an identifier that does not already exists. It&rsquo;s test/application specific, so leave it you to decide what works best for you.</p>
+
+<figure class='code'><figcaption><span>Pre-request Script.</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">pm</span><span class="p">.</span><span class="nx">environment</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;Value&quot;</span><span class="p">,</span> <span class="s2">&quot;Test&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Collection Runner</h3>
+
+<p>The collection runner allows you to manage multiple API requests and run them as a set. Once completed it shows a summary of all the tests included within each request and details of tests that passed/failed in the run. You can target the Runner to run against your environment of choice.</p>
+
+<p><img src="/images/postman_collection_runner.png" alt="Postman Collection Runner" class="center" /></p>
+
+<p>Running these tests still involves some manual effort of selecting environments and running them. However using <a href="https://www.npmjs.com/package/newman">Newman</a>, you can run Postman Collections from the command line, which means even in your build pipeline.</p>
+
+<p>Using Postman, we can quickly test our API&rsquo;s across multiple environments. The Collection Runner also shows an excellent visual summary of the tests and helps us in API development. However, I found these tests to violate the <a href="https://en.wikipedia.org/wiki/Don%27t_repeat_yourself">DRY principle</a>. You need to repeat the same API request structure if you have to use them in a different context. Like in the example above I had to create two <em>Get Value By Id</em> requests to test for the value existing and also for when it does not exists. You could use some conditional looping inside the scripts, but then that makes your tests complicated and gets into the loop of how to test your tests. Postman does allow you to export the API request to the language of your choice. So once you have the basic schema, you can export them and write tests that compose them. I find Postman tests and the Runner a quick way to start testing your API endpoints and then for more complicated cases use a stronger programming language. Having the tests in Postman also allows us to have an API spec in place and can be useful to play around with the API.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-06-25T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 25<sup>th</sup>, 2018</time>
         
 
@@ -1027,64 +1195,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-01-31T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 31<sup>st</sup>, 2018</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/four-finger-swipe-gesture-to-switch-between-virtual-machines/" itemprop="url">Tip of the Week: Four Finger Swipe Gesture to Switch Between Virtual Machines</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Of late I have been working for multiple clients at the same time. Different clients have different development environments, which has forced me into using Virual Machines (VM&rsquo;s) for my day to day work. I will cover my actual setup and new way of working using VM&rsquo;s in a different post.</p>
-
-<p>When working on VM&rsquo;s I often have to switch to the host machine for email, chat and a few other programs that I have just on my host machine. Minimizing the VM host is time consuming and context breaking if you are working off a single screen. On a multi monitor setup you can always have VM on one screen and host on the other. This can still get tricky if you have more than one VM&rsquo;s connected.</p>
-
-<div style="text-align: center;">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/fcbqOe8LnhM" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-</div>
-
-
-<p>The <a href="https://blogs.windows.com/windowsexperience/2015/04/16/virtual-desktops-in-windows-10-the-power-of-windowsmultiplied/">Virtual Desktops</a> feature in Windows 10 is of great help in this scenario. We can move between desktops using keyboard shortcuts (Ctrl + Win + Right/Left Arrow). But with the VM running on separate Virtual Desktop any key presses gets picked up by the VM operating system and not by the host. This means that you cannot use the keyboard shortcuts to switch host desktops from inside a VM. However you can move between desktops using the Four Finger swipe gesture on your touchpad (if that is supported). These swipe gestures are picked up only by the host machine OS, unlike the keyboard shortcuts. So even when you are inside a VM, doing the four finger swipe gesture tells the host OS to switch desktops. This allows you to easily navigate between VM&rsquo;s running on different Virtual Desktops.</p>
-
-<p>Hope this helps!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1108,6 +1218,8 @@ If you are still not convinced let me give it one last shot to get you on board.
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
+    
     <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a>
     
     <a class="list-group-item " href="/blog/working-effectively-under-constraints/">Working Effectively Under Constraints</a>
@@ -1115,8 +1227,6 @@ If you are still not convinced let me give it one last shot to get you on board.
     <a class="list-group-item " href="/blog/subresource-integrity-sri/">Subresource Integrity (SRI)</a>
     
     <a class="list-group-item " href="/blog/enable-cross-origin-requests-cors-in-asp-dot-net-web-api-using-corsoptions/">Enable Cross-Origin Requests (CORS) in ASP.Net Web API Using CorsOptions</a>
-    
-    <a class="list-group-item " href="/blog/http-content-security-policy-csp/">HTTP Content Security Policy (CSP)</a>
     
   </div>
 </section>

@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 <head>
   <meta charset="utf-8">
-  <title>git checkout TFS - Rahul Nath</title>
+  <title>Setting up DbUp in Azure Pipelines - Rahul Nath</title>
   <meta name="author" content="Rahul Nath">
 
   
-<meta name="description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+<meta name="description" content="DbUp in a .Net core console application and Azure Pipelines." />
 
 
 <meta name="keywords" content=".NET, programming, rahul nath, rahul, C#" />
@@ -17,7 +17,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rahulpnath.com/blog/git-checkout-tfs">
+  <link rel="canonical" href="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines">
   
 <!-- Favicon -->
   <link href="/favicon.png" type="image/png" rel="icon">
@@ -43,21 +43,21 @@
 
 
 <meta property="fb:admins" content="774780093" />
-<meta property="og:title" content="git checkout TFS" />
+<meta property="og:title" content="Setting up DbUp in Azure Pipelines" />
 <meta property="og:site_name" content="Rahul Nath" />
-<meta property="og:url" content="http://rahulpnath.com/blog/git-checkout-tfs/" />
-<meta property="og:description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+<meta property="og:url" content="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/" />
+<meta property="og:description" content="DbUp in a .Net core console application and Azure Pipelines." />
 <meta property="og:author" content="https://www.facebook.com/774780093" />
-
+<meta property="og:image" content="http://www.rahulpnath.com/images/dbup_azure_pipelines_extract.jpg" />
 
 
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:site" content="rahulpnath" />
-<meta property="twitter:url" content="http://rahulpnath.com/blog/git-checkout-tfs" />
-<meta property="twitter:title" content="git checkout TFS" />
-<meta property="twitter:description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines" />
+<meta property="twitter:title" content="Setting up DbUp in Azure Pipelines" />
+<meta property="twitter:description" content="DbUp in a .Net core console application and Azure Pipelines." />
 <meta property="twitter:creator" content="rahulpnath" />
-
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/dbup_azure_pipelines_extract.jpg" />
 
 
 <script 
@@ -177,13 +177,13 @@
 
 
 
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-04-15T05:23:08+00:00"  data-updated="true" itemprop="datePublished dateCreated">Apr 15<sup>th</sup>, 2016</time>
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-03T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 3<sup>rd</sup>, 2018</time>
         
 
 <span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
 <span class="categories">
   
-    <a class='category' href='/blog/category/productivity/'>productivity</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+    <a class='category' href='/blog/category/programming/'>programming</a>
   
 </span>
 
@@ -193,82 +193,37 @@
     
     
     <h1 class="entry-title" itemprop="name headline">
-        git checkout TFS
+        Setting up DbUp in Azure Pipelines
         
     </h1>
     
   </header>
 
 
-<div class="entry-content clearfix" itemprop="articleBody"><p>It&rsquo;s been a year since using <a href="https://git-scm.com/">Git</a> as my mainstream version control system and I am loving it! Before Git, I had used Team Foundation Version Control (TFVC) for a very long time and was so used to it that I found Git a bit complex and overwhelming in the beginning. Team Foundation Server (TFS) is the whole product suite from Microsoft that provides source code management. Until TFS 2013, it supported only TFVC which is when it introduced <a href="https://blogs.msdn.microsoft.com/mvpawardprogram/2013/11/13/git-for-tfs-2013/">Git in TFS</a>. Even today people use TFS and TFVC synonymously (like in the title of this post) though they are not the same.</p>
+<div class="entry-content clearfix" itemprop="articleBody"><p><a href="https://azure.microsoft.com/en-au/services/devops/pipelines/">Azure Pipelines</a> is part of the <a href="https://azure.microsoft.com/en-au/services/devops/">Azure Devops</a> offerings which enables you to continuously build test and deploy to any platform and cloud environments. It&rsquo;s been a while since this has been out and it&rsquo;s only recently that I have got a chance to play around with it at one of my clients. We use <a href="https://dbup.readthedocs.io/en/latest/">DBUp</a>, a .Net library to deploy schema changes to our SQL Server database. <em>It tracks which SQL scripts have been run already, and runs the change scripts that are needed to get your database up to date.</em></p>
 
-<h3>Fundamental shift in thinking</h3>
+<p>Setting up DbUp is very easy, and you can use the script straight from the <a href="https://dbup.readthedocs.io/en/latest/">docs</a> to get started. If you are using .Net core console application VS template to setup DbUp make sure to modify the return type of the main function to use int and to return the appropriate application exit codes (as from the script in the doc.) I made the mistake of removing the return statements, only to later realize that build scripts were successfully passing even though the DbUp scripts were failing.</p>
 
-<p>By design, Git is a Distributed VCS, whereas TFS is centralized one. It takes quite a while to get your head around this and what it actually means. By definition</p>
-
-<blockquote><p><em><strong>TFVC</strong>: Uses a single, centralized server repository to track and version files. Local changes are always checked in to the central server where other developers can get the latest changes.</em></p>
-
-<p><em><strong>Git</strong>: Git is a distributed version control system. Each developer has a copy of the source repository on their dev machine. Developers can commit each set of changes on their dev machine and perform version control operations such as history and compare without a network connection.</em></p></blockquote>
-
-<p>You. may not see the real Distributed benefits if you are working off a central repository (hosted on a server like GitHub or Bitbucket) and using <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/centralized-workflow">TFS way of development</a> :</p>
-
-<p><em>Get latest code => Make your changes => Merge latest +> Check in (</em>Commit and push<em>)</em></p>
-
-<p>The real power of Git is better understood when you start working disconnected, use branches to keep unrelated development activities separate and merge those into the main trunk (<em>master</em>) once comfortable. You get a local copy of the project and lets you make changes independent of all the other changes in the project.</p>
-
-<blockquote><p><em>Git feels so lightweight and never gets in the way of doing things.</em></p></blockquote>
-
-<h3>Make command line your friend</h3>
-
-<p>If you are a UI savvy person then Git might a good starting point to start using the command line. At first, it definitely feels hard especially if you were TFS/Visual Studio users and might be tempted to use the GUI tools available (<a href="https://desktop.github.com/">GitHub Desktop</a> or <a href="https://www.sourcetreeapp.com/">SourceTree</a>)</p>
-
-<blockquote><p><em>Repetitive tasks become more evident when you use a command line and easily automatable.</em></p></blockquote>
-
-<p>I use Cmder (<a href="http://www.rahulpnath.com/blog/tools-that-I-use/">one of my favourite tools</a>) with Git and have <a href="https://help.github.com/articles/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent/">set up SSH</a> to Bitbucket and Github (expected soon on TFS), secured by a paraphrase, so that I do not have to key in the credentials every time I interact with the repositories. I <a href="https://github.com/cmderdev/cmder/issues/193#issuecomment-63040989">start the ssh-agent the very first time I open Cmder</a>, which prompts for my paraphrase and continues to run in the background. Alternatively, you can also use <a href="https://github.com/Microsoft/Git-Credential-Manager-for-Windows">Credential Manager</a> to store credentials, when working with HTTP enabled Git repository. For the common commands, I have set up aliases like below, to save a bit on the keystrokes.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>gl=git log --oneline --all --graph --decorate  $*
-</span><span class='line'>gs=git status
-</span><span class='line'>ga=git add -A
-</span><span class='line'>gp=git pull
-</span><span class='line'>gpp=git push
-</span><span class='line'>gc=git commit -m &quot;$*&quot;
-</span><span class='line'>gcc=git commit
-</span></code></pre></td></tr></table></div></figure>
+<div class="alert alert-warning">
+If you are using the .Net Core console application VS template (like I did) make sure you modify the return type of the main function in Program.cs to int. 
+</div>
 
 
-<h3>Different workflows</h3>
+<p>In Azure Pipelines I have the build step publish the build output as a zip artifact. Using this in the release pipeline is a 2 step process</p>
 
-<p>Git can be used in many ways and which makes it hard to get started. There are a few popular <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/">workflows</a> that one can use. Currently, I am using -  <a href="https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow">Feature Branch workflow</a> -
-which means that all work happen on independent feature branches and once completed gets merged into the main trunk (master branch). Code Reviews happens on the way it gets pulled into the main branch, which ensures code quality and familiarity.</p>
+<h4><strong>1 - Extract Zip Package</strong></h4>
 
-<p><a href="https://www.atlassian.com/git/images/tutorials/collaborating/comparing-workflows/feature-branch-workflow/01.svg"><img class="center" alt="Git Feature Branch Workflow" src="/images/git_featurebranch_workflow.png" /></a></p>
+<p>Using the <a href="https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/utility/extract-files?view=vsts">Extract Files Task</a> extract the zip package from the build artifacts. You can specify a destination folder for the files to be extracted to (as shown below).</p>
 
-<h3>Not Just for Code</h3>
+<p><img src="/images/dbup_azure_pipelines_extract.jpg" class ="center" alt="Extract package"></p>
 
-<p>Git is a version control system and does not limit itself to storing code. You can use it for <a href="http://readwrite.com/2013/11/08/seven-ways-to-use-github-that-arent-coding/">version controlling any of your work</a>. For example, this blog is <a href="https://github.com/rahulpnath/rahulpnath.com">hosted on Github</a> and all the <a href="https://github.com/rahulpnath/rahulpnath.com/commits/master">changes are version controlled</a>, which gives me the flexibility to work and commit locally. Since the blog is <a href="http://www.rahulpnath.com/blog/static-generator-is-all-a-blog-needs-moving-to-octopress/">static generated</a> I can also preview all the changes locally. I use git whenever I work on any documents or <a href="https://github.com/rahulpnath/Speaking">presentations</a> so that I can avoid manual copy of files and renaming with suffixes like &lsquo;<em>Draft</em>, &rsquo;<em>Draft1</em>,<em>Final</em>,&ldquo;<em>FinalRevision</em>&lsquo; etc. (if that sounds any similar)</p>
+<h4><strong>2 - Execute DbUp Package</strong></h4>
 
-<h3>Managing Commits</h3>
+<p>With the package extracted out into a folder, we can now execute the console application (using the <a href="https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-run?tabs=netcore21#description">dotnet command line</a>) by passing in the connection string as a command line argument.</p>
 
-<p>When coming to commits, which are nothing but checkpoints of meaningful work done, people might have a different  definition for &lsquo;<em>meaningful</em>&rsquo; - for some it might be really granular, for others a bit coarse and for yet another it means all the work is done. I tend to commit quite often - even a rename of a variable leads to a commit so that I do not have to backtrack if at all something goes wrong immediately after that.</p>
+<p><img src="/images/dbup_azure_pipelines_execute.jpg" class ="center" alt="Execute package"></p>
 
-<p>if you really like the idea of committing often (locally), but want the pushes to remotes more coarse, you can &lsquo;<strong><a href="http://stackoverflow.com/questions/5189560/squash-my-last-x-commits-together-using-git">squash your commits</a></strong>&rsquo;, before pushing it to remote branch. This allows you to commit often locally and still push  meaningful commit in the main source history. Make sure that the <a href="http://chris.beams.io/posts/git-commit/">commit messages and clear and communicates the intent</a> and helps <a href="http://megakemp.com/2014/08/14/the-importance-of-a-good-looking-history/">keep a good looking history</a>.</p>
-
-<p>Git is one of the best things that happened to developers and hopes it stays long!</p>
-
-<p><strong>References</strong></p>
-
-<ul>
-<li><a href="http://gitref.org/index.html">Git Reference</a></li>
-<li><a href="https://git-scm.com/book/en/v2">Pro Git</a></li>
-</ul>
-
+<p>You now have your database deployments automated through the Azure Pipelines.</p>
 </div>
 
 
@@ -301,25 +256,25 @@ which means that all work happen on independent feature branches and once comple
   
     <li>
     	<p>
-      		<a href="/blog/left-align-your-code-for-better-readability/">Left Align Your Code For Better Readability</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
-      		<a href="/blog/using-git-locally-in-a-tfvc-repository/">Tip of the Week: Using Git Locally in a TFVC Repository</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
-      		<a href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
-  		</p>
-    </li>
-  
-    <li>
-    	<p>
       		<a href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/ndc-security-2018-overview-and-key-takeaways/">NDC Security 2018 - Overview and Key Takeaways</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/scheduling-recurring-jobs-with-a-cool-off-period/">Scheduling Recurring Jobs With a Cool-Off Period</a>
   		</p>
     </li>
   
@@ -331,7 +286,7 @@ which means that all work happen on independent feature branches and once comple
         
           <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/git-checkout-tfs/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/git-checkout-tfs/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/" >Tweet</a>
   
   
   
@@ -343,10 +298,8 @@ which means that all work happen on independent feature branches and once comple
         
           <ul class="meta text-muted pager">
             
-            <li class="previous"><a href="/blog/clal-command-line-application-launcher/" title="Previous Post: CLAL - Command Line Application Launcher">&laquo; CLAL - Command Line Application Launcher</a></li>
+            <li class="previous"><a href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/" title="Previous Post: Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?">&laquo; Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a></li>
             
-            
-            <li class="next"><a href="/blog/checking-in-package-dependencies-into-source-control/" title="Next Post: Checking in Package Dependencies into Source Control">Checking in Package Dependencies into Source Control &raquo;</a></li>
             
           </ul>
         
@@ -391,8 +344,8 @@ which means that all work happen on independent feature branches and once comple
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rahulpnath.com/blog/git-checkout-tfs/';
-        var disqus_url = 'http://rahulpnath.com/blog/git-checkout-tfs/';
+        var disqus_identifier = 'http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/';
+        var disqus_url = 'http://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/';
         var disqus_script = 'embed.js';
       
     (function () {
