@@ -4,7 +4,7 @@
   <title><![CDATA[Rahul Nath]]></title>
   <link href="http://rahulpnath.com/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-10T00:02:40+00:00</updated>
+  <updated>2018-12-10T03:13:10+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,227 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure AD Custom Attributes and Optional Claims from an ASP.Net Application]]></title>
+    <link href="http://rahulpnath.com/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/"/>
+    <updated>2018-12-10T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application</id>
+    <content type="html"><![CDATA[<p>When using Azure Active Directory for managing your users, it is a common requirement to add additional attributes to your Users like SkypeId, employee code, EmployeeId and similar. Even though this happens to be a common need, getting this done is not that straightforward. This post describes how you can get additional properties on User objects in Azure AD.</p>
+
+<p>Recently when I had to do this at a client, we had users in Azure AD, the additional property, employeeCode for the user was available in an internal application which had the users Azure email-address mapped to it. We needed these to be synced across to the user Azure AD and make it available as part of claims for a Web site that uses <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/authentication-scenarios">Azure AD authentication</a></p>
+
+<h3>Adding Custom Attribute using Directory Schema Extensions</h3>
+
+<p>Azure AD user has a set of <a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-users-profile-azure-portal">default properties</a>, manageable through the Azure Portal. Any additional property to User gets added as an extension to the current user Schema. To add a new property we first need to <a href="https://msdn.microsoft.com/library/azure/ad/graph/howto/azure-ad-graph-api-directory-schema-extensions#RegisterAnExtension">register an extension</a>. Adding a new extension can be done using the <a href="https://graphexplorer.azurewebsites.net/">GraphExplorer website</a>. You need to specify the appropriate directory name (e.g., <em>contoso.onmicrosoft.com</em>) and the applicationObjectId. The application object id is the Object Id of the AD application that the Web Application uses to authenticate with Azure AD.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/graph/extensibility-overview#azure-ad-directory-schema-extensions">Azure AD supports</a> a similar type of extension, known as directory schema extensions, on a few directory object resources. Although you have to use the Azure AD Graph API to create and manage the definitions of directory schema extensions, you can use the Microsoft Graph API to add, get, update and delete data in the properties of these extensions.</em></p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">POST</span> <span class="err">https://graph.windows.net/contoso.onmicrosoft.com/applications/</span>
+</span><span class='line'>    <span class="err">&lt;applicationObjectId&gt;/extensionProperties?api-version=</span><span class="mf">1.5</span> <span class="err">HTTP/</span><span class="mf">1.1</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;employeeCode&lt;optionalEnvironmentName&gt;&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;dataType&quot;</span><span class="p">:</span> <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;targetObjects&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>        <span class="s2">&quot;User&quot;</span>
+</span><span class='line'>    <span class="p">]</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The response gives back the fully-qualified extension property name, which is used to write values to the property. Usually the name is of the format <em>extension_&lt;adApplicationIdWithoutDashes>_extensionPropertyName</em></p>
+
+<p>If you have multiple environments (like Dev, Test, UAT, Prod) all pointing to the same Active Directory, it is a good idea to append the environment name to the extension property. It avoids any bad data issues between environments as all these properties get written to the same User object. You can automate the above step using any scripting language of your choice if required.</p>
+
+<h3>Setting Values for Custom Attributes</h3>
+
+<p>Now that we have the extension property created on the AD application, we can set the property on the User object. If you want to set this manually, you can use the <a href="https://graphexplorer.azurewebsites.net/">GraphExplorer website</a> again to do this.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">PATCH</span> <span class="err">https://graph.windows.net/contoso.onmicrosoft.com/users</span>
+</span><span class='line'>        <span class="err">/jim@contoso.onmicrosoft.com?api-version=</span><span class="mf">1.5</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;extension_ab603c56068041afb2f6832e2a17e237_employeeCode&lt;optionalEnvironmentName&gt;&quot;</span><span class="p">:</span> <span class="s2">&quot;EMP124&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In our case it was not a one-off case of updating the User object, so better wanted this to be automated. Employee codes were available from a database with the associated Azure AD email address. So we created a windows service job that would sync these codes to Azure AD. You can write to Azure AD schema extension properties using <a href="https://developer.microsoft.com/en-us/graph">Microsoft Graph API</a>. Add a reference to the <a href="https://www.nuget.org/packages/Microsoft.Graph">Microsoft Graph NuGet package</a>, and you are all set to go. For the Graph API to authenticate, use a different Azure AD app (separate to the one that you registered the extension property on, which the web app uses to authenticate), just because it needs additional permissions as well and it is a good idea to isolate that. Under Settings -> Required Permissions, Add Microsoft Graph and provide the relevant permissions for it to write the user&rsquo;s profile/directory data.</p>
+
+<p><img
+    src="http://rahulpnath.com/images/azureAd_GraphApi_Permissions.png"
+    class="center"
+    alt="Azure AD Graph API Permissions" /></p>
+
+<figure class='code'><figcaption><span>Get Graph Api Client</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="k">async</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">GraphServiceClient</span><span class="p">&gt;</span> <span class="n">GetGraphApiClient</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">clientId</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;AppId&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">secret</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;Secret&quot;</span><span class="p">];</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">domain</span> <span class="p">=</span> <span class="n">ConfigurationManager</span><span class="p">.</span><span class="n">AppSettings</span><span class="p">[</span><span class="s">&quot;Domain&quot;</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">credentials</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ClientCredential</span><span class="p">(</span><span class="n">clientId</span><span class="p">,</span> <span class="n">secret</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">authContext</span> <span class="p">=</span>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">AuthenticationContext</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;https://login.microsoftonline.com/{domain}/&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">token</span> <span class="p">=</span> <span class="k">await</span> <span class="n">authContext</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">AcquireTokenAsync</span><span class="p">(</span><span class="s">&quot;https://graph.microsoft.com/&quot;</span><span class="p">,</span> <span class="n">credentials</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">graphServiceClient</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GraphServiceClient</span><span class="p">(</span><span class="k">new</span> <span class="n">DelegateAuthenticationProvider</span><span class="p">((</span><span class="n">requestMessage</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">requestMessage</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Headers</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Authorization</span> <span class="p">=</span> <span class="k">new</span> <span class="n">AuthenticationHeaderValue</span><span class="p">(</span><span class="s">&quot;bearer&quot;</span><span class="p">,</span> <span class="n">token</span><span class="p">.</span><span class="n">AccessToken</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">CompletedTask</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">graphServiceClient</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Update Extension Value</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="k">async</span> <span class="n">Task</span> <span class="nf">UpdateEmployeeCode</span><span class="p">(</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">employeeCodePropertyName</span><span class="p">,</span> <span class="n">GraphServiceClient</span> <span class="n">graphApiClient</span><span class="p">,</span> <span class="n">Employee</span> <span class="n">employee</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">dictionary</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Dictionary</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span> <span class="kt">object</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="n">dictionary</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="n">employeeCodePropertyName</span><span class="p">,</span> <span class="n">employee</span><span class="p">.</span><span class="n">Code</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">await</span> <span class="n">graphApiClient</span><span class="p">.</span><span class="n">Users</span><span class="p">[</span><span class="n">employee</span><span class="p">.</span><span class="n">EmailAddress</span><span class="p">]</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Request</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">UpdateAsync</span><span class="p">(</span><span class="k">new</span> <span class="n">User</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">AdditionalData</span> <span class="p">=</span> <span class="n">dictionary</span>
+</span><span class='line'>        <span class="p">});</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Looping through all the employee codes, you can update all of them into Azure AD at regular intervals. To verify that the attributes are updated correctly, you can either use the Graph API client to read the extension property or use the Graph Explorer Website.</p>
+
+<h3>Accessing Custom Attributes through Claims</h3>
+
+<p>With the Azure AD updated with the employee code for each user, we can now set up the AD application to return the additional property as part of the claims, when the web application authenticates with it. The application manifest of the Azure AD application needs to be modified to return the extension property as part of the claims. By default <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-optional-claims#configuring-optional-claims">optionalClaims property</a> is set to null and you can update it with the below values.</p>
+
+<p><img
+    src="http://rahulpnath.com/images/AzureAd_schema_extension_optionalClaims.png"
+    class="center" alt="Azure AD Application Manifest - Optional Claims" /></p>
+
+<figure class='code'><figcaption><span>Optional Claims in Azure AD Application Manifest</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;optionalClaims&quot;</span><span class="err">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;idToken&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>        <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;extension_&lt;id&gt;_employeeCodeLocal&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;source&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;essential&quot;</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span><span class='line'>        <span class="nt">&quot;additionalProperties&quot;</span><span class="p">:</span> <span class="p">[]</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>    <span class="p">],</span>
+</span><span class='line'>    <span class="nt">&quot;accessToken&quot;</span><span class="p">:</span> <span class="p">[],</span>
+</span><span class='line'>    <span class="nt">&quot;saml2Token&quot;</span><span class="p">:</span> <span class="p">[]</span>
+</span><span class='line'>  <span class="p">}</span><span class="err">,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I updated the idToken property as the .Net Core Web Application was using JWT ID token. If you are unsure of what token you can use <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a> to find what kind of token is used (as shown below).</p>
+
+<p><img src="http://rahulpnath.com/images/AzureAd_idToken.png" class="center" alt="Id token returned" /></p>
+
+<p>With the optonalClaims set, the web application is all set to go. For an authenticated user (with the extension property set), the extension property is available as part of claims. The claim type will be &lsquo;<em>extn.employeeCode<optionalEnvironmentNam></em>&rsquo;. The below code can be used to extract the employee code from the claim.</p>
+
+<figure class='code'><figcaption><span>Get Employee Code From Claim</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="kt">string</span> <span class="nf">GetEmployeeCode</span><span class="p">(</span><span class="k">this</span> <span class="n">ClaimsPrincipal</span> <span class="n">claimsPrincipal</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">claimsPrincipal</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span> <span class="n">claimsPrincipal</span><span class="p">.</span><span class="n">Claims</span> <span class="p">==</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">empCodeClaim</span> <span class="p">=</span> <span class="n">claimsPrincipal</span><span class="p">.</span><span class="n">Claims</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">(</span><span class="n">claim</span> <span class="p">=&gt;</span> <span class="n">claim</span><span class="p">.</span><span class="n">Type</span><span class="p">.</span><span class="n">StartsWith</span><span class="p">(</span><span class="s">&quot;extn.employeeCode&quot;</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">empCodeClaim</span><span class="p">?.</span><span class="n">Value</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<div class="alert alert-warning">
+Usually, the claims start flowing through immediately. However, once it did happen to me that the claims did not come for over a long period. Not sure what I did wrong, but once I deleted and recreated the AD application, it started working fine.
+</div>
+
+
+<p>Although setting additional properties on Azure AD Users is a common requirement, setting it up is not that straight-forward. Hope the portal improves someday, and it would be as easy as setting a list of key-value properties as extension properties, and it would all seamlessly flow through as part of the claims. However, till that day, hope this helps you to set up extra information on your Azure AD users.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting up DbUp in Azure Pipelines]]></title>
@@ -1336,31 +1557,6 @@ If you are still not convinced let me give it one last shot to get you on board.
 </a></p>
 
 <p>I don&rsquo;t see any reason why we should still be serving our sites over HTTP. As you can see I have moved over to the HTTPS and have added this domain to the preload list as well. Let&rsquo;s make the web secure by default!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Share and Inspire]]></title>
-    <link href="http://rahulpnath.com/blog/share-and-inspire/"/>
-    <updated>2018-02-09T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/share-and-inspire</id>
-    <content type="html"><![CDATA[<p>When I started this blog around nine years back, my only intention was to share technical posts. But over period of time I started writing about a variety of things including <a href="http://www.rahulpnath.com/blog/category/productivity/">productivity tips</a> that I found useful, <a href="http://www.rahulpnath.com/blog/category/travelogue/">travelogues</a>, <a href="http://www.rahulpnath.com/blog/category/thoughts/">random thoughts</a>, <a href="http://www.rahulpnath.com/blog/2017-recap/">personal goals</a>, <a href="http://www.rahulpnath.com/blog/category/blogging/">blogging</a> etc. One of the things that I have noticed is that a lot of people have been inspired by these various posts and photos that I post online and have triggered them to do similar things.</p>
-
-<p><img src="http://rahulpnath.com/images/share_and_inspire.jpg" alt="Share and Inspire, Image Source https://www.saylor.org/2015/04/blog-saylor-student-stories/" class="center"></p>
-
-<p>I&rsquo;ve had my own similar inspirations to start the various things that I do today. Like for instance, I started running after being inspired by my friends, <a href="https://twitter.com/SatyKrish">Satish</a>, <a href="https://www.facebook.com/jeyakums">Suresh</a> and <a href="https://www.facebook.com/thirusv">Thiru</a>. I reached out to them for various tips when I started running a year ago. From running I moved on to cycling and a bit of swimming after seeing my friend <a href="https://www.facebook.com/rahul.revikumar477977">Rahul</a>. For travel, my inspiration has been <a href="https://www.facebook.com/arun.sudheendran.1">Arun Sudheendran</a> and <a href="https://www.facebook.com/deepak.suresh">Deepak Suresh</a> who do a fair bit of exploration. I tend to reach out to them for travel ideas and places to visit. Similarly, there have been inspirations from people that I have never met or met just once or twice.</p>
-
-<p>Below is a transcript of a chat with one of my readers whom I have never met. It&rsquo;s a great feeling to wake up to such messages and it boosts your own motivation to continue what you are doing.</p>
-
-<p><img src="http://rahulpnath.com/images/share_and_inspire_chat.png" alt="Share and Inspire" class="center"></p>
-
-<p>Social media plays a great role in spreading information these days. When you see people in your own friend&rsquo;s circle start doing things that you have always wanted to, it gives you an extra push to give it a try. There might be some people who feel you are sharing too much of things that don&rsquo;t interest them. For those, there is always an option to un-follow, mute, filter etc. Don&rsquo;t let that thought stop you from sharing things that you do.</p>
-
-<p>Such a small act of sharing, even things that you might have seen someone do could add up and be of big impact to someone else, often referred to as the <a href="https://www.hanselman.com/blog/TheButterflyEffectOfTechnologyCommunity.aspx">Butterfly Effect</a>.</p>
-
-<blockquote><p>The <strong>Butterfly Effect</strong>: This effect grants the power to cause a hurricane in China to a butterfly flapping its wings in New Mexico. It may take a very long time, but the connection is real. If the butterfly had not flapped its wings at just the right point in space/time, the hurricane would not have happened. - <a href="http://fractalfoundation.org/resources/what-is-chaos-theory/">Chaos Theory</a></p></blockquote>
-
-<p>Share things that you do, share positive things and inspire others!</p>
 ]]></content>
   </entry>
   

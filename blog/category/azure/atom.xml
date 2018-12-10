@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-10T00:02:40+00:00</updated>
+  <updated>2018-12-10T03:13:10+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,145 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Azure AD Custom Attributes and Optional Claims from an ASP.Net Application]]></title>
+    <link href="http://rahulpnath.com/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/"/>
+    <updated>2018-12-10T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application</id>
+    <content type="html"><![CDATA[<p>When using Azure Active Directory for managing your users, it is a common requirement to add additional attributes to your Users like SkypeId, employee code, EmployeeId and similar. Even though this happens to be a common need, getting this done is not that straightforward. This post describes how you can get additional properties on User objects in Azure AD.</p>
+
+<p>Recently when I had to do this at a client, we had users in Azure AD, the additional property, employeeCode for the user was available in an internal application which had the users Azure email-address mapped to it. We needed these to be synced across to the user Azure AD and make it available as part of claims for a Web site that uses <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/authentication-scenarios">Azure AD authentication</a></p>
+
+<h3>Adding Custom Attribute using Directory Schema Extensions</h3>
+
+<p>Azure AD user has a set of <a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-users-profile-azure-portal">default properties</a>, manageable through the Azure Portal. Any additional property to User gets added as an extension to the current user Schema. To add a new property we first need to <a href="https://msdn.microsoft.com/library/azure/ad/graph/howto/azure-ad-graph-api-directory-schema-extensions#RegisterAnExtension">register an extension</a>. Adding a new extension can be done using the <a href="https://graphexplorer.azurewebsites.net/">GraphExplorer website</a>. You need to specify the appropriate directory name (e.g., <em>contoso.onmicrosoft.com</em>) and the applicationObjectId. The application object id is the Object Id of the AD application that the Web Application uses to authenticate with Azure AD.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/graph/extensibility-overview#azure-ad-directory-schema-extensions">Azure AD supports</a> a similar type of extension, known as directory schema extensions, on a few directory object resources. Although you have to use the Azure AD Graph API to create and manage the definitions of directory schema extensions, you can use the Microsoft Graph API to add, get, update and delete data in the properties of these extensions.</em></p></blockquote>
+
+<pre><code class="json">POST https://graph.windows.net/contoso.onmicrosoft.com/applications/
+    &lt;applicationObjectId&gt;/extensionProperties?api-version=1.5 HTTP/1.1
+{
+    "name": "employeeCode&lt;optionalEnvironmentName&gt;",
+    "dataType": "String",
+    "targetObjects": [
+        "User"
+    ]
+}
+</code></pre>
+
+<p>The response gives back the fully-qualified extension property name, which is used to write values to the property. Usually the name is of the format <em>extension_&lt;adApplicationIdWithoutDashes>_extensionPropertyName</em></p>
+
+<p>If you have multiple environments (like Dev, Test, UAT, Prod) all pointing to the same Active Directory, it is a good idea to append the environment name to the extension property. It avoids any bad data issues between environments as all these properties get written to the same User object. You can automate the above step using any scripting language of your choice if required.</p>
+
+<h3>Setting Values for Custom Attributes</h3>
+
+<p>Now that we have the extension property created on the AD application, we can set the property on the User object. If you want to set this manually, you can use the <a href="https://graphexplorer.azurewebsites.net/">GraphExplorer website</a> again to do this.</p>
+
+<pre><code class="json">PATCH https://graph.windows.net/contoso.onmicrosoft.com/users
+        /jim@contoso.onmicrosoft.com?api-version=1.5
+{
+    "extension_ab603c56068041afb2f6832e2a17e237_employeeCode&lt;optionalEnvironmentName&gt;": "EMP124"
+}
+</code></pre>
+
+<p>In our case it was not a one-off case of updating the User object, so better wanted this to be automated. Employee codes were available from a database with the associated Azure AD email address. So we created a windows service job that would sync these codes to Azure AD. You can write to Azure AD schema extension properties using <a href="https://developer.microsoft.com/en-us/graph">Microsoft Graph API</a>. Add a reference to the <a href="https://www.nuget.org/packages/Microsoft.Graph">Microsoft Graph NuGet package</a>, and you are all set to go. For the Graph API to authenticate, use a different Azure AD app (separate to the one that you registered the extension property on, which the web app uses to authenticate), just because it needs additional permissions as well and it is a good idea to isolate that. Under Settings -> Required Permissions, Add Microsoft Graph and provide the relevant permissions for it to write the user&rsquo;s profile/directory data.</p>
+
+<p><img
+    src="/images/azureAd_GraphApi_Permissions.png"
+    class="center"
+    alt="Azure AD Graph API Permissions" /></p>
+
+<pre><code class="csharp Get Graph Api Client">private static async Task&lt;GraphServiceClient&gt; GetGraphApiClient()
+{
+    var clientId = ConfigurationManager.AppSettings["AppId"];
+    var secret = ConfigurationManager.AppSettings["Secret"];
+    var domain = ConfigurationManager.AppSettings["Domain"];
+
+    var credentials = new ClientCredential(clientId, secret);
+    var authContext =
+        new AuthenticationContext($"https://login.microsoftonline.com/{domain}/");
+    var token = await authContext
+        .AcquireTokenAsync("https://graph.microsoft.com/", credentials);
+
+    var graphServiceClient = new GraphServiceClient(new DelegateAuthenticationProvider((requestMessage) =&gt;
+    {
+        requestMessage
+            .Headers
+            .Authorization = new AuthenticationHeaderValue("bearer", token.AccessToken);
+
+        return Task.CompletedTask;
+    }));
+
+    return graphServiceClient;
+}
+</code></pre>
+
+<pre><code class="csharp Update Extension Value">private async Task UpdateEmployeeCode(
+    string employeeCodePropertyName, GraphServiceClient graphApiClient, Employee employee)
+{
+    var dictionary = new Dictionary&lt;string, object&gt;();
+    dictionary.Add(employeeCodePropertyName, employee.Code);
+
+    await graphApiClient.Users[employee.EmailAddress]
+        .Request()
+        .UpdateAsync(new User()
+        {
+            AdditionalData = dictionary
+        });
+}
+</code></pre>
+
+<p>Looping through all the employee codes, you can update all of them into Azure AD at regular intervals. To verify that the attributes are updated correctly, you can either use the Graph API client to read the extension property or use the Graph Explorer Website.</p>
+
+<h3>Accessing Custom Attributes through Claims</h3>
+
+<p>With the Azure AD updated with the employee code for each user, we can now set up the AD application to return the additional property as part of the claims, when the web application authenticates with it. The application manifest of the Azure AD application needs to be modified to return the extension property as part of the claims. By default <a href="https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-optional-claims#configuring-optional-claims">optionalClaims property</a> is set to null and you can update it with the below values.</p>
+
+<p><img
+    src="/images/AzureAd_schema_extension_optionalClaims.png"
+    class="center" alt="Azure AD Application Manifest - Optional Claims" /></p>
+
+<pre><code class="json Optional Claims in Azure AD Application Manifest">"optionalClaims": {
+    "idToken": [
+      {
+        "name": "extension_&lt;id&gt;_employeeCodeLocal",
+        "source": "user",
+        "essential": true,
+        "additionalProperties": []
+      }
+    ],
+    "accessToken": [],
+    "saml2Token": []
+  },
+</code></pre>
+
+<p>I updated the idToken property as the .Net Core Web Application was using JWT ID token. If you are unsure of what token you can use <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a> to find what kind of token is used (as shown below).</p>
+
+<p><img src="/images/AzureAd_idToken.png" class="center" alt="Id token returned" /></p>
+
+<p>With the optonalClaims set, the web application is all set to go. For an authenticated user (with the extension property set), the extension property is available as part of claims. The claim type will be &lsquo;<em>extn.employeeCode<optionalEnvironmentNam></em>&rsquo;. The below code can be used to extract the employee code from the claim.</p>
+
+<pre><code class="csharp Get Employee Code From Claim">public static string GetEmployeeCode(this ClaimsPrincipal claimsPrincipal)
+{
+    if (claimsPrincipal == null || claimsPrincipal.Claims == null)
+        return null;
+
+    var empCodeClaim = claimsPrincipal.Claims
+        .FirstOrDefault(claim =&gt; claim.Type.StartsWith("extn.employeeCode"));
+
+    return empCodeClaim?.Value;
+}
+</code></pre>
+
+<div class="alert alert-warning">
+Usually, the claims start flowing through immediately. However, once it did happen to me that the claims did not come for over a long period. Not sure what I did wrong, but once I deleted and recreated the AD application, it started working fine.
+</div>
+
+
+<p>Although setting additional properties on Azure AD Users is a common requirement, setting it up is not that straight-forward. Hope the portal improves someday, and it would be as easy as setting a list of key-value properties as extension properties, and it would all seamlessly flow through as part of the claims. However, till that day, hope this helps you to set up extra information on your Azure AD users.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure Web App Restarting Automatically Due to Overwhelming Change Notification]]></title>
@@ -319,86 +458,6 @@ Signed    : 0</p>
 <p><strong><em>Deleting the Prefer32Bit attribute from the csproj and building fixed the assembly loading issue of msshrtmi!</em></strong></p>
 
 <p>Though this ended up being a minor fix (in terms of code change), I learned a lot of different tools that can be used to debug assembly loading issues. It was using these right tools that helped me identify this extra attribute on the csproj file and help solve the issue. So the next time you see such an error , either with mssrhtmi or another DLL, hope this helps to find your way through!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Managing Azure AD Application for Key Vault]]></title>
-    <link href="http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault/"/>
-    <updated>2015-06-27T19:13:48+00:00</updated>
-    <id>http://rahulpnath.com/blog/managing-azure-ad-application-for-key-vault</id>
-    <content type="html"><![CDATA[<blockquote><p>Please check <a href="http://www.rahulpnath.com/blog/how-the-deprecation-of-switch-azuremode-affects-azure-key-vault/">here</a> for scripts using the latest PowerShell cmdlets.</p></blockquote>
-
-<p>Access to the Key Vault is secured using AD application token, as we had seen in the &lsquo;<a href="http://www.rahulpnath.com/blog/authenticating-a-client-application-with-azure-key-vault/">Authenticating a Client Application with Azure Key Vault</a>&rsquo;. Quite often administrators require to manage the AD application created, performing activities like creating new AD applications, changing the certificate used to authenticate with the AD application, remove a certificate or even delete an application. All of these are possible using PowerShell scripts and administrators can even run this as part of their automation scripts. With the latest Azure PowerShell version(0.9.2 or higher), the Key Vault cmdlet&rsquo;s are included automatically and does not require any additional installations. For managing the Azure AD application we need to <a href="https://msdn.microsoft.com/en-us/library/azure/jj151815.aspx#bkmk_installmodule">install the Azure AD module for PowerShell</a> and import them into the PowerShell command prompt.</p>
-
-<h4><strong>Creating AD application</strong></h4>
-
-<p>The <em><a href="https://msdn.microsoft.com/en-us/library/dn986794.aspx">New-AzureADApplication</a></em> cmdlet is used to create a new Azure AD application. It also provides an option to specify the certificate details used to authenticate with the AD application at the time of creation itself. This can be done as a separate step if required, which is shown later in the post.</p>
-
-<p>First we need a certificate that is to be used for authenticating against the AD application, for which I use the below commands to generate a test certificate</p>
-
-<pre><code class="text">makecert -sv mykey.pvk -n "cn=AD Test Vault Application" ADTestVaultApplication.cer -b 03/03/2014 -e 06/05/2017 -r -len 2048
-pvk2pfx -pvk mykey.pvk -spc ADTestVaultApplication.cer -pfx ADTestVaultApplication.pfx -po test
-</code></pre>
-
-<p>This certificate is then used to create the AD application using the below script.</p>
-
-<pre><code class="powershell">$certificateFilePath = "C:\certificates\ADTestVaultApplication.cer"
-$certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$certificate.Import($certificateFilePath)
-$rawCertificateData = $certificate.GetRawCertData()
-$credential = [System.Convert]::ToBase64String($rawCertificateData)
-$startDate= [System.DateTime]::Now
-$endDate = $startDate.AddYears(1)
-$adApplication = New-AzureADApplication -DisplayName "KeyVaultADApplication" 
-  -HomePage  "http://www.rahulpnath.com" -IdentifierUris "http://www.rahulpnath.com"  
-  -KeyValue  $credential -KeyType "AsymmetricX509Cert" -KeyUsage "Verify" 
-  -StartDate $startDate -EndDate $endDate 
-</code></pre>
-
-<p>To associate the application created with the Key Vault, we need to create a service principal using <a href="https://msdn.microsoft.com/en-us/library/dn986799.aspx">New-AzureADServicePrincipal</a> and then associate that with the Vault using the <a href="https://msdn.microsoft.com/en-us/library/azure/dn903607.aspx">Set-AzureKeyVaultAccessPolicy</a></p>
-
-<pre><code class="powershell">$servicePrincipal = New-AzureADServicePrincipal -ApplicationId $adApplication.ApplicationId
-Set-AzureKeyVaultAccessPolicy -VaultName 'KeyVaultRahul' -ObjectId  $servicePrincipal.Id -PermissionsToKeys all -PermissionsToSecrets all
-$ServicePrincipal.ApplicationId #Outputs the ServicePrincipalName/AppPrincipalId
-</code></pre>
-
-<h4><strong>Adding a Certificate</strong></h4>
-
-<p>The <em><a href="https://msdn.microsoft.com/en-us/library/azure/dn194106.aspx">New-MsolServicePrincipalCredential</a></em> cmdlet is used to add a new credential to a service principal or to an application. The service principal is identified by supplying one of the following: object ID, appPrincipalID, service principal name (SPN).</p>
-
-<pre><code class="powershell">$msolCredentials = get-credential
-connect-msolservice -credential $msolCredentials
-$certificateFilePath = "C:\certificates\ADTestVaultApplicationNew.cer"
-$x509Certificate2 = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-$x509Certificate2.Import($certificateFilePath)
-$rawCertData = $x509Certificate2.GetRawCertData()
-$credentialValue = [System.Convert]::ToBase64String($rawCertData)
-$startDate= [System.DateTime]::Now
-$endDate = $startDate.AddYears(1)
-New-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -Type Asymmetric -Value $credentialValue -StartDate $startDate -EndDate   $endDate 
-</code></pre>
-
-<h4><strong>Removing a Certificate</strong></h4>
-
-<p>Whenever a credential gets compromised or as part of regular credential refresh, administrators would want to remove an old certificate and replace with a new one. The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194125.aspx">Remove-MsolServicePrincipalCredential</a> cmdlet is used to remove a credential key from a service principal by specifying the key ID for the credential and the objectID/applicationID/ServicePrincipalName to identify the service principal. To get the key ID of an existing credential, <a href="https://msdn.microsoft.com/en-us/library/azure/dn194091.aspx">Get-MsolServicePrincipalCredential</a> cmdlet can be used, which returns the list of credentials associated with a service principal. The below script just removes the first credential, you could loop through and remove all.</p>
-
-<pre><code class="powershell">$servicePrincipalCredential = Get-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -ReturnKeyValues 0
-Remove-MsolServicePrincipalCredential -ServicePrincipalName $ServicePrincipal.ApplicationId -KeyIds $servicePrincipalCredential[0].KeyId
-</code></pre>
-
-<h4><strong>Delete an application</strong></h4>
-
-<p>The <a href="https://msdn.microsoft.com/en-us/library/azure/dn194113.aspx">Remove-MsolServicePrincipal</a> cmdlet removes a service principal from Microsoft Azure Active Directory, by specifying objectID/applicationID/ServicePrincipalName to identify the service principal.</p>
-
-<pre><code class="powershell">Remove-MsolServicePrincipal -ObjectId &lt;Guid&gt;
-Or
-Remove-MsolServicePrincipal -AppPrincipalId &lt;Guid&gt;
-Or
-Remove-MsolServicePrincipal -ServicePrincipalName &lt;string&gt;
-</code></pre>
-
-<p>Managing the AD application is a very important and necessary process in the life cycle of a Key Vault, as the access to the Vault is controlled using that. Certificates securing the AD applciation should be rolled/updated frequently and application permissions should be reviewed often to make sure that all applications have only the required permissions.</p>
 ]]></content>
   </entry>
   
