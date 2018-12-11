@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>.Net Core Web App and Azure AD Groups Role based access - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Use Azure AD groups to enable/disable functionality for your users based on their Roles." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content=".Net Core Web App and Azure AD Groups Role based access" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/" />
+<meta property="og:description" content="Use Azure AD groups to enable/disable functionality for your users based on their Roles." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/azure_ad_Groups.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access" />
+<meta property="twitter:title" content=".Net Core Web App and Azure AD Groups Role based access" />
+<meta property="twitter:description" content="Use Azure AD groups to enable/disable functionality for your users based on their Roles." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/azure_ad_Groups.png" />
+
+
+<script 
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"
+    integrity="sha256-pXtSQrmprcTB74RsNlFHuJxHK5zXcPrOMx78uWU0ayU="
+    crossorigin="anonymous">
+</script>
+
+<script nonce="anF1ZXJ5ZmFsbGJhY2s=">
+    window.jQuery || 
+    document.write('<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js" crossorigin="anonymous" integrity="sha256-ruuHogwePywKZ7bI1vHGGs7ScbBLhkNUcSSeRjhSUko=">\x3C/script>')
+</script>
+
+<link 
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.min.css"
+    integrity="sha256-tf1yN1B2PrtzH5Ih5BPn1k1Y1RktwEDkIpLtPczMpzI="
+    crossorigin="anonymous" />
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap-theme.min.css"
+    integrity="sha256-NLECy3aJQJ/Rw8GArrH9PwuL8LR6slx0xC6v9XTmYak="
+    crossorigin="anonymous" />
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 11<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net-core/'>.net core</a>, <a class='category' href='/blog/category/azure/'>azure</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        .Net Core Web App and Azure AD Groups Role based access
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Getting your application to provide capabilities based on the role of the User using the system is a common thing. When using Azure Active Directory (AD), the Groups feature allows organizing users of your system into different roles. In the applications that we build, the group information can be used to enable/disable functionality. For, e.g., if your application has the functionality to add new users you might want to restrict this to only users belonging to the administrator role.</p>
+
+<p><a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-groups-create-azure-portal">Adding new groups</a> can be done using the Azure portal. Select Group Type, <em>Security</em> as it is intended to provide permissions based on roles.</p>
+
+<p><img src="/images/azure_ad_Groups.png" alt="Azure AD Add Group" class="center" /></p>
+
+<p>For the Groups to be returned as part of the claims, the <em>groupMembershipClaims</em> property in application manifest needs to be updated. Setting it to <em>SecurityGroup</em> will return all SecurityGroups of the user.</p>
+
+<figure class='code'><figcaption><span>Azure AD Manifest - Group Membership Claims</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;groupMembershipClaims&quot;</span><span class="p">:</span> <span class="s2">&quot;SecurityGroup&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For each group created an <em>ObjectId</em> is assigned to it which is what gets returned as part of the claims. You can either add it as part of your applications config file or use Microsoft Graph API to query the list of groups at runtime. Here I have chosen to keep it as part of the config file.</p>
+
+<figure class='code'><figcaption><span>appsettings.json</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;AdGroups&quot;</span><span class="err">:</span> <span class="p">[</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;GroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;Admin&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;GroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;119f6fb5-a325-47f9-9889-ae6979e9e120&quot;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;GroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;Employee&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;GroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;02618532-b2c0-4e58-a32e-e715ddf07f63&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have all the groups and associated configuration setup, we can wire up the .Net Core web application to start using the groups from the claims to enable/disable features. Using the <a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Policy-based authorization</a> capabilities of .Net core application we can wire up policies for all the groups we have.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Role-based authorization and claims-based authorization</a> use a requirement, a requirement handler, and a pre-configured policy. These building blocks support the expression of authorization evaluations in code. The result is a richer, reusable, testable authorization structure.</em></p></blockquote>
+
+<p>We have an <em>IsMemberOfGroupRequirement</em> class to represent the requirement for all the groups, the <em>IsMemberOfGroupHandler</em> that implements how to validate a group requirement. The Handler reads the current user&rsquo;s claims and checks it contains the objectId associated with the Group as a claim. If a match is found the requirement check is marked as a success. Since we want the request to continue to match for any other group requirements the requirement is not failed explicitly.</p>
+
+<figure class='code'><figcaption><span>IsMemberOfGroup Requirement</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IsMemberOfGroupRequirement</span> <span class="p">:</span> <span class="n">IAuthorizationRequirement</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">GroupId</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">GroupName</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">IsMemberOfGroupRequirement</span><span class="p">(</span><span class="kt">string</span> <span class="n">groupName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">groupId</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">GroupName</span> <span class="p">=</span> <span class="n">groupName</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">GroupId</span> <span class="p">=</span> <span class="n">groupId</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IsMemberOfGroupHandler</span> <span class="p">:</span> <span class="n">AuthorizationHandler</span><span class="p">&lt;</span><span class="n">IsMemberOfGroupRequirement</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">Task</span> <span class="nf">HandleRequirementAsync</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">AuthorizationHandlerContext</span> <span class="n">context</span><span class="p">,</span> <span class="n">IsMemberOfGroupRequirement</span> <span class="n">requirement</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">groupClaim</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Claims</span>
+</span><span class='line'>             <span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">(</span><span class="n">claim</span> <span class="p">=&gt;</span> <span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="s">&quot;groups&quot;</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>                 <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">requirement</span><span class="p">.</span><span class="n">GroupId</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">groupClaim</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">Succeed</span><span class="p">(</span><span class="n">requirement</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">CompletedTask</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Registering the policies for all the groups in the application&rsquo;s configuration file and the handler can be done as below. Looping through all the groups in the config we create a policy for each with the associated GroupName. It allows us to use the GroupName as the policy name at places where we want to restrict features for users belonging to that group.</p>
+
+<figure class='code'><figcaption><span>Registering Policy and Handler</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">services</span><span class="p">.</span><span class="n">AddAuthorization</span><span class="p">(</span><span class="n">options</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adGroupConfig</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">AdGroupConfig</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="n">_configuration</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="s">&quot;AdGroups&quot;</span><span class="p">,</span> <span class="n">adGroupConfig</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">adGroup</span> <span class="k">in</span> <span class="n">adGroupConfig</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">options</span><span class="p">.</span><span class="n">AddPolicy</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">adGroup</span><span class="p">.</span><span class="n">GroupName</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">policy</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="n">policy</span><span class="p">.</span><span class="n">AddRequirements</span><span class="p">(</span><span class="k">new</span> <span class="n">IsMemberOfGroupRequirement</span><span class="p">(</span><span class="n">adGroup</span><span class="p">.</span><span class="n">GroupName</span><span class="p">,</span> <span class="n">adGroup</span><span class="p">.</span><span class="n">GroupId</span><span class="p">)));</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">services</span><span class="p">.</span><span class="n">AddSingleton</span><span class="p">&lt;</span><span class="n">IAuthorizationHandler</span><span class="p">,</span> <span class="n">IsMemberOfGroupHandler</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the policy is now as simple as decorating your controllers with the Authorize attribute and providing the required Policy names on it as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Authorize(Policy = &quot;Admin&quot;)]</span>
+</span><span class='line'><span class="na">[ApiController]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">AddUsersController</span> <span class="p">:</span> <span class="n">ControllerBase</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">....</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you to setup Role-based functionality for your ASP.Net Core applications using Azure AD as authentication/authorization provider.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/">Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-web-restarting-automatically-due-to-overwhelming-change-notification/">Azure Web App Restarting Automatically Due to Overwhelming Change Notification</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/azure-key-vault-from-azure-functions-certificate-based-authentication/">Azure Key Vault From Azure Functions - Certificate Based Authentication</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/" title="Previous Post: Azure AD Custom Attributes and Optional Claims from an ASP.Net Application">&laquo; Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2018 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript" nonce="ZGlzcXVzc2NyaXB0">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/';
+        var disqus_url = 'http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script nonce="ZmFjZWJvb2tsaWtl">(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript" nonce="dHdlZXRidXR0b24=">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script 
+    src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js" 
+    integrity="sha256-JMwpUzWY+WKCPEIpvCgEh2RqJ6QqlSV8Md4bmxjzcQ8="
+    crossorigin="anonymous">
+</script>
+<script 
+    src="/javascripts/modernizr-2.0.js" 
+    integrity="sha256-hME7nDofAgLynuLg6DATEk67QUTY7HetpZJjZ+HNZek="
+    crossorigin="anonymous">
+</script>
+
+  </body>
+</html>

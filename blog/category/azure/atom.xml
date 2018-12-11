@@ -4,7 +4,7 @@
   <title><![CDATA[Category: azure | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/azure/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-10T09:49:13+00:00</updated>
+  <updated>2018-12-11T00:02:08+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,104 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[.Net Core Web App and Azure AD Groups Role based access]]></title>
+    <link href="http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access/"/>
+    <updated>2018-12-11T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/dot-net-core-api-and-azure-ad-groups-based-access</id>
+    <content type="html"><![CDATA[<p>Getting your application to provide capabilities based on the role of the User using the system is a common thing. When using Azure Active Directory (AD), the Groups feature allows organizing users of your system into different roles. In the applications that we build, the group information can be used to enable/disable functionality. For, e.g., if your application has the functionality to add new users you might want to restrict this to only users belonging to the administrator role.</p>
+
+<p><a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-groups-create-azure-portal">Adding new groups</a> can be done using the Azure portal. Select Group Type, <em>Security</em> as it is intended to provide permissions based on roles.</p>
+
+<p><img src="/images/azure_ad_Groups.png" alt="Azure AD Add Group" class="center" /></p>
+
+<p>For the Groups to be returned as part of the claims, the <em>groupMembershipClaims</em> property in application manifest needs to be updated. Setting it to <em>SecurityGroup</em> will return all SecurityGroups of the user.</p>
+
+<pre><code class="json Azure AD Manifest - Group Membership Claims">{
+    "groupMembershipClaims": "SecurityGroup"
+}
+</code></pre>
+
+<p>For each group created an <em>ObjectId</em> is assigned to it which is what gets returned as part of the claims. You can either add it as part of your applications config file or use Microsoft Graph API to query the list of groups at runtime. Here I have chosen to keep it as part of the config file.</p>
+
+<pre><code class="json appsettings.json">"AdGroups": [
+  {
+    "GroupName": "Admin",
+    "GroupId": "119f6fb5-a325-47f9-9889-ae6979e9e120"
+  },
+  {
+    "GroupName": "Employee",
+    "GroupId": "02618532-b2c0-4e58-a32e-e715ddf07f63"
+  }
+]
+</code></pre>
+
+<p>Now that we have all the groups and associated configuration setup, we can wire up the .Net Core web application to start using the groups from the claims to enable/disable features. Using the <a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Policy-based authorization</a> capabilities of .Net core application we can wire up policies for all the groups we have.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Role-based authorization and claims-based authorization</a> use a requirement, a requirement handler, and a pre-configured policy. These building blocks support the expression of authorization evaluations in code. The result is a richer, reusable, testable authorization structure.</em></p></blockquote>
+
+<p>We have an <em>IsMemberOfGroupRequirement</em> class to represent the requirement for all the groups, the <em>IsMemberOfGroupHandler</em> that implements how to validate a group requirement. The Handler reads the current user&rsquo;s claims and checks it contains the objectId associated with the Group as a claim. If a match is found the requirement check is marked as a success. Since we want the request to continue to match for any other group requirements the requirement is not failed explicitly.</p>
+
+<pre><code class="csharp IsMemberOfGroup Requirement">public class IsMemberOfGroupRequirement : IAuthorizationRequirement
+{
+    public readonly string GroupId ;
+    public readonly string GroupName ;
+
+    public IsMemberOfGroupRequirement(string groupName, string groupId)
+    {
+        GroupName = groupName;
+        GroupId = groupId;
+    }
+}
+
+public class IsMemberOfGroupHandler : AuthorizationHandler&lt;IsMemberOfGroupRequirement&gt;
+{
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context, IsMemberOfGroupRequirement requirement)
+    {
+        var groupClaim = context.User.Claims
+             .FirstOrDefault(claim =&gt; claim.Type == "groups" &amp;&amp;
+                 claim.Value.Equals(requirement.GroupId, StringComparison.InvariantCultureIgnoreCase));
+
+        if (groupClaim != null)
+            context.Succeed(requirement);
+
+        return Task.CompletedTask;
+    }
+}
+</code></pre>
+
+<p>Registering the policies for all the groups in the application&rsquo;s configuration file and the handler can be done as below. Looping through all the groups in the config we create a policy for each with the associated GroupName. It allows us to use the GroupName as the policy name at places where we want to restrict features for users belonging to that group.</p>
+
+<pre><code class="csharp Registering Policy and Handler">services.AddAuthorization(options =&gt;
+{
+    var adGroupConfig = new List&lt;AdGroupConfig&gt;();
+    _configuration.Bind("AdGroups", adGroupConfig);
+
+    foreach (var adGroup in adGroupConfig)
+        options.AddPolicy(
+            adGroup.GroupName, 
+            policy =&gt;
+                policy.AddRequirements(new IsMemberOfGroupRequirement(adGroup.GroupName, adGroup.GroupId)));
+});
+
+services.AddSingleton&lt;IAuthorizationHandler, IsMemberOfGroupHandler&gt;();
+</code></pre>
+
+<p>Using the policy is now as simple as decorating your controllers with the Authorize attribute and providing the required Policy names on it as shown below.
+<code>csharp
+[Authorize(Policy = "Admin")]
+[ApiController]
+public partial class AddUsersController : ControllerBase
+{
+    ....
+}
+</code></p>
+
+<p>Hope this helps you to setup Role-based functionality for your ASP.Net Core applications using Azure AD as authentication/authorization provider.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Azure AD Custom Attributes and Optional Claims from an ASP.Net Application]]></title>
@@ -384,80 +482,6 @@ public async static Task Run(TimerInfo myTimer, TraceWriter log)
 <p><img src="/images/azureFunction_run.png" alt="" class="center" /></p>
 
 <p>Hope this helps you to get started with Key Vault in Azure Functions and keep your sensitive data secure.</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Could Not Load Assembly msshrtmi.dll?]]></title>
-    <link href="http://rahulpnath.com/blog/could-not-load-assembly-msshrtmi-dll/"/>
-    <updated>2016-06-19T17:38:37+00:00</updated>
-    <id>http://rahulpnath.com/blog/could-not-load-assembly-msshrtmi-dll</id>
-    <content type="html"><![CDATA[<p>While migrating a few Azure Cloud Services to Web Jobs, we started facing the error, <span style='color: red;'><em>Could not load assembly &hellip; /msshrtmi.dll</em></span>,for just one of the projects. The error provides the exact path from where it is trying to load the DLL and is the same path from which the process is running. But the location does have the <em>msshrtmi.dll</em>, which for some reason the process is not able to load.</p>
-
-<p><img class="center" src="/images/msshrtmi_load_error.png" alt="msshrtmi dll load error" /></p>
-
-<div class="alert alert-info" role="alert">
-<strong>TL;DR</strong> This error occurred due to an attribute - <i>&lt;Prefer32Bit&gt;false&lt;/Prefer32Bit&gt;</i> - in the csproj file, while the referred msshrtmi dll was 32-bit version. This might not be applicable to you, but since it has happened once it&#8217;s very likely to happen again.
-</div>
-
-
-<p>To our surprise, this was happening only with a specific worker, while all others (around 8) were working fine. All of the workers are generated by the same build process on a server. For some reason (I am still investigating into this) the msshrtmi.dll is added as an external reference in the project and referred from there in all the project files. This was done mainly because we had a few external dependencies that were dependent on specific Azure SDK version (2.2). But this explicit reference should not have caused any issues as all, as the other processes were working fine and only a specific one was failing.</p>
-
-<p>One useful tool to help diagnose why the .NET framework cannot locate assemblies is <a href="https://msdn.microsoft.com/en-us/library/e74a18c4(v=vs.110).aspx">Assembly Binding Log Viewer(Fuslogvw.exe)</a>. The viewer displays an entry for each failed assembly bind. For each failure, the viewer describes the application that initiated the bind; the assembly the bind is for, including name, version, culture and public key; and the date and time of the failure.</p>
-
-<blockquote><p><em>Fuslogvw.exe is automatically installed with Visual Studio. To run the tool, use the Developer Command Prompt with administrator credentials.</em></p></blockquote>
-
-<p>Running <em>fuslogvw</em> with the application shows the assembly binding error, double clicking which gives a details error information, as shown below. This error message gives more details and tells us that the assembly platform or ContentType is invalid.</p>
-
-<p><img class="center" src="/images/msshrtmi_fuslogvw.png" alt="LOG: Assembly Name is: msshrtmi, Version=2.2.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35
-ERR: Invalid assembly platform or ContentType in file (hr = 0x8007000b).
-ERR: Run-from-source setup phase failed with hr = 0x8007000b.
-ERR: Failed to complete setup of assembly (hr = 0x8007000b). Probing terminated." /></p>
-
-<p>In the Task Manager, the worker with the assembly loading error (last <em>worker</em> in the image below) shows as a 64-bit process, while the others as 32-bit. Since the referred msshrtmi DLL is 32-bit, it explains why it was unable to find the correct platform matching msshrtmi assembly.</p>
-
-<p><img class="center" src="/images/msshrtmi_task_manager.png" alt="msshrtmi task manager" /></p>
-
-<p><a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx">CorFlags.exe</a> is used to determine whether an .exe file or .dll file is meant to run only on a specific platform or under WOW64. Running the <em>corflags</em> on all the workers produces the below two results:</p>
-
-<p><mark>corflags Problematic_Worker.exe</mark> <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x1  <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark>32BITPREF : 0</mark><br/>
-Signed    : 0</p>
-
-<p><mark>corflags Worker.exe</mark>    <br/>
-Version   : v4.0.30319 <br/>
-CLR Header: 2.5 <br/>
-PE        : PE32 <br/>
-CorFlags  : 0x20003 <br/>
-ILONLY    : 1 <br/>
-32BITREQ  : 0 <br/>
-<mark> 32BITPREF : 1</mark>  <br/>
-Signed    : 0</p>
-
-<p>The <em>32BITPREF</em> flag is &lsquo;0&rsquo; for the worker that shows the error, whereas for the rest shows 1. The <a href="https://msdn.microsoft.com/en-us/library/ms164699(v=vs.110).aspx"><em>32BITPREF</em></a> flag indicates that the application runs as a 32 bit process even on 64-bit platforms. This explains why the problematic worker was running as 64-bit process since the flag is turned off.</p>
-
-<blockquote><p><em><a href="http://blogs.microsoft.co.il/sasha/2012/04/04/what-anycpu-really-means-as-of-net-45-and-visual-studio-11/">From .NET 4.5 and Visual Studio 11</a>, the default for most .NET projects is again AnyCPU, but there is more than one meaning to AnyCPU now. There is an additional sub-type of AnyCPU, “Any CPU 32-bit preferred”, which is the new default (overall, there are now five options for the /platform C# compiler switch: x86, Itanium, x64, anycpu, and anycpu32bitpreferred). When using that flavor of AnyCPU, the semantics are the following:</em></p>
-
-<ul>
-<li><em>If the process runs on a 32-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on a 64-bit Windows system, it runs as a 32-bit process. IL is compiled to x86 machine code.</em></li>
-<li><em>If the process runs on an ARM Windows system, it runs as a 32-bit process. IL is compiled to ARM machine code.</em></li>
-</ul>
-</blockquote>
-
-<p>All the projects are getting built using the same build scripts, and we are not explicitly turning off/on this compiler option. So the next possible place where any setting for this flag is specified is the <em>csproj</em> file. On the properties of the worker project file (the one that shows error), I see that &lsquo;<em>Prefer 32-bit</em>&rsquo; option is not checked and the csproj file has it explicitly set to false (as shown below). For other projects, this option is checked in Visual Studio and has no entry in the csproj file, which means the flag defaults to true.</p>
-
-<p><img class="center" src="/images/msshrtmi_prefer32bit.png" alt="msshrtmi prefer 32bit csproj" /></p>
-
-<p><strong><em>Deleting the Prefer32Bit attribute from the csproj and building fixed the assembly loading issue of msshrtmi!</em></strong></p>
-
-<p>Though this ended up being a minor fix (in terms of code change), I learned a lot of different tools that can be used to debug assembly loading issues. It was using these right tools that helped me identify this extra attribute on the csproj file and help solve the issue. So the next time you see such an error , either with mssrhtmi or another DLL, hope this helps to find your way through!</p>
 ]]></content>
   </entry>
   

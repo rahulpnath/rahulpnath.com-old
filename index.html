@@ -181,6 +181,206 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-11T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 11<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/dot-net-core/'>.net core</a>, <a class='category' href='/blog/category/azure/'>azure</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/" itemprop="url">.Net Core Web App and Azure AD Groups Role based access</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Getting your application to provide capabilities based on the role of the User using the system is a common thing. When using Azure Active Directory (AD), the Groups feature allows organizing users of your system into different roles. In the applications that we build, the group information can be used to enable/disable functionality. For, e.g., if your application has the functionality to add new users you might want to restrict this to only users belonging to the administrator role.</p>
+
+<p><a href="https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-groups-create-azure-portal">Adding new groups</a> can be done using the Azure portal. Select Group Type, <em>Security</em> as it is intended to provide permissions based on roles.</p>
+
+<p><img src="/images/azure_ad_Groups.png" alt="Azure AD Add Group" class="center" /></p>
+
+<p>For the Groups to be returned as part of the claims, the <em>groupMembershipClaims</em> property in application manifest needs to be updated. Setting it to <em>SecurityGroup</em> will return all SecurityGroups of the user.</p>
+
+<figure class='code'><figcaption><span>Azure AD Manifest - Group Membership Claims</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;groupMembershipClaims&quot;</span><span class="p">:</span> <span class="s2">&quot;SecurityGroup&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>For each group created an <em>ObjectId</em> is assigned to it which is what gets returned as part of the claims. You can either add it as part of your applications config file or use Microsoft Graph API to query the list of groups at runtime. Here I have chosen to keep it as part of the config file.</p>
+
+<figure class='code'><figcaption><span>appsettings.json</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="s2">&quot;AdGroups&quot;</span><span class="err">:</span> <span class="p">[</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;GroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;Admin&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;GroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;119f6fb5-a325-47f9-9889-ae6979e9e120&quot;</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="nt">&quot;GroupName&quot;</span><span class="p">:</span> <span class="s2">&quot;Employee&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="nt">&quot;GroupId&quot;</span><span class="p">:</span> <span class="s2">&quot;02618532-b2c0-4e58-a32e-e715ddf07f63&quot;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that we have all the groups and associated configuration setup, we can wire up the .Net Core web application to start using the groups from the claims to enable/disable features. Using the <a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Policy-based authorization</a> capabilities of .Net core application we can wire up policies for all the groups we have.</p>
+
+<blockquote><p><em><a href="https://docs.microsoft.com/en-us/aspnet/core/security/authorization/policies?view=aspnetcore-2.2">Role-based authorization and claims-based authorization</a> use a requirement, a requirement handler, and a pre-configured policy. These building blocks support the expression of authorization evaluations in code. The result is a richer, reusable, testable authorization structure.</em></p></blockquote>
+
+<p>We have an <em>IsMemberOfGroupRequirement</em> class to represent the requirement for all the groups, the <em>IsMemberOfGroupHandler</em> that implements how to validate a group requirement. The Handler reads the current user&rsquo;s claims and checks it contains the objectId associated with the Group as a claim. If a match is found the requirement check is marked as a success. Since we want the request to continue to match for any other group requirements the requirement is not failed explicitly.</p>
+
+<figure class='code'><figcaption><span>IsMemberOfGroup Requirement</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IsMemberOfGroupRequirement</span> <span class="p">:</span> <span class="n">IAuthorizationRequirement</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">GroupId</span> <span class="p">;</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">readonly</span> <span class="kt">string</span> <span class="n">GroupName</span> <span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">IsMemberOfGroupRequirement</span><span class="p">(</span><span class="kt">string</span> <span class="n">groupName</span><span class="p">,</span> <span class="kt">string</span> <span class="n">groupId</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">GroupName</span> <span class="p">=</span> <span class="n">groupName</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">GroupId</span> <span class="p">=</span> <span class="n">groupId</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">IsMemberOfGroupHandler</span> <span class="p">:</span> <span class="n">AuthorizationHandler</span><span class="p">&lt;</span><span class="n">IsMemberOfGroupRequirement</span><span class="p">&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">Task</span> <span class="nf">HandleRequirementAsync</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">AuthorizationHandlerContext</span> <span class="n">context</span><span class="p">,</span> <span class="n">IsMemberOfGroupRequirement</span> <span class="n">requirement</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">groupClaim</span> <span class="p">=</span> <span class="n">context</span><span class="p">.</span><span class="n">User</span><span class="p">.</span><span class="n">Claims</span>
+</span><span class='line'>             <span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">(</span><span class="n">claim</span> <span class="p">=&gt;</span> <span class="n">claim</span><span class="p">.</span><span class="n">Type</span> <span class="p">==</span> <span class="s">&quot;groups&quot;</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>                 <span class="n">claim</span><span class="p">.</span><span class="n">Value</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">requirement</span><span class="p">.</span><span class="n">GroupId</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">groupClaim</span> <span class="p">!=</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">context</span><span class="p">.</span><span class="n">Succeed</span><span class="p">(</span><span class="n">requirement</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">CompletedTask</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Registering the policies for all the groups in the application&rsquo;s configuration file and the handler can be done as below. Looping through all the groups in the config we create a policy for each with the associated GroupName. It allows us to use the GroupName as the policy name at places where we want to restrict features for users belonging to that group.</p>
+
+<figure class='code'><figcaption><span>Registering Policy and Handler</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">services</span><span class="p">.</span><span class="n">AddAuthorization</span><span class="p">(</span><span class="n">options</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">adGroupConfig</span> <span class="p">=</span> <span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">AdGroupConfig</span><span class="p">&gt;();</span>
+</span><span class='line'>    <span class="n">_configuration</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="s">&quot;AdGroups&quot;</span><span class="p">,</span> <span class="n">adGroupConfig</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">adGroup</span> <span class="k">in</span> <span class="n">adGroupConfig</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">options</span><span class="p">.</span><span class="n">AddPolicy</span><span class="p">(</span>
+</span><span class='line'>            <span class="n">adGroup</span><span class="p">.</span><span class="n">GroupName</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">policy</span> <span class="p">=&gt;</span>
+</span><span class='line'>                <span class="n">policy</span><span class="p">.</span><span class="n">AddRequirements</span><span class="p">(</span><span class="k">new</span> <span class="n">IsMemberOfGroupRequirement</span><span class="p">(</span><span class="n">adGroup</span><span class="p">.</span><span class="n">GroupName</span><span class="p">,</span> <span class="n">adGroup</span><span class="p">.</span><span class="n">GroupId</span><span class="p">)));</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">services</span><span class="p">.</span><span class="n">AddSingleton</span><span class="p">&lt;</span><span class="n">IAuthorizationHandler</span><span class="p">,</span> <span class="n">IsMemberOfGroupHandler</span><span class="p">&gt;();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Using the policy is now as simple as decorating your controllers with the Authorize attribute and providing the required Policy names on it as shown below.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Authorize(Policy = &quot;Admin&quot;)]</span>
+</span><span class='line'><span class="na">[ApiController]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">AddUsersController</span> <span class="p">:</span> <span class="n">ControllerBase</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">....</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Hope this helps you to setup Role-based functionality for your ASP.Net Core applications using Azure AD as authentication/authorization provider.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-10T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 10<sup>th</sup>, 2018</time>
         
 
@@ -1352,63 +1552,6 @@ Just because you have an A+ Rating (or a good rating) does not mean that your si
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-07-04T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 4<sup>th</sup>, 2018</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/parenting/'>parenting</a>, <a class='category' href='/blog/category/tipow/'>tipow</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/kumon-books-creative-workbooks/" itemprop="url">Tip of the Week: Kumon Books - Creative Workbooks</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>It&rsquo;s always hard to keep young minds engaged and fresh. As a parent, it is good to have a few different options to keep your child engaged and also at the same time help them learn. Activity books are a great way of keeping kids involved and help them develop the skills that they need in their lives.</p>
-
-<p><a href="http://kumonbooks.com/">Kumon Books</a> offer a wide variety of books for different <a href="http://kumonbooks.com/books/by-grade/">age groups</a> and <a href="http://kumonbooks.com/books/by-subject/basic/">subjects</a>. The books follow a progression and are meant to be used in the sequence to helps kids progress by building on previous skills. The <a href="http://kumonbooks.com/wp-content/uploads/2015/01/2015-Workbook-Chart.pdf">workbook chart</a> helps if you are new to Kumon Books. You can also choose by your <a href="http://kumonbooks.com/books/by-grade/">kids age</a> if you don&rsquo;t find the chart useful.</p>
-
-<p><img src="/images/kumon_books.png" alt="center" alt="Kumon Books" /></p>
-
-<p>The books cover a variety of activities like coloring, cutting paper, folding, pasting stickers, reading, writing, maths, etc. Each book easily introduces the concept and makes your child repeat it over and over again until it becomes clear to them before moving to advanced skills. Activity books like cutting, folding, paste, etc. are intended to be used once but for the other ones like writing, reading, math, etc. you can get your child to use a pencil and erase it off if you want them to refresh on the skills sometimes.</p>
-
-<p>We have got books across most of the activities for Gautham and found it valuable. The books have helped him learn to read, write, cut, paint, etc. and highly recommend to others. These books also give an excellent way to interact with your child and help him learn and grow.</p>
-
-<p>Your local bookstore or online stores should be having these books. Google should be of help otherwise. Hope you find it useful!</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1432,6 +1575,8 @@ Just because you have an A+ Rating (or a good rating) does not mean that your si
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/">.Net Core Web App and Azure AD Groups Role based access</a>
+    
     <a class="list-group-item " href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/">Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a>
     
     <a class="list-group-item " href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
@@ -1439,8 +1584,6 @@ Just because you have an A+ Rating (or a good rating) does not mean that your si
     <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a>
     
     <a class="list-group-item " href="/blog/working-effectively-under-constraints/">Working Effectively Under Constraints</a>
-    
-    <a class="list-group-item " href="/blog/subresource-integrity-sri/">Subresource Integrity (SRI)</a>
     
   </div>
 </section>
