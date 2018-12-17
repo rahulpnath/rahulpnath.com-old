@@ -40,12 +40,11 @@ public class ConditionallyApplyTransactionPreprocessor : IScriptPreprocessor
     {
         if (!contents.Contains("CREATE FULLTEXT", StringComparison.InvariantCultureIgnoreCase))
         {
-            var scriptWithoutGO = contents.Replace("GO", string.Empty, StringComparison.InvariantCultureIgnoreCase);
             var modified =
                 $@"
 BEGIN TRANSACTION   
 BEGIN TRY
-           {scriptWithoutGO}
+           {contents}
     COMMIT;
 END TRY
 BEGIN CATCH
