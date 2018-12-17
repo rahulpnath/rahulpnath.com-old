@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Exclude Certain Scripts From Transaction When Using DbUp - Rahul Nath</title>
+  <meta name="author" content="Rahul Nath">
+
+  
+<meta name="description" content="Certain commands cannot run under a transaction. See how you can exclude them while still keeping your rest of the scripts under transaction." />
+
+
+<meta name="keywords" content=".NET, programming, rahul nath, rahul, C#" />
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup">
+  
+<!-- Favicon -->
+  <link href="/favicon.png" type="image/png" rel="icon">
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+  <link rel="icon" type="image/png" href="/favicon-196x196.png" sizes="196x196">
+  <link rel="icon" type="image/png" href="/favicon-160x160.png" sizes="160x160">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+  <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+<!-- End Favicon -->
+  <link href="http://feeds2.feedburner.com/rahulpnath" rel="alternate" title="Rahul Nath" type="application/atom+xml">
+
+  <!-- Social media content metadata -->
+
+
+<meta property="fb:admins" content="774780093" />
+<meta property="og:title" content="Exclude Certain Scripts From Transaction When Using DbUp" />
+<meta property="og:site_name" content="Rahul Nath" />
+<meta property="og:url" content="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/" />
+<meta property="og:description" content="Certain commands cannot run under a transaction. See how you can exclude them while still keeping your rest of the scripts under transaction." />
+<meta property="og:author" content="https://www.facebook.com/774780093" />
+<meta property="og:image" content="http://www.rahulpnath.com/images/dbup_batches.png" />
+
+
+<meta property="twitter:card" content="summary_large_image" />
+<meta property="twitter:site" content="rahulpnath" />
+<meta property="twitter:url" content="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup" />
+<meta property="twitter:title" content="Exclude Certain Scripts From Transaction When Using DbUp" />
+<meta property="twitter:description" content="Certain commands cannot run under a transaction. See how you can exclude them while still keeping your rest of the scripts under transaction." />
+<meta property="twitter:creator" content="rahulpnath" />
+<meta property="twitter:image:src" content="http://www.rahulpnath.com/images/dbup_batches.png" />
+
+
+<script 
+    src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"
+    integrity="sha256-pXtSQrmprcTB74RsNlFHuJxHK5zXcPrOMx78uWU0ayU="
+    crossorigin="anonymous">
+</script>
+
+<script nonce="anF1ZXJ5ZmFsbGJhY2s=">
+    window.jQuery || 
+    document.write('<script src="/javascripts/libs/jquery/jquery-2.0.3.min.js" crossorigin="anonymous" integrity="sha256-ruuHogwePywKZ7bI1vHGGs7ScbBLhkNUcSSeRjhSUko=">\x3C/script>')
+</script>
+
+<link 
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.min.css"
+    integrity="sha256-tf1yN1B2PrtzH5Ih5BPn1k1Y1RktwEDkIpLtPczMpzI="
+    crossorigin="anonymous" />
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap-theme.min.css"
+    integrity="sha256-NLECy3aJQJ/Rw8GArrH9PwuL8LR6slx0xC6v9XTmYak="
+    crossorigin="anonymous" />
+
+
+  
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+
+  
+   <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-43172163-1', 'auto');
+    ga('send', 'pageview');
+
+  </script>
+
+
+</head>
+
+  <body   >
+    <div id="wrap">
+      <header role="banner">
+        <nav class="navbar navbar-default" role="navigation">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Rahul Nath</a>
+        </div>
+
+        <div class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li class="active">
+                    <a rel="index" href="/">Blog</a>
+                </li>
+                <li >
+                    <a href="/blog/archives">Archives</a>
+                </li>
+                <li >
+                    <a href="/apps">Apps</a>
+                </li>
+                <li >
+                    <a href="/about">About</a>
+                </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a class="subscribe-rss" href="http://feeds2.feedburner.com/rahulpnath" title="subscribe via RSS">
+                        <span class="visible-xs">RSS</span>
+                        <img class="hidden-xs" src="/images/rss.png" alt="RSS">
+                    </a>
+                </li>
+                
+            </ul>
+            
+                <form class="search navbar-form navbar-right" action="http://google.com/cse" method="GET">
+                    <input type="hidden" name="cx" value="013909293779229500224:v37rx6hsidk" />
+                    <input name="ie" type="hidden" value="UTF-8">
+                    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+                </form>
+            
+        </div>
+    </div>
+</nav>
+
+
+      </header>
+      <div id="main" class="container">
+        <div id="content">
+          <div class="row">
+  <div class="page-content col-md-9" itemscope itemtype="http://schema.org/Blog">
+    <meta itemprop="name" content="Rahul Nath" />
+    <meta itemprop="description" content="Rahul Nath is a programmer, blogger, speaker and enjoys running. Blogs are usually technical or about life in general." />
+    <meta itemprop="url" content="http://rahulpnath.com" />
+    <article class="hentry" role="article" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+      
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-17T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 17<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+    <h1 class="entry-title" itemprop="name headline">
+        Exclude Certain Scripts From Transaction When Using DbUp
+        
+    </h1>
+    
+  </header>
+
+
+<div class="entry-content clearfix" itemprop="articleBody"><p>Recently I had written about <a href="https://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/">Setting Up DbUP in Azure Pipelines</a> at one of my clients. We had all our scripts run under <a href="https://dbup.readthedocs.io/en/latest/more-info/transactions/">Transaction Per Script</a> mode and was all working fine until we had to deploy some SQL scripts that cannot be run under a transaction. So now I have a bunch of SQL script files that can be run under a transaction and some (like the ones below - <a href="https://azure.microsoft.com/en-au/blog/full-text-search-is-now-available-for-preview-in-azure-sql-database/">Full-Text Search</a>) that cannot be run under a transaction. By default, if you run this using DbUp under a transaction you get the error message<span class="text-danger">
+CREATE FULLTEXT CATALOG statement cannot be used inside a user transaction </span> and this is an <a href="https://github.com/DbUp/DbUp/issues/207">existing issue</a>.</p>
+
+<figure class='code'><figcaption><span>Full Text Search Script</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">CREATE</span> <span class="n">FULLTEXT</span> <span class="k">CATALOG</span> <span class="n">MyCatalog</span>
+</span><span class='line'><span class="k">GO</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">CREATE</span> <span class="n">FULLTEXT</span> <span class="k">INDEX</span>
+</span><span class='line'><span class="k">ON</span>  <span class="p">[</span><span class="n">dbo</span><span class="p">].[</span><span class="n">Products</span><span class="p">]</span> <span class="p">([</span><span class="n">Description</span><span class="p">])</span>
+</span><span class='line'><span class="k">KEY</span> <span class="k">INDEX</span> <span class="p">[</span><span class="n">PK_Products</span><span class="p">]</span> <span class="k">ON</span> <span class="n">MyCatalog</span>
+</span><span class='line'><span class="k">WITH</span> <span class="n">CHANGE_TRACKING</span> <span class="n">AUTO</span>
+</span><span class='line'><span class="k">GO</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>One option would be to turn off transaction all together using <em>builder.WithoutTransaction()</em> (default transaction setting) and everything would work as usual. But in case you want each of your scripts to be run under a transaction you can choose either of the options below.</p>
+
+<h3>Using Pre-Processors to Modify Script Before Execution</h3>
+
+<p><a href="https://dbup.readthedocs.io/en/latest/more-info/preprocessors/">Script Pre-Processors</a> are an extensibility hook into DbUp and allows you to modify a script before it gets executed. So we can wrap each SQL script with a transaction before it gets executed. In this case, you have to configure your builder to run WithoutTransaction and modify each script file before execution and explicitly wrap with a transaction if required. Writing a custom pre-processor is quickly done by implementing the IScriptPreprocessor interface, and you get the contents of the script file to modify. In this case, all I do is check whether the text contains &lsquo;CREATE FULLTEXT&rsquo; and wrap with a transaction if it does not. You could use file-name conventions or any other rules of your choice to perform the check and conditionally wrap with a transaction.</p>
+
+<figure class='code'><figcaption><span>Conditionally Apply Transaction</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ConditionallyApplyTransactionPreprocessor</span> <span class="p">:</span> <span class="n">IScriptPreprocessor</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">Process</span><span class="p">(</span><span class="kt">string</span> <span class="n">contents</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">contents</span><span class="p">.</span><span class="n">Contains</span><span class="p">(</span><span class="s">&quot;CREATE FULLTEXT&quot;</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">scriptWithoutGO</span> <span class="p">=</span> <span class="n">contents</span><span class="p">.</span><span class="n">Replace</span><span class="p">(</span><span class="s">&quot;GO&quot;</span><span class="p">,</span> <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">);</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">modified</span> <span class="p">=</span>
+</span><span class='line'>                <span class="err">$</span><span class="s">@&quot;</span>
+</span><span class='line'><span class="s">BEGIN TRANSACTION   </span>
+</span><span class='line'><span class="s">BEGIN TRY</span>
+</span><span class='line'><span class="s">           {scriptWithoutGO}</span>
+</span><span class='line'><span class="s">    COMMIT;</span>
+</span><span class='line'><span class="s">END TRY</span>
+</span><span class='line'><span class="s">BEGIN CATCH</span>
+</span><span class='line'><span class="s">    ROLLBACK;</span>
+</span><span class='line'><span class="s">    THROW;</span>
+</span><span class='line'><span class="s">END CATCH&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">return</span> <span class="n">modified</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">contents</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Using Multiple UpgradeEngine to Deploy Scripts</h3>
+
+<p>If you are not particularly fine with tweaking the pre-processing step and want to use the default implementations of DbUp and still achieve keep transactions for you scripts where possible, you can use multiple upgraders to perform the job for you. Iterate over all your script files and then partition them into batches of files that need to be run under a transaction and those that can&rsquo;t be run under a transaction. As shown in the image below you will end up with multiple batches with alternating sets of transaction/non-transaction set of scripts. When performing the upgrade over a batch, set the <em>WithTransactionPerScript</em> on the builder conditionally. If any of the batches fail, you can terminate the database upgrade.</p>
+
+<p><img src="/images/dbup_batches.png" alt="Script file batches" class="center" /></p>
+
+<figure class='code'><figcaption><span>Execute all batches (Might not be production ready)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Func</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">,</span><span class="kt">bool</span><span class="p">&gt;</span> <span class="n">canRunUnderTransaction</span> <span class="p">=</span> <span class="p">(</span><span class="n">fileName</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">fileName</span><span class="p">.</span><span class="n">Contains</span><span class="p">(</span><span class="s">&quot;FullText&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Func</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;,</span> <span class="kt">string</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;</span> <span class="n">belongsToCurrentBatch</span> <span class="p">=</span> <span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>      <span class="n">batch</span> <span class="p">!=</span> <span class="k">null</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>        <span class="n">canRunUnderTransaction</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">First</span><span class="p">())</span> <span class="p">==</span> <span class="n">canRunUnderTransaction</span><span class="p">(</span><span class="n">file</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">batches</span> <span class="p">=</span> <span class="n">allScriptFiles</span><span class="p">.</span><span class="n">Aggregate</span>
+</span><span class='line'>        <span class="p">(</span><span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;&gt;(),</span> <span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">next</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="p">(</span><span class="n">belongsToCurrentBatch</span><span class="p">(</span><span class="n">current</span><span class="p">.</span><span class="n">LastOrDefault</span><span class="p">(),</span><span class="n">next</span><span class="p">))</span>
+</span><span class='line'>                    <span class="n">current</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">Add</span><span class="p">(</span><span class="n">next</span><span class="p">);</span>
+</span><span class='line'>                <span class="k">else</span>
+</span><span class='line'>                    <span class="n">current</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">List</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;()</span> <span class="p">{</span> <span class="n">next</span> <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">return</span> <span class="n">current</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">batch</span> <span class="k">in</span> <span class="n">batches</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">includeTransaction</span> <span class="p">=</span> <span class="p">!</span><span class="n">batch</span><span class="p">.</span><span class="n">Any</span><span class="p">(</span><span class="n">canRunUnderTransaction</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">PerformUpgrade</span><span class="p">(</span><span class="n">batch</span><span class="p">.</span><span class="n">ToSqlScriptArray</span><span class="p">(),</span> <span class="n">includeTransaction</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">result</span><span class="p">.</span><span class="n">Successful</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Console</span><span class="p">.</span><span class="n">ForegroundColor</span> <span class="p">=</span> <span class="n">ConsoleColor</span><span class="p">.</span><span class="n">Red</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">Error</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">Console</span><span class="p">.</span><span class="n">ResetColor</span><span class="p">();</span>
+</span><span class='line'>            <span class="k">return</span> <span class="p">-</span><span class="m">1</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Console</span><span class="p">.</span><span class="n">ForegroundColor</span> <span class="p">=</span> <span class="n">ConsoleColor</span><span class="p">.</span><span class="n">Green</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Success!&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Console</span><span class="p">.</span><span class="n">ResetColor</span><span class="p">();</span>
+</span><span class='line'>    <span class="k">return</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="n">DatabaseUpgradeResult</span> <span class="nf">PerformUpgrade</span><span class="p">(</span>
+</span><span class='line'>    <span class="n">SqlScript</span><span class="p">[]</span> <span class="n">scripts</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">bool</span> <span class="n">includeTransaction</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">builder</span> <span class="p">=</span> <span class="n">DeployChanges</span><span class="p">.</span><span class="n">To</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">SqlDatabase</span><span class="p">(</span><span class="n">connectionString</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">WithScripts</span><span class="p">(</span><span class="n">scripts</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">LogToConsole</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">includeTransaction</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">builder</span> <span class="p">=</span> <span class="n">builder</span><span class="p">.</span><span class="n">WithTransactionPerScript</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">upgrader</span> <span class="p">=</span> <span class="n">builder</span><span class="p">.</span><span class="n">Build</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">upgrader</span><span class="p">.</span><span class="n">PerformUpgrade</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Keeping all your scripts in a single place and automating it through the build-release pipeline is <a href="https://rahulpnath.com/blog/working-effectively-under-constraints/">something you need to strive for</a>. Hope this helps you to continue using DbUp even if you want to execute scripts that are a mix of transactional and non-transactional.</p>
+</div>
+
+
+      <footer>
+        
+  
+
+
+<div>
+	<h4>About Rahul</h4>
+	<img src="/images/rahul_p_nath.jpeg" style="border:0;vertical-align: baseline;" class="left" alt="Rahul Nath"> 
+	<span>
+		Rahul Nath is a technology consultant, father, speaker and <del>Microsoft</del> Readify employee. He is a former MCCA and enjoys photography and cycling.
+	</span>
+	<br />
+	<br />
+	<a href="https://twitter.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Twitter" src="/images/icon-twitter.png"></a>
+	<a href="https://www.facebook.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Facebook" src="/images/icon-fb.png"></a>
+	<a href="http://feeds2.feedburner.com/rahulpnath" rel="me"><img style="border:0;vertical-align: baseline;" alt="Feed" src="/images/icon-rss.png"></a>
+</div>
+<p style="clear:left;"></p>
+
+
+        
+<div>
+<br>
+  <h4>You might also like</h4>
+  <div class="entry-content">
+  <ul>
+  
+    <li>
+    	<p>
+      		<a href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/manage-your-postman-api-specs/">Managing Your Postman API Specs</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/ndc-security-2018-overview-and-key-takeaways/">NDC Security 2018 - Overview and Key Takeaways</a>
+  		</p>
+    </li>
+  
+    <li>
+    	<p>
+      		<a href="/blog/build-and-deploy-a-net-core-console-application/">Setting up Build and Deploy Pipeline for a .NET Core Console Application</a>
+  		</p>
+    </li>
+  
+  </ul>
+</div>
+<br>
+</div>
+
+        
+          <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/" data-via="rahulpnath" data-counturl="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+        
+        
+          <ul class="meta text-muted pager">
+            
+            <li class="previous"><a href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/" title="Previous Post: .Net Core Web App and Azure AD Groups Role based access">&laquo; .Net Core Web App and Azure AD Groups Role based access</a></li>
+            
+            
+          </ul>
+        
+      </footer>
+    </article>
+    
+      <section>
+        <h1>Comments</h1>
+        <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+      </section>
+    
+  </div>
+
+  
+  <aside class="sidebar col-md-3">
+    
+      
+    
+  </aside>
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+    <footer role="contentinfo"><div class="container">
+    <p class="text-muted credits">
+  Copyright &copy; 2018 - Rahul Nath<br>
+  <small>
+      <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>,
+      <span class="credit">customized with <a href="https://github.com/kAworu/octostrap3">octostrap3</a></span>.
+  </small>
+</p>
+
+</div>
+</footer>
+    
+
+<script type="text/javascript" nonce="ZGlzcXVzc2NyaXB0">
+      var disqus_shortname = 'rahulpnath';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/';
+        var disqus_url = 'http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script nonce="ZmFjZWJvb2tsaWtl">(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript" nonce="dHdlZXRidXR0b24=">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+<script 
+    src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js" 
+    integrity="sha256-JMwpUzWY+WKCPEIpvCgEh2RqJ6QqlSV8Md4bmxjzcQ8="
+    crossorigin="anonymous">
+</script>
+<script 
+    src="/javascripts/modernizr-2.0.js" 
+    integrity="sha256-hME7nDofAgLynuLg6DATEk67QUTY7HetpZJjZ+HNZek="
+    crossorigin="anonymous">
+</script>
+
+  </body>
+</html>

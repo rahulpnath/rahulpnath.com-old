@@ -181,6 +181,120 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2012-01-27T21:32:54+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jan 27<sup>th</sup>, 2012</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/wpf/'>wpf</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/wpf-expander-trigger-on-isexpanded-to-change-the-header/" itemprop="url">WPF Expander trigger on IsExpanded to change the header</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Just a quick tip on how you could change the Expander header content when Expander is in expanded state.I have also modified the expander HeaderTemplate so that the text gets center aligned.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;Expander</span>  <span class="na">Height=</span><span class="s">&quot;100&quot;</span> <span class="na">HorizontalAlignment=</span><span class="s">&quot;Left&quot;</span> <span class="na">Margin=</span><span class="s">&quot;129,192,0,0&quot;</span>
+</span><span class='line'>           <span class="na">Name=</span><span class="s">&quot;expander1&quot;</span> <span class="na">VerticalAlignment=</span><span class="s">&quot;Top&quot;</span> <span class="na">Width=</span><span class="s">&quot;167&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Expander.HeaderTemplate&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;DataTemplate&gt;</span>
+</span><span class='line'>                    <span class="nt">&lt;Label</span> <span class="na">Name=</span><span class="s">&quot;headerlabel&quot;</span>
+</span><span class='line'>                        <span class="na">Content=</span><span class="s">&quot;{Binding RelativeSource={RelativeSource</span>
+</span><span class='line'><span class="s">                        Mode=FindAncestor,</span>
+</span><span class='line'><span class="s">                        AncestorType={x:Type Expander}},</span>
+</span><span class='line'><span class="s">                        Path=Header}&quot;</span>
+</span><span class='line'>                        <span class="na">HorizontalContentAlignment=</span><span class="s">&quot;Center&quot;</span>
+</span><span class='line'>                        <span class="na">Width=</span><span class="s">&quot;{Binding</span>
+</span><span class='line'><span class="s">                        RelativeSource={RelativeSource</span>
+</span><span class='line'><span class="s">                        Mode=FindAncestor,</span>
+</span><span class='line'><span class="s">                        AncestorType={x:Type Expander}},</span>
+</span><span class='line'><span class="s">                        Path=ActualWidth}&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;/DataTemplate&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/Expander.HeaderTemplate&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Expander.Style&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;Style</span>  <span class="na">TargetType=</span><span class="s">&quot;Expander&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>                    <span class="nt">&lt;Setter</span> <span class="na">Property=</span><span class="s">&quot;Header&quot;</span> <span class="na">Value=</span><span class="s">&quot;Show&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>                    <span class="nt">&lt;Style.Triggers&gt;</span>
+</span><span class='line'>                        <span class="nt">&lt;Trigger</span> <span class="na">Property=</span><span class="s">&quot;IsExpanded&quot;</span> <span class="na">Value=</span><span class="s">&quot;True&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>                            <span class="nt">&lt;Setter</span> <span class="na">Property=</span><span class="s">&quot;Header&quot;</span> <span class="na">Value=</span><span class="s">&quot;Hide&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>                        <span class="nt">&lt;/Trigger&gt;</span>
+</span><span class='line'>                    <span class="nt">&lt;/Style.Triggers&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;/Style&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/Expander.Style&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Grid</span> <span class="nt">&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;Label&gt;</span>Expander Content<span class="nt">&lt;/Label&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/Grid&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/Expander&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We could also end up doing this using a converter or explicitly handling for the Expanded/Collapsed events.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2011-06-15T16:24:47+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jun 15<sup>th</sup>, 2011</time>
         
 
@@ -831,65 +945,6 @@ class Employee
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2010-11-25T08:10:24+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 25<sup>th</sup>, 2010</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/thoughts/'>thoughts</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/attachments-in-email-a-new-way/" itemprop="url">Attachments in email - a new way</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Just a though on a new mail attachment way :).</p>
-
-<p>What if we could attach existing attachments in our mailbox to new mails that we want to send.Forwarding the mail that had the attachment might not be a good solution in many a cases.</p>
-
-<p>The key point here is that attachments should be like a resource,that can be shared across mails,that can be deleted edited or updated.</p>
-
-<p>There could be a small widget showing all attachments that you have in your mailbox,from which you can add whatever you want to your current mail.</p>
-
-<p>I think this would be a cool feature in the present email system.</p>
-
-<p>You would not end up uploading the same file again and again :)</p>
-
-<p>Feel free to comment on this idea ::)</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -913,6 +968,8 @@ class Employee
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/exclude-certain-scripts-from-transaction-when-using-dbup/">Exclude Certain Scripts From Transaction When Using DbUp</a>
+    
     <a class="list-group-item " href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/">.Net Core Web App and Azure AD Groups Role based access</a>
     
     <a class="list-group-item " href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/">Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a>
@@ -920,8 +977,6 @@ class Employee
     <a class="list-group-item " href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
     
     <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a>
-    
-    <a class="list-group-item " href="/blog/working-effectively-under-constraints/">Working Effectively Under Constraints</a>
     
   </div>
 </section>

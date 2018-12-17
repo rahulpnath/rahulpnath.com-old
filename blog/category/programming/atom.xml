@@ -4,7 +4,7 @@
   <title><![CDATA[Category: programming | Rahul Nath]]></title>
   <link href="http://rahulpnath.com/blog/category/programming/atom.xml" rel="self"/>
   <link href="http://rahulpnath.com/"/>
-  <updated>2018-12-16T22:43:12+00:00</updated>
+  <updated>2018-12-17T00:02:04+00:00</updated>
   <id>http://rahulpnath.com/</id>
   <author>
     <name><![CDATA[Rahul Nath]]></name>
@@ -12,6 +12,125 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Exclude Certain Scripts From Transaction When Using DbUp]]></title>
+    <link href="http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup/"/>
+    <updated>2018-12-17T00:00:00+00:00</updated>
+    <id>http://rahulpnath.com/blog/exclude-certain-scripts-from-transaction-when-using-dbup</id>
+    <content type="html"><![CDATA[<p>Recently I had written about <a href="https://rahulpnath.com/blog/setting-up-dbup-in-azure-pipelines/">Setting Up DbUP in Azure Pipelines</a> at one of my clients. We had all our scripts run under <a href="https://dbup.readthedocs.io/en/latest/more-info/transactions/">Transaction Per Script</a> mode and was all working fine until we had to deploy some SQL scripts that cannot be run under a transaction. So now I have a bunch of SQL script files that can be run under a transaction and some (like the ones below - <a href="https://azure.microsoft.com/en-au/blog/full-text-search-is-now-available-for-preview-in-azure-sql-database/">Full-Text Search</a>) that cannot be run under a transaction. By default, if you run this using DbUp under a transaction you get the error message<span class="text-danger">
+CREATE FULLTEXT CATALOG statement cannot be used inside a user transaction </span> and this is an <a href="https://github.com/DbUp/DbUp/issues/207">existing issue</a>.</p>
+
+<pre><code class="sql Full Text Search Script">CREATE FULLTEXT CATALOG MyCatalog
+GO
+
+CREATE FULLTEXT INDEX 
+ON  [dbo].[Products] ([Description])
+KEY INDEX [PK_Products] ON MyCatalog
+WITH CHANGE_TRACKING AUTO
+GO
+</code></pre>
+
+<p>One option would be to turn off transaction all together using <em>builder.WithoutTransaction()</em> (default transaction setting) and everything would work as usual. But in case you want each of your scripts to be run under a transaction you can choose either of the options below.</p>
+
+<h3>Using Pre-Processors to Modify Script Before Execution</h3>
+
+<p><a href="https://dbup.readthedocs.io/en/latest/more-info/preprocessors/">Script Pre-Processors</a> are an extensibility hook into DbUp and allows you to modify a script before it gets executed. So we can wrap each SQL script with a transaction before it gets executed. In this case, you have to configure your builder to run WithoutTransaction and modify each script file before execution and explicitly wrap with a transaction if required. Writing a custom pre-processor is quickly done by implementing the IScriptPreprocessor interface, and you get the contents of the script file to modify. In this case, all I do is check whether the text contains &lsquo;CREATE FULLTEXT&rsquo; and wrap with a transaction if it does not. You could use file-name conventions or any other rules of your choice to perform the check and conditionally wrap with a transaction.</p>
+
+<pre><code class="csharp Conditionally Apply Transaction">public class ConditionallyApplyTransactionPreprocessor : IScriptPreprocessor
+{
+    public string Process(string contents)
+    {
+        if (!contents.Contains("CREATE FULLTEXT", StringComparison.InvariantCultureIgnoreCase))
+        {
+            var scriptWithoutGO = contents.Replace("GO", string.Empty, StringComparison.InvariantCultureIgnoreCase);
+            var modified =
+                $@"
+BEGIN TRANSACTION   
+BEGIN TRY
+           {scriptWithoutGO}
+    COMMIT;
+END TRY
+BEGIN CATCH
+    ROLLBACK;
+    THROW;
+END CATCH";
+
+            return modified;
+        }
+        else
+            return contents;
+    }
+}
+</code></pre>
+
+<h3>Using Multiple UpgradeEngine to Deploy Scripts</h3>
+
+<p>If you are not particularly fine with tweaking the pre-processing step and want to use the default implementations of DbUp and still achieve keep transactions for you scripts where possible, you can use multiple upgraders to perform the job for you. Iterate over all your script files and then partition them into batches of files that need to be run under a transaction and those that can&rsquo;t be run under a transaction. As shown in the image below you will end up with multiple batches with alternating sets of transaction/non-transaction set of scripts. When performing the upgrade over a batch, set the <em>WithTransactionPerScript</em> on the builder conditionally. If any of the batches fail, you can terminate the database upgrade.</p>
+
+<p><img src="/images/dbup_batches.png" alt="Script file batches" class="center" /></p>
+
+<pre><code class="csharp Execute all batches (Might not be production ready)">{
+    Func&lt;string,bool&gt; canRunUnderTransaction = (fileName) =&gt; !fileName.Contains("FullText");
+    Func&lt;List&lt;string&gt;, string, bool&gt; belongsToCurrentBatch = (batch, file) =&gt;
+        batch != null &amp;&amp;
+        canRunUnderTransaction(batch.First()) == canRunUnderTransaction(file);
+
+    var batches = allScriptFiles.Aggregate
+        (new List&lt;List&lt;string&gt;&gt;(), (current, next) =&gt;
+            {
+                if (belongsToCurrentBatch(current.LastOrDefault(),next))
+                    current.Last().Add(next);
+                else
+                    current.Add(new List&lt;string&gt;() { next });
+
+                return current;
+            });
+
+    foreach (var batch in batches)
+    {
+        var includeTransaction = !batch.Any(canRunUnderTransaction);
+
+        var result = PerformUpgrade(batch.ToSqlScriptArray(), includeTransaction);
+
+        if (!result.Successful)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(result.Error);
+            Console.ResetColor();
+            return -1;
+        }
+    }
+
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("Success!");
+    Console.ResetColor();
+    return 0;
+}
+
+private static DatabaseUpgradeResult PerformUpgrade(
+    SqlScript[] scripts,
+    bool includeTransaction)
+{
+    var builder = DeployChanges.To
+        .SqlDatabase(connectionString)
+        .WithScripts(scripts)
+        .LogToConsole();
+
+    if (includeTransaction)
+        builder = builder.WithTransactionPerScript();
+
+      var upgrader = builder.Build();
+
+    var result = upgrader.PerformUpgrade();
+
+    return result;
+}
+</code></pre>
+
+<p>Keeping all your scripts in a single place and automating it through the build-release pipeline is <a href="https://rahulpnath.com/blog/working-effectively-under-constraints/">something you need to strive for</a>. Hope this helps you to continue using DbUp even if you want to execute scripts that are a mix of transactional and non-transactional.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Setting up DbUp in Azure Pipelines]]></title>
@@ -200,160 +319,6 @@ Start-Process dotnet .\ApplicationName.dll
 </code></pre>
 
 <p>With all that set, any time a change is pushed into the source control repository, TeamCity picks that up, build and triggers a deployment to the configured environments in Octopus Deploy. Hope this helps!</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Scheduling Recurring Jobs With a Cool-Off Period]]></title>
-    <link href="http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period/"/>
-    <updated>2017-12-24T00:00:00+00:00</updated>
-    <id>http://rahulpnath.com/blog/scheduling-recurring-jobs-with-a-cool-off-period</id>
-    <content type="html"><![CDATA[<p><a href="https://flic.kr/p/8ys6Hs" class="center" ><img class="center" alt="Scheduling" src="/images\scheduling_jobs.jpg" /></a></p>
-
-<p>At one of my clients, they had a requirement of scheduling various rules to sent our alert messages via SMS, Email, etc. A Rule consists of below and a few other properties</p>
-
-<ul>
-<li><strong>Stored Procedure</strong>: The Stored Procedure (yes you read it correctly) to check if an alert needs to be raised</li>
-<li><strong>Polling Interval</strong>: The time interval in which a Rule needs to be checked.</li>
-<li><strong>Cool-Off Period</strong>: Time to wait before running Rule again after an alert was raised.</li>
-</ul>
-
-
-<p>All Rules are stored in a database. New rules can be added and existing ones updated via an external application. Since the client is not yet in the Cloud, using any of Azure Functions, Lambda, Web Jobs, etc. are out of the question. It needs to be a service running on-premise, so I decided to keep it as a Windows service.</p>
-
-<pre><code class="csharp"> public class Rule
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string StoredProc { get; set; }
-    public TimeSpan PollingInterval { get; set; }
-    public TimeSpan CoolOffPeriod { get; set; }
-    ...
-}
-</code></pre>
-
-<p>Because of my past good experiences with <a href="https://www.hangfire.io/">HangFire</a> I initially set off using that only to discover soon that it can schedule jobs only to the minute level. Even though this is a <a href="https://github.com/HangfireIO/Hangfire/issues/167">feature that has been discussed for a long time</a>, it&rsquo;s yet to be implemented. Since some of the rules are critical to the business, they want to be notified as soon as possible. This means having a polling interval in seconds for those rules.</p>
-
-<p>After reaching out to my <a href="http://www.rahulpnath.com/blog/finding-a-job-abroad/">friends at Readify</a>, I decided to use <a href="https://www.quartz-scheduler.net/">Quartz.net</a>. Many had good experiences using it in the past and recommended it highly. One another option that came up was <a href="https://github.com/fluentscheduler/FluentScheduler">FluentScheduler</a>. There was no particular reason to go with Quartz.net.</p>
-
-<blockquote><p><em>Quartz.NET is a full-featured, open source job scheduling system that can be used from smallest apps to large-scale enterprise systems.</em></p></blockquote>
-
-<p>Setting up and getting started with Quartz scheduler is fast and easy. The library has a <a href="https://www.quartz-scheduler.net/documentation/index.html">well-written documentation</a>. You can update the applications configuration file to tweak various attributes of the scheduler.</p>
-
-<pre><code class="xml App/Web.config file">&lt;configuration&gt;
-  &lt;configSections&gt;
-    &lt;section name="quartz" type="System.Configuration.NameValueSectionHandler, System, Version=1.0.5000.0,Culture=neutral, PublicKeyToken=b77a5c561934e089" /&gt;
-  &lt;/configSections&gt;
-  &lt;quartz&gt;
-    &lt;add key="quartz.scheduler.instanceName" value="TestScheduler" /&gt;
-    &lt;add key="quartz.jobStore.type" value="Quartz.Simpl.RAMJobStore, Quartz" /&gt;
-  &lt;/quartz&gt;
-&lt;/configuration&gt;
-</code></pre>
-
-<p>The <a href="http://www.quartz-scheduler.org/api/2.2.1/org/quartz/simpl/RAMJobStore.html">RAMJobStore</a> indicates the store to use for storing job. There are other job stores available if you want persistence of jobs anytime the application restarts.</p>
-
-<h3>Setting Up Jobs</h3>
-
-<p>Basically, there are three jobs - Alert Job, CoolOff Job, and Refresh Job - set up for the whole application. The Alert and Refresh Jobs are scheduled on application start. The CoolOff Job is triggered by the Alert Job as required. Any data that is required by the job is passed in using <a href="https://www.quartz-scheduler.net/documentation/quartz-2.x/tutorial/more-about-jobs.html#jobdatamap">JobDataMap</a>.</p>
-
-<pre><code class="csharp Schedule an Alert Job">...
-var job = JobBuilder.Create&lt;AlertJob&gt;()
-    .WithIdentity(rule.GetJobKey())
-    .WithDescription(rule.Name)
-    .SetJobData(rule)
-    .Build();
-
-var trigger = TriggerBuilder
-    .Create()
-    .WithIdentity(rule.GetTriggerKey())
-    .StartNow()
-    .WithSimpleSchedule(a =&gt; a
-        .WithIntervalInSeconds((int)rule.PollingInterval.TotalSeconds)
-        .RepeatForever())
-    .Build();
-
-scheduler.ScheduleJob(job, trigger);
-</code></pre>
-
-<h4><strong>Alert Jobs</strong></h4>
-
-<p>The Alert Job is responsible for checking the stored procedure and sending the alerts if required. If an alert is sent, it starts the CoolOff Job and pauses the current job instance. THe DisallowConcurrentExecution prevents multiple instances of the Job having the same key does not execute concurrently. We explicitly set the Job Key based on the Rule Id. This prevents any duplicate messages getting sent out if any of the job instances takes more time to execute than its set polling interval.</p>
-
-<pre><code class="csharp">[DisallowConcurrentExecution]
-public class AlertJob : Job
-{
-    public void Execute(IJobExecutionContext context)
-    {
-        var alert = context.GetRuleFromJobData();
-        var message = GetAlertMessage(alert);
-        if(message != null)
-        {
-            SendMessage(message);
-            CoolOff(alert);
-        }    
-    }
-
-    public void CoolOff(Rule rule)
-    {
-        var job = JobBuilder.Create&lt;CoolOffJob&gt;()
-            .WithIdentity(jobKey)
-            .WithDescription(rule.MessageTitle)
-            .SetJobData(rule)
-            .Build();
-
-        var trigger = TriggerBuilder
-            .Create()
-            .WithIdentity(rule.GetCoolOffTriggerKey())
-            .StartAt(rule.GetCoolOffDateTimeOffset())
-            .Build();
-
-        scheduler.PauseJob(rule.GetJobKey());
-        scheduler.ScheduleJob(job, trigger);
-    }
-    ...
-}
-</code></pre>
-
-<h4><strong>Cool-Off Job</strong></h4>
-
-<p>Cool-Off Jobs is a one time job scheduled by the Alert Job after an alert is sent successfully. The CoolOff job is scheduled to start after the Cool-Off time as configured for the alert. This triggers the job only after the set amount of time. It Resumes the original Rule Job to continue execution.</p>
-
-<pre><code class="csharp">public class CoolOffJob : IJob
-{
-    public void Execute(IJobExecutionContext context)
-    {
-        var alert = context.GetRuleFromJobData();
-        ScheduleHelper.ResumeJob(alert);
-    }
-}
-</code></pre>
-
-<h4><strong>Refresh Job</strong></h4>
-
-<p>The Refresh Job is a recurring job, that polls the database for any changes to the Rules themselves If any change is detected,it removes the existing schedules for the alert and adds the updated alert job.</p>
-
-<pre><code class="csharp">[DisallowConcurrentExecution]
-public class RefreshJob : IJob
-{
-    public void Execute(IJobExecutionContext context)
-    {
-        var allRules = GetAllRules();
-        ScheduleHelper.RefreshRules(allRules);
-    }
-}
-</code></pre>
-
-<p>With these three jobs, all the rules get scheduled at the start of the application and run continuously. Anytime a change is made to the rule itself, the Refresh Job refreshes it within the time interval that it is scheduled for.</p>
-
-<div class="alert alert-info">
-<b>Tip:</b>If there are a lot of rules with the same polling interval it will be good to stagger their starting time using a delayed start per job instance. Doing that will make sure that all jobs do not get polled for at the same time.
-</div>
-
-
-<p>So far I have found the Quartz library stable and reliable and have not faced any issues with it. The library is also quite flexible and adapts well to the different needs.</p>
-
-<p>Hope this helps. Merry Xmas!</p>
 ]]></content>
   </entry>
   

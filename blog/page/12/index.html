@@ -181,6 +181,133 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-21T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 21<sup>st</sup>, 2016</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/azure-key-vault/'>azure key vault</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/accessing-azure-key-vault-from-azure-runbook/" itemprop="url">Accessing Azure Key Vault From Azure Runbook</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Azure Automation is a new service in Azure that allows you to automate your Azure management tasks and to orchestrate actions across external systems from right within Azure. If you are new to Azure Automation, get started <a href="https://azure.microsoft.com/en-us/blog/azure-automation-runbook-management/">here</a>. Runbooks live within the Azure Automation account and can execute PowerShell scripts. In this post, I will walk you through on how to use Key Vault from an Azure Automation Runbook.</p>
+
+<p>To create a Runbook go to &lsquo;Add a Runbook&rsquo; under  Automation Account, Runbooks as shown in the image below. Once created you can author your PowerShell script there.</p>
+
+<p><img class="center" alt="Azure Automation Create a Runbook" src="/images/runbook_create.png"/></p>
+
+<p>In this example I will get all the Keys from an existing key vault, using the <a href="https://msdn.microsoft.com/en-us/library/dn868053.aspx">Get-AzureKeyVaultKey</a> cmdlet. This returns all the key for the given key vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If we are to run this script now, it will fail for many reasons - we do not have the key vault cmdlets imported in the runbook nor have we given access to the automation account to access the keys in the vault. Running it gives me the below error.</p>
+
+<p><span style='color:red'><em>Get-AzureKeyVaultKey : The term &lsquo;Get-AzureKeyVaultKey&rsquo; is not recognized as the name of a cmdlet, function script, file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again </em></span>.</p>
+
+<p>Under &lsquo;Assets&rsquo; from the Azure Automation account Resources section select &lsquo;Modules&rsquo; (as shown in the image below) to add in Modules to the runbook. To execute key vault cmdlets in the runbook, we need to add <em>AzureRM.profile</em> and AzureRM.key vault. Search for this under &lsquo;Browse Gallery&rsquo; and import.</p>
+
+<p><img class="center" alt="Azure Runbook Add KeyVault Module" src="/images/runbook_add_Module.png"/></p>
+
+<p>To give Runbook access to the keys in the vault, it needs to be specified in the Access Policies of the key vault. The &lsquo;Run As Accounts&rsquo; feature will create a new service principal user in Azure Active Directory and assign the Contributor role to this user at the subscription. The &lsquo;Application ID&rsquo; from creating the run as account is used to assign Access Policies for the key vault. In this example, I give the &lsquo;list&rsquo; and &lsquo;get&rsquo; PermissionToKeys.</p>
+
+<p><img class="center" alt="Azure Automation Runbook, set run as account" src="/images/runbook_run_as_accounts.png"/></p>
+
+<p>You can use the <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-sec-configure-azure-runas-account/#sample-code-to-authenticate-with-resource-manager-resources">sample code below</a>, taken from the AzureAutomationTutorialScript example runbook, to authenticate using the Run As account to manage Resource Manager resources with your runbooks. The <em>AzureRunAsConnection</em> is a connection asset automatically created when we created &lsquo;run as accounts&rsquo; above. This can be found under Assets -> Connections. After the authentication code, I run the same code above to get all the keys from the vault.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$connectionName</span> <span class="p">=</span> <span class="s2">&quot;AzureRunAsConnection&quot;</span>
+</span><span class='line'><span class="k">try</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="c"># Get the connection &quot;AzureRunAsConnection &quot;</span>
+</span><span class='line'>    <span class="nv">$servicePrincipalConnection</span><span class="p">=</span><span class="nb">Get-AutomationConnection</span> <span class="n">-Name</span> <span class="nv">$connectionName</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Logging in to Azure...&quot;</span>
+</span><span class='line'>    <span class="nb">Add-AzureRmAccount</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-ServicePrincipal</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-TenantId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">TenantId</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-ApplicationId</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">ApplicationId</span> <span class="p">`</span>
+</span><span class='line'>        <span class="n">-CertificateThumbprint</span> <span class="nv">$servicePrincipalConnection</span><span class="p">.</span><span class="n">CertificateThumbprint</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="k">catch</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="nv">$servicePrincipalConnection</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="nv">$ErrorMessage</span> <span class="p">=</span> <span class="s2">&quot;Connection $connectionName not found.&quot;</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="nv">$ErrorMessage</span>
+</span><span class='line'>    <span class="p">}</span> <span class="k">else</span><span class="p">{</span>
+</span><span class='line'>        <span class="nb">Write-Error</span> <span class="n">-Message</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
+</span><span class='line'>        <span class="k">throw</span> <span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Get-AzureKeyVaultKey</span> <span class="n">-VaultName</span> <span class="n">YoutubeVault</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>On execution, the Runbook can connect to the key vault and retrieve all the keys. Based on the permissions set on the vault you can perform different actions on the key vault. This helps in automating a lot of tasks that otherwise needs to be done manually. Hope this helps you connect Runbooks with Key Vault.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-11-15T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Nov 15<sup>th</sup>, 2016</time>
         
 
@@ -1241,149 +1368,6 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2016-09-12T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Sep 12<sup>th</sup>, 2016</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/blogging/'>blogging</a>, <a class='category' href='/blog/category/productivity/'>productivity</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/automatic_deployment_of_future_posts_with_octopress/" itemprop="url">Automatic Deployment of Future Posts With Octopress</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p>Since the start of this year, I have been trying to blog to a schedule and publish posts more often. The goal that I have set myself with is to post four posts a month, preferably one each week. I have been sticking to it till now, and I hope it continues. Initially, I did not have this upper limit on the number of posts in a month. In the month of March 2016, I went a bit aggressive and published nine articles. It made me think more about setting an upper limit on the number of posts so that I don&rsquo;t end up having higher expectations out of myself.</p>
-
-<h3>Staying Ahead</h3>
-
-<p>Having published nine posts, also made me realize that I could write faster if required and have posts ready for future. It will help me to stay ahead of the posting schedule and give me some off-time when I need it. But this also presented me with a new problem on how to manage and schedule posts for the future.</p>
-
-<blockquote><p><em>The more I automate the mundane tasks of blogging, the more I can concentrate on the writing part</em></p></blockquote>
-
-<h3>Jekyll Future flag</h3>
-
-<p><a href="http://octopress.org/docs/">Octopress</a> is over <a href="https://jekyllrb.com/">Jekyll</a> and it provides all the capabilities that Jekyll provides. The <a href="https://jekyllrb.com/docs/configuration/"><em>future</em> flag</a> in Jekyll indicates <strong><em>whether or not to publish posts or collection documents with a future date.</em></strong> With the flag set to false, Jekyll will not generate posts that have a date in the future. It works perfectly for me as all I need to do is to publish posts into the <em>_posts</em> directory once it&rsquo;s ready, with a date in the future. I have a <a href="http://www.rahulpnath.com/blog/optimizing-octopress-workflow-for-new-posts/">draft workflow</a>, which puts posts into a <em>_drafts</em> folder and move them into the <em>_posts</em> folder once ready. I updated the rake script that publishes drafts as posts, to take in a publish date and use that to update the post date.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='Ruby'><span class='line'><span class="n">task</span> <span class="ss">:publish_draft</span> <span class="k">do</span>
-</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publish Date?&quot;</span>
-</span><span class='line'><span class="n">publishDateString</span> <span class="o">=</span> <span class="no">STDIN</span><span class="o">.</span><span class="n">gets</span><span class="o">.</span><span class="n">chomp</span>
-</span><span class='line'><span class="n">publishDate</span> <span class="o">=</span> <span class="no">DateTime</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">publishDateString</span><span class="p">)</span>
-</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'><span class="n">dest</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">source_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">posts_dir</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">-</span><span class="si">#{</span><span class="n">filename</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="nb">puts</span> <span class="s2">&quot;Publishing post to: </span><span class="si">#{</span><span class="n">dest</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'><span class="no">File</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">{</span> <span class="o">|</span><span class="n">source_file</span><span class="o">|</span>
-</span><span class='line'><span class="n">contents</span> <span class="o">=</span> <span class="n">source_file</span><span class="o">.</span><span class="n">read</span>
-</span><span class='line'><span class="n">contents</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/^thisIsStillADraft:$/</span><span class="p">,</span> <span class="s2">&quot;date: </span><span class="si">#{</span><span class="n">publishDate</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d&#39;</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">completedDate: </span><span class="si">#{</span><span class="no">DateTime</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-%d %H:%M:%S %z&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span class='line'><span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The rake script appends the publish date to the post file name and also the yaml date information and moves it from the <em>_drafts</em> to <em>_posts</em> folder. It also adds a completedDate set to the current time with the timezone information, just for reference.</p>
-
-<h3>Integrating with Travis CI</h3>
-
-<p>I have the <a href="/blog/continuos_delivery_of_octopress_blog_using_travisci_and_docker">deployment of my blog automated via Travis CI</a>, which builds and deploys the site when committing to the <a href="https://github.com/rahulpnath/rahulpnath.com">GitHub repository</a>. For future posts since there might not be a commit on the publish date, I need to trigger the build on those days, to publish the posts scheduled. The <a href="https://azure.microsoft.com/en-us/services/scheduler/">Azure Scheduler</a> enables scheduling requests and also provides out of the box support to invoke web service endpoints over HTTP/HTTPS. <a href="https://docs.travis-ci.com/api">Travis CI exposes an API</a> to interact with the build system and is the same API that the official Web interface uses. The API supports <a href="https://docs.travis-ci.com/user/triggering-builds">triggering builds</a> by making a POST request with an API token and the build details. The API has <a href="https://github.com/travis-ci/travis-ci/issues/5101">an existing bug</a> that requires the slash separating username and repository name in the trigger URL be encoded(%2F). Azure, however, does not like this and treats it as an invalid URL with the bellow error.</p>
-
-<p><img class="center" alt="Azure Scheduler Encoded URL error" src="/images/blogtrigger_scheduler_url_error.png" /></p>
-
-<p>The only way now is to have to custom write this code and have it scheduled. I chose the one with the least work involved - Azure Automation. <a href="https://azure.microsoft.com/en-us/services/automation/">Azure Automation</a> allows to create Run books and automatically trigger it on a schedule. The Azure Automation has a <a href="https://azure.microsoft.com/en-us/pricing/details/automation/">pricing plan with 500 minutes free</a> Job run time in a month, which meets my requirements. I created a <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-types/#powershell-runbooks">PowerShell script</a> and added in the token (<em>TravisToken</em>) and the build URL (<em>TravisBuildUrl</em>) as <a href="https://azure.microsoft.com/en-us/documentation/articles/automation-runbook-input-parameters/">parameters to the script</a>.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class='powershell'><span class='line'><span class="nv">$travisBlogTriggerApiUrl</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisBuildUrl&#39;</span>
-</span><span class='line'><span class="nv">$token</span> <span class="p">=</span> <span class="nb">Get-AutomationVariable</span> <span class="n">-Name</span> <span class="s1">&#39;TravisToken&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nv">$body</span> <span class="p">=</span> <span class="s2">&quot;{&quot;&quot;request&quot;&quot;: {&quot;&quot;message&quot;&quot;:&quot;&quot;Scheduled Automated build&quot;&quot;,&quot;&quot;branch&quot;&quot;:&quot;&quot;master&quot;&quot;}}&quot;</span>
-</span><span class='line'><span class="nv">$headers</span> <span class="p">=</span> <span class="p">@{</span>
-</span><span class='line'>    <span class="s1">&#39;Content-Type&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
-</span><span class='line'>    <span class="s1">&#39;Accept&#39;</span> <span class="p">=</span> <span class="s1">&#39;application/json&#39;</span>
-</span><span class='line'>    <span class="s1">&#39;Travis-API-Version&#39;</span> <span class="p">=</span> <span class="s1">&#39;3&#39;</span>
-</span><span class='line'>    <span class="s1">&#39;Authorization&#39;</span> <span class="p">=</span> <span class="s1">&#39;token &#39;</span> <span class="p">+</span> <span class="nv">$token</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="nb">Invoke-WebRequest</span> <span class="n">-Method</span> <span class="n">Post</span> <span class="nv">$travisBlogTriggerApiUrl</span> <span class="n">-Body</span> <span class="nv">$body</span> <span class="n">-Headers</span> <span class="nv">$headers</span> <span class="n">-UseBasicParsing</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The script runs on a schedule every day and triggers the Travis CI build. It deploys the latest generated site to Azure WebApp that hosts the site. Any posts scheduled for the current date gets picked up by Jekyll and included in the site generation.</p>
-
-<figure>
-    <img alt="Automatic Deployment of Future Posts With Octopress" src="/images/blog_scheduled.png" />
-    <figcaption><em>Scheduler triggers TravisCI build. For details on how TravisCI is set up check <a href="/blog/continuos-delivery-of-octopress-blog-using-travisci-and-docker/">Continuos Delivery of Octopress Blog Using TravisCI and Docker</a></em></figcaption>
-</figure>
-
-
-<p></p>
-
-<h3>Post to Social Media</h3>
-
-<p>With the posts getting deployed automatically, I want to update all my social networks. I already use <a href="https://buffer.com/">Buffer</a> to post updates to all social networks. Buffer is like &lsquo;<strong><em>Write Once, Post Everywhere</em></strong>&rsquo; kind of service. It clubs all your social media profiles into one place and allows you to post to all of them by just writing it once.</p>
-
-<p><a href="https://ifttt.com/recipes">IFTTT</a>(&lsquo;<em>If This Then That</em>&rsquo;) is a service that helps connect different apps and devices together based on a trigger. As the name says, you can trigger an action based on a trigger. IFTTT has many <a href="https://ifttt.com/channels">Channels</a> that can act as a source of the trigger. In my case, the trigger is a post getting published and I can hook into that event using the <a href="https://ifttt.com/feed">Feed Channel</a>. The feed channel has an option to trigger when a <a href="https://ifttt.com/channels/feed/triggers/5-new-feed-item">new item is available</a> on the feed. I use this to trigger an update to Buffer. <a href="https://ifttt.com/buffer">Buffer</a> is available as a channel on IFTTT but allows only update to one of the connected accounts in Buffer, which requires me to setup a recipe per social media account. I chose to use <a href="https://buffer.com/guides/email">update via email feature</a> in Buffer. It allows me to have just one recipe in IFTTT to update to all of my connected profiles in Buffer.</p>
-
-<p><img class="center" alt="Trigger Buffer Email When New Post is Published" src="/images/blog_ifttt.png" /></p>
-
-<p>With the Automated publishing of posts and ability to schedule them, I can concentrate more on just the writing part. I no longer have to push out posts manually. I had never thought that I would be scheduling posts in the future. But now that it is happening it&rsquo;s a great feeling when there are posts for a few weeks ahead all ready to go.</p>
-
-<p><em><a href="http://www.rahulpnath.com/blog/morning_routine/">My Morning Routine</a> was the first posts to be deployed using the schedule.</em></p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1407,6 +1391,8 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/exclude-certain-scripts-from-transaction-when-using-dbup/">Exclude Certain Scripts From Transaction When Using DbUp</a>
+    
     <a class="list-group-item " href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/">.Net Core Web App and Azure AD Groups Role based access</a>
     
     <a class="list-group-item " href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/">Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a>
@@ -1414,8 +1400,6 @@ src="/images/codeformatting_functionparameters_alignzoom.png" /></p>
     <a class="list-group-item " href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
     
     <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a>
-    
-    <a class="list-group-item " href="/blog/working-effectively-under-constraints/">Working Effectively Under Constraints</a>
     
   </div>
 </section>
