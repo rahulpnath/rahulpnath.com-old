@@ -252,19 +252,17 @@ CREATE FULLTEXT CATALOG statement cannot be used inside a user transaction </spa
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
-<span class='line-number'>25</span>
 </pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">ConditionallyApplyTransactionPreprocessor</span> <span class="p">:</span> <span class="n">IScriptPreprocessor</span>
 </span><span class='line'><span class="p">{</span>
 </span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="nf">Process</span><span class="p">(</span><span class="kt">string</span> <span class="n">contents</span><span class="p">)</span>
 </span><span class='line'>    <span class="p">{</span>
 </span><span class='line'>        <span class="k">if</span> <span class="p">(!</span><span class="n">contents</span><span class="p">.</span><span class="n">Contains</span><span class="p">(</span><span class="s">&quot;CREATE FULLTEXT&quot;</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">))</span>
 </span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">scriptWithoutGO</span> <span class="p">=</span> <span class="n">contents</span><span class="p">.</span><span class="n">Replace</span><span class="p">(</span><span class="s">&quot;GO&quot;</span><span class="p">,</span> <span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">,</span> <span class="n">StringComparison</span><span class="p">.</span><span class="n">InvariantCultureIgnoreCase</span><span class="p">);</span>
 </span><span class='line'>            <span class="kt">var</span> <span class="n">modified</span> <span class="p">=</span>
 </span><span class='line'>                <span class="err">$</span><span class="s">@&quot;</span>
 </span><span class='line'><span class="s">BEGIN TRANSACTION   </span>
 </span><span class='line'><span class="s">BEGIN TRY</span>
-</span><span class='line'><span class="s">           {scriptWithoutGO}</span>
+</span><span class='line'><span class="s">           {contents}</span>
 </span><span class='line'><span class="s">    COMMIT;</span>
 </span><span class='line'><span class="s">END TRY</span>
 </span><span class='line'><span class="s">BEGIN CATCH</span>
