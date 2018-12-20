@@ -21,6 +21,7 @@ group :development do
   gem 'rack', '1.6.8'
   gem 'classifier', '1.3.4'
   gem 'rack-protection', '~> 1.5.5'
+  gem 'jekyll-gist', '1.4.1'
 end
 
 gem 'sinatra', '~> 1.4.2'
