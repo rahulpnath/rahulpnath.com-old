@@ -181,6 +181,320 @@
 
 
 
+<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-20T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 20<sup>th</sup>, 2018</time>
+        
+
+<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
+<span class="categories">
+  
+    <a class='category' href='/blog/category/entity-framework/'>entity framework</a>, <a class='category' href='/blog/category/programming/'>programming</a>
+  
+</span>
+
+
+        
+      </p>
+    
+    
+      <h1 class="entry-title" itemprop="name headline"><a href="/blog/query-object-pattern-and-entity-framework-making-readable-queries/" itemprop="url">Query Object Pattern and Entity Framework - Making Readable Queries</a></h1>
+    
+  </header>
+
+
+  <div class="entry-content clearfix" itemprop="articleBody description"><p>Search is a common requirement for most of the applications that we build today. Searching for data often includes multiple fields, data types, and data from multiple tables (especially when using a relational database). I was recently building a Search page which involved searching for Orders - users needed the ability to search by different criteria such as the employee who created the order, orders for a customer, orders between particular dates, order status, an address of delivery. Order criteria are optional, and they allow to narrow down on your search with additional parameters. We were building an API endpoint to query this data based on the parameters using EF Core backed by Azure SQL.</p>
+
+<p>In this post, we go through the code iterations that I made to improve on the readability of the query and keep it contained in a single place. The intention is to create a Query Object like structure that contains all query logic and keep it centralized and readable.</p>
+
+<blockquote><p><em>A <a href="https://martinfowler.com/eaaCatalog/queryObject.html">Query Object</a> is an interpreter [Gang of Four], that is, a structure of objects that can form itself into a SQL query. You can create this query by referring to classes and fields rather than tables and columns. In this way, those who write the queries can do so independently of the database schema, and changes to the schema can be localized in a single place.</em></p></blockquote>
+
+<figure class='code'><figcaption><span>Query Object capturing the Search Criteria</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrderSummaryQuery</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int?</span> <span class="n">CustomerId</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">DateRange</span> <span class="n">DateRange</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Employee</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">Address</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">OrderStatus</span> <span class="n">OrderStatus</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I have removed the final projection in all the queries below to keep the code to a minimum. We will go through all the iterations to make the code more readable, keeping the generated SQL query efficient as possible.</p>
+
+<h3>Iteration 1 - Crude Form</h3>
+
+<p>Let&rsquo;s start with the crudest form of the query stating all possible combinations of the query. Since all properties are nullable, check if a value exists before using it in the query.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">(</span><span class="k">from</span> <span class="n">order</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Order</span>
+</span><span class='line'><span class="k">join</span> <span class="n">od</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">OrderDelivery</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">Id</span> <span class="k">equals</span> <span class="n">od</span><span class="p">.</span><span class="n">OrderId</span>
+</span><span class='line'><span class="k">join</span> <span class="n">customer</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Customer</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">CustomerId</span> <span class="k">equals</span> <span class="n">customer</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'><span class="k">where</span> <span class="n">order</span><span class="p">.</span><span class="n">Status</span> <span class="p">==</span> <span class="n">OrderStatus</span><span class="p">.</span><span class="n">Quote</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>      <span class="n">order</span><span class="p">.</span><span class="n">Active</span> <span class="p">==</span> <span class="k">true</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">Employee</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">CreatedBy</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">Employee</span> <span class="p">||</span> <span class="n">customer</span><span class="p">.</span><span class="n">Employee</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">Employee</span><span class="p">))</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>      <span class="p">(!</span><span class="n">query</span><span class="p">.</span><span class="n">CustomerId</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">||</span>
+</span><span class='line'>      <span class="n">customer</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">CustomerId</span><span class="p">.</span><span class="n">Value</span><span class="p">)</span> <span class="p">&amp;&amp;</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">DateRange</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span>
+</span><span class='line'>      <span class="n">order</span><span class="p">.</span><span class="n">Created</span> <span class="p">&gt;=</span> <span class="n">query</span><span class="p">.</span><span class="n">DateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&amp;&amp;</span> <span class="n">order</span><span class="p">.</span><span class="n">Created</span> <span class="p">&lt;=</span> <span class="n">query</span><span class="p">.</span><span class="n">DateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Iteration 2 - Separating into Multiple Lines</h3>
+
+<p>With all those explicit AND (&amp;&amp;) clauses the query is hard to understand and keep up. Splitting them into multiple where clauses make it more cleaner and keep each search criteria independent. The end SQL query that gets generated remains the same in this case.</p>
+
+<blockquote><p><a href="https://rahulpnath.com/blog/left-align-your-code-for-better-readability/">Aesthetics of code</a> is as important as the code you write. Aligning is an important part that contributes to the overall aesthetics of code.</p></blockquote>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">from</span> <span class="n">order</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Order</span>
+</span><span class='line'><span class="k">join</span> <span class="n">od</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">OrderDelivery</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">Id</span> <span class="k">equals</span> <span class="n">od</span><span class="p">.</span><span class="n">OrderId</span>
+</span><span class='line'><span class="k">join</span> <span class="n">customer</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Customer</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">CustomerId</span> <span class="k">equals</span> <span class="n">customer</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'><span class="k">where</span> <span class="n">order</span><span class="p">.</span><span class="n">Status</span> <span class="p">==</span> <span class="n">orderStatus</span> <span class="p">&amp;&amp;</span> <span class="n">order</span><span class="p">.</span><span class="n">Active</span> <span class="p">==</span> <span class="k">true</span>
+</span><span class='line'><span class="k">where</span> <span class="n">query</span><span class="p">.</span><span class="n">Employee</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span>
+</span><span class='line'>      <span class="n">order</span><span class="p">.</span><span class="n">CreatedBy</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">Employee</span> <span class="p">||</span> <span class="n">customer</span><span class="p">.</span><span class="n">Employee</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">Employee</span>
+</span><span class='line'><span class="k">where</span> <span class="p">!</span><span class="n">query</span><span class="p">.</span><span class="n">CustomerId</span><span class="p">.</span><span class="n">HasValue</span> <span class="p">||</span> <span class="n">customer</span><span class="p">.</span><span class="n">Id</span> <span class="p">==</span> <span class="n">query</span><span class="p">.</span><span class="n">CustomerId</span><span class="p">.</span><span class="n">Value</span>
+</span><span class='line'><span class="k">where</span> <span class="n">query</span><span class="p">.</span><span class="n">DateRange</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">Created</span> <span class="p">&gt;=</span> <span class="n">query</span><span class="p">.</span><span class="n">DateRange</span><span class="p">.</span><span class="n">StartDate</span> <span class="p">&amp;&amp;</span> <span class="n">order</span><span class="p">.</span><span class="n">Created</span> <span class="p">&lt;=</span> <span class="n">query</span><span class="p">.</span><span class="n">DateRange</span><span class="p">.</span><span class="n">EndDate</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Iteration 3 - Refactor to Expressions</h3>
+
+<p>Now that each criterion is independently visible let&rsquo;s make each of the <em>where</em> clause more readable. Refactoring them into C# class functions makes the generated SQL inefficient, as EF cannot transform C# functions into SQL.  Such conditions in a standard C# function gets evaluated on the client site, after retrieving all data from the server. Depending on the size of your data, this is something you need <a href="https://docs.microsoft.com/en-us/ef/core/querying/client-eval#client-evaluation-performance-issues">to be aware of</a>.</p>
+
+<p>However, if you use <a href="https://docs.microsoft.com/en-us/dotnet/framework/data/adonet/ef/language-reference/expressions-in-linq-to-entities-queries">Expressions</a> those get transformed to evaluate on the server. Since all of the conditions on our where clauses can be represented as an Expression, let&rsquo;s move those to the Query object class as properties returning Expressions. Since we need data from multiple tables, the intermediate projection <em>OrderSummaryQueryResult</em> helps to work with data from the multiple tables. All our expressions take the <em>OrderSummaryQueryResult</em> projection and perform the appropriate conditions on them.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrderSummaryQuery</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">BelongsToUser</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Employee</span> <span class="p">==</span> <span class="k">null</span> <span class="p">||</span>
+</span><span class='line'>                      <span class="n">a</span><span class="p">.</span><span class="n">Order</span><span class="p">.</span><span class="n">CreatedBy</span> <span class="p">==</span> <span class="n">Employee</span> <span class="p">||</span> <span class="n">a</span><span class="p">.</span><span class="n">Customer</span><span class="p">.</span><span class="n">Employee</span> <span class="p">==</span> <span class="n">Employee</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">IsActiveOrder</span><span class="p">...</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">ForCustomer</span><span class="p">...</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">InDateRange</span><span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>Refactored to use Expressions </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">(</span><span class="k">from</span> <span class="n">order</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Order</span>
+</span><span class='line'> <span class="k">join</span> <span class="n">od</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">OrderDelivery</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">Id</span> <span class="k">equals</span> <span class="n">od</span><span class="p">.</span><span class="n">OrderId</span>
+</span><span class='line'> <span class="k">join</span> <span class="n">customer</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Customer</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">CustomerId</span> <span class="k">equals</span> <span class="n">customer</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'> <span class="k">select</span> <span class="k">new</span> <span class="nf">OrderSummaryQueryResult</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span> <span class="n">Customer</span> <span class="p">=</span> <span class="n">customer</span><span class="p">,</span> <span class="n">Order</span> <span class="p">=</span>    <span class="n">order</span><span class="p">,</span> <span class="n">OrderDelivery</span> <span class="p">=</span> <span class="n">od</span> <span class="p">})</span>
+</span><span class='line'><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">IsActiveOrder</span><span class="p">)</span>
+</span><span class='line'><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">BelongsToUser</span><span class="p">)</span>
+</span><span class='line'><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">ForCustomer</span><span class="p">)</span>
+</span><span class='line'><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">InDateRange</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>Generated SQL when order status and employee name is set</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sql'><span class='line'><span class="k">SELECT</span> <span class="p">[</span><span class="n">customer</span><span class="p">].[</span><span class="n">Name</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="n">Customer</span><span class="p">],</span> <span class="p">[</span><span class="k">order</span><span class="p">].[</span><span class="n">OrderNumber</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="nb">Number</span><span class="p">],</span>
+</span><span class='line'>       <span class="p">[</span><span class="n">od</span><span class="p">].[</span><span class="n">Address</span><span class="p">],</span> <span class="p">[</span><span class="k">order</span><span class="p">].[</span><span class="n">Created</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="n">CreatedDate</span><span class="p">]</span>
+</span><span class='line'><span class="k">FROM</span> <span class="p">[</span><span class="k">Order</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="k">order</span><span class="p">]</span>
+</span><span class='line'><span class="k">INNER</span> <span class="k">JOIN</span> <span class="p">[</span><span class="n">OrderDelivery</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="n">od</span><span class="p">]</span> <span class="k">ON</span> <span class="p">[</span><span class="k">order</span><span class="p">].[</span><span class="n">Id</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">od</span><span class="p">].[</span><span class="n">OrderId</span><span class="p">]</span>
+</span><span class='line'><span class="k">INNER</span> <span class="k">JOIN</span> <span class="p">[</span><span class="n">Customer</span><span class="p">]</span> <span class="k">AS</span> <span class="p">[</span><span class="n">customer</span><span class="p">]</span> <span class="k">ON</span> <span class="p">[</span><span class="k">order</span><span class="p">].[</span><span class="n">CustomerId</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">customer</span><span class="p">].[</span><span class="n">Id</span><span class="p">]</span>
+</span><span class='line'><span class="k">WHERE</span> <span class="p">(([</span><span class="k">order</span><span class="p">].[</span><span class="n">Active</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="k">AND</span> <span class="p">([</span><span class="k">order</span><span class="p">].[</span><span class="n">Status</span><span class="p">]</span> <span class="o">=</span> <span class="o">@</span><span class="n">__OrderStatus_0</span><span class="p">))</span> <span class="k">AND</span>
+</span><span class='line'>      <span class="p">(([</span><span class="k">order</span><span class="p">].[</span><span class="n">CreatedBy</span><span class="p">]</span> <span class="o">=</span> <span class="o">@</span><span class="n">__employee_1</span><span class="p">)</span> <span class="k">OR</span> <span class="p">([</span><span class="n">customer</span><span class="p">].[</span><span class="n">Employee</span><span class="p">]</span> <span class="o">=</span> <span class="o">@</span><span class="n">__employee_2</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<div class="alert alert-warning">
+If you use constructor initialization for intermediate projection, *OrderSummaryQueryResult* the where clauses gets executed on the client side. So use the object initializer syntax to create the intermediate projection.
+</div>
+
+
+<h3>Iteration 4 - Refactoring to Extension method</h3>
+
+<p>After the last iteration, we have a query that is easy to read and understand. We also have all queries consolidated within the query object, and it acts as a one place holding all the queries. However, something still felt not right, and I had a quick chat with my friend <a href="https://twitter.com/zpbappi">Bappi</a>, and we refined it further. The above query has too many where clauses and it was just repeating for each of the filters. To encapsulate this further, I moved all the filter expressions to be returned as an Enumerable and wrote an extension method, <em>ApplyAllFilters</em>, to execute them all.</p>
+
+<figure class='code'><figcaption><span>Expose one property for all the filters   </span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">OrderSummaryQuery</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;&gt;</span> <span class="n">AllFilters</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">get</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">IsActiveOrderStatus</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">BelongsToUser</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">BelongsToCustomer</span><span class="p">;</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="k">return</span> <span class="n">FallsInDateRange</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">BelongsToUser</span><span class="p">...</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">IsActiveOrder</span><span class="p">...</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">ForCustomer</span><span class="p">...</span>
+</span><span class='line'>    <span class="k">private</span> <span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">OrderSummaryQueryResult</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;</span> <span class="n">InDateRange</span><span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Extension Method on IQueryable</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IQueryable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">ApplyAllFilters</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span>
+</span><span class='line'>        <span class="k">this</span> <span class="n">IQueryable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">queryable</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">Expression</span><span class="p">&lt;</span><span class="n">Func</span><span class="p">&lt;</span><span class="n">T</span><span class="p">,</span> <span class="kt">bool</span><span class="p">&gt;&gt;&gt;</span> <span class="n">filters</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">foreach</span> <span class="p">(</span><span class="kt">var</span> <span class="n">filter</span> <span class="k">in</span> <span class="n">filters</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">queryable</span> <span class="p">=</span> <span class="n">queryable</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">filter</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="n">queryable</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">(</span><span class="k">from</span> <span class="n">order</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Order</span>
+</span><span class='line'>    <span class="k">join</span> <span class="n">od</span> <span class="k">in</span> <span class="n">orderDeliveries</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">Id</span> <span class="k">equals</span> <span class="n">od</span><span class="p">.</span><span class="n">OrderId</span>
+</span><span class='line'>    <span class="k">join</span> <span class="n">customer</span> <span class="k">in</span> <span class="n">_context</span><span class="p">.</span><span class="n">Customer</span> <span class="n">on</span> <span class="n">order</span><span class="p">.</span><span class="n">CustomerId</span> <span class="k">equals</span> <span class="n">customer</span><span class="p">.</span><span class="n">Id</span>
+</span><span class='line'>    <span class="k">select</span> <span class="k">new</span> <span class="nf">OrderSummaryQueryResult</span><span class="p">()</span> <span class="p">{</span> <span class="n">Customer</span> <span class="p">=</span> <span class="n">customer</span><span class="p">,</span> <span class="n">Order</span> <span class="p">=</span> <span class="n">order</span><span class="p">,</span> <span class="n">OrderDelivery</span> <span class="p">=</span> <span class="n">od</span> <span class="p">})</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">ApplyAllFilters</span><span class="p">(</span><span class="n">query</span><span class="p">.</span><span class="n">AllFilters</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">...</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The search query is much more readable than what we started with in Iteration 1. One thing you should always be careful about with EF is making sure that the generated SQL is optimized and you are across what gets executed on the server and the client. Using a SQL Profiler or <a href="https://docs.microsoft.com/en-us/ef/core/miscellaneous/logging">configure logging</a> to see the generated SQL. You can also <a href="https://docs.microsoft.com/en-us/ef/core/querying/client-eval#optional-behavior-throw-an-exception-for-client-evaluation">configure to throw an exception</a> (in your development environment) for client evaluation.</p>
+
+<p>Hope this helps to write cleaner and readable queries. Sound off in the comments if you have thoughts on refining this further or of any other patterns that you use.</p>
+</div>
+  
+  
+
+
+        </article>
+      
+      
+        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
+          
+  <header class="page-header">
+    
+      <p class="meta text-muted text-capitalize">
+        
+
+
+
+
+
+
+
+
+
+
+
+
 <span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-12-17T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Dec 17<sup>th</sup>, 2018</time>
         
 
@@ -1628,102 +1942,6 @@ If you are using the .Net Core console application VS template (like I did) make
 
         </article>
       
-      
-        <article class="post" itemprop="blogPost" itemscope itemtype="http://schema.org/BlogPosting">
-          
-  <header class="page-header">
-    
-      <p class="meta text-muted text-capitalize">
-        
-
-
-
-
-
-
-
-
-
-
-
-
-<span class="glyphicon glyphicon-calendar"></span> <time datetime="2018-07-10T00:00:00+00:00"  data-updated="true" itemprop="datePublished dateCreated">Jul 10<sup>th</sup>, 2018</time>
-        
-
-<span class="glyphicon glyphicon-tags"></span>&nbsp; Posted in&nbsp; 
-<span class="categories">
-  
-    <a class='category' href='/blog/category/security/'>security</a>
-  
-</span>
-
-
-        
-      </p>
-    
-    
-      <h1 class="entry-title" itemprop="name headline"><a href="/blog/http-strict-transport-security-sts-or-hsts/" itemprop="url">HTTP Strict Transport Security (STS or HSTS)</a></h1>
-    
-  </header>
-
-
-  <div class="entry-content clearfix" itemprop="articleBody description"><p><em>This article is part of a series of articles - <a href="/blog/ok-i-have-got-https-what-next/">Ok I have got HTTPS! What Next?</a>. In this post, we explore how to use HSTS security header and the issues it solves.</em></p>
-
-<p>When you enter a domain name in the browser without specifying the protocol (HTTP or HTTPS) the browser by default sends the first request over HTTP. For a server that supports only HTTPS, when it sees such a request, it redirects the request over to HTTPS. The server responds to the client with a <em>302 Redirect</em>, redirecting the client to HTTPS, from which on the browser starts requesting over HTTPS. As you can see here, the very first request that the client makes is over an insecure channel (HTTP), so is also vulnerable to attacks. You could be prone to man-in-the-middle (MITM) attack, and someone could spoof that request and point you to a different site, inject malicious scripts, etc. <strong>The first insecure HTTP request is made everytime you enter the domain name in the browser or make an explicit call over HTTP.</strong></p>
-
-<p><img src="/images/hsts_tofu.png" alt="Trust on First Use" class="center"></p>
-
-<blockquote><p><em>The HTTP <strong>Strict-Transport-Security</strong> response header (often abbreviated as HSTS) lets a website tell browsers that it should only be accessed using HTTPS, instead of using HTTP</em></p></blockquote>
-
-<p>By using the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security">HTTP Strict Transport Security</a> (HSTS) header on your response headers, you are instructing the browser to make calls over HTTPS instead of HTTP for your site.</p>
-
-<figure class='code'><figcaption><span>Syntax</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='text'><span class='line'>Strict-Transport-Security: max-age=&lt;expire-time&gt;
-</span><span class='line'>Strict-Transport-Security: max-age=&lt;expire-time&gt;; includeSubDomains
-</span><span class='line'>Strict-Transport-Security: max-age=&lt;expire-time&gt;; preload
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>There are a few directives that you can set on the header which determines how the browser uses the header. By just setting the header with a <em>max-age</em> (required) directive, you tell the browser the <em>time in seconds that the browser should remember that a site is only to be accessed using HTTPS</em>. By default, the setting affects only the current subdomain. Additionally, you can set the <em>includeSubDomains</em> directive to apply this rule to all subdomain of the site. <strong>Before including all subdomains make sure those are served over HTTPS as well so that you do end up blocking your other sites on the same domain (if any).</strong></p>
-
-<p>As you can see with the HSTS header specified, the browser now only makes one insecure request (the one that it makes everytime the cache expires or the very first request). Once it has established a successful connection with the server, all further requests are over HTTPS for the <em>max_age</em> (cache expiry) set. <strong>With the HSTS header the surface area of the attack gets reduced to just one request as compared to all initial requests going over HTTP (when we did not have the HSTS header).</strong></p>
-
-<p>To verify the HSTS header setting has been applied for your website open your browser in Incognito/In-Private browsing mode. It is to make sure that the browser acts as if it is seeing the site for the very first time (as HSTS header caches do not get shared across regular/incognito sessions)</p>
-
-<blockquote><p><em>The HSTS header settings do not get shared across between the regular and incognito browsing session (at least in Chrome and think this is the same for other browsers as well).</em></p></blockquote>
-
-<p>Open the Developer tools window and monitor the Network requests made by the browser. Request your website over HTTP (either explicitly or just entering the domain name) in this case my blog <a href="http://rahulpnath.com">http://rahulpnath.com</a>. As you can see the very first request go over HTTP and the server returns a <em>301 Moved Permanently</em> status with the https version of the site. For any subsequent requests over HTTP, the browser returns a <em>307 Internal Redirect</em>. This redirect happens within the boundary of your browser and redirects to the HTTPS site. You can use <a href="https://rahulpnath.com/blog/fiddler-free-web-debugging-proxy/">Fiddler</a> to verify that this request does not cross the browser boundary. (The request does not get to Fiddler.)</p>
-
-<p><img src="/images/hsts_without_preload.png" alt="HSTS without preload" class ="center" /></p>
-
-<p>We could still argue that there is still a potential threat with the very first request sent over HTTP which is still vulnerable to MITM attack. To solve that we can use the <em>preload</em> directive and submit out domain to an <a href="https://hstspreload.org/">HSTS Preload list</a>, which when successfully added, propagates to the source code of Browsers.</p>
-
-<blockquote><p><em>Most major browsers (Chrome, Firefox, Opera, Safari, IE 11 and Edge) also have HSTS preload lists based on the Chrome list.</em></p></blockquote>
-
-<p>The Browsers hardcode these domains from the preload approved list into their source code (e.g., here is <a href="https://chromium.googlesource.com/chromium/src/net/+/master/http/transport_security_state_static.json">Chrome&rsquo;s list</a>) and gets shipped with their releases. You can check for the preloaded site in the browser as well. Again for chrome navigate to <em>chrome://net-internals/#hsts</em> and query for the HSTS domain.</p>
-
-<p><img src="/images/hsts_preload_static_json.png" alt="HSTS preloaded site hardcoded" class ="center" /></p>
-
-<p>If STS is not set at all or you have not made the very first request to the server (when preload is false) querying for the domain returns &lsquo;Not Found.&rsquo; Below are two variations that you can see depending on whether you have <em>preload</em> set or not. The <em>dynamic_*_*</em> indicates that STS is set after the first load of the site and the <em>static_*_*</em> indicates that it is set from the preload list.</p>
-
-<blockquote><p><em>If you are wondering why this blog does not have _static_*_*</em> set it is because the preload list that it is part of has not yet made into a stable version of Chrome. However, the preload site does show that it is currently preloaded (probably in a beta version at the time of writing)._</p></blockquote>
-
-<p><img src="/images/chrome_hsts_preload.png" alt="Verifying HSTS preload" class ="center" /></p>
-
-<p>With the preload set and your domain hardcoded into the preload list and available as part of the browser version you are on, any request made over HTTP is redirected internally (307) to HTTPS without even going to the server. It means <strong>we have entirely got rid of the first untrusted HTTP request.</strong></p>
-
-<p><img src="/images/hsts_internal_redirect_scott.png" alt="HSTS preload request flow" class ="center" /></p>
-
-<p>Have you already got HSTS set on your site?</p>
-</div>
-  
-  
-
-
-        </article>
-      
     </div>
 
     <ul class="pager">
@@ -1747,6 +1965,8 @@ If you are using the .Net Core console application VS template (like I did) make
   
   <div id="recent_posts" class="list-group">
     
+    <a class="list-group-item " href="/blog/query-object-pattern-and-entity-framework-making-readable-queries/">Query Object Pattern and Entity Framework - Making Readable Queries</a>
+    
     <a class="list-group-item " href="/blog/exclude-certain-scripts-from-transaction-when-using-dbup/">Exclude Certain Scripts From Transaction When Using DbUp</a>
     
     <a class="list-group-item " href="/blog/dot-net-core-api-and-azure-ad-groups-based-access/">.Net Core Web App and Azure AD Groups Role based access</a>
@@ -1754,8 +1974,6 @@ If you are using the .Net Core console application VS template (like I did) make
     <a class="list-group-item " href="/blog/azure-ad-custom-attributes-and-optional-claims-from-an-asp-dot-net-application/">Azure AD Custom Attributes and Optional Claims from an ASP.Net Application</a>
     
     <a class="list-group-item " href="/blog/setting-up-dbup-in-azure-pipelines/">Setting up DbUp in Azure Pipelines</a>
-    
-    <a class="list-group-item " href="/blog/azure-pipelines-how-to-find-remaining-build-minutes/">Tip of the Week: Azure Pipelines - How to Find Remaining Free Build Minutes?</a>
     
   </div>
 </section>
