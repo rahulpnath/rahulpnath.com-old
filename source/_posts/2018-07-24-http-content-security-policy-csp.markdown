@@ -44,7 +44,7 @@ CSP's can be set via the configuration file of your web server host if you want 
 
 **Using Fiddler**
 
-However if all you want is to play around with the CSP header and don't have access to your Web server or the configuration file, you can still test these headers. You can inject in the headers into the response using a [Web Proxy like Fiddler](blog/fiddler-free-web-debugging-proxy/)
+However if all you want is to play around with the CSP header and don't have access to your Web server or the configuration file, you can still test these headers. You can inject in the headers into the response using a [Web Proxy like Fiddler](/blog/fiddler-free-web-debugging-proxy/)
 
 To modify the request/response in-flight you can use one of the most powerful feature in Fiddler - [Fiddler Script](https://www.telerik.com/blogs/understanding-fiddlerscript)
 

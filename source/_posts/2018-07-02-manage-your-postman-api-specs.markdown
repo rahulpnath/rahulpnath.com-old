@@ -13,7 +13,7 @@ description: Organizing and managing your API specs either through Postman Cloud
 primaryImage: postman_published.png
 ---
 
-In the previous post, we explored how to use [Postman for testing API endpoints](Automated API Testing Using Postman Collection Runner). Postman is an excellent tool to manage API specs as well, so that you can try API requests individually to see how things are working. It also acts as documentation for all your API endpoints and serves as a good starting point for someone new to the team. When it comes to managing the API specs for your application, there are a few options that we have and let's explore what they are.
+In the previous post, we explored how to use [Postman for testing API endpoints](/blog/automated-api-testing-using-postman-collection-runner/). Postman is an excellent tool to manage API specs as well, so that you can try API requests individually to see how things are working. It also acts as documentation for all your API endpoints and serves as a good starting point for someone new to the team. When it comes to managing the API specs for your application, there are a few options that we have and let's explore what they are.
 
 ### Organizing API Specs
 
